@@ -1,0 +1,96 @@
+/* src/styles/variables.css */
+:root {
+  --matey-max-width: 1240px;
+
+  --matey-page-gutter-desktop: 24px;
+  --matey-page-gutter-tablet: 20px;
+  --matey-page-gutter-mobile: 16px;
+
+  --matey-section-py-desktop: 120px;
+  --matey-section-py-tablet: 96px;
+  --matey-section-py-mobile: 78px;
+
+  --matey-header-height: 82px;
+
+  --matey-color-primary: #6c9eff;
+  --matey-color-primary-strong: #4d7dfa;
+  --matey-color-secondary: #8d79ff;
+  --matey-color-accent: #ff93b7;
+  --matey-color-mint: #64d3ba;
+
+  --matey-color-text-strong: #1f2737;
+  --matey-color-text-body: #66728b;
+  --matey-color-text-soft: #7d88a2;
+  --matey-color-text-muted: #98a2b5;
+
+  --matey-color-bg: #ffffff;
+  --matey-color-bg-soft: #fbfcff;
+  --matey-color-bg-soft-blue: #f7fbff;
+  --matey-color-bg-soft-pink: #fff8fb;
+  --matey-color-bg-soft-purple: #f8f6ff;
+
+  --matey-color-border-soft: rgba(132, 146, 181, 0.14);
+  --matey-color-border-medium: rgba(108, 158, 255, 0.2);
+  --matey-color-glass: rgba(255, 255, 255, 0.82);
+  --matey-color-glass-strong: rgba(255, 255, 255, 0.92);
+
+  --matey-gradient-primary: linear-gradient(135deg, #6c9eff 0%, #8d79ff 100%);
+  --matey-gradient-accent: linear-gradient(135deg, #6c9eff 0%, #8d79ff 46%, #ff93b7 100%);
+  --matey-gradient-soft: linear-gradient(180deg, #fffafd 0%, #ffffff 34%, #f8fbff 100%);
+  --matey-gradient-card: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(249, 250, 255, 0.98) 100%
+  );
+
+  --matey-radius-pill: 999px;
+  --matey-radius-card-lg: 36px;
+  --matey-radius-card: 28px;
+  --matey-radius-md: 22px;
+  --matey-radius-sm: 18px;
+
+  --matey-shadow-soft: 0 14px 28px rgba(140, 149, 175, 0.1);
+  --matey-shadow-card: 0 20px 40px rgba(130, 145, 178, 0.12);
+  --matey-shadow-card-strong: 0 30px 80px rgba(141, 154, 186, 0.12);
+  --matey-shadow-primary: 0 20px 38px rgba(108, 158, 255, 0.28);
+
+  --matey-transition-fast: 0.2s ease;
+  --matey-transition-base: 0.28s ease;
+  --matey-transition-slow: 0.38s ease;
+
+  /* =========================
+     Legacy compatibility vars
+     ========================= */
+  --font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+
+  --text-primary: var(--matey-color-text-strong);
+  --text-secondary: var(--matey-color-text-body);
+  --text-tertiary: var(--matey-color-text-soft);
+
+  --bg-white: var(--matey-color-bg);
+  --bg-light: var(--matey-color-bg-soft);
+  --bg-lighter: #f4f7fc;
+
+  --border-color: rgba(132, 146, 181, 0.18);
+
+  --primary-blue: var(--matey-color-primary);
+  --primary-blue-light: #8bb7ff;
+  --primary-pink: var(--matey-color-accent);
+  --primary-pink-light: #ffb1cc;
+
+  --radius-full: var(--matey-radius-pill);
+  --radius-md: 14px;
+
+  --transition-fast: var(--matey-transition-fast);
+  --transition-base: var(--matey-transition-base);
+  --transition-slow: var(--matey-transition-slow);
+
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 40px;
+  --spacing-2xl: 64px;
+  --spacing-3xl: 96px;
+}

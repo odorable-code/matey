@@ -1,0 +1,406 @@
+/* src/components/4_Home/Pricing.css */
+@import '../../styles/variables.css';
+
+.matey-pricing {
+  position: relative;
+  overflow: hidden;
+  padding:
+    calc(var(--matey-section-py-desktop) + 28px)
+    var(--matey-page-gutter-desktop)
+    var(--matey-section-py-desktop);
+  background:
+    radial-gradient(circle at 12% 18%, rgba(108, 158, 255, 0.12), transparent 24%),
+    radial-gradient(circle at 88% 16%, rgba(255, 147, 183, 0.12), transparent 24%),
+    linear-gradient(180deg, #ffffff 0%, #fbfcff 44%, #fff8fb 100%);
+}
+
+.matey-pricing__inner {
+  max-width: var(--matey-max-width);
+  margin: 0 auto;
+}
+
+.matey-pricing__header {
+  max-width: 860px;
+  margin: 0 auto 56px;
+  text-align: center;
+}
+
+.matey-pricing__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(124, 144, 191, 0.16);
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 12px 28px rgba(122, 141, 188, 0.08);
+  color: #6b7591;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.matey-pricing__badge-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6c9eff, #ff93b7);
+  box-shadow: 0 0 0 6px rgba(108, 158, 255, 0.12);
+}
+
+.matey-pricing__title {
+  margin: 18px 0 14px;
+  color: #1d2433;
+  font-size: clamp(32px, 4vw, 48px);
+  font-weight: 900;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+}
+
+.matey-pricing__title span {
+  background: linear-gradient(135deg, #6c9eff 0%, #8d79ff 52%, #ff93b7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.matey-pricing__subtitle {
+  margin: 0 auto;
+  max-width: 760px;
+  color: #66728b;
+  font-size: 16px;
+  line-height: 1.8;
+}
+
+.matey-pricing__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 22px;
+  align-items: stretch;
+}
+
+.matey-pricing__card {
+  position: relative;
+  padding: 28px 24px 24px;
+  border-radius: 30px;
+  border: 1px solid rgba(130, 146, 186, 0.16);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 20px 46px rgba(112, 129, 176, 0.1);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition:
+    transform 0.24s ease,
+    box-shadow 0.24s ease,
+    border-color 0.24s ease,
+    background 0.24s ease;
+}
+
+.matey-pricing__card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 26px 54px rgba(112, 129, 176, 0.14);
+}
+
+.matey-pricing__card--blue {
+  background:
+    radial-gradient(circle at top right, rgba(108, 158, 255, 0.1), transparent 24%),
+    rgba(255, 255, 255, 0.96);
+}
+
+.matey-pricing__card--purple {
+  background:
+    linear-gradient(180deg, rgba(141, 121, 255, 0.09) 0%, rgba(255, 255, 255, 0) 34%),
+    radial-gradient(circle at top right, rgba(141, 121, 255, 0.12), transparent 24%),
+    rgba(249, 247, 255, 0.98);
+  border-color: rgba(141, 121, 255, 0.16);
+}
+
+.matey-pricing__card--pink {
+  background:
+    linear-gradient(180deg, rgba(255, 147, 183, 0.1) 0%, rgba(255, 255, 255, 0) 34%),
+    radial-gradient(circle at top right, rgba(255, 147, 183, 0.12), transparent 24%),
+    rgba(255, 248, 251, 0.98);
+  border-color: rgba(255, 147, 183, 0.16);
+}
+
+.matey-pricing__card.is-featured {
+  box-shadow: 0 22px 50px rgba(125, 132, 180, 0.12);
+}
+
+.matey-pricing__card.is-featured:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 28px 58px rgba(125, 132, 180, 0.16);
+}
+
+.matey-pricing__card-badge {
+  position: absolute;
+  top: -14px;
+  left: 24px;
+  min-height: 34px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #8d79ff 0%, #6c9eff 100%);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+  box-shadow: 0 16px 28px rgba(141, 121, 255, 0.22);
+}
+
+.matey-pricing__card-top {
+  display: grid;
+  gap: 18px;
+}
+
+.matey-pricing__plan-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: #f4f7fb;
+  color: #5f6f8e;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.matey-pricing__price-wrap strong {
+  color: #1d2433;
+  font-size: clamp(36px, 4vw, 46px);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.matey-pricing__price-line {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.matey-pricing__price-line span {
+  color: #6d7891;
+  font-size: 15px;
+  font-weight: 700;
+  padding-bottom: 4px;
+}
+
+.matey-pricing__price-wrap p {
+  margin: 10px 0 0;
+  color: #66728b;
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+.matey-pricing__divider {
+  height: 1px;
+  margin: 22px 0 20px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(125, 144, 189, 0.2) 20%,
+    rgba(125, 144, 189, 0.2) 80%,
+    transparent 100%
+  );
+}
+
+.matey-pricing__feature-list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.matey-pricing__feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.matey-pricing__feature-item.included {
+  color: #243047;
+}
+
+.matey-pricing__feature-item.excluded {
+  color: #a2abba;
+}
+
+.matey-pricing__feature-icon {
+  width: 22px;
+  height: 22px;
+  margin-top: 1px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #edf4ff;
+  color: #5d7fdb;
+  font-size: 12px;
+  font-weight: 900;
+  flex-shrink: 0;
+}
+
+.matey-pricing__feature-item.excluded .matey-pricing__feature-icon {
+  background: #f1f3f8;
+  color: #b5bdcb;
+}
+
+.matey-pricing__note {
+  margin-top: 20px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: #f7f9fc;
+  color: #61708b;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.7;
+}
+
+.matey-pricing__card--purple .matey-pricing__note {
+  background: rgba(141, 121, 255, 0.07);
+  color: #6959b5;
+}
+
+.matey-pricing__card--pink .matey-pricing__note {
+  background: rgba(255, 147, 183, 0.08);
+  color: #b85f85;
+}
+
+.matey-pricing__cta {
+  width: 100%;
+  min-height: 54px;
+  margin-top: 20px;
+  border: 0;
+  border-radius: 18px;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease,
+    opacity 0.22s ease;
+}
+
+.matey-pricing__cta:hover {
+  transform: translateY(-2px);
+}
+
+.matey-pricing__cta--blue {
+  background: linear-gradient(135deg, #6c9eff 0%, #7fb6ff 100%);
+  color: #ffffff;
+  box-shadow: 0 16px 30px rgba(108, 158, 255, 0.2);
+}
+
+.matey-pricing__cta--purple {
+  background: linear-gradient(135deg, #8d79ff 0%, #6c9eff 100%);
+  color: #ffffff;
+  box-shadow: 0 16px 30px rgba(141, 121, 255, 0.2);
+}
+
+.matey-pricing__cta--pink {
+  background: linear-gradient(135deg, #ff93b7 0%, #ffb08e 100%);
+  color: #ffffff;
+  box-shadow: 0 16px 30px rgba(255, 147, 183, 0.2);
+}
+
+.matey-pricing__footnote {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  margin: 34px auto 0;
+  max-width: 560px;
+  justify-items: center;
+}
+
+.matey-pricing__footnote-card {
+  width: 100%;
+  padding: 18px 20px;
+  border-radius: 22px;
+  border: 1px solid rgba(130, 146, 186, 0.14);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 12px 26px rgba(112, 129, 176, 0.08);
+  text-align: center;
+}
+
+.matey-pricing__footnote-card strong {
+  display: block;
+  margin-bottom: 8px;
+  color: #1d2433;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.matey-pricing__footnote-card span {
+  display: block;
+  color: #66728b;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+@media (max-width: 1100px) {
+  .matey-pricing {
+    padding:
+      calc(var(--matey-section-py-tablet) + 18px)
+      var(--matey-page-gutter-tablet)
+      var(--matey-section-py-tablet);
+  }
+
+  .matey-pricing__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .matey-pricing__footnote {
+    max-width: 560px;
+  }
+}
+
+@media (max-width: 768px) {
+  .matey-pricing {
+    padding:
+      calc(var(--matey-section-py-mobile) + 14px)
+      var(--matey-page-gutter-mobile)
+      var(--matey-section-py-mobile);
+  }
+
+  .matey-pricing__header {
+    margin-bottom: 40px;
+  }
+
+  .matey-pricing__title {
+    font-size: 30px;
+  }
+
+  .matey-pricing__subtitle {
+    font-size: 15px;
+  }
+
+  .matey-pricing__card {
+    padding: 24px 18px 20px;
+    border-radius: 24px;
+  }
+
+  .matey-pricing__card-badge {
+    left: 18px;
+  }
+
+  .matey-pricing__footnote {
+    margin-top: 26px;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 560px) {
+  .matey-pricing__price-wrap strong {
+    font-size: 34px;
+  }
+
+  .matey-pricing__footnote-card {
+    padding: 16px 16px;
+    border-radius: 18px;
+  }
+}

@@ -1,0 +1,409 @@
+@import '../../styles/variables.css';
+
+.matey-hero {
+  position: relative;
+  overflow: hidden;
+  padding: 188px var(--matey-page-gutter-desktop) 108px;
+  background:
+    radial-gradient(circle at 14% 18%, rgba(108, 158, 255, 0.16), transparent 28%),
+    radial-gradient(circle at 86% 14%, rgba(255, 147, 183, 0.18), transparent 26%),
+    radial-gradient(circle at 72% 72%, rgba(141, 121, 255, 0.14), transparent 24%),
+    linear-gradient(180deg, #fffafd 0%, #ffffff 36%, #f8fbff 100%);
+}
+
+.matey-hero::before {
+  content: '';
+  position: absolute;
+  left: -80px;
+  bottom: 30px;
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 181, 206, 0.24) 0%, transparent 72%);
+  pointer-events: none;
+}
+
+.matey-hero::after {
+  content: '';
+  position: absolute;
+  top: 56px;
+  right: -80px;
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(108, 158, 255, 0.18) 0%, transparent 72%);
+  pointer-events: none;
+}
+
+.matey-hero__inner {
+  position: relative;
+  z-index: 1;
+  max-width: var(--matey-max-width);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1.02fr) minmax(360px, 1.08fr);
+  gap: 42px;
+  align-items: center;
+}
+
+.matey-hero__content {
+  min-width: 0;
+}
+
+.matey-hero__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: var(--matey-radius-pill);
+  background: rgba(255, 255, 255, 0.84);
+  color: #75819b;
+  font-size: 0.92rem;
+  font-weight: 800;
+  box-shadow: var(--matey-shadow-soft);
+}
+
+.matey-hero__title {
+  margin: 24px 0 18px;
+  color: var(--matey-color-text-strong);
+  font-size: clamp(2.8rem, 6vw, 5rem);
+  line-height: 1.04;
+  letter-spacing: -0.055em;
+  font-weight: 900;
+}
+
+.matey-hero__title span {
+  background: var(--matey-gradient-accent);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+}
+
+.matey-hero__description {
+  max-width: 620px;
+  margin: 0;
+  color: var(--matey-color-text-body);
+  font-size: 1.08rem;
+  line-height: 1.88;
+  letter-spacing: -0.024em;
+}
+
+.matey-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 30px;
+}
+
+.matey-hero__button {
+  min-height: 56px;
+  padding: 0 24px;
+  border-radius: var(--matey-radius-pill);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    transform var(--matey-transition-fast),
+    box-shadow var(--matey-transition-fast),
+    background var(--matey-transition-fast),
+    border-color var(--matey-transition-fast);
+}
+
+.matey-hero__button:hover,
+.matey-hero__button:focus-visible {
+  transform: translateY(-2px);
+  outline: none;
+}
+
+.matey-hero__button--primary {
+  border: none;
+  color: #ffffff;
+  background: var(--matey-gradient-primary);
+  box-shadow: var(--matey-shadow-primary);
+}
+
+.matey-hero__button--secondary {
+  border: 1px solid rgba(108, 158, 255, 0.18);
+  color: #35588f;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 14px 30px rgba(141, 121, 255, 0.1);
+}
+
+.matey-hero__platforms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.matey-hero__platform-chip {
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: var(--matey-radius-pill);
+  display: inline-flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.86);
+  color: #66728b;
+  font-size: 0.87rem;
+  font-weight: 700;
+  box-shadow: 0 10px 22px rgba(141, 149, 178, 0.08);
+}
+
+.matey-hero__visual {
+  position: relative;
+  min-height: 620px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+}
+
+.matey-hero__visual-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(8px);
+  pointer-events: none;
+  animation: mateyHeroFloat 8s ease-in-out infinite;
+}
+
+.matey-hero__visual-glow--one {
+  width: 220px;
+  height: 220px;
+  left: 20px;
+  top: 60px;
+  background: radial-gradient(circle, rgba(108, 158, 255, 0.22) 0%, transparent 72%);
+}
+
+.matey-hero__visual-glow--two {
+  width: 220px;
+  height: 220px;
+  right: 8px;
+  bottom: 56px;
+  background: radial-gradient(circle, rgba(255, 147, 183, 0.22) 0%, transparent 72%);
+  animation-delay: -3s;
+}
+
+.matey-hero__character-scene {
+  position: relative;
+  z-index: 2;
+  width: min(100%, 470px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  transition:
+    opacity 0.55s ease,
+    transform 0.55s ease,
+    filter 0.55s ease;
+}
+
+.matey-hero__character-scene.is-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  filter: blur(0);
+}
+
+.matey-hero__character-scene.is-hidden {
+  opacity: 0;
+  transform: translateY(14px) scale(0.98);
+  filter: blur(6px);
+}
+
+.matey-hero__speech {
+  position: relative;
+  width: 100%;
+  padding: 20px 22px 18px;
+  border-radius: 24px 24px 24px 12px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow:
+    0 22px 42px rgba(124, 137, 168, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.88);
+}
+
+.matey-hero__speech::after {
+  content: '';
+  position: absolute;
+  left: 30px;
+  bottom: -8px;
+  width: 18px;
+  height: 18px;
+  background: rgba(255, 255, 255, 0.94);
+  transform: rotate(45deg);
+  border-radius: 4px;
+}
+
+.matey-hero__speech p {
+  margin: 0;
+  color: #55627f;
+  font-size: 1rem;
+  line-height: 1.74;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+
+.matey-hero__character-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.matey-hero__character-shadow {
+  position: absolute;
+  bottom: 12px;
+  width: 132px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(85, 98, 127, 0.16);
+  filter: blur(10px);
+}
+
+.matey-hero__character-image {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 300px);
+  height: auto;
+  object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 22px 38px rgba(118, 132, 163, 0.22));
+}
+
+.matey-hero__character-meta {
+  margin-top: 12px;
+  text-align: center;
+}
+
+.matey-hero__character-meta strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #24324a;
+  font-size: 1rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.matey-hero__character-meta span {
+  display: block;
+  color: #70809a;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  font-weight: 700;
+}
+
+@keyframes mateyHeroFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-14px);
+  }
+}
+
+/* 큰 태블릿/작은 데스크탑 */
+@media (max-width: 1200px) {
+  .matey-hero {
+    padding: 170px var(--matey-page-gutter-desktop) 102px;
+  }
+}
+
+@media (max-width: 960px) {
+  .matey-hero {
+    padding: 148px var(--matey-page-gutter-tablet) 94px;
+  }
+
+  .matey-hero__inner {
+    grid-template-columns: 1fr;
+    gap: 34px;
+  }
+
+  .matey-hero__content {
+    text-align: center;
+  }
+
+  .matey-hero__description {
+    max-width: none;
+  }
+
+  .matey-hero__actions,
+  .matey-hero__platforms {
+    justify-content: center;
+  }
+
+  .matey-hero__visual {
+    min-height: 500px;
+  }
+
+  .matey-hero__character-scene {
+    width: min(100%, 430px);
+  }
+
+  .matey-hero__character-image {
+    width: min(100%, 270px);
+  }
+}
+
+@media (max-width: 640px) {
+  .matey-hero {
+    padding: 132px var(--matey-page-gutter-mobile) 82px;
+  }
+
+  .matey-hero__title {
+    font-size: clamp(2.2rem, 10vw, 3rem);
+    line-height: 1.08;
+  }
+
+  .matey-hero__title br,
+  .matey-hero__description br {
+    display: none;
+  }
+
+  .matey-hero__description {
+    font-size: 0.98rem;
+    line-height: 1.74;
+  }
+
+  .matey-hero__actions {
+    flex-direction: column;
+  }
+
+  .matey-hero__button {
+    width: 100%;
+  }
+
+  .matey-hero__visual {
+    min-height: 400px;
+  }
+
+  .matey-hero__character-scene {
+    width: min(100%, 360px);
+    gap: 16px;
+  }
+
+  .matey-hero__speech {
+    padding: 17px 18px 16px;
+  }
+
+  .matey-hero__speech p {
+    font-size: 0.92rem;
+    line-height: 1.66;
+  }
+
+  .matey-hero__character-image {
+    width: min(100%, 230px);
+  }
+
+  .matey-hero__character-shadow {
+    width: 110px;
+    height: 22px;
+  }
+
+  .matey-hero__character-meta span {
+    font-size: 0.82rem;
+  }
+}
