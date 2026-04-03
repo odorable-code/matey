@@ -12,7 +12,7 @@ public class SwaggerConfig {
     public OpenAPI openAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("내 프로젝트 API 문서")
+                        .title("Matey API 문서")
                         .description("Spring Boot 3.x 기반 API 명세서입니다.")
                         .version("1.0.0"));
     }
