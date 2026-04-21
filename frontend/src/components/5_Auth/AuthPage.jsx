@@ -84,6 +84,12 @@ function getPasswordStrength(password) {
 export default function AuthPage() {
   const location = useLocation();
   const navigate = useNavigate();
+
+  // {a : {isAuthenticated : b}}로 되어있다면
+  // XX!! const { a.isAuthenticated } = useAuth(); 처럼 점(.)을 찍는 문법은 자바스크립트에서 허용되지 않는 문법
+  // const { login, signup, socialLogin, a: { isAuthenticated } } = useAuth();
+  // 또는
+  // const { login, signup } = auth;  const { isAuthenticated } = auth.a; 로 꺼내쓸 수 있다.
   const { login, signup, socialLogin, isAuthenticated } = useAuth();
 
   const activeTab = location.pathname === '/signup' ? 'signup' : 'login';
@@ -114,6 +120,8 @@ export default function AuthPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
+      // replace : true : 현재 페이지 기록을 새로운 페이지로 덮어씀(뒤로가기 해도 이전 페이지 안 나옴)
+      // replace : true는 언제 쓸까? 로그인 성공 했는데 뒤로 가기를 눌러서 다시 로그인 폼이 나오면 안될 때 
       navigate('/', { replace: true });
     }
   }, [isAuthenticated, navigate]);

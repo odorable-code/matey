@@ -1,3 +1,5 @@
+// 주소 끝에 붙은 슬래시 제거
+// 어떤 사람은 ...api, 어떤 사람은 ...api/ 로 쓸 수도 있으니.
 const API_BASE_URL = (
   process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api'
 ).replace(/\/$/, '');
@@ -11,6 +13,7 @@ function getStoredToken() {
 
 export function setStoredToken(token) {
   if (token) {
+    // TOKEN_KEY 라는 변수의 값을 token으로 지정
     localStorage.setItem(TOKEN_KEY, token);
   } else {
     localStorage.removeItem(TOKEN_KEY);
@@ -48,16 +51,18 @@ async function request(
     body:
       body === undefined || body === null
         ? undefined
-        : isJson
+        : (isJson
         ? JSON.stringify(body)
-        : body,
+        : body),
     credentials,
   });
 
   const text = await response.text();
+  // try 밖에서도 data를 사용하기 위해 try 밖에서 미리 선언.
   let data = null;
 
   try {
+    // text를 json 객체로 변환
     data = text ? JSON.parse(text) : null;
   } catch (error) {
     data = text || null;
@@ -75,6 +80,7 @@ async function request(
   return data;
 }
 
+//서버 개발자마다, 혹은 같은 서버라도 API 종류에 따라 토큰 이름을 다르게 줄 때가 있다. 어떤 API는 accessToken이라고 주고, 어떤 API는 짧게 token이라고 준다.
 function normalizeToken(payload) {
   return (
     payload?.accessToken ||
@@ -195,7 +201,12 @@ export function getSocialLoginUrl(provider) {
 }
 
 export function validateEmail(email) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email).trim());
+  // 정규식 검사는 오직 문자열에서만 작동하기 때문에 email을 String으로 변환한다(email이 null, undefined 등으로 담겨 올 수 있기 때문에)
+  // .test: email을 정규식과 비교해서 일치하면 true, 불일치하면 false를 반환
+  // 영어만 허용, @ 앞: 영어 대소문자, 숫자, 특수문자(., _, %, +, -)만 허용, + 때문에 @ 전 최소 1글자 이상, @는 딱 1개만 존재
+  // @ 뒤: 영어 대소문자, 숫자, 특수문자(-, .)만 허용
+  // . 뒤: 실제 점이 1개 찍혀야함, 영어 대소문자(숫자x), 최소 2글자 이상
+  return /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(String(email).trim());
 }
 
 export { getStoredToken };

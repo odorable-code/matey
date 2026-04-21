@@ -326,6 +326,7 @@ export function AuthProvider({ children }) {
       throw new Error('소셜 로그인 주소를 찾을 수 없어요.');
     }
 
+    // 현재 브라우저에 표시되고 있는 페이지의 주소(URL)를 새로운 주소로 변경
     window.location.href = url;
   }, []);
 
