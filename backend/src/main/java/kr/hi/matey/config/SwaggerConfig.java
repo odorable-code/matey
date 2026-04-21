@@ -1,4 +1,4 @@
-package kr.hi.unnamed.config;
+package kr.hi.matey.config;
 
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
