@@ -120,6 +120,7 @@ export default function AuthPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
+      // replace : flase, 기본값 : false는 이동할 때 브라우저 방문 기록에 새로운 페이지를 추가(뒤로가기 하면 이전 페이지가 나옴)
       // replace : true : 현재 페이지 기록을 새로운 페이지로 덮어씀(뒤로가기 해도 이전 페이지 안 나옴)
       // replace : true는 언제 쓸까? 로그인 성공 했는데 뒤로 가기를 눌러서 다시 로그인 폼이 나오면 안될 때 
       navigate('/', { replace: true });
