@@ -10,9 +10,11 @@ import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PostConstruct;
 import kr.hi.matey.config.AppProperties;
-import kr.hi.matey.dao.SocialAuthDAO;
+import kr.hi.matey.dao.SocialLoginDAO;
 import kr.hi.matey.dto.OAuthUserInfo;
+import kr.hi.matey.dto.SocialLoginDTO;
 import kr.hi.matey.security.jwt.JwtTokenProvider;
+import kr.hi.matey.util.CustomUser;
 import kr.hi.matey.util.OAuthStateStore;
 import kr.hi.matey.vo.UserVO;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +24,7 @@ import lombok.RequiredArgsConstructor;
 public class OAuthLoginService {
 
     private final List<OAuthProvider> providers;
-    private final SocialAuthDAO socialAuthDAO;
+    private final SocialLoginDAO socialLoginDAO;
     private final JwtTokenProvider jwtTokenProvider;
     private final OAuthStateStore stateStore;
     private final AppProperties appProperties;
@@ -51,29 +53,50 @@ public class OAuthLoginService {
         OAuthProvider provider = getProvider(providerName);
         OAuthUserInfo userInfo = provider.getUserInfo(code, state);
 
-        UserVO user = socialAuthDAO.findByProviderAndProviderUserId(
-                userInfo.getProvider(), userInfo.getProviderUserId());
+        SocialLoginDTO socialLogin = socialLoginDAO.findByProviderAndProviderUserId(
+                userInfo.getProvider(),
+                userInfo.getProviderUserId()
+        );
 
+        UserVO user;
         boolean isNewUser = false;
 
-        if (user == null) {
+        if (socialLogin != null) {
+            user = socialLoginDAO.findUserByUserId(socialLogin.getUserId());
+        } else {
             isNewUser = true;
 
             user = new UserVO();
-            user.setProvider(userInfo.getProvider());
-            user.setProviderUserId(userInfo.getProviderUserId());
             user.setEmail(userInfo.getEmail());
-            user.setName(userInfo.getNickname());
+            user.setPassword(UUID.randomUUID().toString());
+            user.setNickname(userInfo.getNickname());
+            user.setUserName(userInfo.getNickname());
             user.setProfileImage(userInfo.getProfileImage());
             user.setRole("USER");
+            user.setLoginType(userInfo.getProvider().toUpperCase());
+            user.setStatus("ACTIVE");
+            user.setPoint(0);
+            user.setSubscriptionGrade("FREE");
+            user.setIsAdult(false);
+            user.setIsNotiAgree(false);
+            user.setIsTermsAgreed(true);
+            user.setIsPrivacyAgreed(true);
+            user.setIsMarketingAgreed(false);
 
-            user.setLoginId(userInfo.getProvider() + "_" + userInfo.getProviderUserId());
-            user.setPassword(UUID.randomUUID().toString());
+            socialLoginDAO.insertUser(user);
 
-            socialAuthDAO.insertSocialUser(user);
+            SocialLoginDTO newSocialLogin = new SocialLoginDTO();
+            newSocialLogin.setProvider(userInfo.getProvider().toUpperCase());
+            newSocialLogin.setProviderUserId(userInfo.getProviderUserId());
+            newSocialLogin.setSocialAccessToken(null);
+            newSocialLogin.setSocialRefreshToken(null);
+            newSocialLogin.setUserId(user.getUserId());
+
+            socialLoginDAO.insertSocialLogin(newSocialLogin);
         }
 
-        String token = jwtTokenProvider.createToken(user.getLoginId(), user.getRole());
+        CustomUser customUser = new CustomUser(user);
+        String token = jwtTokenProvider.createAccessToken(customUser);
 
         return appProperties.getFrontendUrl()
                 + "/login/social-success?token=" + token
