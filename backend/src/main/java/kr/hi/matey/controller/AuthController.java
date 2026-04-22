@@ -87,8 +87,8 @@ public class AuthController {
             Map<String, Object> responseBody = new HashMap<>();
             responseBody.put("accessToken", accessToken);
             responseBody.put("user", Map.of(
-                "userId", customUser.getName(),
-                "nickname", customUser.getNickname() 
+                "userName", customUser.getUser().getName(),
+                "nickname", customUser.getUser().getNickname() 
             ));
             return ResponseEntity.ok(responseBody);
 
