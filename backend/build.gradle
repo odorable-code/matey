@@ -37,9 +37,9 @@ dependencies {
 	// MySQL Connector
     implementation 'mysql:mysql-connector-java:8.0.16'
     // MyBatis Spring Boot Starter
-    implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:4.0.1'
+    implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.4'
     // Spring Boot Starter JDBC
-    implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+    //implementation 'org.springframework.boot:spring-boot-starter-jdbc'
     // Spring Boot Configuration Processor (Annotation Processor)
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
      // Spring Security (암호화 도구 포함)

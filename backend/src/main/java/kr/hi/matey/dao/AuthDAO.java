@@ -1,5 +1,5 @@
 package kr.hi.matey.dao;
 
-public class UserDAO {
+public class AuthDAO {
 
 }
