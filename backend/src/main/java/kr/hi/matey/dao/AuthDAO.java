@@ -9,5 +9,7 @@ import kr.hi.matey.domain.UserVO;
 @Mapper
 public interface AuthDAO {
 	boolean insertUser(@Param("user") UserDTO user);
+
+	boolean confirmUser(@Param("user") UserDTO user);
 	
 }

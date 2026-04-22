@@ -2,4 +2,35 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="kr.hi.matey.dao.AuthDAO">
-    </mapper>
+
+	<insert id="insertUser"  parameterType="kr.yeyakhaezo.barodocq.domain.UserDTO" >
+	    INSERT INTO users (
+	        user_id, user_pw, user_name, user_addr, user_email,
+	        user_phone, user_birth, user_gender, user_alert,
+	        terms_agreed, location_agreed, role
+	    )
+	    VALUES (
+	        #{user.userId},
+	        #{user.password},
+	        #{user.name},
+	        #{user.addr},
+	        #{user.email},
+	        #{user.phone},
+	        #{user.birth},
+	        #{user.gender},
+	        #{user.userAlert},
+	        #{user.termsAgreed},
+	        #{user.locationAgreed},
+	        'USER'
+	    )
+	</insert>
+	
+	<select id="confirmUser" parameterType="kr.yeyakhaezo.barodocq.domain.UserDTO">
+		SELECT 
+        user_email, user_password
+	    FROM users
+	    WHERE user_email = #{user.email} 
+	    AND user_pw = #{user.password}
+	</select>
+
+</mapper>

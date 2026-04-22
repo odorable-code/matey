@@ -31,4 +31,16 @@ public class AuthService {
         }
     }
 
+
+	public boolean login(UserDTO user) {
+		try {
+            boolean result = authDAO.confirmUser(user);
+            return result;
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+	}
+
 }

@@ -132,7 +132,7 @@ export async function signup({ nickname, email, password }) {
   return {
     raw: payload,
     accessToken,
-    // user,
+    user,
     message: payload?.message || '회원가입이 완료되었어요.',
   };
 }

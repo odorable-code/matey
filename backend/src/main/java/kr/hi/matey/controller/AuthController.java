@@ -3,9 +3,11 @@ package kr.hi.matey.controller;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -30,7 +32,6 @@ public class AuthController {
 	private final JwtTokenProvider jwtTokenProvider;
 	// 스프링 시큐리티에서 사용자가 로그인(ID/PW 입력)을 시도했을 때, "이 사람이 우리 회원이 맞는가?"를 최종적으로 결정
 	private final AuthenticationManager authenticationManager;
-	private final CustomUser customUser;
 
 	private Cookie makeRefreshCookie(String refreshToken, int maxAge) {
     	Cookie cookie = new Cookie("refreshToken" , refreshToken);
@@ -101,13 +102,65 @@ public class AuthController {
     }
 	
 	@PostMapping("/login")
-	public String login(){
-		return "";
+	public ResponseEntity<?> login(@RequestBody UserDTO user, HttpServletResponse response){
+		
+		System.out.println("LoginDTO: " + user);
+		
+		try {
+			
+			boolean res = authService.login(user);
+			
+			if(!res) {
+				return ResponseEntity.status(400)
+	                    .body(Map.of("message", "로그인에 실패했습니다. 아이디 또는 비밀번호를 확인해주세요."));
+			}
+			
+			UsernamePasswordAuthenticationToken authToken =
+                    new UsernamePasswordAuthenticationToken(user.getUserId(), user.getPassword());
+
+            Authentication auth = authenticationManager.authenticate(authToken);
+            CustomUser customUser = (CustomUser) auth.getPrincipal();
+
+            String accessToken  = jwtTokenProvider.createAccessToken(customUser);
+            String refreshToken = jwtTokenProvider.createRefreshToken(customUser);
+
+            response.addCookie(makeRefreshCookie(refreshToken, 60 * 60 * 24 * 7));
+            System.out.println("login success: " + customUser.getUser().getUserId());
+
+            Map<String, Object> responseBody = new HashMap<>();
+            responseBody.put("accessToken", accessToken);
+            responseBody.put("user", Map.of(
+                "userName", customUser.getUser().getName(),
+                "nickname", customUser.getUser().getNickname() 
+            ));
+            return ResponseEntity.ok(responseBody);
+			
+		}catch(Exception e) {
+			return ResponseEntity.status(401)
+                    .body(Map.of("message", "아이디 또는 비밀번호가 올바르지 않습니다."));
+		}
 	}
 	
 	@GetMapping("/me")
-	public String me(){
-		return "";
+	public ResponseEntity<?> me(@AuthenticationPrincipal CustomUser customUser, UserDTO user){
+		try {    
+		            
+		            if (customUser == null) {
+		            	return ResponseEntity.status(401).body("로그인이 필요합니다.");
+		            }
+
+		            return ResponseEntity.ok(Map.of(
+		                    "userId", customUser.getUser().getUserId(),
+		                    "userName", customUser.getUser().getName(),
+		                    "nickname", customUser.getUser().getNickname(),
+		                    "role", customUser.getUser().getRole()
+		                ));
+		            
+		            } catch (Exception e) {
+		            // 서버 내부 에러 등 예상치 못한 오류 시 500을 보냄
+		            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+		                    .body(Map.of("message", "서버 오류가 발생했습니다."));
+		            }
 	}
 	
 	@PostMapping("/logout")
