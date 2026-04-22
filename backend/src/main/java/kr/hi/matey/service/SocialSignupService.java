@@ -2,6 +2,7 @@ package kr.hi.matey.service;
 
 import java.util.UUID;
 
+import kr.hi.matey.domain.UserVO;
 import org.springframework.stereotype.Service;
 
 import jakarta.servlet.http.HttpSession;
@@ -11,7 +12,6 @@ import kr.hi.matey.dto.SocialLoginDTO;
 import kr.hi.matey.dto.SocialSignupRequestDTO;
 import kr.hi.matey.security.jwt.JwtTokenProvider;
 import kr.hi.matey.util.CustomUser;
-import kr.hi.matey.vo.UserVO;
 import lombok.RequiredArgsConstructor;
 
 @Service

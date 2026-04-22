@@ -20,7 +20,7 @@
         LIMIT 1
     </select>
 
-    <select id="findUserByUserId" resultType="kr.hi.matey.vo.UserVO">
+    <select id="findUserByUserId" resultType="kr.hi.matey.domain.UserVO">
         SELECT
             user_id,
             email,
@@ -47,7 +47,7 @@
         WHERE user_id = #{userId}
     </select>
 
-    <insert id="insertUser" parameterType="kr.hi.matey.vo.UserVO" useGeneratedKeys="true" keyProperty="userId">
+    <insert id="insertUser" parameterType="kr.hi.matey.domain.UserVO" useGeneratedKeys="true" keyProperty="userId">
         INSERT INTO user (
             email,
             password,

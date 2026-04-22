@@ -5,7 +5,7 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-public class HospitalAdminsVO {
+public class AdminsVO {
 
 	int adminNum;
 	String adminId;
@@ -20,8 +20,6 @@ public class HospitalAdminsVO {
 	int adminAlert;
 	String adminCreatedAt;
 	String adminUpdatedAt;
-	int hoNum;
 	//병원 이름
-	String hospitalName;
-	String role; 
+	String role;
 }

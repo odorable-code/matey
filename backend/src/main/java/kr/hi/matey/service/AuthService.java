@@ -12,7 +12,6 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class AuthService {
 	
-	private final UserDTO userDTO;
 	private final AuthDAO authDAO;
 	private final BCryptPasswordEncoder encoder;
 //	private final NotificationService notificationService;

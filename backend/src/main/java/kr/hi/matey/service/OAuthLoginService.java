@@ -2,7 +2,6 @@ package kr.hi.matey.service;
 
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -18,7 +17,7 @@ import kr.hi.matey.dto.SocialLoginDTO;
 import kr.hi.matey.security.jwt.JwtTokenProvider;
 import kr.hi.matey.util.CustomUser;
 import kr.hi.matey.util.OAuthStateStore;
-import kr.hi.matey.vo.UserVO;
+import kr.hi.matey.domain.UserVO;
 import lombok.RequiredArgsConstructor;
 
 @Service
