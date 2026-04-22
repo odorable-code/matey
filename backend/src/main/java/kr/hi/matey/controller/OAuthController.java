@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import kr.hi.matey.service.OAuthLoginService;
 import lombok.RequiredArgsConstructor;
 
@@ -30,8 +31,9 @@ public class OAuthController {
     public void callback(@PathVariable String provider,
                          @RequestParam String code,
                          @RequestParam(required = false) String state,
-                         HttpServletResponse response) throws IOException {
-        String redirectUrl = oAuthLoginService.login(provider, code, state);
+                         HttpServletResponse response,
+                         HttpSession session) throws IOException {
+        String redirectUrl = oAuthLoginService.login(provider, code, state, session);
         response.sendRedirect(redirectUrl);
     }
 }

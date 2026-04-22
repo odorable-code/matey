@@ -9,9 +9,11 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PostConstruct;
+import jakarta.servlet.http.HttpSession;
 import kr.hi.matey.config.AppProperties;
 import kr.hi.matey.dao.SocialLoginDAO;
 import kr.hi.matey.dto.OAuthUserInfo;
+import kr.hi.matey.dto.PendingSocialUser;
 import kr.hi.matey.dto.SocialLoginDTO;
 import kr.hi.matey.security.jwt.JwtTokenProvider;
 import kr.hi.matey.util.CustomUser;
@@ -43,7 +45,7 @@ public class OAuthLoginService {
         return provider.buildAuthorizeUrl(state);
     }
 
-    public String login(String providerName, String code, String state) {
+    public String login(String providerName, String code, String state, HttpSession session) {
         if ("naver".equals(providerName)) {
             if (state == null || !stateStore.consume(state)) {
                 throw new IllegalArgumentException("유효하지 않은 state 값입니다.");
@@ -54,54 +56,32 @@ public class OAuthLoginService {
         OAuthUserInfo userInfo = provider.getUserInfo(code, state);
 
         SocialLoginDTO socialLogin = socialLoginDAO.findByProviderAndProviderUserId(
-                userInfo.getProvider(),
+                userInfo.getProvider().toUpperCase(),
                 userInfo.getProviderUserId()
         );
 
-        UserVO user;
-        boolean isNewUser = false;
-
         if (socialLogin != null) {
-            user = socialLoginDAO.findUserByUserId(socialLogin.getUserId());
-        } else {
-            isNewUser = true;
+            UserVO user = socialLoginDAO.findUserByUserId(socialLogin.getUserId());
 
-            user = new UserVO();
-            user.setEmail(userInfo.getEmail());
-            user.setPassword(UUID.randomUUID().toString());
-            user.setNickname(userInfo.getNickname());
-            user.setUserName(userInfo.getNickname());
-            user.setProfileImage(userInfo.getProfileImage());
-            user.setRole("USER");
-            user.setLoginType(userInfo.getProvider().toUpperCase());
-            user.setStatus("ACTIVE");
-            user.setPoint(0);
-            user.setSubscriptionGrade("FREE");
-            user.setIsAdult(false);
-            user.setIsNotiAgree(false);
-            user.setIsTermsAgreed(true);
-            user.setIsPrivacyAgreed(true);
-            user.setIsMarketingAgreed(false);
+            CustomUser customUser = new CustomUser(user);
+            String token = jwtTokenProvider.createAccessToken(customUser);
 
-            socialLoginDAO.insertUser(user);
-
-            SocialLoginDTO newSocialLogin = new SocialLoginDTO();
-            newSocialLogin.setProvider(userInfo.getProvider().toUpperCase());
-            newSocialLogin.setProviderUserId(userInfo.getProviderUserId());
-            newSocialLogin.setSocialAccessToken(null);
-            newSocialLogin.setSocialRefreshToken(null);
-            newSocialLogin.setUserId(user.getUserId());
-
-            socialLoginDAO.insertSocialLogin(newSocialLogin);
+            return appProperties.getFrontendUrl()
+                    + "/login/social-success?token=" + token
+                    + "&provider=" + providerName
+                    + "&newUser=false";
         }
 
-        CustomUser customUser = new CustomUser(user);
-        String token = jwtTokenProvider.createAccessToken(customUser);
+        PendingSocialUser pendingUser = new PendingSocialUser();
+        pendingUser.setProvider(userInfo.getProvider().toUpperCase());
+        pendingUser.setProviderUserId(userInfo.getProviderUserId());
+        pendingUser.setEmail(userInfo.getEmail());
+        pendingUser.setNickname(userInfo.getNickname());
+        pendingUser.setProfileImage(userInfo.getProfileImage());
 
-        return appProperties.getFrontendUrl()
-                + "/login/social-success?token=" + token
-                + "&provider=" + providerName
-                + "&newUser=" + isNewUser;
+        session.setAttribute("PENDING_SOCIAL_USER", pendingUser);
+
+        return appProperties.getFrontendUrl() + "/signup/social";
     }
 
     private OAuthProvider getProvider(String providerName) {
