@@ -95,4 +95,8 @@ public class JwtTokenProvider {
 			return false;
 		}
 	}
+
+    public String createToken(String loginId, String role) {
+        return loginId + ":" + role + ":" + System.currentTimeMillis();
+    }
 }
