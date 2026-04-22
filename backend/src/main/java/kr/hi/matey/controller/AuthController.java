@@ -141,32 +141,57 @@ public class AuthController {
 		}
 	}
 	
+	
+	@PostMapping("/logout")
+	public ResponseEntity<?> logout(HttpServletResponse response) {
+        response.addCookie(makeRefreshCookie(null, 0));
+        return ResponseEntity.ok(Map.of("message", "로그아웃 되었습니다."));
+    }
+	
+	
 	@GetMapping("/me")
 	public ResponseEntity<?> me(@AuthenticationPrincipal CustomUser customUser, UserDTO user){
 		try {    
 		            
-		            if (customUser == null) {
-		            	return ResponseEntity.status(401).body("로그인이 필요합니다.");
-		            }
+	            if (customUser == null) {
+	            	return ResponseEntity.status(401).body("로그인이 필요합니다.");
+	            }
 
-		            return ResponseEntity.ok(Map.of(
-		                    "userId", customUser.getUser().getUserId(),
-		                    "userName", customUser.getUser().getName(),
-		                    "nickname", customUser.getUser().getNickname(),
-		                    "role", customUser.getUser().getRole()
-		                ));
-		            
-		            } catch (Exception e) {
-		            // 서버 내부 에러 등 예상치 못한 오류 시 500을 보냄
-		            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-		                    .body(Map.of("message", "서버 오류가 발생했습니다."));
-		            }
+	            return ResponseEntity.ok(Map.of(
+	                    "userId", customUser.getUser().getUserId(),
+	                    "userName", customUser.getUser().getName(),
+	                    "nickname", customUser.getUser().getNickname(),
+	                    "role", customUser.getUser().getRole()
+	                ));
+	            
+	            } catch (Exception e) {
+	            // 서버 내부 에러 등 예상치 못한 오류 시 500을 보냄
+	            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                    .body(Map.of("message", "서버 오류가 발생했습니다."));
+	            }
 	}
 	
-	@PostMapping("/logout")
-	public String logout(){
-		return "";
-	}
+	@PostMapping("/find-id")
+    public ResponseEntity<Map<String, String>> findId(@RequestBody UserDTO user) {
+    	System.out.println("fineId : " + user);
+        String id = authService.findId(user.getPhone(), user.getEmail());
+        System.out.println("id: " + id);
+        return id != null ? ResponseEntity.ok(Map.of("id", id)) : ResponseEntity.status(401).body(Map.of("message", "일치하는 아이디를 찾을 수 없습니다."));
+    }
 	
+	@GetMapping("/check-email")
+    public ResponseEntity<?> checkEmail(@RequestBody UserDTO user) {
+		System.out.println("checkEmail :" + user);
+        boolean isEmailDuplicate = authService.isEmailDuplicate(user);
+        System.out.println("isEmailDuplicate: " + isEmailDuplicate);
+        
+        return isEmailDuplicate != false ? ResponseEntity.ok(isEmailDuplicate) : ResponseEntity.notFound().build();
+    }
+	
+	@PostMapping("/reset-password")
+	public ResponseEntity<?> resetPassword(){
+		
+		return 
+	}
 	
 }

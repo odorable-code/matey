@@ -43,4 +43,16 @@ public class AuthService {
         }
 	}
 
+
+	public String findId(String phone, String email) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+
+	public boolean isEmailDuplicate(UserDTO user) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
 }
