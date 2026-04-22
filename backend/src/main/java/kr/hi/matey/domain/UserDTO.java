@@ -1,4 +1,4 @@
-package kr.hi.matey.dto;
+package kr.hi.matey.domain;
 
 import java.time.LocalDate;
 
@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class UserDTO {
-
+	
 	@Schema(description = "사용자 고유 번호 (PK)")
     private int userNum;
     @Schema(description = "사용자의 아이디")
@@ -36,11 +36,10 @@ public class UserDTO {
     @Schema(description = "알림 허용 여부")
     boolean userAlert;
     @Schema(description = "서비스이용약관 동의 여부")
-    boolean isTermsAgreed;
-    @Schema(description = "개인정보처리방침동의여부")
-    boolean isPrivacyAgreed;
-    @Schema(description = "마케팅정보수신 동의 여부")
-    boolean isMarketingAgreed;
+    boolean termsAgreed;
+    @Schema(description = "위치기반 서비스 동의 여부")
+    boolean locationAgreed;
     @Schema(description = "역할")
     String role;
+   
 }

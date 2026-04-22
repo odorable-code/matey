@@ -2,7 +2,7 @@ package kr.hi.matey.service;
 
 import org.springframework.stereotype.Service;
 
-import kr.hi.matey.dto.UserDTO;
+import kr.hi.matey.domain.UserDTO;
 @Service
 public class AuthService {
 

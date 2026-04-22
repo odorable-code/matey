@@ -15,7 +15,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
-import kr.hi.matey.dto.UserDTO;
+import kr.hi.matey.domain.UserDTO;
 import kr.hi.matey.security.jwt.JwtTokenProvider;
 import kr.hi.matey.service.AuthService;
 import kr.hi.matey.util.CustomUser;
@@ -28,7 +28,7 @@ public class AuthController {
 	private final AuthService authService;
 	private final JwtTokenProvider jwtTokenProvider;
 	private final AuthenticationManager authenticationManager;
-	
+
 	private Cookie makeRefreshCookie(String refreshToken, int maxAge) {
     	Cookie cookie = new Cookie("refreshToken" , refreshToken);
     	cookie.setHttpOnly(true);

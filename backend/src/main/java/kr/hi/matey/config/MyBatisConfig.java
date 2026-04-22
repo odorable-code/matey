@@ -30,6 +30,8 @@ public class MyBatisConfig {
         );
          // TypeAlias 적용
         sessionFactory.setTypeAliasesPackage("kr.hi.matey.vo");  // 여기에 패키지 경로 지정
-        return sessionFactory.getObject();
+        SqlSessionFactory fac = sessionFactory.getObject();
+        fac.getConfiguration().setMapUnderscoreToCamelCase(true);
+        return fac;
     }
 }
