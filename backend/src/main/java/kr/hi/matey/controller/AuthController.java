@@ -27,19 +27,25 @@ import lombok.AllArgsConstructor;
 public class AuthController {
 	private final AuthService authService;
 	private final JwtTokenProvider jwtTokenProvider;
+	// 스프링 시큐리티에서 사용자가 로그인(ID/PW 입력)을 시도했을 때, "이 사람이 우리 회원이 맞는가?"를 최종적으로 결정
 	private final AuthenticationManager authenticationManager;
 	
 	private Cookie makeRefreshCookie(String refreshToken, int maxAge) {
     	Cookie cookie = new Cookie("refreshToken" , refreshToken);
+    	// js가 이 쿠키를 읽지 못하게 막음(해커가 악성 스크립트를 심허 쿠키를 훔쳐가는 XSS 공격을 방어하기 위해)
     	cookie.setHttpOnly(true);
+    	// HTTPS 가 아닌 일반 HTTP 연결에서도 쿠키를 전송할 수 있게 함(false), 실제 서비스가 될 때는 true로 바꿔야한다.
         cookie.setSecure(false);
+        // 도메인의 모든 경로에서 이 쿠키를 사용할 수 있게 함(보통 로그인 정보는 사이트 전체에서 필요하기 때문)
         cookie.setPath("/");
+        // 쿠키가 살아있을 시간(유효기간)을 초단위로 설정, 이 시간이 지나면 쿠키는 브라우저에서 자동으로 삭제됨
         cookie.setMaxAge(maxAge);
 		return cookie;
 	}
 	
 	@Operation(summary = "회원가입", description = "회원가입을 합니다.")
     @PostMapping("/signup")
+	// ResponseEntity: 결과값과 HTTP 상태 코드를 함께 담아 응답하는 스프링의 표준 방식
     public ResponseEntity<?> signup(
             @RequestBody UserDTO user,
             HttpServletResponse response) {  // ← HttpServletResponse 추가
