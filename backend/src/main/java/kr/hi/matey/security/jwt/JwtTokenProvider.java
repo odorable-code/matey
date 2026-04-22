@@ -1,7 +1,9 @@
 package kr.hi.matey.security.jwt;
 
-import kr.hi.matey.util.CustomUser;
+import org.springframework.stereotype.Component;
 
+import kr.hi.matey.util.CustomUser;
+@Component
 public class JwtTokenProvider {
 
 	public String createAccessToken(CustomUser customUser) {
