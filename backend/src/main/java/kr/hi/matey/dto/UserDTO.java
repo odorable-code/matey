@@ -15,17 +15,17 @@ import lombok.NoArgsConstructor;
 public class UserDTO {
 
 	@Schema(description = "사용자 고유 번호 (PK)")
-    private int userNum;
-    @Schema(description = "사용자의 아이디")
-    String userId;
+    private int userId;
     @Schema(description = "사용자의 비밀번호")
-    String userPw;
+    String password;
     @Schema(description = "사용자의 이름")
     String userName;
+    @Schema(description = "사용자의 이름")
+    String nickname;
     @Schema(description = "사용자의 주소")
-    String userAddr;
+    String addr;
     @Schema(description = "사용자의 이메일")
-    String userEmail;
+    String email;
     @Schema(description = "사용자의 전화번호")
     String userPhone;
     @Schema(description = "사용자의 생년월일")

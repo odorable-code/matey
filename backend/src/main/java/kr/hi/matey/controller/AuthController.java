@@ -48,10 +48,10 @@ public class AuthController {
 	// ResponseEntity: 결과값과 HTTP 상태 코드를 함께 담아 응답하는 스프링의 표준 방식
     public ResponseEntity<?> signup(
             @RequestBody UserDTO user,
-            HttpServletResponse response) {  // ← HttpServletResponse 추가
+            HttpServletResponse response) {
 
         // signup() 호출 전에 원본 비밀번호 저장(signup() 내부에서 BCrypt 인코딩 해버리기 때문)
-        String originalPw = user.getUserPw();
+        String originalPw = user.getPassword();
 
         boolean res = authService.signup(user);
 
@@ -67,7 +67,7 @@ public class AuthController {
             UsernamePasswordAuthenticationToken authToken =
                     new UsernamePasswordAuthenticationToken(user.getUserId(), originalPw);
 
-            // 설정된 authenticationManager에게 인증권을 던짐
+            // 설정된 authenticationManager에게 인증권을 던져서 비밀번호 대조
             Authentication auth = authenticationManager.authenticate(authToken);
             
             // 인증에 설공하면 인증 결과물을 꺼내서 우리가 만든 customUser 타입으로 형변환
@@ -76,12 +76,15 @@ public class AuthController {
             String accessToken  = jwtTokenProvider.createAccessToken(customUser);
             String refreshToken = jwtTokenProvider.createRefreshToken(customUser);
 
+            // 보안상 중요한 리프레시 토큰은 아까 만든 메서드를 통해 쿠키에 담아 사용자 브라우저에 저장시킴(7일)
             response.addCookie(makeRefreshCookie(refreshToken, 60 * 60 * 24 * 7));
 
             // 기존 login()과 동일한 형태로 accessToken 반환
+            // 회원가입 성공, 자동로그인도 성공
             return ResponseEntity.ok(Map.of("accessToken", accessToken));
 
         } catch (Exception e) {
+        	// 회원가입 성공, 자동로그인 실패
             // 자동 로그인 실패해도 회원가입은 성공했으므로 성공 응답
             System.out.println("자동 로그인 실패: " + e.getMessage());
             return ResponseEntity.ok(Map.of("success", true));
