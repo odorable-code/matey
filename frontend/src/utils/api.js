@@ -96,7 +96,7 @@ function normalizeUser(payload) {
 }
 
 export async function login({ email, password }) {
-  const payload = await request('/auth/login', {
+  const payload = await request('api/v1/auth/login', {
     method: 'POST',
     body: { email, password },
   });
@@ -117,7 +117,7 @@ export async function login({ email, password }) {
 }
 
 export async function signup({ nickname, email, password }) {
-  const payload = await request('/auth/signup', {
+  const payload = await request('api/v1/auth/signup', {
     method: 'POST',
     body: { nickname, email, password },
   });
@@ -138,7 +138,7 @@ export async function signup({ nickname, email, password }) {
 }
 
 export async function getMyProfile() {
-  const payload = await request('/auth/me', {
+  const payload = await request('api/v1/auth/me', {
     method: 'GET',
   });
 
@@ -146,7 +146,7 @@ export async function getMyProfile() {
 }
 
 export async function forgotPassword(email) {
-  const payload = await request('/auth/forgot-password', {
+  const payload = await request('api/v1/auth/forgot-password', {
     method: 'POST',
     body: { email },
   });
@@ -161,7 +161,7 @@ export async function forgotPassword(email) {
 
 export async function logout() {
   try {
-    const payload = await request('/auth/logout', {
+    const payload = await request('api/v1/auth/logout', {
       method: 'POST',
       body: {},
     });

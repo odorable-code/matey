@@ -47,8 +47,11 @@ function getStoredUser() {
   if (!raw) return null;
 
   try {
+    // 로컬스토리지는 문자열만 저장하기 때문에 저장된 문자열을 json.parse를 통해 객체로 변환
     return JSON.parse(raw);
   } catch (error) {
+    console.error("getStoredUser에서 에러 발생", error)
+    // return undefined 를 막기 위해 값으로 null을 넣어서 "데이터가 있긴 한데 읽을 수 없는 상태네? 없는 셈 치자(null)."라고 안전하게 처리됨
     return null;
   }
 }
