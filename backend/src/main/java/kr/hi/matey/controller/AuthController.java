@@ -1,5 +1,6 @@
 package kr.hi.matey.controller;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
@@ -29,6 +30,7 @@ public class AuthController {
 	private final JwtTokenProvider jwtTokenProvider;
 	// 스프링 시큐리티에서 사용자가 로그인(ID/PW 입력)을 시도했을 때, "이 사람이 우리 회원이 맞는가?"를 최종적으로 결정
 	private final AuthenticationManager authenticationManager;
+	private final CustomUser customUser;
 
 	private Cookie makeRefreshCookie(String refreshToken, int maxAge) {
     	Cookie cookie = new Cookie("refreshToken" , refreshToken);
@@ -81,7 +83,14 @@ public class AuthController {
 
             // 기존 login()과 동일한 형태로 accessToken 반환
             // 회원가입 성공, 자동로그인도 성공
-            return ResponseEntity.ok(Map.of("accessToken", accessToken));
+            
+            Map<String, Object> responseBody = new HashMap<>();
+            responseBody.put("accessToken", accessToken);
+            responseBody.put("user", Map.of(
+                "userId", customUser.getName(),
+                "nickname", customUser.getNickname() 
+            ));
+            return ResponseEntity.ok(responseBody);
 
         } catch (Exception e) {
         	// 회원가입 성공, 자동로그인 실패

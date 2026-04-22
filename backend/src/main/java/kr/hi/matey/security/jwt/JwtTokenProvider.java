@@ -63,8 +63,7 @@ public class JwtTokenProvider {
 			builder.claim("role", user.getAuthorities().iterator().next().getAuthority());
 
 			// 🔥 추가
-			builder.claim("num", user.getUser().getNum());
-			builder.claim("hoNum", user.getUser().getHoNum());
+			builder.claim("id", user.getUser().getUserId());
 			builder.claim("name", user.getUser().getName());
 		}
 		// 토큰을 반환
