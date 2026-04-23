@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 
 @Data
@@ -30,4 +31,6 @@ public class UserVO {
     private Timestamp lastLoginAt;
     private Timestamp createdAt;
     private Timestamp updatedAt;
+    private LocalDateTime tokenExpiryDate;
+    private String resetToken;
 }

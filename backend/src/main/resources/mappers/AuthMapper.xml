@@ -32,5 +32,29 @@
 	    WHERE user_email = #{user.email} 
 	    AND user_pw = #{user.password}
 	</select>
+	
+	<select id="isEmailDuplicate">
+		SELECT 
+		user_email
+		FROM users
+	</select>
+	
+	<update id="updateResetToken">
+		UPDATE user_table 
+		SET reset_token = #{token} 
+		WHERE email = #{email};
+	</update>
+	
+	
+	<select id="findByResetToken" resultType="kr.hi.matey.util.CustomUser">
+    SELECT 
+        userName,
+        password,
+        role,
+        email,
+        token_expiry_date
+    FROM user
+    WHERE reset_token = #{token}
+	</select>
 
 </mapper>

@@ -4,10 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.http.HttpStatus;
-import kr.hi.matey.dto.AdminsDTO;
-import kr.hi.matey.dto.MemberDTO;
-import kr.hi.matey.dto.UserDTO;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -18,6 +14,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import io.jsonwebtoken.Claims;
@@ -25,12 +22,13 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
+import kr.hi.matey.dto.PasswordResetDto;
+import kr.hi.matey.dto.UserDTO;
 import kr.hi.matey.security.jwt.JwtTokenProvider;
-import kr.hi.matey.service.AdminsService;
+import kr.hi.matey.service.AuthService;
 import kr.hi.matey.service.MemberDetailService;
 import kr.hi.matey.service.UserService;
 import kr.hi.matey.util.CustomUser;
-import kr.hi.matey.vo.UserVO;
 import lombok.AllArgsConstructor;
 
 @Tag(name = "Authentication/Authorization", description = "인증/인가 API")
@@ -44,8 +42,6 @@ public class AuthController {
 	private final AuthenticationManager authenticationManager;
 
     private final UserService userService;
-    private final AuthenticationManager authenticationManager;
-    private final JwtTokenProvider jwtTokenProvider;
     private final MemberDetailService userDetailsService;
 
 
@@ -127,7 +123,7 @@ public class AuthController {
             Map<String, Object> responseBody = new HashMap<>();
             responseBody.put("accessToken", accessToken);
             responseBody.put("user", Map.of(
-                "userName", customUser.getUser().getName(),
+                "userName", customUser.getUser().getUserName(),
                 "nickname", customUser.getUser().getNickname() 
             ));
             return ResponseEntity.ok(responseBody);
@@ -156,7 +152,7 @@ public class AuthController {
 
 	            return ResponseEntity.ok(Map.of(
 	                    "userId", customUser.getUser().getUserId(),
-	                    "userName", customUser.getUser().getName(),
+	                    "userName", customUser.getUser().getUserName(),
 	                    "nickname", customUser.getUser().getNickname(),
 	                    "role", customUser.getUser().getRole()
 	                ));
@@ -177,18 +173,18 @@ public class AuthController {
     }
 	
 	@GetMapping("/check-email")
-    public ResponseEntity<?> checkEmail(@RequestBody UserDTO user) {
-		System.out.println("checkEmail :" + user);
-        boolean isEmailDuplicate = authService.isEmailDuplicate(user);
+    public ResponseEntity<?> checkEmail(@RequestParam("email") String email) {
+		System.out.println("checkEmail :" + email);
+        boolean isEmailDuplicate = authService.isEmailDuplicate(email);
         System.out.println("isEmailDuplicate: " + isEmailDuplicate);
         
         return isEmailDuplicate != false ? ResponseEntity.ok(isEmailDuplicate) : ResponseEntity.notFound().build();
     }
 	
 	@PostMapping("/forgot-password")
-	public ResponseEntity<?> forgotPassword(@RequestBody UserDTO user){
+	public ResponseEntity<?> forgotPassword(@RequestParam("email") String email){
 		// 이메일이 db와 일치하는지 확인
-		boolean isEmailDuplicate = authService.isEmailDuplicate(user);
+		boolean isEmailDuplicate = authService.isEmailDuplicate(email);
 		
 		// 일치하면 이메일로 메시지 전송
 		if (!isEmailDuplicate) {
@@ -196,21 +192,30 @@ public class AuthController {
 		}
 		
 		// 서비스에게 비번 재설정 페이지 링크 발송
+		boolean sendLink = authService.sendLink(email);
 		
-		
-		return ResponseEntity.ok(null);
+		if (!sendLink) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("링크를 발송하는데 실패했습니다.");
+		}
+		else {
+			return ResponseEntity.ok("이메일로 재설정 링크를 보냈습니다. 메일함을 확인하세요.");
+		}
 		
 	}
 	
 	
 	@PostMapping("/reset-password")
-	public 
+	public ResponseEntity<?> resetPassword(@RequestBody PasswordResetDto resetDto){
+		
+		boolean isSuccess = authService.updatePassword(resetDto.getToken(), resetDto.getNewpassword());
+		if (isSuccess) {
+	        return ResponseEntity.ok("비밀번호가 성공적으로 변경되었습니다.");
+	    } else {
+	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("유효하지 않거나 만료된 토큰입니다.");
+	    }
+	}
 
-}
 
-    // ────────────────────────────────────────────────
-    // 토큰 갱신
-    // ────────────────────────────────────────────────
     @Operation(summary = "토큰 갱신")
     @PostMapping("/refresh")
     public ResponseEntity<?> refresh(
