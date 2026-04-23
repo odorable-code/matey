@@ -23,6 +23,7 @@ import kr.hi.matey.util.UserRole;
 import lombok.AllArgsConstructor;
 
 @Configuration
+// 이 클래스가 Spring Security 설정을 담당하는 클래스임을 선언하며, 웹 보안 기능을 활성화
 @EnableWebSecurity
 @AllArgsConstructor
 public class SecurityConfig {
@@ -36,13 +37,18 @@ public class SecurityConfig {
     }
 
     @Bean
+    // 보안 필터 체인을 정의하는 메소드. HttpSecurity 객체를 통해 세부적인 보안 정책을 구성
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+        
+        		// CSRF(Cross-Site Request Forgery) 보호를 비활성화. REST API는 보통 세션을 사용하지 않고 토큰(JWT)을 사용하기 때문에 CSRF 공격으로부터 비교적 자유로워 관습적으로 끔.
                 .csrf(csrf -> csrf.disable())
+                // CORS(Cross-Origin Resource Sharing) 설정을 적용. 다른 도메인(예: React, Vue 프런트엔드)에서 이 서버로 API 요청을 보낼 수 있도록 허용하는 규칙을 연결.
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                // 서버에서 세션을 생성하거나 유지하지 않도록 설정(JWT 인증 기반이므로 서버는 클라이언트의 상태를 저장하지 않는 'Stateless' 방식을 따름.)
                 .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                // HTTP 요청에 대한 접근 권한(인가) 설정을 시작
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/auth/**").permitAll()
@@ -50,27 +56,26 @@ public class SecurityConfig {
                         .requestMatchers("/oauth2/**").permitAll()
 
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
-                        .requestMatchers("/api/v1/hospitals/**", "/api/v1/pharmacy/**").permitAll()
-                        .requestMatchers("/api/v1/check-id", "/api/v1/users/**").permitAll()
-                        .requestMatchers("/api/v1/reviews/**", "/uploads/**").permitAll()
-                        .requestMatchers("/api/v1/qnas/**", "/api/v1/qnawrite").permitAll()
+                        .requestMatchers("/api/v1/check-email", "/api/v1/users/**").permitAll()
                         .requestMatchers("/ws-stomp/**").permitAll()
 
-                        .requestMatchers("/api/v1/reviews/*/comments/**").authenticated()
-                        .requestMatchers("/api/v1/reviews/*/likes").authenticated()
+//                        .requestMatchers("/api/v1/reviews/*/likes").authenticated()
 
-                        .anyRequest().permitAll()
+//                        .anyRequest().permitAll()
                 )
                 .userDetailsService(userDetailsService)
+                // JWT 인증 필터를 우선순위에 배치합니다. 아이디/비밀번호 인증 필터(UsernamePasswordAuthenticationFilter)가 실행되기 전에, 들어온 요청의 JWT 토큰을 먼저 검사하여 인증 처리.
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
                 );
-
+        // 설정한 내용을 바탕으로 SecurityFilterChain 객체를 생성하여 반환
         return http.build();
     }
 
     @Bean
+    
+    // AuthenticationManagerrk Bean으로 등록이 안돼있기 때문에 @Bean 어노테이션을 붙여줌
     public AuthenticationManager authenticationManager(
             AuthenticationConfiguration config
     ) throws Exception {
