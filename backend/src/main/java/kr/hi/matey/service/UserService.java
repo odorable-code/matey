@@ -3,8 +3,9 @@ package kr.hi.matey.service;
 import java.util.List;
 
 import kr.hi.matey.dao.UserDAO;
-import kr.hi.matey.domain.UserDTO;
-import kr.hi.matey.domain.UserVO;
+import kr.hi.matey.dto.UserDTO;
+import kr.hi.matey.vo.UserVO;
+
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 

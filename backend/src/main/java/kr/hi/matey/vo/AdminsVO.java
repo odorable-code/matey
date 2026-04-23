@@ -1,4 +1,4 @@
-package kr.hi.matey.domain;
+package kr.hi.matey.vo;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;

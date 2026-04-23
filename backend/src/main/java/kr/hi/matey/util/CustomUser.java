@@ -3,12 +3,11 @@ package kr.hi.matey.util;
 import java.util.Arrays;
 import java.util.Collection;
 
-import kr.hi.matey.domain.UserVO;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 
-
+import kr.hi.matey.vo.UserVO;
 import lombok.Data;
 
 @Data

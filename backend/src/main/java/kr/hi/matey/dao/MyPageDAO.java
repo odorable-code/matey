@@ -1,8 +1,9 @@
 package kr.hi.matey.dao;
 
-import kr.hi.matey.domain.UserProfileDTO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+
+import kr.hi.matey.dto.UserProfileDTO;
 
 import java.util.List;
 import java.util.Map;

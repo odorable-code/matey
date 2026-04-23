@@ -1,4 +1,4 @@
-package kr.hi.matey.domain;
+package kr.hi.matey.dto;
 
 import lombok.Data;
 

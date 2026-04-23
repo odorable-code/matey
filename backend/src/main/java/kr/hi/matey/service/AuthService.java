@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 
 import kr.hi.matey.dao.AuthDAO;
 import kr.hi.matey.dao.UserDAO;
-import kr.hi.matey.domain.UserDTO;
+import kr.hi.matey.dto.UserDTO;
 import lombok.AllArgsConstructor;
 
 @Service

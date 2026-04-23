@@ -1,7 +1,8 @@
 package kr.hi.matey.dao;
 
-import kr.hi.matey.domain.UserDTO;
-import kr.hi.matey.domain.UserVO;
+import kr.hi.matey.dto.UserDTO;
+import kr.hi.matey.vo.UserVO;
+
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 

@@ -1,7 +1,7 @@
 package kr.hi.matey.controller;
 
 import kr.hi.matey.dao.MyPageDAO;
-import kr.hi.matey.domain.UserProfileDTO;
+import kr.hi.matey.dto.UserProfileDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;

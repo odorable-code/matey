@@ -7,10 +7,10 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import kr.hi.matey.dao.UserDAO;
-import kr.hi.matey.domain.AdminsVO;
-import kr.hi.matey.domain.MemberDTO;
-import kr.hi.matey.domain.UserVO;
+import kr.hi.matey.dto.MemberDTO;
 import kr.hi.matey.util.CustomUser;
+import kr.hi.matey.vo.AdminsVO;
+import kr.hi.matey.vo.UserVO;
 import lombok.AllArgsConstructor;
 
 @Service

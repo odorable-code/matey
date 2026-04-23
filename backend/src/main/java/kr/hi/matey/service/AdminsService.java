@@ -1,9 +1,7 @@
 package kr.hi.matey.service;
 
 import kr.hi.matey.dao.AdminsDAO;
-import kr.hi.matey.domain.AdminsDTO;
-
-
+import kr.hi.matey.dto.AdminsDTO;
 import lombok.AllArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;

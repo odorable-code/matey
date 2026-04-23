@@ -3,7 +3,10 @@ package kr.hi.matey.controller;
 import java.util.HashMap;
 import java.util.Map;
 
-import kr.hi.matey.domain.UserVO;
+import kr.hi.matey.dto.AdminsDTO;
+import kr.hi.matey.dto.MemberDTO;
+import kr.hi.matey.dto.UserDTO;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -21,14 +24,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
-import kr.hi.matey.domain.AdminsDTO;
-import kr.hi.matey.domain.MemberDTO;
-import kr.hi.matey.domain.UserDTO;
 import kr.hi.matey.security.jwt.JwtTokenProvider;
 import kr.hi.matey.service.AdminsService;
 import kr.hi.matey.service.MemberDetailService;
 import kr.hi.matey.service.UserService;
 import kr.hi.matey.util.CustomUser;
+import kr.hi.matey.vo.UserVO;
 import lombok.AllArgsConstructor;
 
 @Tag(name = "Authentication/Authorization", description = "인증/인가 API")

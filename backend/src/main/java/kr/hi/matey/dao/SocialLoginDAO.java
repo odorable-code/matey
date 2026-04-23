@@ -4,7 +4,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import kr.hi.matey.dto.SocialLoginDTO;
-import kr.hi.matey.domain.UserVO;
+import kr.hi.matey.vo.UserVO;
 
 @Mapper
 public interface SocialLoginDAO {
