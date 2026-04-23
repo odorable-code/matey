@@ -188,10 +188,26 @@ public class AuthController {
         return isEmailDuplicate != false ? ResponseEntity.ok(isEmailDuplicate) : ResponseEntity.notFound().build();
     }
 	
-	@PostMapping("/reset-password")
-	public ResponseEntity<?> resetPassword(){
+	@PostMapping("/forgot-password")
+	public ResponseEntity<?> forgotPassword(@RequestBody UserDTO user){
+		// 이메일이 db와 일치하는지 확인
+		boolean isEmailDuplicate = authService.isEmailDuplicate(user);
 		
-		return 
+		// 일치하면 이메일로 메시지 전송
+		if (!isEmailDuplicate) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("일치하는 이메일을 찾을 수 없습니다.");
+		}
+		
+		// 서비스에게 비번 재설정 페이지 링크 발송
+		
+		
+		return ResponseEntity.ok(null);
+		
 	}
+	
+	
+	@PostMapping("/reset-password")
+	public 
+	
 	
 }
