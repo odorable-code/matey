@@ -1,4 +1,4 @@
-package kr.hi.matey.domain;
+package kr.hi.matey.dto;
 
 import lombok.Data;
 
@@ -10,7 +10,7 @@ public class MemberDTO {
     private int num;
     private String role;
 
-    public MemberDTO(String id, String pw, String name, int num, String role) {
+    public MemberDTO(String id, String pw, int num, String role) {
         this.id   = id;
         this.pw   = pw;
         this.name = name;

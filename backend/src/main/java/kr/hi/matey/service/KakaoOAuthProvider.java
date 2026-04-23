@@ -4,6 +4,9 @@ import java.util.Map;
 
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -28,10 +31,12 @@ public class KakaoOAuthProvider implements OAuthProvider {
     public String buildAuthorizeUrl(String state) {
         OAuthProperties.Provider p = oAuthProperties.getProviders().get("kakao");
 
+        // state는 콜백에 그대로 돌아오니까(네이버랑 똑같이) OAuthLoginService 쪽 1회용 store랑 맞출 수 있음
         return UriComponentsBuilder.fromUriString(p.getAuthorizeUri())
                 .queryParam("client_id", p.getClientId())
                 .queryParam("redirect_uri", p.getRedirectUri())
                 .queryParam("response_type", "code")
+                .queryParam("state", state)
                 .build()
                 .toUriString();
     }
@@ -41,19 +46,20 @@ public class KakaoOAuthProvider implements OAuthProvider {
     public OAuthUserInfo getUserInfo(String code, String state) {
         OAuthProperties.Provider p = oAuthProperties.getProviders().get("kakao");
 
-        String formBody =
-                "grant_type=authorization_code" +
-                "&client_id=" + p.getClientId() +
-                "&redirect_uri=" + p.getRedirectUri() +
-                "&code=" + code +
-                ((p.getClientSecret() != null && !p.getClientSecret().isBlank())
-                        ? "&client_secret=" + p.getClientSecret()
-                        : "");
+        MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
+        form.add("grant_type", "authorization_code");
+        form.add("client_id", p.getClientId());
+        form.add("redirect_uri", p.getRedirectUri());
+        form.add("code", code);
+        if (p.getClientSecret() != null && !p.getClientSecret().isBlank()) {
+            form.add("client_secret", p.getClientSecret());
+        }
 
         OAuthTokenResponse token = webClient.post()
                 .uri(p.getTokenUri())
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                .bodyValue(formBody)
+                // 위에서 String 붙이면 code에 & 같은 거 들어가면 깨질 수 있어서 폼으로 보냄
+                .body(BodyInserters.fromFormData(form))
                 .retrieve()
                 .bodyToMono(OAuthTokenResponse.class)
                 .block();

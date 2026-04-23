@@ -1,14 +1,14 @@
 package kr.hi.matey.vo;
 
-import java.sql.Timestamp;
-
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
-@Getter
-@Setter
-public class UserVO {
+import java.sql.Timestamp;
 
+
+@Data
+public class UserVO {
     private Long userId;
     private String email;
     private String password;

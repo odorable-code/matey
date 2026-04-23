@@ -9,7 +9,7 @@ import kr.hi.matey.vo.UserVO;
 public interface SocialAuthDAO {
 
     UserVO findByProviderAndProviderUserId(@Param("provider") String provider,
-                                           @Param("providerUserId") String providerUserId);
+                                                                     @Param("providerUserId") String providerUserId);
 
     int insertSocialUser(UserVO user);
 }

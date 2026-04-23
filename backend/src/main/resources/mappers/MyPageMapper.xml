@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.hi.matey.mapper.MyPageMapper">
+
+    <select id="getUserProfile" resultType="kr.hi.matey.domain.UserProfileDTO">
+        SELECT 
+            u.user_id as id,
+            u.nickname,
+            u.email,
+            u.phone,
+            u.bio,
+            u.status_msg as status,
+            s.plan_name as subscriptionName,
+            p.available_points as points,
+            (SELECT COUNT(*) FROM counsel_sessions WHERE user_id = u.user_id) as totalSessions
+        FROM users u
+        LEFT JOIN subscriptions s ON u.user_id = s.user_id
+        LEFT JOIN points p ON u.user_id = p.user_id
+        WHERE u.user_id = #{userId}
+    </select>
+
+    <select id="getPaymentHistory" resultType="map">
+        SELECT 
+            order_id as id,
+            product_name as title,
+            amount,
+            paid_at as date,
+            pay_method as method,
+            order_status as status
+        FROM orders
+        WHERE user_id = #{userId}
+        ORDER BY paid_at DESC
+    </select>
+
+</mapper>
