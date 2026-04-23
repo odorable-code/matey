@@ -57,13 +57,7 @@ const requestJson = async (url, options = {}) => {
 };
 
 const REPORT_ENDPOINTS = [
-  '/api/mypage/reports',
-  '/api/my-page/reports',
-  '/api/emotion/reports',
-  '/api/emotion/report',
-  '/api/reports/emotion',
   '/api/report/emotion',
-  '/api/reports',
 ];
 
 const REPORT_REFRESH_ENDPOINTS = [
