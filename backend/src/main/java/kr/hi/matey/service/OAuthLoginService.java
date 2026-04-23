@@ -45,7 +45,8 @@ public class OAuthLoginService {
     }
 
     public String login(String providerName, String code, String state, HttpSession session) {
-        if ("naver".equals(providerName)) {
+        // 인가할 때 stateStore.create()로 넣어둔 값이랑 콜백 state가 같아야 함(둘 다 1회만 통과)
+        if ("naver".equals(providerName) || "kakao".equals(providerName)) {
             if (state == null || !stateStore.consume(state)) {
                 throw new IllegalArgumentException("유효하지 않은 state 값입니다.");
             }
