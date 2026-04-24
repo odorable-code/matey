@@ -1,0 +1,73 @@
+기획서 기준 DB 정리 메모 (2026-04-24)
+목적: 구현 우선순위 확인용 문서
+
+[A] 기획서 기준 필수 테이블(1차 구현 우선)
+1) 계정/인증
+- USER
+- ROLE
+- SOCIAL_LOGIN
+- AUTO_LOGIN
+- PASSWORD_RESET_TOKEN
+
+2) 채팅/상담 핵심
+- CHAT_ROOM
+- MESSAGE
+- MESSAGE_ANALYSIS
+- MESSAGE_FEEDBACK
+- SATISFACTION
+
+3) 커뮤니티 핵심
+- CATEGORY
+- POST
+- POST_IMAGE
+- COMMENT
+- POST_REACTION
+- COMMENT_REACTION
+
+4) 마이페이지/지원
+- USER_SETTING
+- USER_ACTIVITY_DAILY
+- SUPPORT
+- SUPPORT_ANSWER
+- SUPPORT_REASON
+- REPORT_REASON
+
+5) 알림
+- NOTIFICATION
+- NOTIFICATION_TYPE
+- USER_NOTIFICATION_SETTING
+
+6) 관리자 콘텐츠
+- ADMIN_NOTICE
+- ADMIN_FAQ
+
+[B] 2차(후순위) 권장 테이블
+- BOT_MOTION
+- CHAT_BACKGROUND
+- BOT_POPULARITY_STAT
+- BOT_LETTER
+- USER_INVENTORY
+- FEED_TRANSACTION
+- USER_BOT_RELATION
+- BOT_REACTION
+
+[C] 구현 전 정리 필요(중요)
+1) SUPPORT 구조
+- support_reason_id, report_reason_id 동시 필수 여부 재검토
+- 문의/신고 단일 테이블 운영 규칙과 맞게 제약 조건 정리
+
+2) SQL 문법 오류성 표현 정리
+- DEFAULT DEFAULT ...
+- CURRENT_TIMESTAMP,, (콤마 중복)
+- DEFAULT AUTO_INCREMENT PRIMARY KEY
+- DEFAULT UNIQUE
+
+3) FK 컬럼 타입 통일
+- BIGINT/INT 혼용 구간 점검 후 일관화
+
+4) 네이밍 컨벤션 통일
+- USER vs users, snake_case/camelCase 혼용 정리
+
+5) 인증 보안 규칙
+- AUTO_LOGIN은 token_hash 저장 원칙
+- PASSWORD_RESET_TOKEN은 1회성/짧은 만료/used_at 관리
