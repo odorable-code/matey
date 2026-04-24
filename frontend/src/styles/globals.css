@@ -1,5 +1,51 @@
-/* src/styles/globals.css */
 @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --font-family: 'Pretendard', system-ui, sans-serif;
+
+  /* 기존 프로젝트에서 이미 쓰는 변수와 맞춰주는 브리지 */
+  --text-primary: #333333;
+  --text-secondary: #555555;
+  --text-tertiary: #888888;
+  --bg-white: #ffffff;
+  --border-color: #e8defa;
+  --bg-lighter: #f8f4ff;
+  --primary-blue: #7c5cfc;
+  --primary-blue-light: #9f89ff;
+  --transition-base: 0.2s ease;
+
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-xl: 24px;
+  --spacing-2xl: 32px;
+  --spacing-3xl: 48px;
+
+  --radius-md: 12px;
+
+  /* 마이페이지 전용 디자인 토큰 */
+  --primary: #7c5cfc;
+  --primary-light: #d4c4f7;
+  --primary-bg: #f5f0ff;
+  --pink: #ffd6ec;
+  --pink-accent: #ff8fab;
+  --blue: #7ec8e3;
+  --yellow: #ffd166;
+  --pink-bold: #ff6b9d;
+  --lavender: #b8a9e8;
+  --magenta: #c77dff;
+  --grad-start: #e8deff;
+  --grad-mid: #ffd6ec;
+  --grad-end: #ffe8f0;
+  --text-1: #333333;
+  --text-2: #555555;
+  --text-3: #888888;
+  --white: #ffffff;
+  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.05);
+  --shadow-icon: 0 3px 12px rgba(0, 0, 0, 0.15);
+  --radius-card: 20px;
+  --radius-btn: 12px;
+  --radius-pill: 20px;
+}
 
 * {
   margin: 0;

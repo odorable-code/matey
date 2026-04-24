@@ -1,0 +1,169 @@
+.container {
+  padding: 32px;
+  max-width: 640px;
+  box-sizing: border-box;
+}
+
+.pageTitle {
+  margin: 0 0 28px;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-1);
+  line-height: 1.4;
+}
+
+.section {
+  border-bottom: 1px solid #f0f0f0;
+  padding-bottom: 24px;
+  margin-bottom: 24px;
+}
+
+.sectionLast {
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+
+.sectionTitle {
+  margin: 0 0 16px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-2);
+  line-height: 1.5;
+}
+
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 0;
+}
+
+.infoLabel {
+  font-size: 15px;
+  color: var(--text-1);
+  line-height: 1.5;
+}
+
+.infoValue {
+  font-size: 14px;
+  color: var(--text-2);
+  line-height: 1.5;
+  text-align: right;
+}
+
+.infoValueMuted {
+  font-size: 14px;
+  color: var(--text-3);
+  line-height: 1.5;
+  text-align: right;
+}
+
+.socialBlock {
+  padding-top: 6px;
+}
+
+.socialTitleRow {
+  padding: 12px 0 8px;
+}
+
+.socialList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.socialRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--primary-bg);
+}
+
+.socialProvider {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-1);
+  line-height: 1.5;
+}
+
+.socialRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 62px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.connectedBadge {
+  background: #f0fff0;
+  color: #66bb6a;
+}
+
+.disconnectedBadge {
+  background: #f5f5f5;
+  color: var(--text-3);
+}
+
+.connectButton {
+  padding: 8px 14px;
+  border-radius: 12px;
+  background: var(--white);
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-card);
+}
+
+.connectButton:hover {
+  background: #faf7ff;
+}
+
+.actionArea {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.logoutButton {
+  color: var(--text-2);
+  background: none;
+  border: 1px solid #ddd;
+  border-radius: var(--radius-btn);
+  padding: 10px 24px;
+  font-size: 14px;
+  line-height: 1.4;
+  transition: all 0.2s ease;
+}
+
+.logoutButton:hover {
+  background: var(--primary-bg);
+  border-color: var(--primary-light);
+}
+
+.withdrawButton {
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--text-3);
+  text-decoration: underline;
+  line-height: 1.4;
+  transition: all 0.2s ease;
+}
+
+.withdrawButton:hover {
+  color: var(--text-2);
+}

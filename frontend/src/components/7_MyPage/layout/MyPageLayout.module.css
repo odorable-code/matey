@@ -1,0 +1,38 @@
+.page {
+  min-height: 100vh;
+  padding: 20px;
+  background: linear-gradient(
+    135deg,
+    var(--grad-start) 0%,
+    var(--grad-mid) 50%,
+    var(--grad-end) 100%
+  );
+  box-sizing: border-box;
+}
+
+.inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.content {
+  flex: 1;
+  min-height: 600px;
+  background: var(--white);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  padding: 0;
+  position: relative;
+}

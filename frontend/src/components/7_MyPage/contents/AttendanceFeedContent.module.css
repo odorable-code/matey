@@ -1,0 +1,213 @@
+.container {
+  padding: 32px;
+  display: flex;
+  gap: 32px;
+  box-sizing: border-box;
+}
+
+.leftColumn {
+  flex: 1.2;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.rightColumn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.sectionCard {
+  background: var(--white);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.sectionTitle {
+  margin: 0 0 16px;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-1);
+  line-height: 1.4;
+}
+
+.attendanceButton {
+  width: 100%;
+  margin-top: 16px;
+  background: var(--primary);
+  color: var(--white);
+  border-radius: var(--radius-btn);
+  padding: 14px;
+  font-size: 15px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.attendanceButton:hover {
+  opacity: 0.9;
+}
+
+.feedSummary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.feedLabel {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--text-3);
+  line-height: 1.4;
+}
+
+.feedValue {
+  margin: 0;
+  font-size: 36px;
+  font-weight: 800;
+  color: var(--primary);
+  line-height: 1.1;
+}
+
+.feedImageWrap {
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  background: var(--primary-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.feedImage {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  display: block;
+  background: transparent;
+}
+
+.feedButton {
+  background: var(--yellow);
+  color: var(--text-1);
+  border-radius: var(--radius-btn);
+  padding: 14px 32px;
+  font-size: 15px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.feedButton:hover {
+  opacity: 0.9;
+}
+
+.intimacyCard {
+  text-align: center;
+}
+
+.unlockList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.unlockItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 12px;
+  box-sizing: border-box;
+}
+
+.unlockActive {
+  background: var(--primary-bg);
+}
+
+.unlockLocked {
+  background: #f5f5f5;
+  opacity: 0.6;
+}
+
+.unlockIconWrap {
+  width: 32px;
+  height: 32px;
+  border-radius: 12px;
+  background: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.unlockIcon {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  display: block;
+  background: transparent;
+}
+
+.unlockName {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-1);
+  line-height: 1.4;
+}
+
+.unlockBadge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 8px;
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+
+.unlockBadgeActive {
+  background: var(--primary);
+  color: var(--white);
+}
+
+.unlockBadgeLocked {
+  background: #ddd;
+  color: #999;
+}
+
+.motionSection {
+  margin-top: 24px;
+  text-align: center;
+}
+
+.motionPreview {
+  width: 200px;
+  height: 200px;
+  margin: 0 auto;
+  background: var(--primary-bg);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.motionImage {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+  background: var(--primary-bg);
+}
+
+.motionText {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--text-3);
+  line-height: 1.5;
+}

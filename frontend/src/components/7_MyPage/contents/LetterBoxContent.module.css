@@ -1,0 +1,70 @@
+.container {
+  padding: 32px;
+  box-sizing: border-box;
+}
+
+.header {
+  margin-bottom: 20px;
+}
+
+.title {
+  margin: 0 0 8px;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-1);
+  line-height: 1.4;
+}
+
+.subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-3);
+  line-height: 1.5;
+}
+
+.filterTabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.filterButton {
+  padding: 8px 18px;
+  border-radius: var(--radius-pill);
+  font-size: 13px;
+  color: var(--text-2);
+  background: #f5f5f5;
+  transition: all 0.2s ease;
+}
+
+.filterButton:hover {
+  background: var(--primary-bg);
+  color: var(--primary);
+}
+
+.activeFilter {
+  background: var(--primary);
+  color: var(--white);
+}
+
+.listCard {
+  background: var(--white);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.emptyState {
+  min-height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--primary-bg), var(--pink));
+}
+
+.emptyText {
+  margin: 0;
+  font-size: 15px;
+  color: var(--text-2);
+  line-height: 1.6;
+}

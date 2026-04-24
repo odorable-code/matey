@@ -1,0 +1,61 @@
+.menuCard {
+  background: var(--white);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-sizing: border-box;
+}
+
+.menuItem {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  border-radius: var(--radius-btn);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  color: var(--text-2);
+  text-align: left;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.menuItem:hover {
+  background: var(--primary-bg);
+}
+
+.active {
+  background: var(--primary-bg);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.iconWrap {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary-bg);
+  border-radius: 12px;
+}
+
+.icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  display: block;
+  background: var(--primary-bg);
+}
+
+.label {
+  font-size: 15px;
+  line-height: 1.2;
+}
