@@ -20,6 +20,6 @@ public class AdminsVO {
 	int adminAlert;
 	String adminCreatedAt;
 	String adminUpdatedAt;
-	//병원 이름
+
 	String role;
 }
