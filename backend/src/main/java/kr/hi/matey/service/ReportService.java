@@ -29,12 +29,15 @@ public class ReportService {
 
     @Transactional
     public void createReport(ReportDTO reportDTO, List<MultipartFile> images) {
-
-        validateReport(reportDTO);
+        if (reportDTO == null) {
+            throw new IllegalArgumentException("요청 정보가 없습니다.");
+        }
 
         if (reportDTO.getType() == null) {
             reportDTO.setType(SupportType.REPORT);
         }
+
+        validateReport(reportDTO);
 
         reportDAO.insertReport(reportDTO);
 
@@ -42,6 +45,17 @@ public class ReportService {
     }
 
     private void validateReport(ReportDTO reportDTO) {
+        if (reportDTO.getUserId() == null) {
+            throw new IllegalArgumentException("사용자 정보가 없습니다.");
+        }
+
+        if (reportDTO.getContent() == null || reportDTO.getContent().trim().isEmpty()) {
+            throw new IllegalArgumentException("내용을 입력하세요.");
+        }
+
+        if (reportDTO.getType() == SupportType.INQUIRY) {
+            return;
+        }
 
         if (reportDTO.getReason() == null) {
             throw new IllegalArgumentException("신고목록을 입력하세요.");
@@ -49,10 +63,6 @@ public class ReportService {
 
         if (reportDAO.existsReason(reportDTO.getReason()) == 0) {
             throw new IllegalArgumentException("존재하지 않는 신고목록입니다.");
-        }
-
-        if (reportDTO.getContent() == null || reportDTO.getContent().trim().isEmpty()) {
-            throw new IllegalArgumentException("신고내용을 입력하세요.");
         }
 
         if (reportDTO.getTargetType() == null) {
@@ -63,9 +73,6 @@ public class ReportService {
             throw new IllegalArgumentException("신고 대상 번호가 없습니다.");
         }
 
-        if (reportDTO.getUserId() == null) {
-            throw new IllegalArgumentException("사용자 정보가 없습니다.");
-        }
     }
 
     private void saveImages(Long supportId, List<MultipartFile> images) {
