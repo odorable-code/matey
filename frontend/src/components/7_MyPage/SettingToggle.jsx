@@ -7,10 +7,6 @@ function SettingToggle({
   checked = false,
   onChange = () => {},
 }) {
-  const toggleImage = checked
-    ? "/images/toggle-on.png"
-    : "/images/toggle-off.png";
-
   return (
     <div className={styles.row}>
       <div className={styles.info}>
@@ -20,16 +16,12 @@ function SettingToggle({
 
       <button
         type="button"
-        className={styles.toggleButton}
+        className={`${styles.toggle} ${checked ? styles.on : styles.off}`}
         onClick={onChange}
         aria-pressed={checked}
         aria-label={`${title} ${checked ? "켜짐" : "꺼짐"}`}
       >
-        <img
-          src={toggleImage}
-          alt={checked ? "켜짐" : "꺼짐"}
-          className={styles.toggleImage}
-        />
+        <span className={styles.thumb} />
       </button>
     </div>
   );

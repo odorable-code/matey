@@ -1,114 +1,115 @@
-import React, { useMemo, useState } from "react";
-import LetterItem from "../LetterItem";
-import styles from "./LetterBoxContent.module.css";
+import React from 'react';
+import styles from './LetterBoxContent.module.css';
 
-// TODO: API 연동
-const dummyBot = {
-  name: "메이티",
-  avatarImage: "/images/avatar-default.png",
+const defaultLetters = {
+  featured: {
+    title: '오늘 하루는 어땠어?',
+    sender: '메이티',
+    preview:
+      '조금 지친 날처럼 보여서 먼저 편지를 남겨둘게. 오늘 잘 버틴 것만으로도 충분해.',
+    date: '방금 전',
+    status: '새 편지',
+  },
+  stats: [
+    { label: '읽지 않은 편지', value: '3' },
+    { label: '이번 주 도착', value: '7' },
+  ],
+  items: [
+    {
+      id: 1,
+      sender: '메이티',
+      title: '잠들기 전에 읽어줘',
+      preview: '하루 끝에 마음이 복잡하면 짧게라도 정리해보자.',
+      date: '오늘',
+      unread: true,
+    },
+    {
+      id: 2,
+      sender: '메이티',
+      title: '조금 느리게 가도 괜찮아',
+      preview: '속도를 줄여도 방향을 잃는 건 아니야.',
+      date: '어제',
+      unread: true,
+    },
+    {
+      id: 3,
+      sender: '메이티',
+      title: '잘하고 있다는 기록',
+      preview: '요즘의 너를 보면 천천히 균형을 다시 잡아가는 중이야.',
+      date: '2일 전',
+      unread: false,
+    },
+    {
+      id: 4,
+      sender: '메이티',
+      title: '오늘의 작은 칭찬',
+      preview: '별것 아닌 것 같아도 계속 해내고 있다는 점이 대단해.',
+      date: '3일 전',
+      unread: false,
+    },
+  ],
 };
 
-// TODO: API 연동
-const dummyLetters = [
-  {
-    id: 1,
-    type: "RECONNECT",
-    title: "오랜만이야!",
-    content: "요즘 어떻게 지내고 있어? 네 이야기를 다시 들을 수 있어서 반가워.",
-    isRead: false,
-    createdAt: "2026-04-23",
-  },
-  {
-    id: 2,
-    type: "EMOTION_GROWTH",
-    title: "감정이 차곡차곡 쌓이고 있어요",
-    content: "최근 편안한 감정이 자주 보여서 흐름이 한결 부드럽게 이어지고 있어.",
-    isRead: true,
-    createdAt: "2026-04-20",
-  },
-  {
-    id: 3,
-    type: "GIFT",
-    title: "선물이 도착했어요",
-    content: "출석 보상으로 만능사료 3개를 받았어. 오늘도 함께 시간을 보내보자.",
-    isRead: true,
-    createdAt: "2026-04-18",
-  },
-  {
-    id: 4,
-    type: "MIDNIGHT",
-    title: "오늘 하루도 수고했어",
-    content: "잠들기 전까지 마음이 조금 바빴다면, 지금은 천천히 쉬어가도 괜찮아.",
-    isRead: false,
-    createdAt: "2026-04-16",
-  },
-];
-
-const filterItems = [
-  { key: "all", label: "전체" },
-  { key: "encourage", label: "응원" },
-  { key: "comfort", label: "위로" },
-  { key: "event", label: "이벤트" },
-  { key: "growth", label: "감정성장" },
-];
-
-const typeToFilterMap = {
-  RECONNECT: "encourage",
-  MIDNIGHT: "comfort",
-  HIGH_RISK: "comfort",
-  GIFT: "event",
-  EMOTION_GROWTH: "growth",
-};
-
-function LetterBoxContent() {
-  const [activeFilter, setActiveFilter] = useState("all");
-
-  const filteredLetters = useMemo(() => {
-    if (activeFilter === "all") {
-      return dummyLetters;
-    }
-
-    return dummyLetters.filter(
-      (letter) => typeToFilterMap[letter.type] === activeFilter
-    );
-  }, [activeFilter]);
-
+function LetterBoxContent({ letterData = defaultLetters }) {
   return (
-    <section className={styles.container}>
+    <section className={styles.page}>
       <header className={styles.header}>
-        <h2 className={styles.title}>쪽지함</h2>
-        <p className={styles.subtitle}>봇이 보내준 따뜻한 메시지예요</p>
+        <div className={styles.headerText}>
+          <span className={styles.eyebrow}>LETTER BOX</span>
+          <h2 className={styles.title}>쪽지함</h2>
+          <p className={styles.description}>
+            메이티가 남긴 메시지를 더 가볍게 훑어볼 수 있게 정리했어요.
+          </p>
+        </div>
       </header>
 
-      <div className={styles.filterTabs}>
-        {filterItems.map((filter) => (
-          <button
-            key={filter.key}
-            type="button"
-            className={`${styles.filterButton} ${
-              activeFilter === filter.key ? styles.activeFilter : ""
-            }`}
-            onClick={() => setActiveFilter(filter.key)}
-          >
-            {filter.label}
-          </button>
-        ))}
+      <div className={styles.heroGrid}>
+        <article className={styles.featuredCard}>
+          <div className={styles.featuredTop}>
+            <span className={styles.featuredBadge}>{letterData.featured.status}</span>
+            <span className={styles.featuredDate}>{letterData.featured.date}</span>
+          </div>
+
+          <div className={styles.featuredBody}>
+            <span className={styles.featuredSender}>{letterData.featured.sender}</span>
+            <h3 className={styles.featuredTitle}>{letterData.featured.title}</h3>
+            <p className={styles.featuredPreview}>{letterData.featured.preview}</p>
+          </div>
+        </article>
+
+        <div className={styles.statColumn}>
+          {letterData.stats.map((item) => (
+            <article key={item.label} className={styles.statCard}>
+              <span className={styles.statLabel}>{item.label}</span>
+              <strong className={styles.statValue}>{item.value}</strong>
+            </article>
+          ))}
+        </div>
       </div>
 
-      <div className={styles.listCard}>
-        {filteredLetters.length > 0 ? (
-          filteredLetters.map((letter) => (
-            <LetterItem
-              key={letter.id}
-              letter={letter}
-              botAvatar={dummyBot.avatarImage}
-            />
-          ))
-        ) : (
-          <div className={styles.emptyState}>
-            <p className={styles.emptyText}>아직 도착한 쪽지가 없어요</p>
-          </div>
-        )}
+      <div className={styles.listGrid}>
+        {letterData.items.map((item) => (
+          <article
+            key={item.id}
+            className={`${styles.letterCard} ${item.unread ? styles.unreadCard : ''}`}
+          >
+            <div className={styles.letterTop}>
+              <span className={styles.letterSender}>{item.sender}</span>
+              <span className={styles.letterDate}>{item.date}</span>
+            </div>
+
+            <h3 className={styles.letterTitle}>{item.title}</h3>
+            <p className={styles.letterPreview}>{item.preview}</p>
+
+            <div className={styles.letterBottom}>
+              {item.unread ? (
+                <span className={styles.unreadBadge}>읽지 않음</span>
+              ) : (
+                <span className={styles.readBadge}>읽음</span>
+              )}
+            </div>
+          </article>
+        ))}
       </div>
     </section>
   );

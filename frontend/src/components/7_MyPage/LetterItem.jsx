@@ -7,40 +7,50 @@ const getLetterMeta = (type) => {
       return {
         label: "응원",
         badgeClassName: styles.encourageBadge,
+        toneClassName: styles.toneBlue,
       };
+
     case "MIDNIGHT":
     case "HIGH_RISK":
       return {
         label: "위로",
         badgeClassName: styles.comfortBadge,
+        toneClassName: styles.tonePurple,
       };
+
     case "GIFT":
       return {
         label: "이벤트",
         badgeClassName: styles.eventBadge,
+        toneClassName: styles.toneYellow,
       };
+
     case "EMOTION_GROWTH":
       return {
         label: "감정성장",
         badgeClassName: styles.growthBadge,
+        toneClassName: styles.toneMint,
       };
+
     default:
       return {
         label: "응원",
         badgeClassName: styles.encourageBadge,
+        toneClassName: styles.toneBlue,
       };
   }
 };
 
-function LetterItem({ letter, botAvatar = "/images/avatar-default.png" }) {
+function LetterItem({ letter, botAvatar = "/images/rabbit.png" }) {
   const meta = getLetterMeta(letter.type);
 
   return (
     <button type="button" className={styles.item}>
       <div className={styles.avatarWrap}>
+        <div className={styles.avatarGlow} aria-hidden="true" />
         <img
           src={botAvatar}
-          alt="봇 아바타"
+          alt="메이티 아바타"
           className={styles.avatarImage}
         />
       </div>
@@ -58,7 +68,17 @@ function LetterItem({ letter, botAvatar = "/images/avatar-default.png" }) {
 
       <div className={styles.rightArea}>
         <span className={styles.date}>{letter.createdAt}</span>
-        {!letter.isRead && <span className={styles.unreadDot} />}
+
+        <span className={styles.metaRow}>
+          <span
+            className={`${styles.smallPill} ${meta.toneClassName}`}
+            aria-hidden="true"
+          >
+            {meta.label}
+          </span>
+
+          {!letter.isRead ? <span className={styles.unreadDot} /> : null}
+        </span>
       </div>
     </button>
   );

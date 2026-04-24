@@ -1,0 +1,275 @@
+import React, { useEffect, useRef, useState } from 'react';
+import styles from './ProfileInfoContent.module.css';
+
+const initialProfile = {
+  userId: 'seongho_1024',
+  nickname: '성호',
+  name: '김성호',
+  email: 'sungho@example.com',
+  phone: '010-1234-5678',
+  birthDate: '1999-10-24',
+  gender: '남성',
+  joinedAt: '2026-01-05',
+  profileImage: '/images/rabbit-profile.png',
+};
+
+function ProfileInfoContent() {
+  const fileInputRef = useRef(null);
+  const [profile, setProfile] = useState(initialProfile);
+  const [draft, setDraft] = useState(initialProfile);
+  const [isEditMode, setIsEditMode] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (draft.profileImage?.startsWith('blob:')) {
+        URL.revokeObjectURL(draft.profileImage);
+      }
+    };
+  }, [draft.profileImage]);
+
+  const currentProfile = isEditMode ? draft : profile;
+
+  const handleStartEdit = () => {
+    setDraft(profile);
+    setIsEditMode(true);
+  };
+
+  const handleCancelEdit = () => {
+    if (
+      draft.profileImage?.startsWith('blob:') &&
+      draft.profileImage !== profile.profileImage
+    ) {
+      URL.revokeObjectURL(draft.profileImage);
+    }
+
+    setDraft(profile);
+    setIsEditMode(false);
+  };
+
+  const handleSaveEdit = () => {
+    setProfile(draft);
+    setIsEditMode(false);
+  };
+
+  const handleEditableChange = (field, value) => {
+    setDraft((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleOpenFilePicker = () => {
+    if (!isEditMode) return;
+    fileInputRef.current?.click();
+  };
+
+  const handleProfileImageChange = (event) => {
+    const selectedFile = event.target.files?.[0];
+    if (!selectedFile) return;
+
+    const previewUrl = URL.createObjectURL(selectedFile);
+
+    if (draft.profileImage?.startsWith('blob:')) {
+      URL.revokeObjectURL(draft.profileImage);
+    }
+
+    setDraft((prev) => ({
+      ...prev,
+      profileImage: previewUrl,
+    }));
+  };
+
+  return (
+    <section className={styles.page}>
+      <div className={styles.headerRow} data-reveal-skip="true">
+        <div className={styles.headerText}>
+          <span className={styles.eyebrow}>PROFILE INFO</span>
+          <h2 className={styles.title}>개인정보</h2>
+          <p className={styles.description}>
+            수정 가능한 항목은 닉네임, 프로필 사진, 휴대폰 번호, 성별만 남기고
+            나머지는 읽기 전용으로 정리했어요.
+          </p>
+        </div>
+
+        <div className={styles.actionRow}>
+          {!isEditMode ? (
+            <button
+              type="button"
+              className={styles.primaryButton}
+              onClick={handleStartEdit}
+            >
+              Edit
+            </button>
+          ) : (
+            <>
+              <button
+                type="button"
+                className={styles.secondaryButton}
+                onClick={handleCancelEdit}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className={styles.primaryButton}
+                onClick={handleSaveEdit}
+              >
+                Save
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      <div className={styles.contentGrid}>
+        <article className={styles.avatarCard}>
+          <div className={styles.avatarTop}>
+            <div className={styles.avatarFrame}>
+              <img
+                src={currentProfile.profileImage}
+                alt="프로필 이미지"
+                className={styles.avatarImage}
+              />
+            </div>
+
+            <div className={styles.avatarMeta}>
+              <strong className={styles.avatarName}>{currentProfile.nickname}</strong>
+              <span className={styles.avatarId}>@{profile.userId}</span>
+            </div>
+          </div>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className={styles.hiddenInput}
+            onChange={handleProfileImageChange}
+          />
+
+          <button
+            type="button"
+            className={styles.imageButton}
+            onClick={handleOpenFilePicker}
+            disabled={!isEditMode}
+          >
+            프로필 사진 변경
+          </button>
+
+          <p className={styles.avatarHint}>
+            {isEditMode
+              ? 'Edit 모드에서만 프로필 사진을 변경할 수 있어요.'
+              : '사진 변경은 Edit 모드에서만 가능합니다.'}
+          </p>
+        </article>
+
+        <article className={styles.formCard}>
+          <div className={styles.section}>
+            <div className={styles.sectionHead}>
+              <h3 className={styles.sectionTitle}>기본 정보</h3>
+            </div>
+
+            <div className={styles.fieldGrid}>
+              <label className={styles.field}>
+                <span className={styles.fieldLabel}>사용자 ID</span>
+                <input
+                  type="text"
+                  value={currentProfile.userId}
+                  disabled
+                  className={`${styles.input} ${styles.readOnly}`}
+                />
+              </label>
+
+              <label className={styles.field}>
+                <span className={styles.fieldLabel}>닉네임</span>
+                <input
+                  type="text"
+                  value={currentProfile.nickname}
+                  disabled={!isEditMode}
+                  onChange={(e) =>
+                    handleEditableChange('nickname', e.target.value)
+                  }
+                  className={styles.input}
+                />
+              </label>
+
+              <label className={styles.field}>
+                <span className={styles.fieldLabel}>이름</span>
+                <input
+                  type="text"
+                  value={currentProfile.name}
+                  disabled
+                  className={`${styles.input} ${styles.readOnly}`}
+                />
+              </label>
+
+              <label className={styles.field}>
+                <span className={styles.fieldLabel}>이메일</span>
+                <input
+                  type="email"
+                  value={currentProfile.email}
+                  disabled
+                  className={`${styles.input} ${styles.readOnly}`}
+                />
+              </label>
+            </div>
+          </div>
+
+          <div className={styles.section}>
+            <div className={styles.sectionHead}>
+              <h3 className={styles.sectionTitle}>추가 정보</h3>
+            </div>
+
+            <div className={styles.fieldGrid}>
+              <label className={styles.field}>
+                <span className={styles.fieldLabel}>휴대폰 번호</span>
+                <input
+                  type="text"
+                  value={currentProfile.phone}
+                  disabled={!isEditMode}
+                  onChange={(e) => handleEditableChange('phone', e.target.value)}
+                  className={styles.input}
+                />
+              </label>
+
+              <label className={styles.field}>
+                <span className={styles.fieldLabel}>성별</span>
+                <select
+                  value={currentProfile.gender}
+                  disabled={!isEditMode}
+                  onChange={(e) => handleEditableChange('gender', e.target.value)}
+                  className={styles.select}
+                >
+                  <option value="남성">남성</option>
+                  <option value="여성">여성</option>
+                  <option value="선택 안 함">선택 안 함</option>
+                </select>
+              </label>
+
+              <label className={styles.field}>
+                <span className={styles.fieldLabel}>생년월일</span>
+                <input
+                  type="text"
+                  value={currentProfile.birthDate}
+                  disabled
+                  className={`${styles.input} ${styles.readOnly}`}
+                />
+              </label>
+
+              <label className={styles.field}>
+                <span className={styles.fieldLabel}>가입일</span>
+                <input
+                  type="text"
+                  value={currentProfile.joinedAt}
+                  disabled
+                  className={`${styles.input} ${styles.readOnly}`}
+                />
+              </label>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+  );
+}
+
+export default ProfileInfoContent;

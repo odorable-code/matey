@@ -1,0 +1,325 @@
+.page {
+  width: 100%;
+  display: grid;
+  gap: 18px;
+  box-sizing: border-box;
+}
+
+.page * {
+  box-sizing: border-box;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.headerText {
+  min-width: 0;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: #f3ecff;
+  color: #8e76be;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  margin-bottom: 10px;
+}
+
+.title {
+  margin: 0 0 8px;
+  color: #4f4169;
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.24;
+}
+
+.description {
+  margin: 0;
+  color: #7b6f90;
+  font-size: 14px;
+  line-height: 1.65;
+  word-break: keep-all;
+}
+
+.overviewGrid {
+  display: grid;
+  grid-template-columns: 1.2fr repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.levelCard,
+.summaryCard,
+.collectionCard,
+.motionCard,
+.interactionCard {
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.76);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(249, 244, 255, 0.9) 100%
+  );
+  box-shadow: 0 18px 36px rgba(110, 89, 148, 0.11);
+  backdrop-filter: blur(18px);
+}
+
+.levelCard,
+.summaryCard {
+  padding: 18px 20px;
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.cardTitle {
+  margin: 0;
+  color: #55456c;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.32;
+}
+
+.softBadge {
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: #f4edff;
+  color: #8b73b9;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.levelValueRow {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.levelValue {
+  color: #4f4169;
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.levelNote {
+  color: #7b6f90;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.progressTrack {
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(231, 221, 247, 0.9);
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #cdb9ff 0%, #f6bfd9 100%);
+}
+
+.summaryCard {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+
+.summaryTitle {
+  color: #8a7ba1;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+.summaryValue {
+  color: #4f4169;
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.summaryNote {
+  margin: 0;
+  color: #7b6f90;
+  font-size: 13px;
+  line-height: 1.55;
+  word-break: keep-all;
+}
+
+.contentGrid {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 16px;
+}
+
+.collectionCard,
+.motionCard,
+.interactionCard {
+  padding: 20px;
+}
+
+.collectionGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.collectionItem {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(232, 222, 246, 0.92);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.collectionItem:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 28px rgba(114, 93, 152, 0.12);
+  border-color: rgba(221, 208, 245, 0.98);
+}
+
+.collectionThumb {
+  width: 100%;
+  aspect-ratio: 1.55 / 1;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #f9d7e9 0%, #d8c8ff 52%, #cfece6 100%);
+}
+
+.collectionMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.collectionName {
+  color: #4f4169;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.stateBadge {
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stateActive {
+  background: #efe7ff;
+  color: #7d63b2;
+}
+
+.stateOwned {
+  background: #eefaf7;
+  color: #4e8f83;
+}
+
+.stateLocked {
+  background: #f7f1f7;
+  color: #9b88a0;
+}
+
+.sideStack {
+  display: grid;
+  gap: 16px;
+}
+
+.motionList {
+  display: grid;
+  gap: 10px;
+}
+
+.motionItem {
+  min-height: 48px;
+  padding: 0 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.84);
+  border: 1px solid rgba(233, 222, 246, 0.9);
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 10px;
+}
+
+.motionDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #cfbbff 0%, #f6bfd9 100%);
+}
+
+.motionName {
+  color: #56466c;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.motionTag {
+  color: #8d79aa;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.interactionList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.interactionChip {
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(227, 215, 245, 0.95);
+  background: rgba(255, 255, 255, 0.88);
+  color: #5e5073;
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 1180px) {
+  .overviewGrid,
+  .contentGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .collectionGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
