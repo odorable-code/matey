@@ -61,11 +61,7 @@ const REPORT_ENDPOINTS = [
 ];
 
 const REPORT_REFRESH_ENDPOINTS = [
-  '/api/mypage/reports/refresh',
-  '/api/my-page/reports/refresh',
-  '/api/emotion/reports/refresh',
-  '/api/report/emotion/refresh',
-  '/api/reports/refresh',
+  '/api/report/refresh',
 ];
 
 const buildDetailEndpoints = (id) => {
