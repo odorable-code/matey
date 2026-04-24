@@ -8,7 +8,7 @@ import java.util.Map;
 
 @Data
 public class ReportDTO {
-    private BigInteger id;
+    private long reportId;
     private int stability;
     private String dominantEmotion;
     private String rangeLabel;

@@ -6,7 +6,6 @@ import org.apache.ibatis.annotations.Param;
 
 import kr.hi.matey.dto.UserProfileDTO;
 
-import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 

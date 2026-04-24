@@ -7,5 +7,5 @@ import org.apache.ibatis.annotations.Mapper;
 @Mapper
 public interface ReportDAO {
     ReportDTO selectLatestReportByUserId(long userId);
-    ReportDTO selectReportById(long id);
+    ReportDTO selectReportById(long reportId);
 }

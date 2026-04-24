@@ -8,7 +8,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -24,7 +23,7 @@ public class ReportController {
     public ResponseEntity<Map<String, Object>> getReports(
             @AuthenticationPrincipal CustomUser user
     ) {
-       BigInteger userId = user.getUser().getUserId();
+        long userId = user.getUser().getUserId();
         ReportDTO report = reportService.getLatestReport(userId);
 
 

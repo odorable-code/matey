@@ -1,6 +1,5 @@
 package kr.hi.matey.util;
 
-import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collection;
 

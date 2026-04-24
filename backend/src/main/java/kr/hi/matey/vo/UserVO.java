@@ -1,11 +1,7 @@
 package kr.hi.matey.vo;
 
 import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
 
-import java.math.BigInteger;
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
 

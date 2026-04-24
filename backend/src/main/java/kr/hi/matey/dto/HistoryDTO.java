@@ -2,7 +2,6 @@ package kr.hi.matey.dto;
 
 import lombok.Data;
 
-import java.math.BigInteger;
 import java.util.List;
 
 @Data

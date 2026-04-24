@@ -26,8 +26,8 @@ public class ReportService {
         return report;
     }
 
-    public ReportDTO getReportDetail(long id) {
-        ReportDTO report = reportDAO.selectReportById(id);
+    public ReportDTO getReportDetail(long reportId) {
+        ReportDTO report = reportDAO.selectReportById(reportId);
         if (report != null) {
             parseJsonFields(report);
         }
