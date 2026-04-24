@@ -53,7 +53,7 @@ public class AuthService {
 	}
 
 
-	public String findId(String phone, String email) {
+	public String findId(String email) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -138,6 +138,30 @@ public class AuthService {
 	        	return false;
 	        }
 		}
+
+
+	public void enableAutoLogin(Long userId, String refreshToken) {
+		// 1. 현재 시간 기준으로 30일 뒤 만료일 계산
+        LocalDateTime expiryDate = LocalDateTime.now().plusDays(30);
+        
+        // 2. DAO에게 데이터 전달
+        authDAO.saveAutoLoginInfo(userId, refreshToken, expiryDate);
+		
+	}
+	
+	
+	public boolean isValidRefreshToken(String subject, String refreshToken) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+
+	public void disableAutoLogin(Long userId) {
+		authDAO.removeToken(userId);
+		
+	}
+
+
 	
 	}
 

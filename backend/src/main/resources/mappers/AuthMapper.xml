@@ -56,5 +56,19 @@
     FROM user
     WHERE reset_token = #{token}
 	</select>
+	
+	<delete id="deleteTokenByUserId">
+    DELETE FROM auto_login WHERE userId = #{userId}
+	</delete>
+	
+	<insert id="insertOrUpdateToken">
+    INSERT INTO auto_login (userId, refreshToken, expiryDate)
+    VALUES (#{userId}, #{refreshToken}, #{expiryDate})
+    ON DUPLICATE KEY UPDATE 
+        refreshToken = #{refreshToken},
+        expiryDate = #{expiryDate}
+	</insert>
+	
+	
 
 </mapper>

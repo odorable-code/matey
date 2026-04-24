@@ -1,5 +1,6 @@
 package kr.hi.matey.dao;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import org.apache.ibatis.annotations.Mapper;
@@ -28,5 +29,10 @@ public interface AuthDAO {
 	boolean updateFinalPassword(String email, String encodedPassword);
 
 	boolean clearResetToken(String email);
+
+	void saveAutoLoginInfo(Long userId, String refreshToken, LocalDateTime expiryDate);
+
+	void removeToken(Long userId);
+	
 	
 }

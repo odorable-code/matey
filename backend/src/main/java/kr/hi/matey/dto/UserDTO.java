@@ -1,6 +1,8 @@
 package kr.hi.matey.dto;
 
+import java.sql.Timestamp;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
@@ -14,33 +16,30 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class UserDTO {
 	
-	@Schema(description = "사용자 고유 번호 (PK)")
-    private String userId;
-    @Schema(description = "사용자의 비밀번호")
-    String password;
-    @Schema(description = "사용자의 이름")
-    String name;
-    @Schema(description = "사용자의 이름")
-    String nickname;
-    @Schema(description = "사용자의 주소")
-    String addr;
-    @Schema(description = "사용자의 이메일")
-    String email;
-    @Schema(description = "사용자의 전화번호")
-    String phone;
-    @Schema(description = "사용자의 생년월일")
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
-    LocalDate birth;
-    @Schema(description = "사용자의 성별")
-    String gender;
-    @Schema(description = "알림 허용 여부")
-    boolean alert;
-    @Schema(description = "서비스이용약관 동의 여부")
-    boolean termsAgreed;
-    @Schema(description = "위치기반 서비스 동의 여부")
-    boolean locationAgreed;
-    @Schema(description = "역할")
-    String role;
+	private Long userId;
+    private String email;
+    private String password;
+    private String nickname;
+    private String userName;
+    private Long userBirth;
+    private Long gender;
+    private String profileImage;
+    private String role;
+    private String loginType;
+    private String status;
+    private Integer point;
+    private String subscriptionGrade;
+    private Boolean isAdult;
+    private Boolean isNotiAgree;
+    private Boolean isTermsAgreed;
+    private Boolean isPrivacyAgreed;
+    private Boolean isMarketingAgreed;
+    private Timestamp lastLoginAt;
+    private Timestamp createdAt;
+    private Timestamp updatedAt;
+    private LocalDateTime tokenExpiryDate;
+    private String resetToken;
+    private boolean rememberMe;
    
     
 //    public UserDTO(int userId, String password, String name, String nickname, String addr,

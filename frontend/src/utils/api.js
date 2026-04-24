@@ -95,10 +95,10 @@ function normalizeUser(payload) {
   return payload?.user || payload?.data?.user || payload?.data || null;
 }
 
-export async function login({ email, password }) {
+export async function login({ email, password, rememberMe }) {
   const payload = await request('api/v1/auth/login', {
     method: 'POST',
-    body: { email, password },
+    body: { email, password, rememberMe },
   });
 
   const accessToken = normalizeToken(payload);

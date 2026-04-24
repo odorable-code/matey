@@ -110,31 +110,4 @@ public class SecurityConfig {
         return source;
     }
     
-    @Bean
-    // 자동로그인
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.csrf(csrf ->csrf.disable())
-	        .authorizeHttpRequests(/*생략*/)
-	        .formLogin(/*생략*/)
-            /* 자동로그인은 클라이언트(사용자) 컴퓨터에 쿠키를 만들어서 활용
-             * => 동일한 이름(LC) 쿠키가 있는지 확인해서 있으면 값을 가져와
-             *    로그인을 함
-             * */
-            .rememberMe(rm-> rm
-    	    		//자동로그인이 체크되어 있으면 memberDetailService를 이용해서 로그인 진행
-            	.userDetailsService(memberDetailService)
-            	//쿠키에 저장할 토큰을 생성할 때 활용할 문자열
-            	//이 문자열이 바뀌면 이전에 있던 토큰이 무효화 되어 자동 로그인 취소
-            	//key에 들어가는 문자열은 노출되면 안됨.
-            	//application.properties에 작성해서 관리해야함.
-            	.key("abc123")
-            	//쿠키 이름
-            	.rememberMeCookieName("LC")
-            	//쿠키 유효시간(단위 초).
-            	.tokenValiditySeconds(60*60*24*7)//7일
-            )
-            .logout(/*생략*/);  
-        return http.build();
-    }
-    
 }

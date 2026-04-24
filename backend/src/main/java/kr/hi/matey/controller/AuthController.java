@@ -116,8 +116,16 @@ public class AuthController {
 
             String accessToken  = jwtTokenProvider.createAccessToken(customUser);
             String refreshToken = jwtTokenProvider.createRefreshToken(customUser);
+            
+            // 사용자가 체크박스를 눌렀을 때만 실행됩니다.
+            if (user.isRememberMe()) {
+                authService.enableAutoLogin(customUser.getUser().getUserId(), refreshToken);
+            }
 
-            response.addCookie(makeRefreshCookie(refreshToken, 60 * 60 * 24 * 7));
+            // 음수 (예: -1): 쿠키를 별도의 파일로 저장하지 않고 브라우저가 켜져 있는 동안만 유지합니다. 브라우저(모든 탭과 창)를 완전히 닫으면 삭제됩니다. (일반 로그인에 사용)
+            // 0: 쿠키를 즉시 삭제하라는 뜻입니다. (로그아웃 구현 시 사용)
+            int cookieMaxAge = user.isRememberMe() ? 60 * 60 * 24 * 30 : -1;
+            response.addCookie(makeRefreshCookie(refreshToken, cookieMaxAge));
             System.out.println("login success: " + customUser.getUser().getUserId());
 
             Map<String, Object> responseBody = new HashMap<>();
@@ -136,7 +144,17 @@ public class AuthController {
 	
 	
 	@PostMapping("/logout")
-	public ResponseEntity<?> logout(HttpServletResponse response) {
+	public ResponseEntity<?> logout(HttpServletResponse response, Authentication auth) {
+		
+		// 1. 현재 로그인된 사용자의 아이디를 가져옵니다.
+	    if (auth != null && auth.isAuthenticated()) {
+	        CustomUser customUser = (CustomUser) auth.getPrincipal();
+	        Long userId = customUser.getUser().getUserId();
+	        
+	        // 서비스에게 DB에 저장된 자동 로그인 토큰을 지우게 함
+	        authService.disableAutoLogin(userId);
+	    }
+		
         response.addCookie(makeRefreshCookie(null, 0));
         return ResponseEntity.ok(Map.of("message", "로그아웃 되었습니다."));
     }
@@ -163,15 +181,16 @@ public class AuthController {
 	                    .body(Map.of("message", "서버 오류가 발생했습니다."));
 	            }
 	}
-	
+	// 아이디(이메일) 찾기
 	@PostMapping("/find-id")
     public ResponseEntity<Map<String, String>> findId(@RequestBody UserDTO user) {
-    	System.out.println("fineId : " + user);
-        String id = authService.findId(user.getPhone(), user.getEmail());
+    	System.out.println("findId : " + user);
+        String id = authService.findId(user.getEmail());
         System.out.println("id: " + id);
         return id != null ? ResponseEntity.ok(Map.of("id", id)) : ResponseEntity.status(401).body(Map.of("message", "일치하는 아이디를 찾을 수 없습니다."));
     }
 	
+	// 이메일 중복 확인
 	@GetMapping("/check-email")
     public ResponseEntity<?> checkEmail(@RequestParam("email") String email) {
 		System.out.println("checkEmail :" + email);
@@ -226,8 +245,16 @@ public class AuthController {
         }
 
         Claims claims = jwtTokenProvider.parseClaims(refreshToken);
+        
+        // [추가] DB에 저장된 리프레시 토큰과 일치하는지 검증
+        if (!authService.isValidRefreshToken(claims.getSubject(), refreshToken)) {
+            return ResponseEntity.status(401).build();
+        }
         CustomUser user = (CustomUser) userDetailsService.loadUserByUsername(claims.getSubject());
         return ResponseEntity.ok(Map.of("accessToken", jwtTokenProvider.createAccessToken(user)));
     }
+    
+    // 자동 로그인이 되어 있다면 사용자가 사이트에 접속했을 때 화면에 "료그인 계속 유지하기" 에 체크 표시를 프로그래밍적으로 넣어준다.
+    // 만약 사용자가 자동 로그인을 하고, 로그아웃을 직접 했다면 서버와 브라우저에 저장된 모든 토큰/쿠키를 지우고 화면의 "로그인 계속 유지하기" 체크박스도 해제해야함
 
 }
