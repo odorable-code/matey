@@ -24,14 +24,31 @@ public class AuthService {
 	private final BCryptPasswordEncoder encoder;
 	private final CustomUser customuser;
 	private final JavaMailSender mailSender;
-	private final UserVO userVO;
 	
+	// 이메일 중복 확인(회원가입시)
+	public boolean isEmailDuplicateSignup(String email) {
+			
+			boolean isEmailDuplicateSignup = authDAO.isEmailDuplicateSignup(email);
+			return isEmailDuplicateSignup;
+		}
 
+	// 회원가입
 	public boolean signup(UserDTO user) {
 		String encodedPw = encoder.encode(user.getPassword());
-        user.setPassword(encodedPw);
+		UserVO userVO = new UserVO();
+		
+		userVO.setEmail(user.getEmail());
+	    userVO.setNickname(user.getNickname());
+	    userVO.setPassword(encodedPw);
+	    userVO.setIsTermsAgreed(user.getIsTermsAgreed());
+	    userVO.setIsPrivacyAgreed(user.getIsPrivacyAgreed());
+	    userVO.setIsMarketingAgreed(user.getIsMarketingAgreed());
+		userVO.setPassword(encodedPw);
+		userVO.setRole("USER");
+		
+		
         try {
-            boolean result = authDAO.insertUser(user);
+            boolean result = authDAO.insertUser(userVO);
             return result;
             
         } catch (Exception e) {
@@ -41,11 +58,18 @@ public class AuthService {
     }
 
 
+	// 로그인
 	public boolean login(UserDTO user) {
+		
 		try {
-            boolean result = authDAO.confirmUser(user);
-            return result;
-            
+			
+			UserVO savedUser = authDAO.findByEmail(user.getEmail());
+			if (savedUser == null) {
+				return false;
+	    }
+		    boolean isMatch = encoder.matches(user.getPassword(), savedUser.getPassword());
+		    return isMatch;
+			
         } catch (Exception e) {
             e.printStackTrace();
             return false;
@@ -53,20 +77,34 @@ public class AuthService {
 	}
 
 
-	public String findId(String email) {
-		// TODO Auto-generated method stub
-		return null;
+	// 아이디(이메일) 찾기
+	public String findId(UserDTO user) {
+		String id = authDAO.findId(user);
+		return id;
+	}
+	
+	// 비번 재설정
+	public boolean isEmailDuplicatePw(UserDTO user) {
+		
+		UserVO userVO = new UserVO();
+	    userVO.setEmail(user.getEmail());
+		
+		boolean isEmailDuplicatePW = authDAO.isEmailDuplicatePw(userVO);
+		return isEmailDuplicatePW;
 	}
 
 
-	public boolean sendLink(String email) {
+	// 비번 재설정(링크 전송)
+	public boolean sendLink(UserDTO user) {
 		// 고유 토큰 생성 (UUID)
         try{
+        	
+        	// 비밀번호 재설정 페이지로 연결되는 일회용 비밀 주소(토큰)를 만들 때 사용(전 세계에서 중복될 확률이 거의 없는, 아주 고유한 식별용 문자열(아이디)을 하나 생성)
         	String token = UUID.randomUUID().toString();
         
         
         // DB에 토큰 저장 (나중에 비번 바꿀 때 "검증용")
-        boolean updateToken = authDAO.updateResetToken(email, token); 
+        boolean updateToken = authDAO.updateResetToken(user.getEmail(), token); 
         
         // DB 저장 실패시 메일 안 보냄
         if (!updateToken) {
@@ -77,7 +115,7 @@ public class AuthService {
         String resetLink = "http://localhost:8080/reset-password?token=" + token;
         
         SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(email);
+        message.setTo(user);
         message.setSubject("[서비스 이름] 비밀번호 재설정 안내");
         message.setText("아래 링크를 클릭하여 비밀번호를 재설정하세요.\n\n" + resetLink);
 
@@ -94,17 +132,10 @@ public class AuthService {
 	}
 
 
-	public boolean isEmailDuplicate(String email) {
-		
-		boolean isEmailDuplicate = authDAO.isEmailDuplicate(email);
-		return isEmailDuplicate;
-	}
-
-
+	// 비번 재설정(재설정된 비번 db에 저장)
 	@Transactional
 	public boolean updatePassword(String token, String newpassword) {
 		
-		// 1. DAO는 UserVO(순수 정보)를 가져옵니다.
 		Optional<UserVO> voOpt = authDAO.findUserVOByToken(token);
 
 		if (voOpt.isPresent()) {
@@ -120,7 +151,7 @@ public class AuthService {
 			return false;
 		}
 		
-	        // 3. 새로운 비밀번호 암호화 (BCrypt 사용 권장)
+	        // 새로운 비밀번호 암호화 (BCrypt 사용 권장)
 	        String encodedPassword = encoder.encode(newpassword);
 	        
 	        if (encodedPassword == null || encodedPassword.isEmpty()) {
@@ -156,12 +187,10 @@ public class AuthService {
 	}
 
 
-	public void disableAutoLogin(Long userId) {
-		authDAO.removeToken(userId);
-		
+	public boolean removeAutoLoginToken(Long userId) {
+		int removeAutoLoginToken = authDAO.removeAutoLoginToken(userId, null);
+		return removeAutoLoginToken > 0;
 	}
 
-
-	
-	}
+}
 

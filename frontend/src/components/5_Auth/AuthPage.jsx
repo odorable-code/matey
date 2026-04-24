@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { validateEmail } from '../../utils/api';
+import { validateEmail, checkEmailDuplicate } from '../../utils/api';
 import './AuthPage.css';
 
 const LOGIN_INITIAL = {
@@ -15,7 +15,9 @@ const SIGNUP_INITIAL = {
   email: '',
   password: '',
   confirmPassword: '',
-  agree: false,
+  isTermsAgreed: false,    // 이용약관(필수)
+  isPrivacyAgreed: false,  // 개인정보(필수)
+  isMarketingAgreed: false // 마케팅(선택)
 };
 
 const TAB_COPY = {
@@ -54,8 +56,11 @@ function getPasswordStrength(password) {
 
   let score = 0;
 
+  // 비번이 8자 이상일 때
   if (password.length >= 8) score += 1;
+  // 영어 대소문자 1글자 이상 포함
   if (/[A-Za-z]/.test(password) && /\d/.test(password)) score += 1;
+  // 숫자 1글자 이상 포함, 비번이 10자 이상일 때
   if (/[^A-Za-z0-9]/.test(password) || password.length >= 10) score += 1;
 
   if (score <= 1) {
@@ -109,6 +114,7 @@ export default function AuthPage() {
     [signupForm.password]
   );
 
+  // 회원가입을 마치고 로그인 창으로 넘어왔을 때 이메일 입력칸에 방금 가입한 이메일이 타이핑 되어 있는 상태가 됨 => 비번만 입력하면 되서 편함
   useEffect(() => {
     if (location.state?.signupEmail) {
       setLoginForm((prev) => ({
@@ -210,9 +216,9 @@ export default function AuthPage() {
       nextErrors.confirmPassword = '비밀번호가 서로 다르게 입력되었어요.';
     }
 
-    if (!signupForm.agree) {
-      nextErrors.agree = '서비스 이용을 위해 약관 동의가 필요해요.';
-    }
+    if (!signupForm.termsAgree || !signupForm.privacyAgree) {
+    nextErrors.agree = '서비스 이용을 위해 필수 약관 동의가 필요해요.';
+  }
 
     return nextErrors;
   };
@@ -229,9 +235,10 @@ export default function AuthPage() {
       setLoading(true);
       setSubmitMessage('');
 
-      await login({
+    const result = await login({
         email: loginForm.email.trim(),
         password: loginForm.password,
+        rememberMe : loginForm.rememberMe
       });
 
       navigate('/', { replace: true });
@@ -254,10 +261,32 @@ export default function AuthPage() {
       setLoading(true);
       setSubmitMessage('');
 
+      const isDuplicate = await checkEmailDuplicate(signupForm.email.trim());
+      
+      if (isDuplicate) {
+        setSignupErrors(prev => ({
+          ...prev,
+          email: '이미 사용 중인 이메일이에요.'
+        }));
+        setLoading(false);
+        return;
+      }
+      else {
+      // [Case 2] 중복이 아닌 경우 (사용 가능)
+      setSignupErrors(prev => ({
+        ...prev,
+        email: '' // 기존 에러 메시지 제거
+      }));
+      setLoading(false);
+    }
+
       const result = await signup({
         nickname: signupForm.nickname.trim(),
         email: signupForm.email.trim(),
         password: signupForm.password,
+        termsAgree: signupForm.isTermsAgreed,
+        privacyAgree: signupForm.isPrivacyAgreed,
+        marketingAgree: signupForm.isMarketingAgreed
       });
 
       if (result?.accessToken) {
@@ -417,6 +446,10 @@ export default function AuthPage() {
                     <span>로그인 상태 유지</span>
                   </label>
 
+                  <Link to="/forgot-id" className="matey-auth-link">
+                    아이디 찾기
+                  </Link>
+
                   <Link to="/forgot-password" className="matey-auth-link">
                     비밀번호 찾기
                   </Link>
@@ -554,8 +587,28 @@ export default function AuthPage() {
                 <label className="matey-auth-check matey-auth-check--full">
                   <input
                     type="checkbox"
-                    name="agree"
-                    checked={signupForm.agree}
+                    name="termsAgree"
+                    checked={signupForm.termsAgree}
+                    onChange={handleSignupChange}
+                  />
+                  <span>서비스 이용약관 및 개인정보 처리에 동의합니다.</span>
+                </label>
+
+                <label className="matey-auth-check matey-auth-check--full">
+                  <input
+                    type="checkbox"
+                    name="privacyAgree"
+                    checked={signupForm.privacyAgree}
+                    onChange={handleSignupChange}
+                  />
+                  <span>서비스 이용약관 및 개인정보 처리에 동의합니다.</span>
+                </label>
+
+                <label className="matey-auth-check matey-auth-check--full">
+                  <input
+                    type="checkbox"
+                    name="marketingAgree"
+                    checked={signupForm.marketingAgree}
                     onChange={handleSignupChange}
                   />
                   <span>서비스 이용약관 및 개인정보 처리에 동의합니다.</span>

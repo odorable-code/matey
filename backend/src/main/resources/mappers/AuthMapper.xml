@@ -3,58 +3,74 @@
 
 <mapper namespace="kr.hi.matey.dao.AuthDAO">
 
-	<insert id="insertUser"  parameterType="kr.yeyakhaezo.barodocq.domain.UserDTO" >
+	<!-- 이메일 중복 확인(회원가입시) -->
+	<select id="isEmailDuplicateSignup" parameterType="string" resultType="int">
+	    SELECT 
+	        COUNT(email)
+	    FROM users
+	    WHERE email = #{email}
+	</select>
+
+	<insert id="insertUser"  parameterType="kr.hi.matey.vo.UserVO" >
 	    INSERT INTO users (
-	        user_id, user_pw, user_name, user_addr, user_email,
-	        user_phone, user_birth, user_gender, user_alert,
-	        terms_agreed, location_agreed, role
-	    )
-	    VALUES (
-	        #{user.userId},
-	        #{user.password},
-	        #{user.name},
-	        #{user.addr},
-	        #{user.email},
-	        #{user.phone},
-	        #{user.birth},
-	        #{user.gender},
-	        #{user.userAlert},
-	        #{user.termsAgreed},
-	        #{user.locationAgreed},
-	        'USER'
-	    )
+	        email, 
+	        password, 
+	        nickname;,
+	        isTermsAgreed;,
+	        isPrivacyAgreed;,
+	        isMarketingAgreed;,
+	        role )
+    	VALUES (
+	        #{email},
+	        #{password},
+	        #{nickname},
+	        #{isTermsAgreed},
+	        #{isPrivacyAgreed},
+	        #{isMarketingAgreed},
+	        'USER' )
 	</insert>
 	
-	<select id="confirmUser" parameterType="kr.yeyakhaezo.barodocq.domain.UserDTO">
-		SELECT 
-        user_email, user_password
-	    FROM users
-	    WHERE user_email = #{user.email} 
-	    AND user_pw = #{user.password}
-	</select>
-	
-	<select id="isEmailDuplicate">
-		SELECT 
-		user_email
+	<select id="findId" parameterType="kr.hi.matey.dto.UserDTO" resultType="string">
+		SELECT
+			userId
 		FROM users
+		WHERE name = #{name} AND email = #{email}
 	</select>
 	
-	<update id="updateResetToken">
-		UPDATE user_table 
+	<!-- 비번 재설정 -->
+	<select id="isEmailDuplicatePw" parameterType="kr.hi.matey.vo.UserVO" resultType="boolean">
+	    SELECT 
+	        email,
+        	role
+	    FROM users
+	    WHERE email = #{email}
+	</select>
+	
+	<select id="findByEmail" parameterType="string" resultType="kr.hi.matey.vo.UserVO">
+	    SELECT 
+	        email,
+	        password;,
+        	role
+	    FROM users
+	    WHERE email = #{email}
+	</select>
+	
+	<update id="updateResetToken" >
+		UPDATE  password_reset
 		SET reset_token = #{token} 
 		WHERE email = #{email};
 	</update>
 	
 	
 	<select id="findByResetToken" resultType="kr.hi.matey.util.CustomUser">
-    SELECT 
-        userName,
-        password,
-        role,
-        email,
-        token_expiry_date
-    FROM user
-    WHERE reset_token = #{token}
+	    SELECT 
+	        userName,
+	        password,
+	        role,
+	        email,
+	        token_expiry_date
+	    FROM user
+	    WHERE reset_token = #{token}
 	</select>
 	
 	<delete id="deleteTokenByUserId">
@@ -69,6 +85,10 @@
         expiryDate = #{expiryDate}
 	</insert>
 	
-	
+	<update id="removeAutoLoginToken">
+	    UPDATE auto_login 
+	    SET refreshToken = #{object} 
+	    WHERE userId = #{userId}
+	</update>
 
 </mapper>

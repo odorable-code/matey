@@ -13,16 +13,23 @@ import kr.hi.matey.util.CustomUser;
 @Mapper
 public interface AuthDAO {
 	
+	// 이메일 중복 확인(회원가입시)
+	boolean isEmailDuplicateSignup(String email);
 	
-	boolean insertUser(@Param("user") UserDTO user);
+	boolean insertUser(@Param("user") UserVO userVO);
 
-	boolean confirmUser(@Param("user") UserDTO user);
+	UserVO findByEmail(String email);
+	
+	String findId(UserDTO user);
+	
+	// 비번 재설정
+	boolean isEmailDuplicatePw(UserVO userVO);
 
 	boolean updateResetToken(String email, String token);
 
 	Optional<CustomUser> findByResetToken(String token);
 
-	boolean isEmailDuplicate(String email);
+	
 
 	Optional<UserVO> findUserVOByToken(String token);
 
@@ -33,6 +40,17 @@ public interface AuthDAO {
 	void saveAutoLoginInfo(Long userId, String refreshToken, LocalDateTime expiryDate);
 
 	void removeToken(Long userId);
+
+	int removeAutoLoginToken(Long userId, Object object);
+
+	
+
+
+	
+
+	
+
+	
 	
 	
 }

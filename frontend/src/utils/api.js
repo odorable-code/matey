@@ -11,6 +11,7 @@ function getStoredToken() {
   return localStorage.getItem(TOKEN_KEY);
 }
 
+// LocalStorage의 Access Token을 지움!
 export function setStoredToken(token) {
   if (token) {
     // TOKEN_KEY 라는 변수의 값을 token으로 지정
@@ -116,10 +117,10 @@ export async function login({ email, password, rememberMe }) {
   };
 }
 
-export async function signup({ nickname, email, password }) {
+export async function signup({ nickname, email, password, termsAgree, privacyAgree, marketingAgree }) {
   const payload = await request('api/v1/auth/signup', {
     method: 'POST',
-    body: { nickname, email, password },
+    body: { nickname, email, password, termsAgree, privacyAgree, marketingAgree },
   });
 
   const accessToken = normalizeToken(payload);
@@ -135,6 +136,15 @@ export async function signup({ nickname, email, password }) {
     user,
     message: payload?.message || '회원가입이 완료되었어요.',
   };
+}
+
+export async function checkEmailDuplicate(email) {
+  // 이메일을 쿼리 스트링으로 전달 (api/v1/auth/check-email?email=...)
+  const payload = await request(`api/v1/auth/check-email?email=${encodeURIComponent(email)}`, {
+    method: 'GET',
+  });
+
+  return payload?.isEmailDuplicate || false;
 }
 
 export async function getMyProfile() {
@@ -156,6 +166,20 @@ export async function forgotPassword(email) {
     message:
       payload?.message ||
       '비밀번호 재설정 링크를 이메일로 보냈어요. 메일함을 확인해 주세요.',
+  };
+}
+
+export async function forgotId(name, email) {
+  const payload = await request('api/v1/auth/forgot-id', {
+    method: 'POST',
+    body: { name, email },
+  });
+
+  return {
+    raw: payload,
+    message:
+      payload?.message ||
+      '입력하신 정보와 일치하는 아이디를 찾았어요.',
   };
 }
 
