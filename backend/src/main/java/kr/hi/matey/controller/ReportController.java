@@ -35,8 +35,8 @@ public class ReportController {
 
     // 2. 특정 감정 리포트 상세 조회
     @GetMapping("/detail/{id}")
-    public ResponseEntity<Map<String, Object>> getReportDetail(@PathVariable String id) {
-        ReportDTO report = reportService.getReportDetail(id);
+    public ResponseEntity<Map<String, Object>> getReportDetail(@PathVariable long reportId) {
+        ReportDTO report = reportService.getReportDetail(reportId);
 
         Map<String, Object> response = new HashMap<>();
         response.put("report", report);
@@ -49,7 +49,7 @@ public class ReportController {
     public ResponseEntity<Map<String, Object>> refreshReports(
             @AuthenticationPrincipal CustomUser user
             ) {
-        String userId = "test_user_id"; // TODO: 시큐리티 인증 객체에서 실제 유저 ID 추출
+        long userId = user.getUser().getUserId();
         ReportDTO newReport = reportService.generateNewReport(userId);
 
         Map<String, Object> response = new HashMap<>();
