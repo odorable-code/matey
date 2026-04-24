@@ -7,10 +7,7 @@ import kr.hi.matey.vo.UserVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.math.BigInteger;
 import java.util.HashMap;
@@ -28,8 +25,8 @@ public class MyPageApiController {
     @GetMapping("/profile")
     public ResponseEntity<Map<String, Object>> getProfile(
             @AuthenticationPrincipal CustomUser user
-            ) {
-        BigInteger userId = user.getUser().getUserId();
+    ) {
+        long userId = user.getUser().getUserId();
 
         UserVO profile = myPageMapper.getUserProfile(userId);
 
@@ -38,5 +35,14 @@ public class MyPageApiController {
         response.put("data", profile);
 
         return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/profile")
+    public ResponseEntity<Boolean> patchProfile(
+            @AuthenticationPrincipal CustomUser user
+    ) {
+        long userId = user.getUser().getUserId();
+        myPageMapper.setUserProfile(userId);
+        return ResponseEntity.ok(true);
     }
 }

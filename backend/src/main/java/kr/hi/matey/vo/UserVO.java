@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 
 @Data
 public class UserVO {
-    private BigInteger userId;
+    private long userId;
     private String email;
     private String password;
     private String nickname;

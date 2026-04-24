@@ -4,10 +4,13 @@ import kr.hi.matey.dto.BillingDTO;
 import kr.hi.matey.dto.PaymentDTO;
 import kr.hi.matey.dto.PointDTO;
 import kr.hi.matey.service.BillingService;
+import kr.hi.matey.util.CustomUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,9 +24,10 @@ public class BillingController {
 
     // 1. 구독 요약 및 보유 포인트 조회
     @GetMapping
-    public ResponseEntity<Map<String, Object>> getBillingInfo() {
-        // TODO: SecurityContext에서 실제 로그인한 사용자 ID를 가져옵니다.
-        String userId = "test_user_id";
+    public ResponseEntity<Map<String, Object>> getBillingInfo(
+            @AuthenticationPrincipal CustomUser user
+    ) {
+        long userId = user.getUser().getUserId();
 
         BillingDTO billing = billingService.getBillingSummary(userId);
 
@@ -35,8 +39,10 @@ public class BillingController {
 
     // 2. 결제 내역 조회
     @GetMapping("/payments")
-    public ResponseEntity<Map<String, Object>> getPaymentHistory() {
-        String userId = "test_user_id";
+    public ResponseEntity<Map<String, Object>> getPaymentHistory(
+            @AuthenticationPrincipal CustomUser user
+    ) {
+        long userId = user.getUser().getUserId();
 
         List<PaymentDTO> payments = billingService.getPaymentHistory(userId);
 
@@ -48,8 +54,10 @@ public class BillingController {
 
     // 3. 포인트 내역 조회
     @GetMapping("/points")
-    public ResponseEntity<Map<String, Object>> getPointHistory() {
-        String userId = "test_user_id";
+    public ResponseEntity<Map<String, Object>> getPointHistory(
+            @AuthenticationPrincipal CustomUser user
+    ) {
+        long userId = user.getUser().getUserId();
 
         List<PointDTO> pointHistory = billingService.getPointHistory(userId);
 

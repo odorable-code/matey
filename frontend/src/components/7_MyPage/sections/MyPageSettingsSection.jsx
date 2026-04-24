@@ -94,7 +94,7 @@ function MyPageSettingsSection({
   errorMessage = '',
 }) {
   const initialForm = useMemo(() => buildInitialForm(profile), [profile]);
-
+  const [isSaving, setIsSaving] = useState(false);
   const [form, setForm] = useState(initialForm);
   const [saved, setSaved] = useState(false);
 
@@ -118,9 +118,49 @@ function MyPageSettingsSection({
     }));
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    setSaved(true);
+   
+    if (typeof onSaveProfile !== 'function') return;
+
+    setIsSaving(true);
+    setSaved(false);
+
+    try {
+      // 2. 백엔드(ProfileDTO) 구조에 맞게 데이터 가공
+      const userPayload = {
+        nickname: form.nickname,
+        email: form.email,
+        phone: form.phone,
+        bio: form.bio,
+      };
+      const settingsPayload = {
+          timezone: form.timezone,
+          language: form.language,
+          marketingConsent: form.marketingConsent,
+          emailNotification: form.emailNotification,
+          pushNotification: form.pushNotification,
+          reportAutoSave: form.reportAutoSave,
+          securityAlert: form.securityAlert,
+      };
+      await Promise.all(
+        fetch('/api/mypage/profile', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(userPayload)
+        }),
+        fetch('/api/mypage/settings', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(settingsPayload)
+        })
+      );
+      setSaved(true);
+    } catch (error) {
+      alert('설정 저장에 실패했습니다. 다시 시도해주세요.'); // 에러 처리
+    } finally {
+      setIsSaving(false);
+    } 
   };
 
   const profileSummary = useMemo(
@@ -248,8 +288,8 @@ function MyPageSettingsSection({
           </div>
 
           <div className="matey-mypage__panel-actions">
-            <button type="submit" className="matey-mypage__primary-button">
-              설정 저장
+            <button type="submit" className="matey-mypage__primary-button" disabled={isSaving}>
+              {isSaving ? '저장 중...' : '설정 저장' }
             </button>
             {saved ? <p className="matey-mypage__success-text">변경사항이 반영되었어요.</p> : null}
           </div>

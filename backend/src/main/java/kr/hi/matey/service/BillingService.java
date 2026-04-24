@@ -1,6 +1,6 @@
 package kr.hi.matey.service;
 
-import kr.hi.matey.dao.BillingMapper;
+import kr.hi.matey.dao.BillingDAO;
 import kr.hi.matey.dto.BillingDTO;
 import kr.hi.matey.dto.PaymentDTO;
 import kr.hi.matey.dto.PointDTO;
@@ -13,17 +13,17 @@ import java.util.List;
 @RequiredArgsConstructor
 public class BillingService {
 
-    private final BillingMapper billingMapper;
+    private final BillingDAO billingDAO;
 
-    public BillingDTO getBillingSummary(String userId) {
-        return billingMapper.selectBillingSummary(userId);
+    public BillingDTO getBillingSummary(long userId) {
+        return billingDAO.selectBillingSummary(userId);
     }
 
-    public List<PaymentDTO> getPaymentHistory(String userId) {
-        return billingMapper.selectPaymentHistory(userId);
+public List<PaymentDTO> getPaymentHistory(long userId) {
+        return billingDAO.selectPaymentHistory(userId);
     }
 
-    public List<PointDTO> getPointHistory(String userId) {
-        return billingMapper.selectPointHistory(userId);
+    public List<PointDTO> getPointHistory(long userId) {
+        return billingDAO.selectPointHistory(userId);
     }
 }

@@ -13,8 +13,10 @@ import java.util.Map;
 @Mapper
 public interface MyPageDAO {
     // 사용자의 기본 프로필과 구독 정보를 조인해서 가져옴
-    UserVO getUserProfile(@Param("userId") BigInteger userId);
+    UserVO getUserProfile(@Param("userId") long userId);
 
     // 결제 내역 조회
-    List<Map<String, Object>> getPaymentHistory(@Param("userId") String userId);
+    List<Map<String, Object>> getPaymentHistory(@Param("userId") long userId);
+
+    void setUserProfile(long userId);
 }

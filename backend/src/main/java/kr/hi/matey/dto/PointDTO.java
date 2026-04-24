@@ -4,7 +4,7 @@ import lombok.Data;
 
 @Data
 public class PointDTO {
-    private String id;
+    private long userId;
     private String title;
     private int amount;
     private String type;

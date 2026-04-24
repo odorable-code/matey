@@ -11,7 +11,7 @@ import java.util.List;
 
 @Mapper
 public interface BillingDAO {
-    BillingDTO selectBillingSummary(String userId);
-    List<PaymentDTO> selectPaymentHistory(String userId);
-    List<PointDTO> selectPointHistory(String userId);
+    BillingDTO selectBillingSummary(long userId);
+    List<PaymentDTO> selectPaymentHistory(long userId);
+    List<PointDTO> selectPointHistory(long userId);
 }
