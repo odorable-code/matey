@@ -4,6 +4,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.http.HttpStatus;
+import kr.hi.matey.dto.LoginDTO;
+import kr.hi.matey.dto.UserDTO;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -25,7 +28,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import kr.hi.matey.dto.PasswordResetDto;
 import kr.hi.matey.dto.UserDTO;
 import kr.hi.matey.security.jwt.JwtTokenProvider;
-import kr.hi.matey.service.AuthService;
 import kr.hi.matey.service.MemberDetailService;
 import kr.hi.matey.service.UserService;
 import kr.hi.matey.util.CustomUser;

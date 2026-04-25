@@ -1,5 +1,5 @@
-/* src/styles/globals.css */
-@import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700&display=swap");
+@import "./variables.css";
 
 * {
   margin: 0;
@@ -21,10 +21,24 @@ html {
 body {
   font-family: var(--font-family);
   color: var(--text-primary);
+  background: var(--page-gradient);
+  background-attachment: fixed;
   background-color: var(--bg-white);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
 }
 
 /* 스크롤바 커스터마이징 */
@@ -96,6 +110,15 @@ button {
   background: none;
 }
 
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid rgba(141, 121, 255, 0.32);
+  outline-offset: 2px;
+}
+
 button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
@@ -111,6 +134,7 @@ select {
   padding: var(--spacing-sm) var(--spacing-md);
   border-radius: var(--radius-md);
   transition: all var(--transition-base);
+  background: rgba(255, 255, 255, 0.84);
 }
 
 input:focus,
@@ -131,7 +155,7 @@ select:disabled {
 
 /* 유틸리티 클래스 */
 .container {
-  max-width: 1200px;
+  max-width: var(--matey-max-width);
   margin: 0 auto;
   padding: 0 var(--spacing-md);
 }
@@ -145,6 +169,7 @@ select:disabled {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -155,6 +180,7 @@ select:disabled {
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -166,35 +192,50 @@ select:disabled {
     opacity: 0;
     transform: translateY(-20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
 
-@keyframes float {
+@keyframes mateyFloat {
   0%,
   100% {
     transform: translateY(0px);
   }
+
   50% {
-    transform: translateY(-20px);
+    transform: translateY(-12px);
   }
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
+@keyframes mateyShine {
+  0% {
+    transform: translateX(-120%);
+    opacity: 0;
+  }
+
+  25% {
+    opacity: 0.35;
+  }
+
+  100% {
+    transform: translateX(140%);
+    opacity: 0;
   }
 }
 
-@keyframes pulse {
+@keyframes mateyGlow {
   0%,
   100% {
-    opacity: 1;
-  }
-  50% {
     opacity: 0.5;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.04);
   }
 }
 
