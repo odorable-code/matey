@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.hi.matey.dao.EmotionReportDAO">
+
+    <select id="selectLatestReportByUserId" resultType="kr.hi.matey.dto.EmotionReportDTO">
+        SELECT
+        id,
+        user_id as userId,
+        stability,
+        dominant_emotion as dominantEmotion,
+        range_label as rangeLabel,
+        created_at as createdAt,
+        updated_at as updatedAt,
+        emotion_bars as emotionBarsRaw,
+        weekly_flow as weeklyFlowRaw,
+        keywords as keywordsRaw
+        FROM emotion_reports
+        WHERE user_id = #{userId}
+        ORDER BY created_at DESC
+        LIMIT 1
+    </select>
+
+    <select id="selectReportById" resultType="kr.hi.matey.dto.EmotionReportDTO">
+        SELECT
+        id,
+        user_id as userId,
+        stability,
+        dominant_emotion as dominantEmotion,
+        range_label as rangeLabel,
+        created_at as createdAt,
+        updated_at as updatedAt,
+        emotion_bars as emotionBarsRaw,
+        weekly_flow as weeklyFlowRaw,
+        keywords as keywordsRaw
+        FROM emotion_reports
+        WHERE id = #{id}
+    </select>
+
+</mapper>
