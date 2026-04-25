@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.hi.matey.dao.UserDAO">
+
+    <insert id="insertUser"  parameterType="kr.hi.matey.domain.UserDTO" useGeneratedKeys="true" keyProperty="user.userNum">
+        INSERT INTO users (
+        user_id, user_pw, user_name, user_addr, user_email,
+        user_phone, user_birth, user_gender, user_alert,
+        terms_agreed, location_agreed, role
+        )
+        VALUES (
+        #{user.userId},
+        #{user.userPw},
+        #{user.userName},
+        #{user.userAddr},
+        #{user.userEmail},
+        #{user.userPhone},
+        #{user.userBirth},
+        #{user.userGender},
+        #{user.userAlert},
+        #{user.termsAgreed},
+        #{user.locationAgreed},
+        'USER'
+        )
+    </insert>
+    <update id="updateUser">
+        UPDATE users
+        <set>
+            <if test="user.userPw != null">user_pw = #{user.userPw},</if>
+            <if test="user.userName != null">user_name = #{user.userName},</if>
+            <if test="user.userEmail != null">user_email = #{user.userEmail},</if>
+            <if test="user.userAddr != null">user_addr = #{user.userAddr},</if>
+            <if test="user.userPhone != null">user_phone = #{user.userPhone},</if>
+            <if test="user.userBirth != null">user_birth = #{user.userBirth},</if>
+            <if test="user.userGender != null">user_gender = #{user.userGender},</if>
+            <if test="user.userAlert != false">user_alert = #{user.userAlert},</if>
+            <if test="user.termsAgreed != false">terms_agreed = #{user.termsAgreed},</if>
+            <if test="user.locationAgreed != false">location_agreed = #{user.locationAgreed},</if>
+            <if test="user.role != null">role = #{user.role},</if>
+        </set>
+        WHERE user_num = #{userNum}
+    </update>
+    <delete id="deleteUser">
+        DELETE FROM users
+        WHERE user_num = #{userNum}
+    </delete>
+    <select id="selectUser" resultType="kr.hi.matey.domain.UserVO">
+        SELECT * FROM users WHERE user_id = #{userId}
+    </select>
+    <select id="selectUsers" resultType="kr.hi.matey.domain.UserVO">
+        SELECT * FROM users LIMIT 1000
+    </select>
+
+    <select id="findByUserId">
+        SELECT
+        admin_id
+        <!-- admin_pw,
+        admin_name,
+        role -->
+        FROM hospital_admins
+        WHERE admin_phone = #{adminPhone} AND admin_email = #{adminEmail}
+
+        UNION
+
+        SELECT
+        user_id
+        <!-- user_pw,
+        user_name,
+        role -->
+        FROM users
+        WHERE user_phone = #{userPhone} AND user_email = #{userEmail}
+    </select>
+
+    <select id="existsByUserId" parameterType="string" resultType="int">
+        select count(*) from
+        (SELECT admin_id as id FROM hospital_admins
+        UNION
+        SELECT user_id as id FROM users) as total_users
+        where id = #{userId}
+    </select>
+
+    <insert id="signupUser" parameterType="kr.hi.matey.domain.UserDTO">
+        INSERT INTO users (
+        userId,
+        userPw,
+        userName,
+        userAddr,
+        userEmail,
+        userPhone,
+        userBirth,
+        userGender,
+        userAlert,
+        termsAgreed,
+        locationAgreed
+        ) VALUES (
+        #{user.userId},
+        #{user.userPw},
+        #{user.userName},
+        #{user.userAddr, jdbcType=VARCHAR},
+        #{user.userEmail, jdbcType=VARCHAR},
+        #{user.userPhone},
+        #{user.userBirth, jdbcType=DATE},
+        #{user.userGender},
+        #{user.userAlert},
+        #{user.termsAgreed},
+        #{user.locationAgreed}
+        )
+    </insert>
+
+    <select id="findUserId" resultType="String">
+        SELECT user_id FROM users
+        WHERE user_phone = #{phone} AND user_email = #{email}
+
+        UNION
+
+        SELECT admin_id FROM hospital_admins
+        WHERE admin_phone = #{phone} AND admin_email = #{email};
+    </select>
+    <select id="selectUserByUserNum" resultType="kr.hi.matey.domain.UserVO">
+        select * from users where user_num = #{userNum}
+    </select>
+
+    <select id="existsByAdminEmail" resultType="boolean">
+        SELECT COUNT(*) > 0 FROM hospital_admins WHERE admin_email = #{adminEmail}
+    </select>
+
+    <select id="existsByAdminBusinessNum" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM hospital_admins
+        WHERE business_num = #{businessNum}
+    </select>
+
+    <select id="existsByAdminHoName" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM hospital_admins ha
+        right JOIN hospital_info hi ON ha.ho_num = hi.ho_num
+        WHERE ho_name = #{hoName}
+    </select>
+    <!-- <select id="existsByAdminId" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM hospital_admins
+        WHERE ho_num = #{hoNum}
+    </select> -->
+
+    <!-- <insert id="insertUser" parameterType="kr.hi.matey.domain.UserDTO">
+        INSERT INTO users (userId, userPw, userName, userPhone, userGender, termsAgreed, locationAgreed)
+        VALUES (#{user.userId}, #{user.userPw}, #{user.userName}, #{user.userPhone}, #{user.userGender}, #{user.termsAgreed}, #{user.locationAgreed})
+    </insert> -->
+</mapper>

@@ -10,7 +10,7 @@ description = 'Demo project for Spring Boot'
 
 java {
 	toolchain {
-		languageVersion = JavaLanguageVersion.of(17)
+		languageVersion = JavaLanguageVersion.of(21) 
 	}
 }
 
@@ -32,6 +32,26 @@ dependencies {
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	
+	// 위가 기본 dependencies 속성, 여기서부터 팀에서 추가한 dependencies
+	// MySQL Connector
+    implementation 'mysql:mysql-connector-java:8.0.16'
+    // MyBatis Spring Boot Starter
+    implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.4'
+    // Spring Boot Starter JDBC
+    //implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+    // Spring Boot Configuration Processor (Annotation Processor)
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+     // Spring Security (암호화 도구 포함)
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    // 타임리프를 이용하여 sec:를 사용하기 위해 추가
+    implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
+    // jwt 의존성 추가
+    implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5' // JSON 파싱용
+	// WebClient 사용을 위해 추가
+	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 }
 
 tasks.named('test') {
