@@ -1,16 +1,61 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { forgotPassword, validateEmail } from '../../utils/api';
-import './ForgotPasswordPage.css';
-import ResetPasswordPage from './ResetPasswordPage';
+import { forgotPassword, validateEmail, resetPassword } from '../../utils/api';
+import './ResetPasswordPage.css';
 
-export default function ForgotPasswordPage() {
-  const [email, setEmail] = useState('');
+export default function ResetPasswordPage() {
+  const [newPassword, setNewPassword] = useState('');
   const [submitState, setSubmitState] = useState({
     loading: false,
     success: '',
     error: '',
   });
+
+  function getPasswordStrength(password) {
+  if (!password) {
+    return {
+      score: 0,
+      label: '입력 전',
+      message: '영문과 숫자를 포함해 8자 이상으로 설정해 주세요.',
+    };
+  }
+
+  let score = 0;
+
+  // 비번이 8자 이상일 때
+  if (password.length >= 8) score += 1;
+  // 영어 대소문자 1글자 이상 포함
+  if (/[A-Za-z]/.test(password) && /\d/.test(password)) score += 1;
+  // 숫자 1글자 이상 포함, 비번이 10자 이상일 때
+  if (/[^A-Za-z0-9]/.test(password) || password.length >= 10) score += 1;
+
+  if (score <= 1) {
+    return {
+      score,
+      label: '약함',
+      message: '영문과 숫자를 함께 넣고 조금 더 길게 설정해 보세요.',
+    };
+  }
+
+  if (score === 2) {
+    return {
+      score,
+      label: '보통',
+      message: '좋아요. 특수문자를 넣으면 더 안전해져요.',
+    };
+  }
+
+  return {
+    score,
+    label: '강함',
+    message: '충분히 안전한 비밀번호예요.',
+  };
+}
+
+const passwordStrength = useMemo(
+    () => getPasswordStrength(newPassword),
+    [newPassword]
+  );
 
   const clearMessages = () => {
     if (submitState.success || submitState.error) {
@@ -25,25 +70,27 @@ export default function ForgotPasswordPage() {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    const trimmedEmail = email.trim();
+    const nextErrors = {};
+    const trimmedPassword = newPassword.trim();
 
-    if (!trimmedEmail) {
+    if (!trimmedPassword) {
       setSubmitState({
         loading: false,
         success: '',
-        error: '이메일을 입력해 주세요.',
+        error: ' 비밀번호를 입력해 주세요.',
       });
       return;
     }
 
-    if (!validateEmail(trimmedEmail)) {
-      setSubmitState({
-        loading: false,
-        success: '',
-        error: '올바른 이메일 형식으로 입력해 주세요.',
-      });
-      return;
+    if (newPassword) {
+      nextErrors.newPassword = '비밀번호를 입력해 주세요.';
+    } else if (newPassword.length < 8) {
+      nextErrors.newPassword = '비밀번호는 8자 이상이어야 해요.';
+    } else if (!/(?=.*[A-Za-z])(?=.*\d)/.test(newPassword)) {
+      nextErrors.newPassword = '영문과 숫자를 함께 포함해 주세요.';
     }
+
+    if (Object.keys(nextErrors).length > 0) return;
 
     try {
       setSubmitState({
@@ -52,7 +99,7 @@ export default function ForgotPasswordPage() {
         error: '',
       });
 
-      const result = await forgotPassword(trimmedEmail);
+      const result = await resetPassword(trimmedPassword);
 
       setSubmitState({
         loading: false,
@@ -64,7 +111,7 @@ export default function ForgotPasswordPage() {
       setSubmitState({
         loading: false,
         success: '',
-        error: error.message || '비밀번호 재설정 요청에 실패했어요.',
+        error: error.message || '비밀번호 재설정에 실패했어요.',
       });
     }
   };
@@ -119,7 +166,7 @@ export default function ForgotPasswordPage() {
             <div className="matey-forgot-card__top">
               <div className="matey-forgot-card__title-wrap">
                 <p className="matey-forgot-card__eyebrow">Reset your password</p>
-                <h2 className="matey-forgot-card__title">재설정 링크 받기</h2>
+                <h2 className="matey-forgot-card__title">비밀번호를 재설정해주세요.</h2>
               </div>
 
               <div className="matey-forgot-card__status">
@@ -127,10 +174,6 @@ export default function ForgotPasswordPage() {
                 이메일 인증 방식
               </div>
             </div>
-
-            <p className="matey-forgot-card__description">
-              계정에 연결된 이메일로 비밀번호 변경 안내를 보내드릴게요.
-            </p>
 
             {submitState.success && (
               <div className="matey-forgot-alert matey-forgot-alert--success">
@@ -150,46 +193,46 @@ export default function ForgotPasswordPage() {
                   htmlFor="forgot-password-email"
                   className="matey-forgot-field__label"
                 >
-                  이메일
+                  재설정할 비번을 입력해주세요.
                 </label>
-
-                <Link to="/reset-password" >
-                  reset-password
-                </Link>
 
                 <input
                   id="forgot-password-email"
                   type="email"
                   className="matey-forgot-field__input"
-                  placeholder="you@example.com"
-                  value={email}
+                  placeholder=""
+                  value={newPassword}
                   onChange={(event) => {
-                    setEmail(event.target.value);
+                    setNewPassword(event.target.value);
                     clearMessages();
                   }}
                 />
+                {nextErrors.newPassword && (
+                    <p className="matey-auth-field__error">{nextErrors.newPassword}</p>
+                  )}
               </div>
+
+              <div className="matey-auth-strength">
+                    <div className="matey-auth-strength__track">
+                      <div
+                        className={`matey-auth-strength__fill score-${passwordStrength.score}`}
+                        style={{ width: `${(passwordStrength.score / 3) * 100}%` }}
+                      />
+                    </div>
+                    <div className="matey-auth-strength__meta">
+                      <strong>{passwordStrength.label}</strong>
+                      <span>{passwordStrength.message}</span>
+                    </div>
+                  </div>
 
               <button
                 type="submit"
                 className="matey-forgot-submit"
                 disabled={submitState.loading}
               >
-                {submitState.loading ? '보내는 중...' : '재설정 링크 보내기'}
+                {submitState.loading ? '보내는 중...' : '비밀번호 변경하기'}
               </button>
             </form>
-
-            <div className="matey-forgot-help">
-              <div className="matey-forgot-help__item">
-                <strong>메일이 안 보이나요?</strong>
-                <p>스팸함, 프로모션함, 광고함도 함께 확인해 주세요.</p>
-              </div>
-
-              <div className="matey-forgot-help__item">
-                <strong>계정이 기억나지 않나요?</strong>
-                <p>자주 사용하는 이메일 주소부터 하나씩 확인해 보세요.</p>
-              </div>
-            </div>
 
             <div className="matey-forgot-footer-links">
               <Link to="/login">로그인으로 돌아가기</Link>

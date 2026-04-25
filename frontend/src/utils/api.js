@@ -169,6 +169,23 @@ export async function forgotPassword(email) {
   };
 }
 
+export async function resetPassword(token, newpassword) {
+  const payload = await request('api/v1/auth/reset-password', {
+    method: 'POST',
+    body: { 
+      token,
+      newpassword
+    },
+  });
+
+  return {
+    raw: payload,
+    message:
+      payload?.message || 
+      '비밀번호가 성공적으로 변경되었습니다.',
+  };
+}
+
 export async function forgotId(name, email) {
   const payload = await request('api/v1/auth/forgot-id', {
     method: 'POST',

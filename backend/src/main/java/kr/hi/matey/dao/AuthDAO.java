@@ -27,9 +27,7 @@ public interface AuthDAO {
 
 	boolean updateResetToken(String email, String token);
 
-	Optional<CustomUser> findByResetToken(String token);
-
-	
+//	Optional<CustomUser> findByResetToken(String token);
 
 	Optional<UserVO> findUserVOByToken(String token);
 

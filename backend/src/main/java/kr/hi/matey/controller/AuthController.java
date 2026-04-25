@@ -2,11 +2,8 @@ package kr.hi.matey.controller;
 
 import java.util.HashMap;
 import java.util.Map;
-
 import org.springframework.http.HttpStatus;
-import kr.hi.matey.dto.LoginDTO;
 import kr.hi.matey.dto.UserDTO;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -19,15 +16,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
 import io.jsonwebtoken.Claims;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import kr.hi.matey.dto.PasswordResetDto;
-import kr.hi.matey.dto.UserDTO;
 import kr.hi.matey.security.jwt.JwtTokenProvider;
+import kr.hi.matey.service.AuthService;
 import kr.hi.matey.service.MemberDetailService;
 import kr.hi.matey.service.UserService;
 import kr.hi.matey.util.CustomUser;
@@ -269,7 +265,7 @@ public class AuthController {
 		
 		boolean isSuccess = authService.updatePassword(resetDto.getToken(), resetDto.getNewpassword());
 		if (isSuccess) {
-	        return ResponseEntity.ok("비밀번호가 성공적으로 변경되었습니다.");
+	        return ResponseEntity.ok(Map.of("message", "비밀번호가 성공적으로 변경되었습니다."));
 	    } else {
 	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("유효하지 않거나 만료된 토큰입니다.");
 	    }

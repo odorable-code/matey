@@ -96,9 +96,10 @@ public class AuthService {
 
 	// 비번 재설정(링크 전송)
 	public boolean sendLink(UserDTO user) {
-		// 고유 토큰 생성 (UUID)
+		
         try{
         	
+        	// 고유 토큰 생성 (UUID)
         	// 비밀번호 재설정 페이지로 연결되는 일회용 비밀 주소(토큰)를 만들 때 사용(전 세계에서 중복될 확률이 거의 없는, 아주 고유한 식별용 문자열(아이디)을 하나 생성)
         	String token = UUID.randomUUID().toString();
         
@@ -112,10 +113,10 @@ public class AuthService {
         }
 
         // 메일 발송
-        String resetLink = "http://localhost:8080/reset-password?token=" + token;
+        String resetLink = "http://localhost:3000/api/v1/auth/reset-password?token=" + token;
         
         SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(user);
+        message.setTo(user.getEmail());
         message.setSubject("[서비스 이름] 비밀번호 재설정 안내");
         message.setText("아래 링크를 클릭하여 비밀번호를 재설정하세요.\n\n" + resetLink);
 
@@ -138,18 +139,16 @@ public class AuthService {
 		
 		Optional<UserVO> voOpt = authDAO.findUserVOByToken(token);
 
-		if (voOpt.isPresent()) {
-			// 2. 가져온 VO를 가공된 상자(CustomUser)에 담습니다.
-	        UserVO vo = voOpt.get();
-	        CustomUser customUser = new CustomUser(vo);
-		    
-		    if (customUser.getUser().getTokenExpiryDate().isBefore(LocalDateTime.now())){
-		    	return false;
-		    }
-		}
-		else {
+		if (voOpt.isEmpty()) {
 			return false;
+			// 2. 가져온 VO를 가공된 상자(CustomUser)에 담습니다.
 		}
+		
+        UserVO vo = voOpt.get();
+	    
+        if (vo.getTokenExpiryDate() == null || vo.getTokenExpiryDate().isBefore(LocalDateTime.now())) {
+            return false;
+        }
 		
 	        // 새로운 비밀번호 암호화 (BCrypt 사용 권장)
 	        String encodedPassword = encoder.encode(newpassword);
@@ -158,11 +157,11 @@ public class AuthService {
 	            return false; // 암호화 실패 (현실적으로 거의 발생하지 않음)
 	        }
 	        
-	        boolean isUpdated = authDAO.updateFinalPassword(userVO.getEmail(), encodedPassword);
+	        boolean isUpdated = authDAO.updateFinalPassword(vo.getEmail(), encodedPassword);
 	        
 	        if(isUpdated) {
 	            // 성공하면 토큰 무효화 (이것도 DB에 반영되어야 함)
-	            authDAO.clearResetToken(userVO.getEmail());
+	            authDAO.clearResetToken(vo.getEmail());
 	            return true;
 	        }
 	        else {

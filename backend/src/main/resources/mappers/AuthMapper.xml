@@ -61,8 +61,28 @@
 		WHERE email = #{email};
 	</update>
 	
+	<select id="findUserVOByToken" resultType="kr.hi.matey.vo.UserVO">
+	    SELECT 
+	        email, 
+	        nickname, 
+	        password, 
+	        role, 
+	        token, 
+	        token_expiry_date
+	    FROM users 
+	    WHERE token = #{token}
+	</select>
 	
-	<select id="findByResetToken" resultType="kr.hi.matey.util.CustomUser">
+	<update id="updateFinalPassword">
+	    UPDATE users 
+	    SET 
+	        password = #{encodedPassword},
+	        token = NULL,
+	        token_expiry_date = NULL
+	    WHERE email = #{email}
+	</update>
+	
+	<!-- <select id="findByResetToken" resultType="kr.hi.matey.util.CustomUser">
 	    SELECT 
 	        userName,
 	        password,
@@ -71,7 +91,7 @@
 	        token_expiry_date
 	    FROM user
 	    WHERE reset_token = #{token}
-	</select>
+	</select> -->
 	
 	<delete id="deleteTokenByUserId">
     DELETE FROM auto_login WHERE userId = #{userId}
