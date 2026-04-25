@@ -137,9 +137,12 @@
 }
 
 .progressFill {
+  width: 0;
   height: 100%;
   border-radius: 999px;
   background: linear-gradient(90deg, #cdb9ff 0%, #f6bfd9 100%);
+  will-change: width;
+  transition: width 180ms ease-out;
 }
 
 .summaryCard {
@@ -321,5 +324,52 @@
 
   .collectionGrid {
     grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .title {
+    font-size: 26px;
+  }
+
+  .overviewGrid,
+  .contentGrid,
+  .sideStack {
+    gap: 14px;
+  }
+
+  .levelCard,
+  .summaryCard,
+  .collectionCard,
+  .motionCard,
+  .interactionCard {
+    border-radius: 24px;
+  }
+
+  .levelCard,
+  .summaryCard,
+  .collectionCard,
+  .motionCard,
+  .interactionCard {
+    padding: 16px;
+  }
+
+  .levelValue {
+    font-size: 28px;
+  }
+
+  .summaryValue {
+    font-size: 24px;
+  }
+
+  .collectionGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progressFill,
+  .collectionItem {
+    transition: none;
   }
 }

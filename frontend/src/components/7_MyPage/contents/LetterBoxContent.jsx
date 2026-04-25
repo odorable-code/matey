@@ -1,5 +1,6 @@
 import React from 'react';
 import styles from './LetterBoxContent.module.css';
+import useAnimatedNumber, { usePrefersReducedMotion } from '../hook/useAnimatedNumber';
 
 const defaultLetters = {
   featured: {
@@ -50,7 +51,27 @@ const defaultLetters = {
   ],
 };
 
+function AnimatedStatCard({ item, index, prefersReducedMotion }) {
+  const numericValue = Number(item.value);
+  const isNumeric = Number.isFinite(numericValue);
+
+  const animatedValue = useAnimatedNumber(isNumeric ? numericValue : 0, 900 + index * 180, {
+    reducedMotion: prefersReducedMotion,
+  });
+
+  return (
+    <article className={styles.statCard}>
+      <span className={styles.statLabel}>{item.label}</span>
+      <strong className={styles.statValue}>
+        {isNumeric ? animatedValue : item.value}
+      </strong>
+    </article>
+  );
+}
+
 function LetterBoxContent({ letterData = defaultLetters }) {
+  const prefersReducedMotion = usePrefersReducedMotion();
+
   return (
     <section className={styles.page}>
       <header className={styles.header}>
@@ -78,11 +99,13 @@ function LetterBoxContent({ letterData = defaultLetters }) {
         </article>
 
         <div className={styles.statColumn}>
-          {letterData.stats.map((item) => (
-            <article key={item.label} className={styles.statCard}>
-              <span className={styles.statLabel}>{item.label}</span>
-              <strong className={styles.statValue}>{item.value}</strong>
-            </article>
+          {letterData.stats.map((item, index) => (
+            <AnimatedStatCard
+              key={item.label}
+              item={item}
+              index={index}
+              prefersReducedMotion={prefersReducedMotion}
+            />
           ))}
         </div>
       </div>

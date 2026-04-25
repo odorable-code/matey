@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import styles from './BotMenuContent.module.css';
+import useAnimatedNumber, { usePrefersReducedMotion } from '../hook/useAnimatedNumber';
 
 const defaultBotData = {
   level: 4,
@@ -24,7 +25,81 @@ const defaultBotData = {
   ],
 };
 
+function extractAnimatedText(value) {
+  const text = value == null ? '' : String(value);
+  const match = text.match(/(\d+(?:\.\d+)?)/);
+
+  if (!match) {
+    return {
+      raw: text,
+      hasNumber: false,
+      prefix: text,
+      number: 0,
+      suffix: '',
+    };
+  }
+
+  const numberText = match[1];
+  const startIndex = match.index ?? 0;
+  const endIndex = startIndex + numberText.length;
+
+  return {
+    raw: text,
+    hasNumber: true,
+    prefix: text.slice(0, startIndex),
+    number: Number(numberText),
+    suffix: text.slice(endIndex),
+  };
+}
+
+function AnimatedSummaryCard({ item, prefersReducedMotion }) {
+  const valueMeta = useMemo(() => extractAnimatedText(item.value), [item.value]);
+  const noteMeta = useMemo(() => extractAnimatedText(item.note), [item.note]);
+
+  const animatedValue = useAnimatedNumber(valueMeta.number, 1200, {
+    reducedMotion: prefersReducedMotion,
+  });
+
+  const animatedNoteValue = useAnimatedNumber(noteMeta.number, 1000, {
+    reducedMotion: prefersReducedMotion,
+  });
+
+  const renderedValue = valueMeta.hasNumber
+    ? `${valueMeta.prefix}${animatedValue}${valueMeta.suffix}`
+    : valueMeta.raw;
+
+  const renderedNote = noteMeta.hasNumber
+    ? `${noteMeta.prefix}${animatedNoteValue}${noteMeta.suffix}`
+    : noteMeta.raw;
+
+  return (
+    <article className={styles.summaryCard}>
+      <span className={styles.summaryTitle}>{item.title}</span>
+      <strong className={styles.summaryValue}>{renderedValue}</strong>
+      <p className={styles.summaryNote}>{renderedNote}</p>
+    </article>
+  );
+}
+
 function BotMenuContent({ botData = defaultBotData }) {
+  const prefersReducedMotion = usePrefersReducedMotion();
+
+  const animatedLevel = useAnimatedNumber(botData.level ?? 0, 900, {
+    reducedMotion: prefersReducedMotion,
+  });
+
+  const animatedRemainPoint = useAnimatedNumber(botData.remainPoint ?? 0, 1100, {
+    reducedMotion: prefersReducedMotion,
+  });
+
+  const animatedProgressPercent = useAnimatedNumber(botData.progressPercent ?? 0, 1200, {
+    reducedMotion: prefersReducedMotion,
+  });
+
+  const clampedProgressPercent = useMemo(() => {
+    return Math.max(0, Math.min(100, animatedProgressPercent));
+  }, [animatedProgressPercent]);
+
   return (
     <section className={styles.page}>
       <header className={styles.header}>
@@ -45,26 +120,33 @@ function BotMenuContent({ botData = defaultBotData }) {
           </div>
 
           <div className={styles.levelValueRow}>
-            <strong className={styles.levelValue}>Lv. {botData.level}</strong>
+            <strong className={styles.levelValue}>Lv. {animatedLevel}</strong>
             <span className={styles.levelNote}>
-              다음 레벨까지 {botData.remainPoint} 포인트
+              다음 레벨까지 {animatedRemainPoint} 포인트
             </span>
           </div>
 
-          <div className={styles.progressTrack}>
+          <div
+            className={styles.progressTrack}
+            role="progressbar"
+            aria-label="친밀도 진행도"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={clampedProgressPercent}
+          >
             <div
               className={styles.progressFill}
-              style={{ width: `${botData.progressPercent}%` }}
+              style={{ width: `${clampedProgressPercent}%` }}
             />
           </div>
         </article>
 
         {botData.summaryCards.map((item) => (
-          <article key={item.title} className={styles.summaryCard}>
-            <span className={styles.summaryTitle}>{item.title}</span>
-            <strong className={styles.summaryValue}>{item.value}</strong>
-            <p className={styles.summaryNote}>{item.note}</p>
-          </article>
+          <AnimatedSummaryCard
+            key={item.title}
+            item={item}
+            prefersReducedMotion={prefersReducedMotion}
+          />
         ))}
       </div>
 

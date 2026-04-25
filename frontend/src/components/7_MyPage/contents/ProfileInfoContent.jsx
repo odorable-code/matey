@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import styles from './ProfileInfoContent.module.css';
 
+const DEFAULT_PROFILE_IMAGE = '/images/mypage/bot/matey-profile.png';
+
 const initialProfile = {
   userId: 'seongho_1024',
   nickname: '성호',
@@ -10,7 +12,7 @@ const initialProfile = {
   birthDate: '1999-10-24',
   gender: '남성',
   joinedAt: '2026-01-05',
-  profileImage: '/images/rabbit-profile.png',
+  profileImage: DEFAULT_PROFILE_IMAGE,
 };
 
 function ProfileInfoContent() {
@@ -30,7 +32,7 @@ function ProfileInfoContent() {
   const currentProfile = isEditMode ? draft : profile;
 
   const handleStartEdit = () => {
-    setDraft(profile);
+    setDraft({ ...profile });
     setIsEditMode(true);
   };
 
@@ -42,12 +44,12 @@ function ProfileInfoContent() {
       URL.revokeObjectURL(draft.profileImage);
     }
 
-    setDraft(profile);
+    setDraft({ ...profile });
     setIsEditMode(false);
   };
 
   const handleSaveEdit = () => {
-    setProfile(draft);
+    setProfile({ ...draft });
     setIsEditMode(false);
   };
 
@@ -77,6 +79,10 @@ function ProfileInfoContent() {
       ...prev,
       profileImage: previewUrl,
     }));
+  };
+
+  const handleImageError = (event) => {
+    event.currentTarget.src = DEFAULT_PROFILE_IMAGE;
   };
 
   return (
@@ -126,9 +132,10 @@ function ProfileInfoContent() {
           <div className={styles.avatarTop}>
             <div className={styles.avatarFrame}>
               <img
-                src={currentProfile.profileImage}
+                src={currentProfile.profileImage || DEFAULT_PROFILE_IMAGE}
                 alt="프로필 이미지"
                 className={styles.avatarImage}
+                onError={handleImageError}
               />
             </div>
 
@@ -185,9 +192,7 @@ function ProfileInfoContent() {
                   type="text"
                   value={currentProfile.nickname}
                   disabled={!isEditMode}
-                  onChange={(e) =>
-                    handleEditableChange('nickname', e.target.value)
-                  }
+                  onChange={(e) => handleEditableChange('nickname', e.target.value)}
                   className={styles.input}
                 />
               </label>
