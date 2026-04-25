@@ -1,4 +1,3 @@
-/* src/styles/variables.css */
 :root {
   --matey-max-width: 1240px;
 
@@ -35,8 +34,18 @@
   --matey-color-glass-strong: rgba(255, 255, 255, 0.92);
 
   --matey-gradient-primary: linear-gradient(135deg, #6c9eff 0%, #8d79ff 100%);
-  --matey-gradient-accent: linear-gradient(135deg, #6c9eff 0%, #8d79ff 46%, #ff93b7 100%);
-  --matey-gradient-soft: linear-gradient(180deg, #fffafd 0%, #ffffff 34%, #f8fbff 100%);
+  --matey-gradient-accent: linear-gradient(
+    135deg,
+    #6c9eff 0%,
+    #8d79ff 46%,
+    #ff93b7 100%
+  );
+  --matey-gradient-soft: linear-gradient(
+    180deg,
+    #fffafd 0%,
+    #ffffff 34%,
+    #f8fbff 100%
+  );
   --matey-gradient-card: linear-gradient(
     180deg,
     rgba(255, 255, 255, 0.95) 0%,
@@ -61,8 +70,8 @@
   /* =========================
      Legacy compatibility vars
      ========================= */
-  --font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI',
-    Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+  --font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
 
   --text-primary: var(--matey-color-text-strong);
   --text-secondary: var(--matey-color-text-body);
@@ -93,4 +102,57 @@
   --spacing-xl: 40px;
   --spacing-2xl: 64px;
   --spacing-3xl: 96px;
+
+  /* =========================
+     MyPage refined tokens
+     ========================= */
+  --primary: #7c79ff;
+  --primary-light: #ddd5ff;
+  --primary-bg: #f3efff;
+  --pink: #ffe1ee;
+  --pink-accent: #ff93b7;
+  --blue: #8fc8ff;
+  --yellow: #ffd166;
+  --pink-bold: #ff78ab;
+  --lavender: #c3b6ff;
+  --magenta: #a16eff;
+
+  --grad-start: #f4ebff;
+  --grad-mid: #ffe8f3;
+  --grad-end: #eef6ff;
+
+  --text-1: var(--matey-color-text-strong);
+  --text-2: var(--matey-color-text-body);
+  --text-3: var(--matey-color-text-soft);
+  --white: #ffffff;
+
+  --shadow-card: 0 24px 48px rgba(130, 145, 178, 0.14);
+  --shadow-card-strong: 0 36px 84px rgba(126, 137, 168, 0.18);
+  --shadow-icon: 0 16px 34px rgba(141, 121, 255, 0.24);
+
+  --radius-card: 28px;
+  --radius-btn: 16px;
+  --radius-pill: 999px;
+
+  --glass-surface: rgba(255, 255, 255, 0.72);
+  --glass-surface-strong: rgba(255, 255, 255, 0.86);
+  --glass-border: rgba(255, 255, 255, 0.58);
+  --glass-border-soft: rgba(141, 121, 255, 0.14);
+
+  --page-gradient: radial-gradient(
+      circle at 12% 14%,
+      rgba(140, 121, 255, 0.16) 0%,
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at 84% 18%,
+      rgba(255, 147, 183, 0.16) 0%,
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 78% 76%,
+      rgba(108, 158, 255, 0.14) 0%,
+      transparent 34%
+    ),
+    linear-gradient(135deg, #f7ebff 0%, #fff1f7 48%, #edf7ff 100%);
 }

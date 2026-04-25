@@ -1,0 +1,173 @@
+.page {
+  --mypage-header-offset: 96px;
+  --panel-enter-duration: 320ms;
+  --panel-enter-easing: cubic-bezier(0.22, 1, 0.36, 1);
+  --reveal-enter-duration: 520ms;
+  --reveal-enter-easing: cubic-bezier(0.22, 1, 0.36, 1);
+  --reveal-stagger-step: 60ms;
+
+  width: 100%;
+  min-height: 100%;
+  padding-top: calc(var(--mypage-header-offset) + 24px);
+  padding-bottom: 64px;
+  box-sizing: border-box;
+}
+
+.page * {
+  box-sizing: border-box;
+}
+
+.container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 228px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.sidebarColumn {
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  gap: 16px;
+  align-content: start;
+  position: sticky;
+  top: calc(var(--mypage-header-offset) + 24px);
+}
+
+.contentColumn {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.contentPanel {
+  width: 100%;
+  min-width: 0;
+  border-radius: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.96) 0%,
+    rgba(248, 243, 255, 0.92) 100%
+  );
+  box-shadow: 0 18px 36px rgba(112, 91, 150, 0.12);
+  backdrop-filter: blur(18px);
+  overflow: hidden;
+}
+
+.contentPanel[data-panel-enter='true'] {
+  animation: panelFadeUp var(--panel-enter-duration) var(--panel-enter-easing)
+    both;
+  will-change: opacity, transform;
+}
+
+.contentInner {
+  width: 100%;
+  min-width: 0;
+  padding: 28px;
+}
+
+.contentInner > * {
+  width: 100%;
+  min-width: 0;
+}
+
+/* 자동 감지된 카드형 요소 stagger */
+.contentPanel [data-reveal-item='true'] {
+  opacity: 0;
+  transform: translateY(14px) scale(0.988);
+  animation-name: revealItemFadeUp;
+  animation-duration: var(--reveal-enter-duration);
+  animation-timing-function: var(--reveal-enter-easing);
+  animation-fill-mode: forwards;
+  animation-delay: calc(
+    90ms + var(--reveal-index, 0) * var(--reveal-stagger-step)
+  );
+  will-change: opacity, transform;
+}
+
+/* 패널 진입 애니메이션 */
+@keyframes panelFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 카드 stagger 애니메이션 */
+@keyframes revealItemFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.988);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 1280px) {
+  .page {
+    padding-top: calc(var(--mypage-header-offset) + 20px);
+    padding-right: 20px;
+    padding-bottom: 56px;
+    padding-left: 20px;
+  }
+}
+
+@media (max-width: 1080px) {
+  .container {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebarColumn {
+    position: static;
+    top: auto;
+  }
+
+  .contentInner {
+    padding: 24px;
+  }
+}
+
+@media (max-width: 768px) {
+  .page {
+    --mypage-header-offset: 84px;
+    padding-top: calc(var(--mypage-header-offset) + 16px);
+    padding-right: 16px;
+    padding-bottom: 48px;
+    padding-left: 16px;
+  }
+
+  .container {
+    gap: 16px;
+  }
+
+  .contentPanel {
+    border-radius: 28px;
+  }
+
+  .contentInner {
+    padding: 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .contentPanel[data-panel-enter='true'] {
+    animation: none;
+  }
+
+  .contentPanel [data-reveal-item='true'] {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+}

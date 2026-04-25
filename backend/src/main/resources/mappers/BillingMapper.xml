@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.hi.matey.dao.BillingMapper">
+
+    <select id="selectBillingSummary" resultType="kr.hi.matey.dto.BillingDTO">
+        SELECT
+        s.plan_name as subscriptionName,
+        u.point_balance as availablePoints,
+        s.monthly_amount as monthlyAmount,
+        s.next_billing_date as nextBillingDate,
+        s.payment_method as paymentMethod
+        FROM user_profiles u
+        LEFT JOIN user_subscriptions s ON u.id = s.user_id
+        WHERE u.id = #{userId}
+    </select>
+
+    <select id="selectPaymentHistory" resultType="kr.hi.matey.dto.PaymentDTO">
+        SELECT
+        id,
+        title,
+        amount,
+        paid_at as date,
+        method,
+        status
+        FROM payment_history
+        WHERE user_id = #{userId}
+        ORDER BY paid_at DESC
+    </select>
+
+    <select id="selectPointHistory" resultType="kr.hi.matey.dto.PointDTO">
+        SELECT
+        id,
+        title,
+        amount,
+        type,  created_at as date
+        FROM point_history
+        WHERE user_id = #{userId}
+        ORDER BY created_at DESC
+    </select>
+
+</mapper>
