@@ -15,14 +15,14 @@ import kr.hi.matey.dto.UserDTO;
 import kr.hi.matey.util.CustomUser;
 import kr.hi.matey.vo.UserVO;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class AuthService {
 	
 	private final AuthDAO authDAO;
 	private final BCryptPasswordEncoder encoder;
-	private final CustomUser customuser;
 	private final JavaMailSender mailSender;
 	
 	// 이메일 중복 확인(회원가입시)
@@ -113,7 +113,7 @@ public class AuthService {
         }
 
         // 메일 발송
-        String resetLink = "http://localhost:3000/api/v1/auth/reset-password?token=" + token;
+        String resetLink = "http://localhost:3000/reset-password?token=" + token;
         
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(user.getEmail());
@@ -141,7 +141,6 @@ public class AuthService {
 
 		if (voOpt.isEmpty()) {
 			return false;
-			// 2. 가져온 VO를 가공된 상자(CustomUser)에 담습니다.
 		}
 		
         UserVO vo = voOpt.get();

@@ -1,9 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { forgotPassword, validateEmail, resetPassword } from '../../utils/api';
 import './ResetPasswordPage.css';
 
 export default function ResetPasswordPage() {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const [errors, setErrors] = useState({});
   const [newPassword, setNewPassword] = useState('');
   const [submitState, setSubmitState] = useState({
     loading: false,
@@ -12,7 +15,7 @@ export default function ResetPasswordPage() {
   });
 
   function getPasswordStrength(password) {
-  if (!password) {
+  if (!newPassword) {
     return {
       score: 0,
       label: '입력 전',
@@ -23,11 +26,11 @@ export default function ResetPasswordPage() {
   let score = 0;
 
   // 비번이 8자 이상일 때
-  if (password.length >= 8) score += 1;
+  if (newPassword.length >= 8) score += 1;
   // 영어 대소문자 1글자 이상 포함
-  if (/[A-Za-z]/.test(password) && /\d/.test(password)) score += 1;
+  if (/[A-Za-z]/.test(newPassword) && /\d/.test(newPassword)) score += 1;
   // 숫자 1글자 이상 포함, 비번이 10자 이상일 때
-  if (/[^A-Za-z0-9]/.test(password) || password.length >= 10) score += 1;
+  if (/[^A-Za-z0-9]/.test(newPassword) || newPassword.length >= 10) score += 1;
 
   if (score <= 1) {
     return {
@@ -67,10 +70,21 @@ const passwordStrength = useMemo(
     }
   };
 
+  const token = searchParams.get('token');
+
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    const nextErrors = {};
+    // 파라미터에 토큰이 없는 경우
+    if (!token) {
+      setSubmitState({
+        loading: false,
+        success: '',
+        error: '유효하지 않은 접근입니다. 메일의 링크를 다시 확인해주세요.',
+      });
+      return;
+    }
+
     const trimmedPassword = newPassword.trim();
 
     if (!trimmedPassword) {
@@ -82,7 +96,8 @@ const passwordStrength = useMemo(
       return;
     }
 
-    if (newPassword) {
+    const nextErrors = {};
+    if (!newPassword) {
       nextErrors.newPassword = '비밀번호를 입력해 주세요.';
     } else if (newPassword.length < 8) {
       nextErrors.newPassword = '비밀번호는 8자 이상이어야 해요.';
@@ -90,7 +105,13 @@ const passwordStrength = useMemo(
       nextErrors.newPassword = '영문과 숫자를 함께 포함해 주세요.';
     }
 
-    if (Object.keys(nextErrors).length > 0) return;
+    if (Object.keys(nextErrors).length > 0){
+      setErrors(nextErrors);
+      return;
+    }
+
+    // 에러가 없으면 기존 에러 초기화
+    setErrors({});
 
     try {
       setSubmitState({
@@ -99,7 +120,7 @@ const passwordStrength = useMemo(
         error: '',
       });
 
-      const result = await resetPassword(trimmedPassword);
+      const result = await resetPassword(token, trimmedPassword);
 
       setSubmitState({
         loading: false,
@@ -107,6 +128,10 @@ const passwordStrength = useMemo(
           result.raw?.message,
         error: '',
       });
+
+      // 성공 시 2초 뒤 로그인 페이지로 이동하는 등의 처리
+      setTimeout(() => navigate('/login'), 2500);
+
     } catch (error) {
       setSubmitState({
         loading: false,
@@ -198,7 +223,6 @@ const passwordStrength = useMemo(
 
                 <input
                   id="forgot-password-email"
-                  type="email"
                   className="matey-forgot-field__input"
                   placeholder=""
                   value={newPassword}
@@ -207,8 +231,8 @@ const passwordStrength = useMemo(
                     clearMessages();
                   }}
                 />
-                {nextErrors.newPassword && (
-                    <p className="matey-auth-field__error">{nextErrors.newPassword}</p>
+                {errors.newPassword && (
+                    <p className="matey-auth-field__error">{errors.newPassword}</p>
                   )}
               </div>
 

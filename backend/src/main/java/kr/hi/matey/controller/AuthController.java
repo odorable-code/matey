@@ -46,6 +46,7 @@ public class AuthController {
     private Cookie makeRefreshCookie(String refreshToken, int maxAge) {
         Cookie cookie = new Cookie("refreshToken", refreshToken);
         cookie.setHttpOnly(true);
+        // HTTP에서도 쿠키를 보내겠다(https://가 아니기 때문에)
         cookie.setSecure(false);
         cookie.setPath("/");
         cookie.setMaxAge(maxAge);
@@ -150,8 +151,8 @@ public class AuthController {
                 authService.enableAutoLogin(customUser.getUser().getUserId(), refreshToken);
             }
 
-            // 음수 (예: -1): 쿠키를 별도의 파일로 저장하지 않고 브라우저가 켜져 있는 동안만 유지합니다. 브라우저(모든 탭과 창)를 완전히 닫으면 삭제됩니다. (일반 로그인에 사용)
-            // 0: 쿠키를 즉시 삭제하라는 뜻입니다. (로그아웃 구현 시 사용)
+            // 음수 (예: -1): 쿠키를 별도의 파일로 저장하지 않고 브라우저가 켜져 있는 동안만 유지. 브라우저(모든 탭과 창)를 완전히 닫으면 삭제. (일반 로그인에 사용)
+            // 0: 쿠키를 즉시 삭제하라는 뜻. (로그아웃 구현 시 사용)
             int cookieMaxAge = user.isRememberMe() ? 60 * 60 * 24 * 30 : -1;
             response.addCookie(makeRefreshCookie(refreshToken, cookieMaxAge));
             System.out.println("login success: " + customUser.getUser().getUserId());
@@ -236,7 +237,7 @@ public class AuthController {
     }
 	
 	
-	// 비번 재설정 1(이메일 존재 확인)
+	// 비번 재설정 1(이메일 존재 확인하고 이메일로 링크 전송)
 	@PostMapping("/forgot-password")
 	public ResponseEntity<?> forgotPassword(@RequestBody UserDTO user){
 		// 이메일이 db와 일치하는지 확인
@@ -244,14 +245,14 @@ public class AuthController {
 		
 		// 일치하면 이메일로 메시지 전송
 		if (!isEmailDuplicatePw) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("일치하는 이메일을 찾을 수 없습니다.");
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message","일치하는 이메일을 찾을 수 없습니다."));
 		}
 		
 		// 서비스에게 비번 재설정 페이지 링크 발송
 		boolean sendLink = authService.sendLink(user);
 		
 		if (!sendLink) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("링크를 발송하는데 실패했습니다.");
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "링크를 발송하는데 실패했습니다."));
 		}
 		else {
 			return ResponseEntity.ok(Map.of("message", "이메일로 재설정 링크를 보냈습니다. 메일함을 확인하세요."));
@@ -267,7 +268,7 @@ public class AuthController {
 		if (isSuccess) {
 	        return ResponseEntity.ok(Map.of("message", "비밀번호가 성공적으로 변경되었습니다."));
 	    } else {
-	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("유효하지 않거나 만료된 토큰입니다.");
+	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "유효하지 않거나 만료된 토큰입니다."));
 	    }
 	}
 
@@ -283,7 +284,7 @@ public class AuthController {
 
         Claims claims = jwtTokenProvider.parseClaims(refreshToken);
         
-        // [추가] DB에 저장된 리프레시 토큰과 일치하는지 검증
+        // DB에 저장된 리프레시 토큰과 일치하는지 검증
         if (!authService.isValidRefreshToken(claims.getSubject(), refreshToken)) {
             return ResponseEntity.status(401).build();
         }

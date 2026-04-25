@@ -4,7 +4,7 @@
 
 <mapper namespace="kr.hi.matey.mapper.MyPageMapper">
 
-    <select id="getUserProfile" resultType="kr.hi.matey.domain.UserProfileDTO">
+    <select id="getUserProfile" resultType="kr.hi.matey.dto.UserProfileDTO">
         SELECT 
             u.user_id,
             u.nickname,

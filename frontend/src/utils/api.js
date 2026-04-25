@@ -99,11 +99,20 @@ function normalizeUser(payload) {
 export async function login({ email, password, rememberMe }) {
   const payload = await request('api/v1/auth/login', {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: { email, password, rememberMe },
   });
 
   const accessToken = normalizeToken(payload);
   const user = normalizeUser(payload);
+
+  if (!payload.ok) {
+    throw new Error(payload.message || '비밀번호 재설정에 실패했습니다.');
+  }
+
+  await payload.json()
 
   if (accessToken) {
     setStoredToken(accessToken);
@@ -120,11 +129,20 @@ export async function login({ email, password, rememberMe }) {
 export async function signup({ nickname, email, password, termsAgree, privacyAgree, marketingAgree }) {
   const payload = await request('api/v1/auth/signup', {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: { nickname, email, password, termsAgree, privacyAgree, marketingAgree },
   });
 
   const accessToken = normalizeToken(payload);
   const user = normalizeUser(payload);
+
+  if (!payload.ok) {
+    throw new Error(payload.message || '비밀번호 재설정에 실패했습니다.');
+  }
+
+  await payload.json()
 
   if (accessToken) {
     setStoredToken(accessToken);
@@ -158,8 +176,17 @@ export async function getMyProfile() {
 export async function forgotPassword(email) {
   const payload = await request('api/v1/auth/forgot-password', {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: { email },
   });
+
+  if (!payload.ok) {
+    throw new Error(payload.message || '비밀번호 재설정에 실패했습니다.');
+  }
+
+  await payload.json()
 
   return {
     raw: payload,
@@ -172,11 +199,20 @@ export async function forgotPassword(email) {
 export async function resetPassword(token, newpassword) {
   const payload = await request('api/v1/auth/reset-password', {
     method: 'POST',
-    body: { 
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ 
       token,
       newpassword
-    },
+    }),
   });
+
+  if (!payload.ok) {
+    throw new Error(payload.message || '비밀번호 재설정에 실패했습니다.');
+  }
+
+  await payload.json()
 
   return {
     raw: payload,
@@ -189,8 +225,17 @@ export async function resetPassword(token, newpassword) {
 export async function forgotId(name, email) {
   const payload = await request('api/v1/auth/forgot-id', {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: { name, email },
   });
+
+  if (!payload.ok) {
+    throw new Error(payload.message || '비밀번호 재설정에 실패했습니다.');
+  }
+
+  await payload.json()
 
   return {
     raw: payload,
@@ -204,8 +249,17 @@ export async function logout() {
   try {
     const payload = await request('api/v1/auth/logout', {
       method: 'POST',
+      headers: {
+      'Content-Type': 'application/json',
+    },
       body: {},
     });
+
+    if (!payload.ok) {
+    throw new Error(payload.message || '비밀번호 재설정에 실패했습니다.');
+  }
+
+    await payload.json()
 
     setStoredToken(null);
 

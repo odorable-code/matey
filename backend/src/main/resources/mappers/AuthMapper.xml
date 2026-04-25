@@ -30,6 +30,15 @@
 	        'USER' )
 	</insert>
 	
+	<select id="findByEmail" parameterType="string" resultType="kr.hi.matey.vo.UserVO">
+	    SELECT 
+	        email,
+	        password;,
+        	role
+	    FROM users
+	    WHERE email = #{email}
+	</select>
+	
 	<select id="findId" parameterType="kr.hi.matey.dto.UserDTO" resultType="string">
 		SELECT
 			userId
@@ -46,15 +55,6 @@
 	    WHERE email = #{email}
 	</select>
 	
-	<select id="findByEmail" parameterType="string" resultType="kr.hi.matey.vo.UserVO">
-	    SELECT 
-	        email,
-	        password;,
-        	role
-	    FROM users
-	    WHERE email = #{email}
-	</select>
-	
 	<update id="updateResetToken" >
 		UPDATE  password_reset
 		SET reset_token = #{token} 
@@ -64,12 +64,11 @@
 	<select id="findUserVOByToken" resultType="kr.hi.matey.vo.UserVO">
 	    SELECT 
 	        email, 
-	        nickname, 
 	        password, 
 	        role, 
 	        token, 
 	        token_expiry_date
-	    FROM users 
+	    FROM reset_password
 	    WHERE token = #{token}
 	</select>
 	
@@ -82,6 +81,49 @@
 	    WHERE email = #{email}
 	</update>
 	
+	<update id="clearResetToken">
+	    UPDATE reset_password 
+	    SET 
+	        reset_token = NULL,
+	        token_expiry_date = NULL
+	    WHERE 
+	    email = #{email}
+	</update>
+	
+	<insert id="saveAutoLoginInfo">
+        INSERT INTO auto_login (
+            user_id, 
+            refresh_token, 
+            expiry_date
+        ) VALUES (
+            #{userId}, 
+            #{refreshToken}, 
+            #{expiryDate}
+        )
+        ON DUPLICATE KEY UPDATE
+            refresh_token = #{refreshToken},
+            expiry_date = #{expiryDate},
+            updated_at = NOW()
+     </insert>
+     
+     <update id="removeAutoLoginToken">
+	    UPDATE auto_login 
+	    SET refreshToken = #{object} 
+	    WHERE userId = #{userId}
+	</update>
+	
+	<!-- <delete id="deleteTokenByUserId">
+    DELETE FROM auto_login WHERE userId = #{userId}
+	</delete> -->
+	
+	<!-- <insert id="insertOrUpdateToken">
+    INSERT INTO auto_login (userId, refreshToken, expiryDate)
+    VALUES (#{userId}, #{refreshToken}, #{expiryDate})
+    ON DUPLICATE KEY UPDATE 
+        refreshToken = #{refreshToken},
+        expiryDate = #{expiryDate}
+	</insert> -->
+	
 	<!-- <select id="findByResetToken" resultType="kr.hi.matey.util.CustomUser">
 	    SELECT 
 	        userName,
@@ -92,23 +134,5 @@
 	    FROM user
 	    WHERE reset_token = #{token}
 	</select> -->
-	
-	<delete id="deleteTokenByUserId">
-    DELETE FROM auto_login WHERE userId = #{userId}
-	</delete>
-	
-	<insert id="insertOrUpdateToken">
-    INSERT INTO auto_login (userId, refreshToken, expiryDate)
-    VALUES (#{userId}, #{refreshToken}, #{expiryDate})
-    ON DUPLICATE KEY UPDATE 
-        refreshToken = #{refreshToken},
-        expiryDate = #{expiryDate}
-	</insert>
-	
-	<update id="removeAutoLoginToken">
-	    UPDATE auto_login 
-	    SET refreshToken = #{object} 
-	    WHERE userId = #{userId}
-	</update>
 
 </mapper>

@@ -33,11 +33,11 @@ public interface AuthDAO {
 
 	boolean updateFinalPassword(String email, String encodedPassword);
 
-	boolean clearResetToken(String email);
+	boolean clearResetToken(@Param("email") String email);
 
-	void saveAutoLoginInfo(Long userId, String refreshToken, LocalDateTime expiryDate);
+	void saveAutoLoginInfo(@Param("userId") Long userId, @Param("refreshToken") String refreshToken, @Param("expiryDate") LocalDateTime expiryDate);
 
-	void removeToken(Long userId);
+//	void removeToken(Long userId);
 
 	int removeAutoLoginToken(Long userId, Object object);
 
