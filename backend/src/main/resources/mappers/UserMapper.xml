@@ -2,22 +2,19 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="kr.hi.matey.dao.UserDAO">
 
-    <insert id="insertUser"  parameterType="kr.hi.matey.dto.UserDTO" useGeneratedKeys="true" keyProperty="user.userNum">
+    <!-- <insert id="insertUser"  parameterType="kr.hi.matey.dto.UserDTO" useGeneratedKeys="true" keyProperty="user.userNum">
         INSERT INTO users (
-        user_id, user_pw, user_name, user_addr, user_email,
-        user_phone, user_birth, user_gender, user_alert,
-        terms_agreed, location_agreed, role
+        user_id, password, user_name, email,
+        user_birth, gender,
+        is_terms_agreed, is_privacy_agreed, is_marketing_agreed
         )
         VALUES (
         #{user.userId},
-        #{user.userPw},
+        #{user.password},
         #{user.userName},
-        #{user.userAddr},
         #{user.userEmail},
-        #{user.userPhone},
         #{user.userBirth},
         #{user.userGender},
-        #{user.userAlert},
         #{user.termsAgreed},
         #{user.locationAgreed},
         'USER'
@@ -54,9 +51,9 @@
     <select id="findByUserId">
         SELECT
         admin_id
-        <!-- admin_pw,
+        admin_pw,
         admin_name,
-        role -->
+        role
         FROM hospital_admins
         WHERE admin_phone = #{adminPhone} AND admin_email = #{adminEmail}
 
@@ -64,9 +61,9 @@
 
         SELECT
         user_id
-        <!-- user_pw,
+        user_pw,
         user_name,
-        role -->
+        role
         FROM users
         WHERE user_phone = #{userPhone} AND user_email = #{userEmail}
     </select>
@@ -136,13 +133,13 @@
         right JOIN hospital_info hi ON ha.ho_num = hi.ho_num
         WHERE ho_name = #{hoName}
     </select>
-    <!-- <select id="existsByAdminId" resultType="boolean">
+    <select id="existsByAdminId" resultType="boolean">
         SELECT COUNT(*) > 0
         FROM hospital_admins
         WHERE ho_num = #{hoNum}
-    </select> -->
+    </select>
 
-    <!-- <insert id="insertUser" parameterType="kr.hi.matey.domain.UserDTO">
+    <insert id="insertUser" parameterType="kr.hi.matey.domain.UserDTO">
         INSERT INTO users (userId, userPw, userName, userPhone, userGender, termsAgreed, locationAgreed)
         VALUES (#{user.userId}, #{user.userPw}, #{user.userName}, #{user.userPhone}, #{user.userGender}, #{user.termsAgreed}, #{user.locationAgreed})
     </insert> -->

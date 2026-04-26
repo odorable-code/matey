@@ -15,9 +15,9 @@ const SIGNUP_INITIAL = {
   email: '',
   password: '',
   confirmPassword: '',
-  isTermsAgreed: false,    // 이용약관(필수)
-  isPrivacyAgreed: false,  // 개인정보(필수)
-  isMarketingAgreed: false // 마케팅(선택)
+  termsAgreed: false,    // 이용약관(필수)
+  privacyAgreed: false,  // 개인정보(필수)
+  marketingAgreed: false // 마케팅(선택)
 };
 
 const TAB_COPY = {
@@ -216,7 +216,7 @@ export default function AuthPage() {
       nextErrors.confirmPassword = '비밀번호가 서로 다르게 입력되었어요.';
     }
 
-    if (!signupForm.termsAgree || !signupForm.privacyAgree) {
+    if (!signupForm.termsAgreed || !signupForm.privacyAgreed) {
     nextErrors.agree = '서비스 이용을 위해 필수 약관 동의가 필요해요.';
   }
 
@@ -248,6 +248,8 @@ export default function AuthPage() {
       setLoading(false);
     }
   };
+
+  // console.log("signupForm:", signupForm);
 
   const handleSignupSubmit = async (event) => {
     event.preventDefault();
@@ -284,10 +286,12 @@ export default function AuthPage() {
         nickname: signupForm.nickname.trim(),
         email: signupForm.email.trim(),
         password: signupForm.password,
-        termsAgree: signupForm.isTermsAgreed,
-        privacyAgree: signupForm.isPrivacyAgreed,
-        marketingAgree: signupForm.isMarketingAgreed
+        termsAgreed: signupForm.termsAgreed,
+        privacyAgreed: signupForm.privacyAgreed,
+        marketingAgreed: signupForm.marketingAgreed
       });
+
+      console.log(result)
 
       if (result?.accessToken) {
         navigate('/', { replace: true });
@@ -302,6 +306,7 @@ export default function AuthPage() {
         },
       });
     } catch (error) {
+      console.error(error)
       setSubmitMessage(error.message || '회원가입에 실패했어요.');
     } finally {
       setLoading(false);
@@ -587,31 +592,31 @@ export default function AuthPage() {
                 <label className="matey-auth-check matey-auth-check--full">
                   <input
                     type="checkbox"
-                    name="termsAgree"
-                    checked={signupForm.termsAgree}
+                    name="termsAgreed"
+                    checked={signupForm.termsAgreed}
                     onChange={handleSignupChange}
                   />
-                  <span>서비스 이용약관 및 개인정보 처리에 동의합니다.</span>
+                  <span>(필수)서비스 이용약관에 동의합니다.</span>
                 </label>
 
                 <label className="matey-auth-check matey-auth-check--full">
                   <input
                     type="checkbox"
-                    name="privacyAgree"
-                    checked={signupForm.privacyAgree}
+                    name="privacyAgreed"
+                    checked={signupForm.privacyAgreed}
                     onChange={handleSignupChange}
                   />
-                  <span>서비스 이용약관 및 개인정보 처리에 동의합니다.</span>
+                  <span>(필수)개인정보 처리에 동의합니다.</span>
                 </label>
 
                 <label className="matey-auth-check matey-auth-check--full">
                   <input
                     type="checkbox"
-                    name="marketingAgree"
-                    checked={signupForm.marketingAgree}
+                    name="marketingAgreed"
+                    checked={signupForm.marketingAgreed}
                     onChange={handleSignupChange}
                   />
-                  <span>서비스 이용약관 및 개인정보 처리에 동의합니다.</span>
+                  <span>(선택)마케팅 목적 이용에 동의합니다.</span>
                 </label>
 
                 {signupErrors.agree && (

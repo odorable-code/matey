@@ -23,11 +23,11 @@ public class CustomUser extends User {
     public CustomUser(UserVO vo) {
         super(	
         		// vo.getUserName() → Spring의 username으로 설정
-        		vo.getUserName(),
+        		vo.getEmail(),
         		// vo.getPassword() → Spring의 password으로 설정
                 vo.getPassword(),
                 // vo.getRole() → SimpleGrantedAuthority를 통해 Spring의 권한(authorities) 목록으로 변환
-                Arrays.asList(new SimpleGrantedAuthority(vo.getRole())));
+                Arrays.asList(new SimpleGrantedAuthority(vo.getRole().getRole_code())));
         this.user = vo;
     }
 }

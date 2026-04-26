@@ -7,42 +7,52 @@
 	<select id="isEmailDuplicateSignup" parameterType="string" resultType="int">
 	    SELECT 
 	        COUNT(email)
-	    FROM users
+	    FROM USER
 	    WHERE email = #{email}
 	</select>
 
 	<insert id="insertUser"  parameterType="kr.hi.matey.vo.UserVO" >
-	    INSERT INTO users (
+	    INSERT INTO USER (
 	        email, 
 	        password, 
-	        nickname;,
-	        isTermsAgreed;,
-	        isPrivacyAgreed;,
-	        isMarketingAgreed;,
-	        role )
+	        nickname,
+	        is_terms_agreed,
+	        is_privacy_agreed,
+	        is_marketing_agreed		)
     	VALUES (
 	        #{email},
 	        #{password},
 	        #{nickname},
-	        #{isTermsAgreed},
-	        #{isPrivacyAgreed},
-	        #{isMarketingAgreed},
-	        'USER' )
+	        #{termsAgreed},
+	        #{privacyAgreed},
+	        #{marketingAgreed}	);
+	        
+	    INSERT INTO USER_ROLE (user_id, role_id)
+    	VALUES (LAST_INSERT_ID(), 1);
 	</insert>
 	
 	<select id="findByEmail" parameterType="string" resultType="kr.hi.matey.vo.UserVO">
 	    SELECT 
 	        email,
-	        password;,
-        	role
-	    FROM users
+	        password
+	    FROM USER
+	    WHERE email = #{email}
+	</select>
+	
+	<select id="selectUser" resultType="kr.hi.matey.vo.UserVO">
+	    SELECT
+	        user_id,
+	        email,
+	        password,
+	        nickname
+	    FROM USER
 	    WHERE email = #{email}
 	</select>
 	
 	<select id="findId" parameterType="kr.hi.matey.dto.UserDTO" resultType="string">
 		SELECT
 			userId
-		FROM users
+		FROM USER
 		WHERE name = #{name} AND email = #{email}
 	</select>
 	
@@ -50,66 +60,67 @@
 	<select id="isEmailDuplicatePw" parameterType="kr.hi.matey.vo.UserVO" resultType="boolean">
 	    SELECT 
 	        email,
-        	role
-	    FROM users
+	    FROM USER
 	    WHERE email = #{email}
 	</select>
 	
 	<update id="updateResetToken" >
-		UPDATE  password_reset
-		SET reset_token = #{token} 
+		UPDATE PASSWORD_RESET_TOKEN
+		SET token_hash = #{token} 
 		WHERE email = #{email};
 	</update>
 	
 	<select id="findUserVOByToken" resultType="kr.hi.matey.vo.UserVO">
-	    SELECT 
-	        email, 
-	        password, 
-	        role, 
-	        token, 
-	        token_expiry_date
-	    FROM reset_password
-	    WHERE token = #{token}
+    	SELECT 
+	        u.user_id,
+	        u.email,
+	        u.user_name,
+	        t.expires_at AS tokenExpiryDate,
+	        t.token_hash AS resetToken
+	    FROM USER u
+	    JOIN PASSWORD_RESET_TOKEN t ON u.user_id = t.user_id
+	    WHERE t.token_hash = #{token}
+	    AND t.used_at IS NULL
 	</select>
 	
 	<update id="updateFinalPassword">
-	    UPDATE users 
+	    UPDATE USER 
 	    SET 
-	        password = #{encodedPassword},
-	        token = NULL,
-	        token_expiry_date = NULL
+	        password = #{encodedPassword}
 	    WHERE email = #{email}
 	</update>
 	
 	<update id="clearResetToken">
-	    UPDATE reset_password 
+	    UPDATE PASSWORD_RESET_TOKEN
 	    SET 
-	        reset_token = NULL,
-	        token_expiry_date = NULL
+	        token_hash = NULL,
+	        expires_at = NULL
 	    WHERE 
 	    email = #{email}
 	</update>
 	
 	<insert id="saveAutoLoginInfo">
-        INSERT INTO auto_login (
-            user_id, 
-            refresh_token, 
-            expiry_date
-        ) VALUES (
-            #{userId}, 
-            #{refreshToken}, 
-            #{expiryDate}
-        )
-        ON DUPLICATE KEY UPDATE
-            refresh_token = #{refreshToken},
-            expiry_date = #{expiryDate},
-            updated_at = NOW()
+        INSERT INTO AUTO_LOGIN (
+	        user_id, 
+	        token_hash, 
+	        expired_at,
+	        last_used_at  		)
+        VALUES (
+	        #{userId}, 
+	        #{refreshToken}, 
+	        #{expiryDate},
+	        NOW()
+    	)
+    ON DUPLICATE KEY UPDATE
+        token_hash = #{refreshToken},
+        expired_at = #{expiryDate},
+        last_used_at = NOW()
      </insert>
      
      <update id="removeAutoLoginToken">
-	    UPDATE auto_login 
-	    SET refreshToken = #{object} 
-	    WHERE userId = #{userId}
+	    UPDATE AUTO_LOGIN 
+	    SET token_hash = #{object} 
+	    WHERE user_id = #{userId}
 	</update>
 	
 	<!-- <delete id="deleteTokenByUserId">

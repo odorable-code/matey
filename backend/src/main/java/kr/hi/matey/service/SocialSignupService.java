@@ -11,6 +11,7 @@ import kr.hi.matey.dto.SocialLoginDTO;
 import kr.hi.matey.dto.SocialSignupRequestDTO;
 import kr.hi.matey.security.jwt.JwtTokenProvider;
 import kr.hi.matey.util.CustomUser;
+import kr.hi.matey.vo.RoleVO;
 import kr.hi.matey.vo.UserVO;
 import lombok.RequiredArgsConstructor;
 
@@ -34,19 +35,17 @@ public class SocialSignupService {
         user.setPassword(UUID.randomUUID().toString());
         user.setNickname(pendingUser.getNickname());
         user.setUserName(request.getUserName());
-        user.setUserBirth(request.getUserBirth());
+        user.setBirthDate(request.getUserBirth());
         user.setGender(request.getGender());
-        user.setProfileImage(pendingUser.getProfileImage());
-        user.setRole("USER");
-        user.setLoginType(pendingUser.getProvider());
+        user.setProfile_image(pendingUser.getProfileImage());
+        RoleVO roleVO = new RoleVO();
+        roleVO.setRole_id(1L); // DB 스키마에서 일반 유저의 role_id가 1이라고 가정할 때
+        user.setRole(roleVO);
+        user.setLogin_type(pendingUser.getProvider());
         user.setStatus("ACTIVE");
-        user.setPoint(0);
-        user.setSubscriptionGrade("FREE");
-        user.setIsAdult(request.getIsAdult());
-        user.setIsNotiAgree(request.getIsNotiAgree());
-        user.setIsTermsAgreed(request.getIsTermsAgreed());
-        user.setIsPrivacyAgreed(request.getIsPrivacyAgreed());
-        user.setIsMarketingAgreed(request.getIsMarketingAgreed());
+        user.setTermsAgreed(request.getIsTermsAgreed());
+        user.setPrivacyAgreed(request.getIsPrivacyAgreed());
+        user.setMarketingAgreed(request.getIsMarketingAgreed());
 
         socialLoginDAO.insertUser(user);
 

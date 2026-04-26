@@ -11,7 +11,7 @@ public class SocialSignupRequestDTO {
     private Long gender;
     private Boolean isAdult;
     private Boolean isNotiAgree;
-    private Boolean isTermsAgreed;
-    private Boolean isPrivacyAgreed;
-    private Boolean isMarketingAgreed;
+    private int isTermsAgreed;
+    private int isPrivacyAgreed;
+    private int isMarketingAgreed;
 }

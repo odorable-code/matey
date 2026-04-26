@@ -11,8 +11,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import kr.hi.matey.dao.AuthDAO;
+import kr.hi.matey.dto.PasswordResetDTO;
 import kr.hi.matey.dto.UserDTO;
 import kr.hi.matey.util.CustomUser;
+import kr.hi.matey.vo.RoleVO;
 import kr.hi.matey.vo.UserVO;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
@@ -28,8 +30,8 @@ public class AuthService {
 	// 이메일 중복 확인(회원가입시)
 	public boolean isEmailDuplicateSignup(String email) {
 			
-			boolean isEmailDuplicateSignup = authDAO.isEmailDuplicateSignup(email);
-			return isEmailDuplicateSignup;
+			int isEmailDuplicateSignup = authDAO.isEmailDuplicateSignup(email);
+			return isEmailDuplicateSignup > 0;
 		}
 
 	// 회원가입
@@ -40,11 +42,13 @@ public class AuthService {
 		userVO.setEmail(user.getEmail());
 	    userVO.setNickname(user.getNickname());
 	    userVO.setPassword(encodedPw);
-	    userVO.setIsTermsAgreed(user.getIsTermsAgreed());
-	    userVO.setIsPrivacyAgreed(user.getIsPrivacyAgreed());
-	    userVO.setIsMarketingAgreed(user.getIsMarketingAgreed());
+	    userVO.setTermsAgreed(user.isTermsAgreed() ? 1 : 0);
+	    userVO.setPrivacyAgreed(user.isPrivacyAgreed() ? 1 : 0);
+	    userVO.setMarketingAgreed(user.isMarketingAgreed() ? 1 : 0);
 		userVO.setPassword(encodedPw);
-		userVO.setRole("USER");
+		RoleVO roleVO = new RoleVO();
+	    roleVO.setRole_code("USER");
+	    userVO.setRole(roleVO);
 		
 		
         try {
@@ -59,22 +63,22 @@ public class AuthService {
 
 
 	// 로그인
-	public boolean login(UserDTO user) {
-		
-		try {
-			
-			UserVO savedUser = authDAO.findByEmail(user.getEmail());
-			if (savedUser == null) {
-				return false;
-	    }
-		    boolean isMatch = encoder.matches(user.getPassword(), savedUser.getPassword());
-		    return isMatch;
-			
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-	}
+	//public boolean login(UserDTO user) {
+	//	
+	//	try {
+	//		
+	//		UserVO savedUser = authDAO.findByEmail(user.getEmail());
+	//		if (savedUser == null) {
+	//			return false;
+	//    }
+	//	    boolean isMatch = encoder.matches(user.getPassword(), savedUser.getPassword());
+	//	    return isMatch;
+	//		
+    //    } catch (Exception e) {
+    //        e.printStackTrace();
+    //        return false;
+    //    }
+	//}
 
 
 	// 아이디(이메일) 찾기
@@ -137,15 +141,18 @@ public class AuthService {
 	@Transactional
 	public boolean updatePassword(String token, String newpassword) {
 		
-		Optional<UserVO> voOpt = authDAO.findUserVOByToken(token);
+		
+		Optional<PasswordResetDTO> resetOpt = authDAO.findUserVOByToken(token);
 
-		if (voOpt.isEmpty()) {
+		if (resetOpt.isEmpty()) {
 			return false;
 		}
 		
-        UserVO vo = voOpt.get();
+		UserVO vo = new UserVO();
+		
+		PasswordResetDTO dto = resetOpt.get();
 	    
-        if (vo.getTokenExpiryDate() == null || vo.getTokenExpiryDate().isBefore(LocalDateTime.now())) {
+        if (dto.getExpiresAt() == null || dto.getExpiresAt().isBefore(LocalDateTime.now())) {
             return false;
         }
 		

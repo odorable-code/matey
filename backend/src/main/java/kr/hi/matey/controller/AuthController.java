@@ -21,7 +21,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
-import kr.hi.matey.dto.PasswordResetDto;
+import kr.hi.matey.dto.PasswordResetDTO;
 import kr.hi.matey.security.jwt.JwtTokenProvider;
 import kr.hi.matey.service.AuthService;
 import kr.hi.matey.service.MemberDetailService;
@@ -71,18 +71,23 @@ public class AuthController {
             @RequestBody UserDTO user,
             HttpServletResponse response) {  // ← HttpServletResponse 추가
 
+    	System.out.println("UserDTO :" + user);
+    	System.out.println("terms: " + user.isTermsAgreed());
+    	System.out.println("privacy: " + user.isPrivacyAgreed());
+    	System.out.println("marketing: " + user.isMarketingAgreed());
+    	
         // ⭐ 핵심: signup() 호출 전에 원본 비밀번호 저장!
         // (signup() 내부에서 BCrypt 인코딩 해버리기 때문)
         String originalPw = user.getPassword();
 
-        boolean res = userService.signup(user);
+        boolean res = authService.signup(user);
 
         if (!res) {
             return ResponseEntity.status(400)
                     .body(Map.of("message", "회원가입에 실패했습니다."));
         }
 
-        try {
+        
             // 회원가입 성공 → 즉시 로그인 처리
         	// 사용자가 입력한 아이디(userId)와 비밀번호(originalPw)를 바탕으로 "이 사람이 맞는지 확인해달라"는 일종의 '신분증 신청서'를 만드는 단계
             UsernamePasswordAuthenticationToken authToken =
@@ -114,13 +119,7 @@ public class AuthController {
             responseBody.put("accessToken", accessToken);
             
             return ResponseEntity.ok(responseBody);
-            
-
-        } catch (Exception e) {
-            // 자동 로그인 실패해도 회원가입은 성공했으므로 성공 응답
-            System.out.println("자동 로그인 실패: " + e.getMessage());
-            return ResponseEntity.ok(Map.of("success", true));
-        }
+        
     }
 	
 	@PostMapping("/login")
@@ -130,15 +129,15 @@ public class AuthController {
 		
 		try {
 			
-			boolean res = authService.login(user);
+			//boolean res = authService.login(user);
 			
-			if(!res) {
-				return ResponseEntity.status(400)
-	                    .body(Map.of("message", "로그인에 실패했습니다. 아이디 또는 비밀번호를 확인해주세요."));
-			}
+			//if(!res) {
+			//	return ResponseEntity.status(400)
+	        //            .body(Map.of("message", "로그인에 실패했습니다. 아이디 또는 비밀번호를 확인해주세요."));
+			//}
 			
 			UsernamePasswordAuthenticationToken authToken =
-                    new UsernamePasswordAuthenticationToken(user.getUserId(), user.getPassword());
+                    new UsernamePasswordAuthenticationToken(user.getEmail(), user.getPassword());
 
             Authentication auth = authenticationManager.authenticate(authToken);
             CustomUser customUser = (CustomUser) auth.getPrincipal();
@@ -166,6 +165,7 @@ public class AuthController {
             return ResponseEntity.ok(responseBody);
 			
 		}catch(Exception e) {
+			e.printStackTrace();
 			return ResponseEntity.status(401)
                     .body(Map.of("message", "아이디 또는 비밀번호가 올바르지 않습니다."));
 		}
@@ -262,9 +262,9 @@ public class AuthController {
 	
 	// 비번 재설정 2(새로운 비번 db에 저장)
 	@PostMapping("/reset-password")
-	public ResponseEntity<?> resetPassword(@RequestBody PasswordResetDto resetDto){
+	public ResponseEntity<?> resetPassword(@RequestBody PasswordResetDTO resetDto){
 		
-		boolean isSuccess = authService.updatePassword(resetDto.getToken(), resetDto.getNewpassword());
+		boolean isSuccess = authService.updatePassword(resetDto.getTokenHash(), resetDto.getNewPassword());
 		if (isSuccess) {
 	        return ResponseEntity.ok(Map.of("message", "비밀번호가 성공적으로 변경되었습니다."));
 	    } else {

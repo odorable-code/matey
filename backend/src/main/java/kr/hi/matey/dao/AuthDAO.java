@@ -6,6 +6,7 @@ import java.util.Optional;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import kr.hi.matey.dto.PasswordResetDTO;
 import kr.hi.matey.dto.UserDTO;
 import kr.hi.matey.vo.UserVO;
 import kr.hi.matey.util.CustomUser;
@@ -14,9 +15,9 @@ import kr.hi.matey.util.CustomUser;
 public interface AuthDAO {
 	
 	// 이메일 중복 확인(회원가입시)
-	boolean isEmailDuplicateSignup(String email);
+	int isEmailDuplicateSignup(String email);
 	
-	boolean insertUser(@Param("user") UserVO userVO);
+	boolean insertUser(UserVO userVO);
 
 	UserVO findByEmail(String email);
 	
@@ -27,9 +28,7 @@ public interface AuthDAO {
 
 	boolean updateResetToken(String email, String token);
 
-//	Optional<CustomUser> findByResetToken(String token);
-
-	Optional<UserVO> findUserVOByToken(String token);
+	Optional<PasswordResetDTO> findUserVOByToken(String token);
 
 	boolean updateFinalPassword(String email, String encodedPassword);
 
@@ -37,9 +36,9 @@ public interface AuthDAO {
 
 	void saveAutoLoginInfo(@Param("userId") Long userId, @Param("refreshToken") String refreshToken, @Param("expiryDate") LocalDateTime expiryDate);
 
-//	void removeToken(Long userId);
-
 	int removeAutoLoginToken(Long userId, Object object);
+
+	UserVO selectUser(String email);
 
 	
 
