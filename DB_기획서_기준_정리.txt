@@ -149,3 +149,67 @@
   2) PASSWORD_RESET_TOKEN 컬럼 의미 정리(used_at, requested_ip 등)
 - 분리 원칙:
   - AUTO_LOGIN(로그인 유지)과 PASSWORD_RESET_TOKEN(비번 재설정)은 목적이 달라 분리 유지
+
+==================================================
+4) 최근 파일 점검 반영 (기준 문서 업데이트)
+==================================================
+
+점검 범위:
+- DB_기획서_기준_정리.txt, 요청 정리 문서를 제외한 파일 기준 확인
+- 핵심 반영 대상: DB 초안.sql
+
+[A. DB 초안에서 확인된 "이미 반영된 것"]
+- 상담/분석 도메인 테이블 존재
+  - MESSAGE
+  - CHAT_ROOM
+  - MESSAGE_ANALYSIS
+  - SATISFACTION
+  - COUNSEL_FEEDBACK
+- 감정 분석 관련 신규 테이블 존재
+  - EMOTION_CATEGORY
+  - MESSAGE_EMOTION_SCORE
+  - MESSAGE_CONTENT_SECURE
+- MESSAGE_ANALYSIS에 dominant_emotion_id 추가됨
+- 중복 키 정리 반영
+  - MESSAGE.user_id 제거
+  - SATISFACTION.user_id 제거
+  - MESSAGE_ANALYSIS.bot_id 제거
+
+[B. DB 초안에서 확인된 "아직 수정 필요한 것"]
+- 공통 문법 오류 일부 잔존
+  - 제약/유니크를 COMMENT로만 남긴 구간을 실제 제약으로 반영 필요
+  - ENUM 성격 값은 CHECK/코드테이블 기준으로 정식 제약화 필요
+- 타입/의미 불일치
+  - MESSAGE_CONTENT_SECURE.emotion_score 타입/의미 재정의 필요(DECIMAL 정밀도 명확화 권장)
+- 알림 타입 FK 컬럼 점검
+  - NOTIFICATION.notification_type_id 타입은 BIGINT로 맞춰짐
+  - USER_NOTIFICATION_SETTING.notification_type_id 타입은 BIGINT로 맞춰짐
+- 피드백 도메인 명칭 확정
+  - MESSAGE_FEEDBACK 미사용
+  - COUNSEL_FEEDBACK 단일 명칭으로 유지
+
+[C. 상담 메시지 도메인 최종 기준 (이 문서 기준으로 확정)]
+- 키 기준 경로를 단일화:
+  - CHAT_ROOM: user_id, bot_id
+  - MESSAGE: message_id, chat_room_id, sender_type, created_at (user_id 중복 저장 지양)
+  - MESSAGE_ANALYSIS: analysis_id, message_id(UNIQUE), dominant_emotion_id, risk_level, is_high_risk, analyzed_at
+  - MESSAGE_EMOTION_SCORE: (analysis_id, emotion_id) UNIQUE + emotion_score(0~1)
+- 세션 평가 vs 메시지 반응 분리:
+  - 세션 평가: chat_room_id 기준 (점수/사유 분리)
+  - 메시지 반응: `COUNSEL_FEEDBACK`(message_id 기준) 단일 유지
+- 중복 컬럼 최소화 원칙:
+  - 하위 테이블에서 user_id/bot_id를 반복 저장하지 않고, 상위 FK 조인으로 조회
+
+[D. 즉시 적용 우선순위 (DB 초안 수정 순서)]
+1) COMMENT 기반 제약을 실제 UNIQUE/FK/INDEX로 반영
+2) 감정 분석 3종 테이블 재정의
+   - EMOTION_CATEGORY
+   - MESSAGE_ANALYSIS
+   - MESSAGE_EMOTION_SCORE
+3) MESSAGE_CONTENT_SECURE 컬럼 의미/타입 정리
+4) 평가 도메인(세션/메시지) 제약 확정
+
+[E. 운영 관점 결론]
+- 현재 DB 초안은 "기능 항목"은 상당 부분 들어왔지만,
+  스키마 정합성과 제약 설계가 아직 기획서 기준에 완전히 맞지 않다.
+- 다음 단계는 신규 테이블 추가보다 "제약 확정 + 타입/의미 정리"가 우선이다.
