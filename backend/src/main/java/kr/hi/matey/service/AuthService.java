@@ -30,8 +30,12 @@ public class AuthService {
 	
 	// 닉네임 중복 확인(회원가입시)
 	public boolean isNicknameDuplicateSignup(String nickname) {
-		int isEmailDuplicateSignup = authDAO.isNicknameDuplicateSignup(nickname);
-		return isEmailDuplicateSignup > 0;
+		int isNicknameDuplicateSignup = authDAO.isNicknameDuplicateSignup(nickname);
+		
+		if(isNicknameDuplicateSignup > 0) {
+			return true;
+		}
+		return false;
 	}
 	
 	
@@ -46,6 +50,7 @@ public class AuthService {
 		String encodedPw = encoder.encode(user.getPassword());
 		UserVO userVO = new UserVO();
 		
+		userVO.setUserName(user.getUserName());
 		userVO.setEmail(user.getEmail());
 	    userVO.setNickname(user.getNickname());
 	    userVO.setPassword(encodedPw);
@@ -60,6 +65,11 @@ public class AuthService {
 		
         try {
             boolean result = authDAO.insertUser(userVO);
+            
+            if(result) {
+                authDAO.insertUserRole(userVO.getUserId(), 1);
+            }
+            
             return result;
             
         } catch (Exception e) {

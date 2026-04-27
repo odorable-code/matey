@@ -106,16 +106,19 @@ export async function login({ email, password, rememberMe }) {
   });
 
   const accessToken = normalizeToken(payload);
+
+  if (!accessToken) {
+    // 토큰이 없는데 message가 있다면 그 메시지를, 없으면 기본 에러를 던집니다.
+    throw new Error(payload?.message || '로그인 정보를 확인해주세요.');
+  }
+
   const user = normalizeUser(payload);
 
-  if (!payload.ok) {
-    throw new Error(payload.message || '비밀번호 재설정에 실패했습니다.');
-  }
+  // if (!payload.ok) {
+  //   throw new Error(payload.message || '로그인에 실패했어요.');
+  // }
 
-
-  if (accessToken) {
-    setStoredToken(accessToken);
-  }
+  setStoredToken(accessToken);
 
   return {
     raw: payload,
@@ -126,6 +129,7 @@ export async function login({ email, password, rememberMe }) {
 }
 
 export async function signup({ 
+  userName,
   nickname,
   email,
   password,
@@ -133,19 +137,23 @@ export async function signup({
   privacyAgreed,
   marketingAgreed
 }) {
+  console.log(userName);
+
   const payload = await request('/api/v1/auth/signup', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: {
+      userName,
       nickname,
       email,
       password,
-      termsAgreed: !!termsAgreed, 
-      privacyAgreed: !!privacyAgreed, 
-      marketingAgreed: !!marketingAgreed
+      termsAgreed: termsAgreed, 
+      privacyAgreed: privacyAgreed, 
+      marketingAgreed: marketingAgreed
     },
+    isJson : true,
   });
 
   const accessToken = normalizeToken(payload);
@@ -199,7 +207,6 @@ export async function forgotPassword(email) {
     body: { email },
   });
 
-
   return {
     raw: payload,
     message:
@@ -208,15 +215,15 @@ export async function forgotPassword(email) {
   };
 }
 
-export async function resetPassword(token, newpassword) {
+export async function resetPassword(token, newPassword) {
   const payload = await request('/api/v1/auth/reset-password', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ 
+    body:({ 
       token,
-      newpassword
+      newPassword
     }),
   });
 
@@ -228,13 +235,13 @@ export async function resetPassword(token, newpassword) {
   };
 }
 
-export async function forgotId(name, email) {
+export async function forgotId(userName, nickname) {
   const payload = await request('/api/v1/auth/forgot-id', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: { name, email },
+    body: { userName, nickname },
   });
 
 

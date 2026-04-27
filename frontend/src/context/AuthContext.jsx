@@ -280,11 +280,15 @@ export function AuthProvider({ children }) {
   );
 
   const signup = useCallback(
-    async ({ nickname, email, password }) => {
+    async ({ userName, nickname, email, password, termsAgreed, privacyAgreed, marketingAgreed }) => {
       const result = await signupRequest({
+        userName: String(userName || '').trim(),
         nickname: String(nickname || '').trim(),
         email: String(email || '').trim(),
         password: String(password || ''),
+        termsAgreed,
+        privacyAgreed,
+        marketingAgreed
       });
 
       const nextToken = result?.accessToken || '';

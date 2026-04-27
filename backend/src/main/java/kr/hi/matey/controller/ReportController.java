@@ -1,60 +1,41 @@
 package kr.hi.matey.controller;
 
+import java.util.List;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
 import kr.hi.matey.dto.ReportDTO;
 import kr.hi.matey.service.ReportService;
-import kr.hi.matey.util.CustomUser;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @RestController
-@RequestMapping("/api/mypage/reports")
 @RequiredArgsConstructor
+@RequestMapping("/api/report")
 public class ReportController {
 
     private final ReportService reportService;
 
-    // 1. 최신 감정 리포트 조회
-    @GetMapping
-    public ResponseEntity<Map<String, Object>> getReports(
-            @AuthenticationPrincipal CustomUser user
+    @GetMapping("/reasons")
+    public ResponseEntity<?> getReasonList() {
+        return ResponseEntity.ok(reportService.getReasonList());
+    }
+
+    @PostMapping("/emotion")
+    public ResponseEntity<?> createReport(
+        @RequestPart("report") ReportDTO reportDTO,
+        @RequestPart(value = "images", required = false) List<MultipartFile> images
     ) {
-        long userId = user.getUser().getUserId();
-        ReportDTO report = reportService.getLatestReport(userId);
+        try {
+            reportService.createReport(reportDTO, images);
+            return ResponseEntity.ok("접수되었습니다.");
 
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("reports", report);
-
-        return ResponseEntity.ok(response);
-    }
-
-    // 2. 특정 감정 리포트 상세 조회
-    @GetMapping("/detail/{id}")
-    public ResponseEntity<Map<String, Object>> getReportDetail(@PathVariable long reportId) {
-        ReportDTO report = reportService.getReportDetail(reportId);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("report", report);
-
-        return ResponseEntity.ok(response);
-    }
-
-    // 3. 감정 리포트 새로고침 (수동 생성)
-    @PostMapping("/refresh")
-    public ResponseEntity<Map<String, Object>> refreshReports(
-            @AuthenticationPrincipal CustomUser user
-            ) {
-        long userId = user.getUser().getUserId();
-        ReportDTO newReport = reportService.generateNewReport(userId);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("reports", newReport);
-
-        return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.internalServerError().body(e.getMessage());
+        }
     }
 }

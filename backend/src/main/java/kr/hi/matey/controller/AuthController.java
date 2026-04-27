@@ -3,6 +3,8 @@ package kr.hi.matey.controller;
 import java.util.HashMap;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
+
+import kr.hi.matey.dto.LoginDTO;
 import kr.hi.matey.dto.UserDTO;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -58,9 +60,17 @@ public class AuthController {
       public ResponseEntity<?> checkNickname(@RequestParam("nickname") String nickname) {
   		System.out.println("checkNickname :" + nickname);
           boolean isNicknameDuplicate = authService.isNicknameDuplicateSignup(nickname);
+          
+          if(isNicknameDuplicate) {
+        	  System.out.println("isNicknameDuplicate: true (중복 발생)");
+        	  Map<String, Boolean> response = new HashMap<>();
+        	  response.put("isNicknameDuplicate", true);
+        	  
+        	  return ResponseEntity.ok(response);
+  		}
           Map<String, Boolean> response = new HashMap<>();
-          response.put("isNicknameDuplicate", isNicknameDuplicate);
-          System.out.println("isNicknameDuplicate: " + isNicknameDuplicate);
+          response.put("isNicknameDuplicate", false);
+          System.out.println("isNicknameDuplicate: false (사용 가능)");
           
           return ResponseEntity.ok(response);
       }
@@ -84,6 +94,8 @@ public class AuthController {
             HttpServletResponse response) {  // ← HttpServletResponse 추가
 
     	System.out.println("UserDTO :" + user);
+    	System.out.println("userName :" + user.getUserName());
+    	System.out.println("userNickname :" + user.getNickname());
     	System.out.println("terms: " + user.isTermsAgreed());
     	System.out.println("privacy: " + user.isPrivacyAgreed());
     	System.out.println("marketing: " + user.isMarketingAgreed());
@@ -103,7 +115,7 @@ public class AuthController {
             // 회원가입 성공 → 즉시 로그인 처리
         	// 사용자가 입력한 아이디(userId)와 비밀번호(originalPw)를 바탕으로 "이 사람이 맞는지 확인해달라"는 일종의 '신분증 신청서'를 만드는 단계
             UsernamePasswordAuthenticationToken authToken =
-                    new UsernamePasswordAuthenticationToken(user.getUserId(), originalPw);
+                    new UsernamePasswordAuthenticationToken(user.getEmail(), originalPw);
 
             // 스프링 시큐리티의 인증 매니저가 실제로 DB에 저장된 비밀번호와 사용자가 입력한 비밀번호를 비교해서 인증 성공 > 사용자 정보가 담긴 Authentication 객체를 반환
             Authentication auth = authenticationManager.authenticate(authToken);
@@ -170,9 +182,9 @@ public class AuthController {
 
             Map<String, Object> responseBody = new HashMap<>();
             responseBody.put("accessToken", accessToken);
+            responseBody.put("message", "로그인에 성공했습니다.");
             responseBody.put("user", Map.of(
-                "userName", customUser.getUser().getUserName(),
-                "nickname", customUser.getUser().getNickname() 
+                "email", customUser.getUser().getEmail()
             ));
             return ResponseEntity.ok(responseBody);
 			
@@ -222,7 +234,7 @@ public class AuthController {
 		try {    
 		            
 	            if (customUser == null) {
-	            	return ResponseEntity.status(401).body("로그인이 필요합니다.");
+	            	return ResponseEntity.status(401).body(Map.of("message", "UNAUTHORIZED"));
 	            }
 
 	            return ResponseEntity.ok(Map.of(
@@ -254,6 +266,7 @@ public class AuthController {
 	public ResponseEntity<?> forgotPassword(@RequestBody UserDTO user){
 		// 이메일이 db와 일치하는지 확인
 		boolean isEmailDuplicatePw = authService.isEmailDuplicatePw(user);
+		System.out.println(isEmailDuplicatePw);
 		
 		// 일치하면 이메일로 메시지 전송
 		if (!isEmailDuplicatePw) {
@@ -262,6 +275,7 @@ public class AuthController {
 		
 		// 서비스에게 비번 재설정 페이지 링크 발송
 		boolean sendLink = authService.sendLink(user);
+		System.out.println(sendLink);
 		
 		if (!sendLink) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "링크를 발송하는데 실패했습니다."));
@@ -275,12 +289,13 @@ public class AuthController {
 	// 비번 재설정 2(새로운 비번 db에 저장)
 	@PostMapping("/reset-password")
 	public ResponseEntity<?> resetPassword(@RequestBody PasswordResetDTO resetDto){
+		System.out.println(resetDto);
 		
 		boolean isSuccess = authService.updatePassword(resetDto.getTokenHash(), resetDto.getNewPassword());
 		if (isSuccess) {
 	        return ResponseEntity.ok(Map.of("message", "비밀번호가 성공적으로 변경되었습니다."));
 	    } else {
-	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "유효하지 않거나 만료된 토큰입니다."));
+	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "비밀번호 재설정에 실패했습니다."));
 	    }
 	}
 

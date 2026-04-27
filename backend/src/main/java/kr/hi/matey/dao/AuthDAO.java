@@ -21,6 +21,8 @@ public interface AuthDAO {
 	int isNicknameDuplicateSignup(String nickname);
 	
 	boolean insertUser(UserVO userVO);
+	
+	int insertUserRole(@Param("userId") Long userId, @Param("roleId") int roleId);
 
 	UserVO findByEmail(String email);
 	
@@ -29,11 +31,11 @@ public interface AuthDAO {
 	// 비번 재설정
 	boolean isEmailDuplicatePw(UserVO userVO);
 
-	boolean updateResetToken(String email, String token);
+	boolean updateResetToken(@Param("email") String email, @Param("token") String token);
 
 	Optional<PasswordResetDTO> findUserVOByToken(String token);
 
-	boolean updateFinalPassword(String email, String encodedPassword);
+	boolean updateFinalPassword(@Param("email") String email, @Param("encodedPassword") String encodedPassword);
 
 	boolean clearResetToken(@Param("email") String email);
 

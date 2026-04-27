@@ -14,7 +14,7 @@ export default function ResetPasswordPage() {
     error: '',
   });
 
-  function getPasswordStrength(password) {
+  function getPasswordStrength(newPassword) {
   if (!newPassword) {
     return {
       score: 0,

@@ -11,6 +11,7 @@ const LOGIN_INITIAL = {
 };
 
 const SIGNUP_INITIAL = {
+  userName: '',
   nickname: '',
   email: '',
   password: '',
@@ -169,6 +170,7 @@ export default function AuthPage() {
       ...prev,
       [name]: '',
     }));
+    console.log(signupForm)
   };
 
   const validateLoginForm = () => {
@@ -190,10 +192,15 @@ export default function AuthPage() {
   const validateSignupForm = () => {
     const nextErrors = {};
 
+    if (!signupForm.userName.trim()) {
+      nextErrors.userName = ' 이름을 입력해 주세요.';
+    }
     if (!signupForm.nickname.trim()) {
       nextErrors.nickname = '닉네임을 입력해 주세요.';
     } else if (signupForm.nickname.trim().length < 2) {
       nextErrors.nickname = '닉네임은 2자 이상이어야 해요.';
+    } else if (/\s/.test(signupForm.nickname)) {
+      nextErrors.nickname = '닉네임에 공백을 포함할 수 없어요.';
     }
 
     if (!signupForm.email.trim()) {
@@ -268,7 +275,7 @@ export default function AuthPage() {
       if (isNicknameDuplicate) {
         setSignupErrors(prev => ({
           ...prev,
-          email: '이미 사용 중인 닉네임이에요.'
+          nickname: '이미 사용 중인 닉네임이에요.'
         }));
         setLoading(false);
         return;
@@ -300,8 +307,9 @@ export default function AuthPage() {
       }));
       setLoading(false);
     }
-
+      console.log(signupForm.userName.trim())
       const result = await signup({
+        userName: signupForm.userName.trim(),
         nickname: signupForm.nickname.trim(),
         email: signupForm.email.trim(),
         password: signupForm.password,
@@ -310,6 +318,7 @@ export default function AuthPage() {
         marketingAgreed: signupForm.marketingAgreed
       });
 
+      console.log(signupForm)
       console.log(result)
 
       if (result?.accessToken) {
@@ -475,7 +484,7 @@ export default function AuthPage() {
                   </Link>
 
                   <Link to="/forgot-password" className="matey-auth-link">
-                    비밀번호 찾기
+                    비밀번호 재설정
                   </Link>
                 </div>
 
@@ -518,6 +527,23 @@ export default function AuthPage() {
               </form>
             ) : (
               <form className="matey-auth-form" onSubmit={handleSignupSubmit}>
+              <div className="matey-auth-field">
+                  <label htmlFor="signup-nickname" className="matey-auth-field__label">
+                    이름
+                  </label>
+                  <input
+                    id="signup-nickname"
+                    name="userName"
+                    type="text"
+                    className={`matey-auth-field__input ${signupErrors.userName ? 'has-error' : ''}`}
+                    placeholder="이름을 입력해주세요."
+                    value={signupForm.userName}
+                    onChange={handleSignupChange}
+                  />
+                  {signupErrors.userName && (
+                    <p className="matey-auth-field__error">{signupErrors.userName}</p>
+                  )}
+                </div>
                 <div className="matey-auth-field">
                   <label htmlFor="signup-nickname" className="matey-auth-field__label">
                     닉네임

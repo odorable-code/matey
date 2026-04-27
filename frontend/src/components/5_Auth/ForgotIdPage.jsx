@@ -6,6 +6,8 @@ import './ForgotIdPage.css';
 export default function ForgotIdPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [nickname, setNickname] = useState('');
+  const [idResult, setIdResult] = useState('');
   const [submitState, setSubmitState] = useState({
     loading: false,
     success: '',
@@ -26,7 +28,7 @@ export default function ForgotIdPage() {
     event.preventDefault();
 
     const trimmedName = name.trim();
-    const trimmedEmail = email.trim();
+    const trimmedNickname = nickname.trim();
 
     if (!trimmedName) {
       setSubmitState({
@@ -37,23 +39,23 @@ export default function ForgotIdPage() {
       return;
     }
 
-    if (!trimmedEmail) {
+    if (!trimmedNickname) {
       setSubmitState({
         loading: false,
         success: '',
-        error: '이메일을 입력해 주세요.',
+        error: '이름을 입력해 주세요.',
       });
       return;
     }
 
-    if (!validateEmail(trimmedEmail)) {
-      setSubmitState({
-        loading: false,
-        success: '',
-        error: '올바른 이메일 형식으로 입력해 주세요.',
-      });
-      return;
-    }
+    // if (!validateEmail(trimmedEmail)) {
+    //   setSubmitState({
+    //     loading: false,
+    //     success: '',
+    //     error: '올바른 이메일 형식으로 입력해 주세요.',
+    //   });
+    //   return;
+    // }
 
     try {
       setSubmitState({
@@ -62,11 +64,16 @@ export default function ForgotIdPage() {
         error: '',
       });
 
-      const result = await forgotId(trimmedName, trimmedEmail);
+      const result = await forgotId(trimmedName, trimmedNickname);
+      const foundId = result.raw?.message || result.message;
+      
+      if (foundId) {
+        setIdResult(foundId);
+      }
+
       setSubmitState({
         loading: false,
-        success:
-          result.raw?.message ? `찾으시는 아이디는 [${result.raw.message}] 입니다.` : result.message,
+        success: `찾으시는 아이디는 [${idResult}] 입니다.`,
         error: '',
       });
     } catch (error) {
@@ -77,6 +84,7 @@ export default function ForgotIdPage() {
       });
     }
   };
+  
 
   return (
     <main className="matey-forgot-page">
@@ -133,7 +141,7 @@ export default function ForgotIdPage() {
 
               <div className="matey-forgot-card__status">
                 <span className="matey-forgot-card__status-dot" />
-                이름/이메일 인증 방식
+                이름/닉네임 인증 방식
               </div>
             </div>
 
@@ -161,12 +169,11 @@ export default function ForgotIdPage() {
 
                 <input
                   id="forgot-password-email"
-                  type="email"
                   className="matey-forgot-field__input"
                   placeholder="이름을 입력해주세요."
                   value={name}
                   onChange={(event) => {
-                    setEmail(event.target.value);
+                    setName(event.target.value);
                     clearMessages();
                   }}
                 />
@@ -177,17 +184,16 @@ export default function ForgotIdPage() {
                   htmlFor="forgot-password-email"
                   className="matey-forgot-field__label"
                 >
-                  이메일
+                  닉네임
                 </label>
 
                 <input
                   id="forgot-password-email"
-                  type="email"
                   className="matey-forgot-field__input"
-                  placeholder="이메일을 입력해주세요."
-                  value={email}
+                  placeholder="이름을 입력해주세요."
+                  value={nickname}
                   onChange={(event) => {
-                    setEmail(event.target.value);
+                    setNickname(event.target.value);
                     clearMessages();
                   }}
                 />
@@ -201,6 +207,22 @@ export default function ForgotIdPage() {
                 {submitState.loading ? '보내는 중...' : '아이디 찾기'}
               </button>
             </form>
+
+            {/* <div className="matey-forgot-field">
+                <label
+                  htmlFor="forgot-password-email"
+                  className="matey-forgot-field__label"
+                >
+                  찾은 아이디
+                </label>
+
+                <input
+                  id="forgot-password-email"
+                  className="matey-forgot-field__input"
+                  value={idResult}
+                  readOnly
+                />
+              </div> */}
 
             <div className="matey-forgot-footer-links">
               <Link to="/login">로그인으로 돌아가기</Link>

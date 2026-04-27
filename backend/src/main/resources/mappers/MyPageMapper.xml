@@ -2,54 +2,129 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="kr.hi.matey.mapper.MyPageMapper">
+<mapper namespace="kr.hi.matey.dao.MyPageDAO">
 
-    <select id="getUserProfile" resultType="kr.hi.matey.dto.UserProfileDTO">
-        SELECT 
-            u.user_id,
-            u.nickname,
-            u.email,
-            u.phone,
-            u.bio,
-            u.status_msg as status,
-            s.plan_name as subscriptionName,
-            p.available_points as points,
-            (SELECT COUNT(*) FROM counsel_sessions WHERE user_id = u.user_id) as totalSessions
-        FROM users u
-        LEFT JOIN subscriptions s ON u.user_id = s.user_id
-        LEFT JOIN points p ON u.user_id = p.user_id
-        WHERE u.user_id = #{userId}
+    <select id="selectUserProfile" resultType="kr.hi.matey.dto.UserProfileDTO">
+        SELECT
+            email as userId,
+            nickname,
+            user_name as name,
+            email,
+            '010-0000-0000' as phone, DATE_FORMAT(birth_date, '%Y-%m-%d') as birthDate,
+            gender,
+            DATE_FORMAT(created_at, '%Y-%m-%d') as joinedAt,
+            profile_image as profileImage
+        FROM USER
+        WHERE user_id = #{userId}
     </select>
 
-    <update id="setUserProfile">
-        UPDATE users u
+    <select id="selectBotRelationInfo" resultType="kr.hi.matey.dto.BotMenuDTO">
+        SELECT
+            intimacy_level as level,
+            intimacy_score as remainPoint FROM USER_BOT_RELATION
+        WHERE user_id = #{userId}
+        LIMIT 1
+    </select>
 
-        u.user_id,
-        u.nickname,
-        u.email,
-        u.phone,
-        u.bio,
-        u.status_msg as status,
-        s.plan_name as subscriptionName,
-        p.available_points as points,
-        (SELECT COUNT(*) FROM counsel_sessions WHERE user_id = u.user_id) as totalSessions
-        FROM users u
-        LEFT JOIN subscriptions s ON u.user_id = s.user_id
-        LEFT JOIN points p ON u.user_id = p.user_id
-        WHERE u.user_id = #{userId}
+    <select id="selectUserBackgrounds" resultType="kr.hi.matey.dto.BotMenuDTO$BackgroundDTO">
+        SELECT
+            name,
+            CASE
+                WHEN unlock_intimacy_level &gt; #{userLevel} THEN '잠금'
+                ELSE '보유'
+            END as state
+        FROM CHAT_BACKGROUND
+        ORDER BY sort_order ASC
+    </select>
+
+    <select id="selectUserMotions" resultType="kr.hi.matey.dto.BotMenuDTO$MotionDTO">
+        SELECT
+            motion_name as name,
+            CASE
+                WHEN unlock_intimacy_level &gt; #{userLevel} THEN '잠금'
+                WHEN motion_group = 'COMMON' THEN '기본'
+                ELSE '보유'
+            END as tag
+        FROM BOT_MOTION
+        ORDER BY sort_order ASC
+    </select>
+
+    <select id="countUnreadLetters" resultType="int">
+        SELECT COUNT(*) FROM BOT_LETTER WHERE user_id = #{userId} AND is_read = FALSE
+    </select>
+
+    <select id="countWeeklyLetters" resultType="int">
+        SELECT COUNT(*) FROM BOT_LETTER
+        WHERE user_id = #{userId} AND created_at &gt;= DATE_SUB(NOW(), INTERVAL 7 DAY)
+    </select>
+
+    <select id="selectBotLetters" resultType="kr.hi.matey.dto.LetterBoxDTO$LetterDTO">
+        SELECT
+            letter_id as id,
+            letter_type as type,
+            '메이티' as sender,
+            title,
+            content as preview,
+            CASE
+                WHEN DATE(created_at) = CURDATE() THEN '오늘'
+                WHEN DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) THEN '어제'
+                ELSE DATE_FORMAT(created_at, '%Y-%m-%d')
+            END as date,
+            NOT is_read as unread
+        FROM BOT_LETTER
+        WHERE user_id = #{userId}
+        ORDER BY created_at DESC
+    </select>
+
+    <select id="selectUserSettings" resultType="kr.hi.matey.dto.UserSettingsDTO">
+        SELECT
+            bot_letter_enabled as pushNotice,
+            TRUE as emailNotice, TRUE as gentleTone,
+            TRUE as quickReply
+        FROM USER_SETTING
+        WHERE user_id = #{userId}
+    </select>
+
+    <update id="updateUserProfile">
+        UPDATE `USER`
+        <set>
+            <if test="dto.nickname != null">nickname = #{dto.nickname},</if>
+            <if test="dto.gender != null">gender = #{dto.gender},</if>
+            <if test="dto.profileImage != null">profile_image = #{dto.profileImage},</if>
+            <if test="dto.phone != null">phone = #{dto.phone},</if> </set>
+        WHERE user_id = #{userId}
     </update>
 
-    <select id="getPaymentHistory" resultType="map">
-        SELECT 
-            order_id as id,
-            product_name as title,
-            amount,
-            paid_at as date,
-            pay_method as method,
-            order_status as status
-        FROM orders
+    <update id="updateUserSettings">
+        UPDATE `USER_SETTING`
+        <set>
+            <choose>
+                <when test="key == 'pushNotice'">bot_letter_enabled = #{value}</when>
+                <when test="key == 'emailNotice'">email_notice_enabled = #{value}</when> <when test="key == 'gentleTone'">gentle_tone_enabled = #{value}</when> <when test="key == 'quickReply'">quick_reply_enabled = #{value}</when> </choose>
+        </set>
         WHERE user_id = #{userId}
-        ORDER BY paid_at DESC
-    </select>
+    </update>
 
+    <update id="updateLetterReadStatus">
+        UPDATE `BOT_LETTER`
+        SET is_read = TRUE, read_at = NOW()
+        WHERE letter_id = #{letterId} AND user_id = #{userId}
+    </update>
+
+    <delete id="deleteLetter">
+        DELETE FROM `BOT_LETTER`
+        WHERE letter_id = #{letterId} AND user_id = #{userId}
+    </delete>
+
+    <update id="updateBotIntimacy">
+        UPDATE `USER_BOT_RELATION`
+        SET intimacy_score = intimacy_score + #{expGain}
+        WHERE user_id = #{userId}
+    </update>
+
+    <update id="updateLastInteractedAt">
+        UPDATE `USER_BOT_RELATION`
+        SET last_interacted_at = NOW()
+        WHERE user_id = #{userId}
+    </update>
 </mapper>
