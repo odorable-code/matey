@@ -1,6 +1,6 @@
 import React from 'react';
 import styles from './LetterBoxContent.module.css';
-import useAnimatedNumber, { usePrefersReducedMotion } from '../hook/useAnimatedNumber';
+import useAnimatedNumber, { usePrefersReducedMotion } from '../../hooks/useAnimatedNumber';
 
 const defaultLetters = {
   featured: {

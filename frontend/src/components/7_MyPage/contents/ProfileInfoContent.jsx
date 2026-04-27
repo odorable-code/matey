@@ -92,8 +92,8 @@ function ProfileInfoContent() {
           <span className={styles.eyebrow}>PROFILE INFO</span>
           <h2 className={styles.title}>개인정보</h2>
           <p className={styles.description}>
-            수정 가능한 항목은 닉네임, 프로필 사진, 휴대폰 번호, 성별만 남기고
-            나머지는 읽기 전용으로 정리했어요.
+            수정 가능한 항목은 닉네임, 이메일, 프로필 사진, 휴대폰 번호, 성별만
+            남기고 나머지는 읽기 전용으로 정리했어요.
           </p>
         </div>
 
@@ -140,7 +140,9 @@ function ProfileInfoContent() {
             </div>
 
             <div className={styles.avatarMeta}>
-              <strong className={styles.avatarName}>{currentProfile.nickname}</strong>
+              <strong className={styles.avatarName}>
+                {currentProfile.nickname}
+              </strong>
               <span className={styles.avatarId}>@{profile.userId}</span>
             </div>
           </div>
@@ -212,8 +214,9 @@ function ProfileInfoContent() {
                 <input
                   type="email"
                   value={currentProfile.email}
-                  disabled
-                  className={`${styles.input} ${styles.readOnly}`}
+                  disabled={!isEditMode}
+                  onChange={(e) => handleEditableChange('email', e.target.value)}
+                  className={styles.input}
                 />
               </label>
             </div>
@@ -226,13 +229,12 @@ function ProfileInfoContent() {
 
             <div className={styles.fieldGrid}>
               <label className={styles.field}>
-                <span className={styles.fieldLabel}>휴대폰 번호</span>
+                <span className={styles.fieldLabel}>가입일</span>
                 <input
                   type="text"
-                  value={currentProfile.phone}
-                  disabled={!isEditMode}
-                  onChange={(e) => handleEditableChange('phone', e.target.value)}
-                  className={styles.input}
+                  value={currentProfile.joinedAt}
+                  disabled
+                  className={`${styles.input} ${styles.readOnly}`}
                 />
               </label>
 
@@ -261,12 +263,13 @@ function ProfileInfoContent() {
               </label>
 
               <label className={styles.field}>
-                <span className={styles.fieldLabel}>가입일</span>
+                <span className={styles.fieldLabel}>휴대폰 번호</span>
                 <input
                   type="text"
-                  value={currentProfile.joinedAt}
-                  disabled
-                  className={`${styles.input} ${styles.readOnly}`}
+                  value={currentProfile.phone}
+                  disabled={!isEditMode}
+                  onChange={(e) => handleEditableChange('phone', e.target.value)}
+                  className={styles.input}
                 />
               </label>
             </div>

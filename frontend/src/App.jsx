@@ -2,13 +2,15 @@
 import React from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+
 import MainLayout from './components/3_Layout/MainLayout';
-import MainPage from './pages/HomePage';
-import DownloadPage from './pages/DownloadPage';
 import AuthPage from './components/5_Auth/AuthPage';
 import ForgotPasswordPage from './components/5_Auth/ForgotPasswordPage';
-import MyPage from './components/7_MyPage/MyPage';
+import MyPage from './components/7_MyPage/pages/MyPage';
 import AdminPage from './components/8_AdminPage/AdminPage';
+
+import MainPage from './pages/HomePage';
+import DownloadPage from './pages/DownloadPage';
 import AdminAccessDeniedPage from './pages/AdminAccessDeniedPage';
 
 function AuthLoadingScreen() {

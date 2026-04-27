@@ -1,0 +1,164 @@
+.card {
+  width: 100%;
+  padding: 18px;
+  border-radius: 26px;
+  border: 1px solid rgba(255, 255, 255, 0.84);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 244, 255, 0.90) 100%);
+  box-shadow: 0 16px 30px rgba(118, 97, 160, 0.10);
+  backdrop-filter: blur(18px);
+  display: grid;
+  gap: 16px;
+}
+
+.topRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.copyBlock {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.eyebrow {
+  width: fit-content;
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(216, 200, 243, 0.94);
+  background: rgba(255, 255, 255, 0.74);
+  color: #8f78b7;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.description {
+  margin: 0;
+  color: #756d8a;
+  font-size: 13px;
+  line-height: 1.65;
+  font-weight: 700;
+  word-break: keep-all;
+}
+
+.rightSlot {
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.optionList {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.optionButton {
+  position: relative;
+  width: 100%;
+  min-height: 74px;
+  padding: 14px 16px;
+  border-radius: 22px;
+  border: 1px solid rgba(229, 220, 246, 0.95);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(250, 246, 255, 0.88) 100%);
+  box-shadow: 0 10px 22px rgba(131, 109, 172, 0.08);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease;
+}
+
+.optionButton:hover {
+  transform: translateY(-1px);
+  border-color: rgba(209, 191, 241, 0.98);
+  box-shadow: 0 12px 24px rgba(131, 109, 172, 0.12);
+}
+
+.optionButton:focus-visible {
+  outline: none;
+  border-color: rgba(165, 137, 223, 0.98);
+  box-shadow:
+    0 0 0 4px rgba(188, 163, 236, 0.14),
+    0 12px 24px rgba(131, 109, 172, 0.12);
+}
+
+.active {
+  border-color: rgba(193, 170, 239, 0.98);
+  background:
+    linear-gradient(180deg, rgba(255, 252, 255, 0.98) 0%, rgba(245, 238, 255, 0.96) 100%);
+  box-shadow:
+    0 14px 26px rgba(134, 109, 180, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.74);
+}
+
+.optionTextGroup {
+  display: grid;
+  gap: 4px;
+}
+
+.optionLabel {
+  color: #302a41;
+  font-size: 15px;
+  line-height: 1.2;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  word-break: keep-all;
+}
+
+.optionHelper {
+  color: #8a7ea1;
+  font-size: 12px;
+  line-height: 1.35;
+  font-weight: 800;
+  word-break: keep-all;
+}
+
+@media (max-width: 1024px) {
+  .optionList {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .card {
+    padding: 16px;
+    border-radius: 22px;
+  }
+
+  .topRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .optionButton {
+    min-height: 68px;
+    padding: 13px 14px;
+    border-radius: 18px;
+  }
+
+  .optionLabel {
+    font-size: 14px;
+  }
+
+  .optionHelper {
+    font-size: 11px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .optionButton {
+    transition: none;
+  }
+}

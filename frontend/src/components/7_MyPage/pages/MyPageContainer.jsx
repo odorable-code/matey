@@ -1,29 +1,53 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import layoutStyles from './layout/MyPageLayout.module.css';
+import layoutStyles from '../layout/MyPageLayout.module.css';
 
-import ProfileCard from './ProfileCard';
-import SideMenu from './SideMenu';
+import ProfileCard from '../layout/ProfileCard';
+import SideMenu from '../layout/SideMenu';
 
-import DashboardContent from './contents/DashboardContent';
-import ProfileInfoContent from './contents/ProfileInfoContent';
-import EmotionReportContent from './contents/EmotionReportContent';
-import BotMenuContent from './contents/BotMenuContent';
-import LetterBoxContent from './contents/LetterBoxContent';
-import SettingsContent from './contents/SettingsContent';
+import DashboardContent from '../contents/DashboardContent';
+import ProfileInfoContent from '../contents/ProfileInfoContent';
+import EmotionReportContent from '../contents/emotionReport/EmotionReportContent';
+import BotMenuContent from '../contents/BotMenuContent';
+import LetterBoxContent from '../contents/letterBox/LetterBoxContent';
+import SettingsContent from '../contents/settings/SettingsContent';
 
 function MyPageContainer() {
-  const [activeMenu, setActiveMenu] = useState('home');
+  const [activeMenu, setActiveMenu] = useState('dashboard');
   const [transitionKey, setTransitionKey] = useState(0);
   const contentPanelRef = useRef(null);
 
   const menuItems = useMemo(
     () => [
-      { key: 'home', label: '홈' },
-      { key: 'profileInfo', label: '프로필 정보' },
-      { key: 'emotionReport', label: '감정 리포트' },
-      { key: 'botMenu', label: '봇 메뉴' },
-      { key: 'letterBox', label: '쪽지함' },
-      { key: 'settings', label: '설정' },
+      {
+        key: 'dashboard',
+        label: '대시보드',
+        description: '메이티와의 오늘 상태를 확인해요',
+      },
+      {
+        key: 'profileInfo',
+        label: '프로필 정보',
+        description: '내 프로필과 계정 정보를 수정해요',
+      },
+      {
+        key: 'emotionReport',
+        label: '감정 리포트',
+        description: '대화 기반 감정 흐름을 확인해요',
+      },
+      {
+        key: 'botMenu',
+        label: '메이티 정보',
+        description: '레벨, 포인트, 수집 현황을 살펴봐요',
+      },
+      {
+        key: 'letterBox',
+        label: '편지함',
+        description: '도착한 편지와 읽지 않은 편지를 봐요',
+      },
+      {
+        key: 'settings',
+        label: '설정',
+        description: '알림과 서비스 옵션을 관리해요',
+      },
     ],
     []
   );
@@ -45,17 +69,29 @@ function MyPageContainer() {
     switch (activeMenu) {
       case 'profileInfo':
         return <ProfileInfoContent />;
+
       case 'emotionReport':
         return <EmotionReportContent />;
+
       case 'botMenu':
         return <BotMenuContent />;
+
       case 'letterBox':
         return <LetterBoxContent />;
+
       case 'settings':
         return <SettingsContent />;
-      case 'home':
+
+      case 'dashboard':
       default:
-        return <DashboardContent onInteractionSelect={handleInteractionSelect} />;
+        return (
+          <DashboardContent
+            onInteractionSelect={handleInteractionSelect}
+            intimacyLevel={4}
+            intimacyExp={18}
+            intimacyMaxExp={100}
+          />
+        );
     }
   };
 
@@ -67,6 +103,7 @@ function MyPageContainer() {
 
     const applyRevealItems = () => {
       const previousItems = root.querySelectorAll('[data-reveal-item="true"]');
+
       previousItems.forEach((node) => {
         node.removeAttribute('data-reveal-item');
         node.style.removeProperty('--reveal-index');
@@ -118,6 +155,7 @@ function MyPageContainer() {
       <div className={layoutStyles.container}>
         <aside className={layoutStyles.sidebarColumn}>
           <ProfileCard />
+
           <SideMenu
             items={menuItems}
             activeKey={activeMenu}
