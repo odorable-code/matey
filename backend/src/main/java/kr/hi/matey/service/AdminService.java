@@ -16,12 +16,58 @@ import java.util.Map;
 public class AdminService {
     private final AdminDAO adminMapper;
 
-    // 1. 사용자 검색 및 목록
+    // ==========================================
+    // 통계 & 대시보드
+    // ==========================================
+
+    public Map<String, Object> getDashboardData() {
+        Map<String, Object> data = new HashMap<>();
+        data.put("summary", adminMapper.selectSummaryCounts());
+        data.put("emotionStats", adminMapper.selectEmotionStats());
+        data.put("concernStats", adminMapper.selectCategoryStats());
+        return data;
+    }
+
+    public Map<String, Object> getStats() {
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("summary", adminMapper.selectSummaryCounts());
+        stats.put("userCount", adminMapper.selectUserCount());
+        stats.put("activeConversations", adminMapper.selectActiveConversationCount());
+        stats.put("avgAttendance", adminMapper.selectAvgAttendance());
+        return stats;
+    }
+
+    public List<Map<String, Object>> getEmotionStats() {
+        return adminMapper.selectEmotionStats();
+    }
+
+    public List<Map<String, Object>> getConcernStats() {
+        return adminMapper.selectCategoryStats();
+    }
+
+    // ==========================================
+    // 사용자 관리
+    // ==========================================
+
     public List<UserDTO2> findUsers(String keyword, String role, String status) {
         return adminMapper.selectAdminUserList(keyword, role, status);
     }
 
-    // 2. 사용자 권한 및 상태 변경 (일괄 처리 포함)
+    @Transactional
+    public void updateUser(Long userId, Map<String, Object> data) {
+        if (data.containsKey("status")) {
+            adminMapper.updateUserStatus(userId, (String) data.get("status"));
+        }
+        if (data.containsKey("nickname")) {
+            adminMapper.updateUserNickname(userId, (String) data.get("nickname"));
+        }
+    }
+
+    @Transactional
+    public void deleteUser(Long userId) {
+        adminMapper.deleteUser(userId);
+    }
+
     @Transactional
     public void bulkUpdateStatus(List<Long> userIds, String status) {
         userIds.forEach(id -> adminMapper.updateUserStatus(id, status));
@@ -33,7 +79,10 @@ public class AdminService {
         adminMapper.updateUserRole(userId, roleId);
     }
 
-    // 3. 피드백 관리
+    // ==========================================
+    // 피드백 관리
+    // ==========================================
+
     public List<FeedbackDTO> findFeedbacks(String status) {
         return adminMapper.selectSupportList(status);
     }
@@ -43,12 +92,16 @@ public class AdminService {
         adminMapper.updateSupportStatus(supportId, status);
     }
 
-    // 4. 대시보드 통계 데이터 통합
-    public Map<String, Object> getDashboardData() {
-        Map<String, Object> data = new HashMap<>();
-        data.put("summary", adminMapper.selectSummaryCounts());
-        data.put("emotionStats", adminMapper.selectEmotionStats());
-        data.put("concernStats", adminMapper.selectCategoryStats());
-        return data;
+    // ==========================================
+    // 활동 로그
+    // ==========================================
+
+    public List<Map<String, Object>> findLogs(String period, String keyword, String category, String actor) {
+        return adminMapper.selectAdminActivityLogs(keyword, period, category, actor);
+    }
+
+    @Transactional
+    public void insertLog(Map<String, Object> log) {
+        adminMapper.insertAdminLog(log);
     }
 }

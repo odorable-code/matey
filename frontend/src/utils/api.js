@@ -210,3 +210,72 @@ export function validateEmail(email) {
 }
 
 export { getStoredToken };
+
+// ==========================================
+// Admin API
+// ==========================================
+
+export const adminAPI = {
+  // 사용자 관리
+  getUsers: (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return request(`/api/admin/users${query ? `?${query}` : ''}`, {
+      method: 'GET',
+    });
+  },
+  
+  updateUser: (userId, data) => {
+    return request(`/api/admin/users/${userId}`, {
+      method: 'PUT',
+      body: data,
+    });
+  },
+  
+  deleteUser: (userId) => {
+    return request(`/api/admin/users/${userId}`, {
+      method: 'DELETE',
+    });
+  },
+
+  // 피드백 관리
+  getFeedbacks: (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return request(`/api/admin/feedbacks${query ? `?${query}` : ''}`, {
+      method: 'GET',
+    });
+  },
+  
+  updateFeedbackStatus: (feedbackId, status) => {
+    return request(`/api/admin/feedbacks/${feedbackId}/status`, {
+      method: 'PATCH',
+      body: { status },
+    });
+  },
+
+  // 활동 로그
+  getLogs: (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return request(`/api/admin/logs${query ? `?${query}` : ''}`, {
+      method: 'GET',
+    });
+  },
+
+  // 통계/대시보드
+  getStats: () => {
+    return request('/api/admin/stats', {
+      method: 'GET',
+    });
+  },
+  
+  getEmotionStats: () => {
+    return request('/api/admin/stats/emotions', {
+      method: 'GET',
+    });
+  },
+  
+  getConcernStats: () => {
+    return request('/api/admin/stats/concerns', {
+      method: 'GET',
+    });
+  },
+};

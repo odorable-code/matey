@@ -115,4 +115,89 @@
         ORDER BY label ASC
     </select>
 
+    <!-- ========================================== -->
+    <!-- 통계 & 대시보드 추가 -->
+    <!-- ========================================== -->
+
+    <select id="selectUserCount" resultType="long">
+        SELECT COUNT(*) FROM USER
+    </select>
+
+    <select id="selectActiveConversationCount" resultType="long">
+        SELECT COUNT(DISTINCT chat_room_id) FROM CHAT_ROOM 
+        WHERE updated_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+    </select>
+
+    <select id="selectAvgAttendance" resultType="int">
+        SELECT AVG(activity_score) FROM USER_ACTIVITY_DAILY 
+        WHERE activity_date >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+    </select>
+
+    <!-- ========================================== -->
+    <!-- 사용자 관리 추가 -->
+    <!-- ========================================== -->
+
+    <update id="updateUserNickname">
+        UPDATE USER SET nickname = #{nickname}, updated_at = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <delete id="deleteUser">
+        UPDATE USER SET status = 'DELETED', updated_at = NOW()
+        WHERE user_id = #{userId}
+    </delete>
+
+    <!-- ========================================== -->
+    <!-- 활동 로그 -->
+    <!-- ========================================== -->
+
+    <select id="selectAdminActivityLogs" resultType="map">
+        SELECT
+        log_id as id,
+        actor,
+        actor_role as actorRole,
+        category,
+        action,
+        target,
+        detail,
+        created_at as createdAt
+        FROM ADMIN_ACTION_LOG
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (actor LIKE CONCAT('%', #{keyword}, '%')
+                OR target LIKE CONCAT('%', #{keyword}, '%')
+                OR detail LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="category != null and category != 'ALL'">
+                AND category = #{category}
+            </if>
+            <if test="actor != null and actor != 'ALL'">
+                AND actor = #{actor}
+            </if>
+            <if test="period != null and period != 'ALL'">
+                <if test="period == 'TODAY'">
+                    AND created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)
+                </if>
+                <if test="period == 'WEEK'">
+                    AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+                </if>
+            </if>
+        </where>
+        ORDER BY created_at DESC
+        LIMIT 120
+    </select>
+
+    <insert id="insertAdminLog">
+        INSERT INTO ADMIN_ACTION_LOG (actor, actor_role, category, action, target, detail, created_at)
+        VALUES (
+            #{log.actor},
+            #{log.actorRole},
+            #{log.category},
+            #{log.action},
+            #{log.target},
+            #{log.detail},
+            NOW()
+        )
+    </insert>
+
 </mapper>
