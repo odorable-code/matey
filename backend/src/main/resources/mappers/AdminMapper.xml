@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.hi.matey.dao.AdminDAO">
+
+    <select id="selectAdminUserList" resultType="kr.hi.dto.UserDTO2">
+        SELECT
+        u.user_id,
+        u.email,
+        u.nickname,
+        u.status,
+        u.last_login_at,
+        u.created_at,
+        r.role_code as role,
+        r.role_name,
+        (SELECT COUNT(*) FROM CHAT_ROOM cr WHERE cr.user_id = u.user_id) as conversations,
+        (SELECT COUNT(*) FROM COUNSEL_FEEDBACK cf
+        JOIN MESSAGE m ON cf.message_id = m.message_id
+        JOIN CHAT_ROOM cr ON m.chat_room_id = cr.chat_room_id
+        WHERE cr.user_id = u.user_id) as feedbackCount,
+        IFNULL((SELECT activity_score FROM USER_ACTIVITY_DAILY uad
+        WHERE uad.user_id = u.user_id
+        ORDER BY activity_date DESC LIMIT 1), 0) as attendance
+        FROM USER u
+        LEFT JOIN USER_ROLE ur ON u.user_id = ur.user_id
+        LEFT JOIN ROLE r ON ur.role_id = r.role_id
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (u.nickname LIKE CONCAT('%', #{keyword}, '%')
+                OR u.email LIKE CONCAT('%', #{keyword}, '%')
+                OR u.user_name LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="roleCode != null and roleCode != 'ALL'">
+                AND r.role_code = #{roleCode}
+            </if>
+            <if test="status != null and status != 'ALL'">
+                AND u.status = #{status}
+            </if>
+        </where>
+        ORDER BY u.created_at DESC
+    </select>
+
+    <update id="updateUserStatus">
+        UPDATE USER SET status = #{status}, updated_at = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <update id="updateUserRole">
+        UPDATE USER_ROLE SET role_id = #{roleId}
+        WHERE user_id = #{userId}
+    </update>
+
+    <select id="selectSupportList" resultType="kr.hi.matey.dto.FeedbackDTO">
+        SELECT
+        s.support_id,
+        s.user_id,
+        u.nickname as userNickname,
+        s.title,
+        s.content,
+        s.status,
+        s.created_at,
+        sr.reason_name as category,
+        CASE
+        WHEN sr.request_type = 'REPORT' THEN 'HIGH'
+        ELSE 'MEDIUM'
+        END as priority
+        FROM SUPPORT s
+        JOIN USER u ON s.user_id = u.user_id
+        JOIN SUPPORT_REASON sr ON s.support_reason_id = sr.support_reason_id
+        <where>
+            <if test="status != null and status != 'ALL'">
+                AND s.status = #{status}
+            </if>
+        </where>
+        ORDER BY s.created_at DESC
+    </select>
+
+    <update id="updateSupportStatus">
+        UPDATE SUPPORT SET status = #{status} WHERE support_id = #{supportId}
+    </update>
+
+    <select id="selectSummaryCounts" resultType="map">
+        SELECT
+        (SELECT COUNT(*) FROM USER) as totalUsers,
+        (SELECT COUNT(*) FROM USER WHERE status = 'ACTIVE') as activeUsers,
+        (SELECT COUNT(*) FROM SUPPORT WHERE status = 'PENDING') as pendingFeedbacks,
+        (SELECT COUNT(*) FROM USER_ROLE ur JOIN ROLE r ON ur.role_id = r.role_id
+        WHERE r.role_code IN ('ADMIN', 'SUPER_ADMIN')) as adminCount
+    </select>
+
+    <select id="selectEmotionStats" resultType="map">
+        SELECT
+        ec.emotion_name as label,
+        COUNT(ma.analysis_id) as value,
+        'violet' as color FROM MESSAGE_ANALYSIS ma
+        JOIN EMOTION_CATEGORY ec ON ma.dominant_emotion_id = ec.emotion_id
+        GROUP BY ec.emotion_id, ec.emotion_name
+    </select>
+
+    <select id="selectCategoryStats" resultType="map">
+        SELECT
+        c.name as label,
+        COUNT(p.post_id) as value
+        FROM POST p
+        JOIN CATEGORY c ON p.category_id = c.category_id
+        GROUP BY c.category_id, c.name
+    </select>
+
+    <select id="selectLiveCounselSeries" resultType="map">
+        SELECT
+        DATE_FORMAT(created_at, '%H:00') as label,
+        COUNT(*) as value
+        FROM MESSAGE
+        WHERE created_at >= DATE_SUB(NOW(), INTERVAL 8 HOUR)
+        GROUP BY label
+        ORDER BY label ASC
+    </select>
+
+</mapper>
