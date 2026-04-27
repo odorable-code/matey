@@ -17,6 +17,9 @@ public interface AuthDAO {
 	// 이메일 중복 확인(회원가입시)
 	int isEmailDuplicateSignup(String email);
 	
+	// 닉네임 중복 확인(회원가입시)
+	int isNicknameDuplicateSignup(String nickname);
+	
 	boolean insertUser(UserVO userVO);
 
 	UserVO findByEmail(String email);
@@ -39,6 +42,8 @@ public interface AuthDAO {
 	int removeAutoLoginToken(Long userId, Object object);
 
 	UserVO selectUser(String email);
+
+	
 
 	
 

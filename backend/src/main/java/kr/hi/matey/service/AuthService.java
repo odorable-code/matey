@@ -27,7 +27,14 @@ public class AuthService {
 	private final BCryptPasswordEncoder encoder;
 	private final JavaMailSender mailSender;
 	
-	// 이메일 중복 확인(회원가입시)
+	
+	// 닉네임 중복 확인(회원가입시)
+	public boolean isNicknameDuplicateSignup(String nickname) {
+		int isEmailDuplicateSignup = authDAO.isNicknameDuplicateSignup(nickname);
+		return isEmailDuplicateSignup > 0;
+	}
+	
+	
 	public boolean isEmailDuplicateSignup(String email) {
 			
 			int isEmailDuplicateSignup = authDAO.isEmailDuplicateSignup(email);
@@ -196,6 +203,8 @@ public class AuthService {
 		int removeAutoLoginToken = authDAO.removeAutoLoginToken(userId, null);
 		return removeAutoLoginToken > 0;
 	}
+
+	
 
 }
 

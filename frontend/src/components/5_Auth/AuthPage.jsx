@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { validateEmail, checkEmailDuplicate } from '../../utils/api';
+import { validateEmail, checkEmailDuplicate, checkNickNameDuplicate } from '../../utils/api';
 import './AuthPage.css';
 
 const LOGIN_INITIAL = {
@@ -263,9 +263,28 @@ export default function AuthPage() {
       setLoading(true);
       setSubmitMessage('');
 
-      const isDuplicate = await checkEmailDuplicate(signupForm.email.trim());
+      const isNicknameDuplicate = await checkNickNameDuplicate(signupForm.nickname.trim());
+
+      if (isNicknameDuplicate) {
+        setSignupErrors(prev => ({
+          ...prev,
+          email: '이미 사용 중인 닉네임이에요.'
+        }));
+        setLoading(false);
+        return;
+      }
+      else {
+      // [Case 2] 중복이 아닌 경우 (사용 가능)
+      setSignupErrors(prev => ({
+        ...prev,
+        nickname: '' // 기존 에러 메시지 제거
+      }));
+      setLoading(false);
+    }
+
+      const isEmailDuplicate = await checkEmailDuplicate(signupForm.email.trim());
       
-      if (isDuplicate) {
+      if (isEmailDuplicate) {
         setSignupErrors(prev => ({
           ...prev,
           email: '이미 사용 중인 이메일이에요.'

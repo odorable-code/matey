@@ -52,6 +52,18 @@ public class AuthController {
         cookie.setMaxAge(maxAge);
         return cookie;
     }
+    
+ // 닉네임 중복 확인
+  	@GetMapping("/check-nickname")
+      public ResponseEntity<?> checkNickname(@RequestParam("nickname") String nickname) {
+  		System.out.println("checkNickname :" + nickname);
+          boolean isNicknameDuplicate = authService.isNicknameDuplicateSignup(nickname);
+          Map<String, Boolean> response = new HashMap<>();
+          response.put("isNicknameDuplicate", isNicknameDuplicate);
+          System.out.println("isNicknameDuplicate: " + isNicknameDuplicate);
+          
+          return ResponseEntity.ok(response);
+      }
 
  // 이메일 중복 확인
  	@GetMapping("/check-email")

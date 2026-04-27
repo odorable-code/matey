@@ -181,6 +181,15 @@ export async function getMyProfile() {
   return normalizeUser(payload) || payload;
 }
 
+export async function checkNickNameDuplicate(nickname) {
+  // 이메일을 쿼리 스트링으로 전달 (api/v1/auth/check-email?email=...)
+  const payload = await request(`/api/v1/auth/check-nickname?nickname=${encodeURIComponent(nickname)}`, {
+    method: 'GET',
+  });
+
+  return payload?.isNicknameDuplicate || false;
+}
+
 export async function forgotPassword(email) {
   const payload = await request('/api/v1/auth/forgot-password', {
     method: 'POST',
