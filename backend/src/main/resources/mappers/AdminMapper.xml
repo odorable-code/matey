@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="kr.hi.matey.dao.AdminDAO">
 
-    <select id="selectAdminUserList" resultType="kr.hi.dto.UserDTO2">
+    <select id="selectAdminUserList" resultType="kr.hi.matey.dto.UserDTO2">
         SELECT
         u.user_id,
         u.email,

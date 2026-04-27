@@ -5,7 +5,7 @@
 
 <mapper namespace="kr.hi.matey.dao.SocialAuthDAO">
 
-    <select id="findByProviderAndProviderUserId" resultType="kr.hi.matey.domain.UserVO">
+    <select id="findByProviderAndProviderUserId" resultType="kr.hi.matey.vo.UserVO">
         SELECT
             id,
             login_id,
@@ -22,7 +22,7 @@
         LIMIT 1
     </select>
 
-    <insert id="insertSocialUser" parameterType="kr.hi.matey.domain.UserVO" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insertSocialUser" parameterType="kr.hi.matey.vo.UserVO" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO member (
             login_id,
             password,

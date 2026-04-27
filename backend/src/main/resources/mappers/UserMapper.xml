@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="kr.hi.matey.dao.UserDAO">
 
-    <insert id="insertUser"  parameterType="kr.hi.matey.domain.UserDTO" useGeneratedKeys="true" keyProperty="user.userNum">
+    <insert id="insertUser"  parameterType="kr.hi.matey.dto.UserDTO" useGeneratedKeys="true" keyProperty="user.userNum">
         INSERT INTO users (
         user_id, user_pw, user_name, user_addr, user_email,
         user_phone, user_birth, user_gender, user_alert,
@@ -44,10 +44,10 @@
         DELETE FROM users
         WHERE user_num = #{userNum}
     </delete>
-    <select id="selectUser" resultType="kr.hi.matey.domain.UserVO">
+    <select id="selectUser" resultType="kr.hi.matey.vo.UserVO">
         SELECT * FROM users WHERE user_id = #{userId}
     </select>
-    <select id="selectUsers" resultType="kr.hi.matey.domain.UserVO">
+    <select id="selectUsers" resultType="kr.hi.matey.vo.UserVO">
         SELECT * FROM users LIMIT 1000
     </select>
 
@@ -79,7 +79,7 @@
         where id = #{userId}
     </select>
 
-    <insert id="signupUser" parameterType="kr.hi.matey.domain.UserDTO">
+    <insert id="signupUser" parameterType="kr.hi.matey.dto.UserDTO">
         INSERT INTO users (
         userId,
         userPw,
@@ -116,7 +116,7 @@
         SELECT admin_id FROM hospital_admins
         WHERE admin_phone = #{phone} AND admin_email = #{email};
     </select>
-    <select id="selectUserByUserNum" resultType="kr.hi.matey.domain.UserVO">
+    <select id="selectUserByUserNum" resultType="kr.hi.matey.vo.UserVO">
         select * from users where user_num = #{userNum}
     </select>
 
@@ -136,14 +136,4 @@
         right JOIN hospital_info hi ON ha.ho_num = hi.ho_num
         WHERE ho_name = #{hoName}
     </select>
-    <!-- <select id="existsByAdminId" resultType="boolean">
-        SELECT COUNT(*) > 0
-        FROM hospital_admins
-        WHERE ho_num = #{hoNum}
-    </select> -->
-
-    <!-- <insert id="insertUser" parameterType="kr.hi.matey.domain.UserDTO">
-        INSERT INTO users (userId, userPw, userName, userPhone, userGender, termsAgreed, locationAgreed)
-        VALUES (#{user.userId}, #{user.userPw}, #{user.userName}, #{user.userPhone}, #{user.userGender}, #{user.termsAgreed}, #{user.locationAgreed})
-    </insert> -->
 </mapper>

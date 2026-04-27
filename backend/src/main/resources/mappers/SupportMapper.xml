@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="kr.hi.matey.dao.SupportMapper">
+<mapper namespace="kr.hi.matey.dao.SupportDAO">
 
     <select id="selectSupportList" resultType="kr.hi.matey.dto.SupportDTO">
         SELECT
@@ -42,7 +42,7 @@
         )
     </insert>
 
-    <select id="selectFaqList" resultType="kr.hi.mateydto.FaqDTO">
+    <select id="selectFaqList" resultType="kr.hi.matey.dto.FaqDTO">
         SELECT
         id,
         question,
