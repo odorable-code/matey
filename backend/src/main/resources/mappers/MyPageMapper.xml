@@ -6,7 +6,7 @@
 
     <select id="getUserProfile" resultType="kr.hi.matey.domain.UserProfileDTO">
         SELECT 
-            u.user_id as id,
+            u.user_id,
             u.nickname,
             u.email,
             u.phone,
@@ -20,6 +20,24 @@
         LEFT JOIN points p ON u.user_id = p.user_id
         WHERE u.user_id = #{userId}
     </select>
+
+    <update id="setUserProfile">
+        UPDATE users u
+
+        u.user_id,
+        u.nickname,
+        u.email,
+        u.phone,
+        u.bio,
+        u.status_msg as status,
+        s.plan_name as subscriptionName,
+        p.available_points as points,
+        (SELECT COUNT(*) FROM counsel_sessions WHERE user_id = u.user_id) as totalSessions
+        FROM users u
+        LEFT JOIN subscriptions s ON u.user_id = s.user_id
+        LEFT JOIN points p ON u.user_id = p.user_id
+        WHERE u.user_id = #{userId}
+    </update>
 
     <select id="getPaymentHistory" resultType="map">
         SELECT 

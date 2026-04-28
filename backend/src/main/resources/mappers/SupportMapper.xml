@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.hi.matey.dao.SupportMapper">
+
+    <select id="selectSupportList" resultType="kr.hi.matey.dto.SupportDTO">
+        SELECT
+        id,
+        user_id as userId,
+        title,
+        content,
+        status,
+        category,
+        email,
+        created_at as createdAt,
+        updated_at as updatedAt
+        FROM support_tickets
+        WHERE user_id = #{userId}
+        ORDER BY created_at DESC
+    </select>
+
+    <insert id="insertSupportTicket" parameterType="kr.hi.matey.dto.SupportDTO" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO support_tickets (
+        user_id,
+        title,
+        content,
+        status,
+        category,
+        email,
+        created_at,
+        updated_at
+        ) VALUES (
+        #{userId},
+        #{title},
+        #{content},
+        #{status},
+        #{category},
+        #{email},
+        NOW(),
+        NOW()
+        )
+    </insert>
+
+    <select id="selectFaqList" resultType="kr.hi.mateydto.FaqDTO">
+        SELECT
+        id,
+        question,
+        answer
+        FROM faq_items
+        ORDER BY sort_order ASC
+    </select>
+
+</mapper>

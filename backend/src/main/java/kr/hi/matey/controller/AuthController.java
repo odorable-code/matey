@@ -3,8 +3,7 @@ package kr.hi.matey.controller;
 import java.util.HashMap;
 import java.util.Map;
 
-import kr.hi.matey.dto.AdminsDTO;
-import kr.hi.matey.dto.MemberDTO;
+import kr.hi.matey.dto.LoginDTO;
 import kr.hi.matey.dto.UserDTO;
 
 import org.springframework.http.ResponseEntity;
@@ -25,7 +24,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import kr.hi.matey.security.jwt.JwtTokenProvider;
-import kr.hi.matey.service.AdminsService;
 import kr.hi.matey.service.MemberDetailService;
 import kr.hi.matey.service.UserService;
 import kr.hi.matey.util.CustomUser;
@@ -140,7 +138,7 @@ public class AuthController {
     // ────────────────────────────────────────────────
     @Operation(summary = "로그인")
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody AdminsDTO.LoginDTO user, HttpServletResponse response) {
+    public ResponseEntity<?> login(@RequestBody LoginDTO user, HttpServletResponse response) {
         System.out.println("LoginDTO: " + user);
 
         try {
@@ -168,7 +166,7 @@ public class AuthController {
 
 
     // ────────────────────────────────────────────────
-    // 내 정보 조회  ✅ hoNum 추가
+    // 내 정보 조회
     // ────────────────────────────────────────────────
     @Operation(summary = "나의 정보")
     @GetMapping("/me")

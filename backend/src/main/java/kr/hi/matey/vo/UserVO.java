@@ -1,15 +1,13 @@
 package kr.hi.matey.vo;
 
 import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
 
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 
 @Data
 public class UserVO {
-    private Long userId;
+    private long userId;
     private String email;
     private String password;
     private String nickname;
@@ -27,7 +25,7 @@ public class UserVO {
     private Boolean isTermsAgreed;
     private Boolean isPrivacyAgreed;
     private Boolean isMarketingAgreed;
-    private Timestamp lastLoginAt;
-    private Timestamp createdAt;
-    private Timestamp updatedAt;
+    private LocalDateTime lastLoginAt;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }
