@@ -114,10 +114,6 @@ export async function login({ email, password, rememberMe }) {
 
   const user = normalizeUser(payload);
 
-  // if (!payload.ok) {
-  //   throw new Error(payload.message || '로그인에 실패했어요.');
-  // }
-
   setStoredToken(accessToken);
 
   return {

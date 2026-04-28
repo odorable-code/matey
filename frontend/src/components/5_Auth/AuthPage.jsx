@@ -7,7 +7,7 @@ import './AuthPage.css';
 const LOGIN_INITIAL = {
   email: '',
   password: '',
-  rememberMe: true,
+  rememberMe: false,
 };
 
 const SIGNUP_INITIAL = {
