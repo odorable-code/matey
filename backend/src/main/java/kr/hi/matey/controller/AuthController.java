@@ -149,17 +149,11 @@ public class AuthController {
 	@PostMapping("/login")
 	public ResponseEntity<?> login(@RequestBody UserDTO user, HttpServletResponse response){
 		
-		System.out.println("LoginDTO: " + user);
+		System.out.println("email: " + user.getEmail());
+		System.out.println("password: " + user.getPassword());
+		System.out.println("rememberMe: " + user.isRememberMe());
 		
 		try {
-			
-			//boolean res = authService.login(user);
-			
-			//if(!res) {
-			//	return ResponseEntity.status(400)
-	        //            .body(Map.of("message", "로그인에 실패했습니다. 아이디 또는 비밀번호를 확인해주세요."));
-			//}
-			
 			UsernamePasswordAuthenticationToken authToken =
                     new UsernamePasswordAuthenticationToken(user.getEmail(), user.getPassword());
 
@@ -177,6 +171,7 @@ public class AuthController {
             // 음수 (예: -1): 쿠키를 별도의 파일로 저장하지 않고 브라우저가 켜져 있는 동안만 유지. 브라우저(모든 탭과 창)를 완전히 닫으면 삭제. (일반 로그인에 사용)
             // 0: 쿠키를 즉시 삭제하라는 뜻. (로그아웃 구현 시 사용)
             int cookieMaxAge = user.isRememberMe() ? 60 * 60 * 24 * 30 : -1;
+            System.out.println("cookieMaxAge:" + cookieMaxAge);
             response.addCookie(makeRefreshCookie(refreshToken, cookieMaxAge));
             System.out.println("login success: " + customUser.getUser().getUserId());
 
@@ -198,7 +193,8 @@ public class AuthController {
 	
 	@PostMapping("/logout")
 	public ResponseEntity<?> logout(HttpServletResponse response, Authentication auth) {
-		
+		System.out.println(response);
+		System.out.println(auth);
 		// 현재 로그인된 사용자의 아이디를 가져옴.
 		// auth.isAuthenticated(): 이 사용자가 현재 유효하게 인증된(로그인된) 상태인가? > true 반환: 아이디/비밀번호가 일치했거나, 유효한 토큰을 가지고 있어서 서버가 "이 사람은 누군지 확실히 알아!"라고 인정한 상태
 	    if (auth != null && auth.isAuthenticated()) {
@@ -210,6 +206,7 @@ public class AuthController {
 	        
 	        // 서비스에게 DB에 저장된 자동 로그인 토큰을 지우게 함
 	        boolean removeAutoLoginToken = authService.removeAutoLoginToken(userId);
+	        System.out.println(removeAutoLoginToken);
 	        
 	        if (removeAutoLoginToken) {
 	            // DB 청소 완료 -> 브라우저 쿠키도 삭제 명령

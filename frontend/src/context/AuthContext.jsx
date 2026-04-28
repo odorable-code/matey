@@ -228,9 +228,10 @@ export function AuthProvider({ children }) {
   }, [syncProfile]);
 
   const login = useCallback(
-    async ({ email, password }) => {
+    async ({ email, password, rememberMe }) => {
       const trimmedEmail = String(email || '').trim();
       const rawPassword = String(password || '');
+      const isAutoLogin = Boolean(rememberMe);
 
       const mockUser = findMockUser(trimmedEmail, rawPassword);
 
@@ -254,6 +255,7 @@ export function AuthProvider({ children }) {
       const result = await loginRequest({
         email: trimmedEmail,
         password: rawPassword,
+        rememberMe: isAutoLogin
       });
 
       const nextToken = result?.accessToken || '';
