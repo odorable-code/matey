@@ -22,7 +22,7 @@
         LIMIT 1
     </select>
 
-    <insert id="insertSocialUser" parameterType="kr.hi.matey.vo.UserVO" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insertSocialUser" parameterType="kr.hi.matey.vo.UserVO" useGeneratedKeys="true" keyProperty="userId">
         INSERT INTO member (
             login_id,
             password,
@@ -37,7 +37,7 @@
             #{password},
             #{name},
             #{email},
-            #{role},
+            #{role.role_id},
             #{provider},
             #{providerUserId},
             #{profileImage}
