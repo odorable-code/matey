@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import styles from './IntimacyGauge.module.css';
-import useAnimatedNumber, { usePrefersReducedMotion } from '../hook/useAnimatedNumber';
+import useAnimatedNumber, { usePrefersReducedMotion } from '../hooks/useAnimatedNumber';
 
 export default function IntimacyGauge({
   level = 4,
