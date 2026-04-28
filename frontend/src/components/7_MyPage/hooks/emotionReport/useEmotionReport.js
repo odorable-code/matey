@@ -320,9 +320,9 @@ function buildEmotionTabData(selectedBot, filteredDailyReports) {
     statCards: [
       {
         id: 'conversation-count',
-        label: '대화량',
+        label: '함께 마음 나눈 날들',
         value: `${totalConversations}회`,
-        caption: '선택 기간 동안 기록된 대화 횟수',
+        caption: '선택 기간 동안 기록된 대화 날짜 횟수',
       },
       {
         id: 'stability',
