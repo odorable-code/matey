@@ -12,6 +12,8 @@ import AdminPage from './components/8_AdminPage/AdminPage';
 import MainPage from './pages/HomePage';
 import DownloadPage from './pages/DownloadPage';
 import AdminAccessDeniedPage from './pages/AdminAccessDeniedPage';
+import ForgotIdPage from './components/5_Auth/ForgotIdPage';
+import ResetPasswordPage from './components/5_Auth/ResetPasswordPage';
 
 function AuthLoadingScreen() {
   return (
@@ -109,6 +111,24 @@ function AppRoutes() {
           element={
             <PublicOnlyRoute>
               <ForgotPasswordPage />
+            </PublicOnlyRoute>
+          }
+        />
+        
+        <Route
+          path="/forgot-id"
+          element={
+            <PublicOnlyRoute>
+              <ForgotIdPage />
+            </PublicOnlyRoute>
+          }
+        />
+
+        <Route
+          path="/reset-password"
+          element={
+            <PublicOnlyRoute>
+              <ResetPasswordPage />
             </PublicOnlyRoute>
           }
         />

@@ -68,6 +68,7 @@ function setStoredUser(user) {
 }
 
 function clearStoredAuth() {
+  // if (user)가 false가 되어 else문이 실행됨
   setStoredToken(null);
   setStoredUser(null);
   window.localStorage.removeItem('accessToken');
@@ -100,12 +101,16 @@ function sanitizeMockUser(user) {
 }
 
 function extractTokenFromUrl() {
+  // new URL(): 내장 객체, 현재 브라우저 주소창에 떠 있는 복잡한 전체 URL 문자열을 가져와서 js가 요리하기 쉬운 객체 형태로 변환
+  // ex. "https://example.com/login?token=abc#hello" -> url.pathname, url.searchParams, url.hash 같은 속성별로 깔끔하게 정리된 상자를 만들고
+  // const queryToken = url.searchParams.get('accessToken'); 이런식으로 간단하게 원하는 속성을 꺼내 쓸 수 있다.
   const url = new URL(window.location.href);
   const queryToken = url.searchParams.get('accessToken') || url.searchParams.get('token');
 
   let hashToken = '';
   if (url.hash) {
     const hash = url.hash.replace(/^#/, '');
+    // 주소창의 ? 뒷부분을 분석
     const params = new URLSearchParams(hash);
     hashToken = params.get('accessToken') || params.get('token') || '';
   }
@@ -118,6 +123,9 @@ function extractTokenFromUrl() {
   url.searchParams.delete('token');
   url.hash = '';
 
+  // window.history.replaceState(): 브라우저 히스토리(방문 기록)을 조작하는 메서드
+  // replaceState의 특징: 새로운 기록을 추가하지 않고, 현재 페이지 기록을 새 주소로 덮어씌움. 효과: 이렇게 하면 사용자가 브라우저의 '뒤로 가기' 버튼을 눌러도 토큰이 노출된 이전 주소로 돌아가지 않음. (증거 인멸)
+  // 사용자가 주소창을 복사해서 친구에게 보내거나, 화면을 캡처할 때 내 로그인 토큰이 유출되는 것을 막기 위한 보안 조치
   window.history.replaceState({}, document.title, `${url.pathname}${url.search}${url.hash}`);
 
   return token;
@@ -272,11 +280,15 @@ export function AuthProvider({ children }) {
   );
 
   const signup = useCallback(
-    async ({ nickname, email, password }) => {
+    async ({ userName, nickname, email, password, termsAgreed, privacyAgreed, marketingAgreed }) => {
       const result = await signupRequest({
+        userName: String(userName || '').trim(),
         nickname: String(nickname || '').trim(),
         email: String(email || '').trim(),
         password: String(password || ''),
+        termsAgreed,
+        privacyAgreed,
+        marketingAgreed
       });
 
       const nextToken = result?.accessToken || '';

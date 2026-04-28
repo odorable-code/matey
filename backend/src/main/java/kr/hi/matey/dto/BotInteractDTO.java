@@ -4,5 +4,5 @@ import lombok.Data;
 
 @Data
 public class BotInteractDTO {
-    private String actionType; // feed, touch, play, counsel
+    private String actionType; // feed, touch, play, counsel 등
 }

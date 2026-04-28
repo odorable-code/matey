@@ -7,31 +7,25 @@ import java.util.List;
 
 @Mapper
 public interface MyPageDAO {
-    // Profile
+    // 1. Profile
     UserProfileDTO selectUserProfile(long userId);
+    int updateUserProfile(@Param("userId") long userId, @Param("dto") ProfileUpdateDTO dto);
 
-    // Bot Menu
+    // 2. Bot Menu & Interaction
     BotMenuDTO selectBotRelationInfo(long userId);
-    List<BotMenuDTO.BackgroundDTO> selectUserBackgrounds(@Param("userId") long userId, @Param("userLevel") int userLevel);
-    List<BotMenuDTO.MotionDTO> selectUserMotions(@Param("userId") long userId, @Param("userLevel") int userLevel);
+    List<BotMenuDTO.BackgroundDTO> selectUserBackgrounds(@Param("userLevel") int userLevel);
+    List<BotMenuDTO.MotionDTO> selectUserMotions(@Param("userLevel") int userLevel);
+    int updateBotIntimacy(@Param("userId") long userId, @Param("expGain") int expGain);
+    int updateLastInteractedAt(long userId);
 
-    // Letters
+    // 3. Letters
     int countUnreadLetters(long userId);
     int countWeeklyLetters(long userId);
     List<LetterBoxDTO.LetterDTO> selectBotLetters(long userId);
-
-    // Settings
-    UserSettingsDTO selectUserSettings(long userId);
-    int updateUserProfile(@Param("userId") long userId, @Param("dto") ProfileUpdateDTO dto);
-
-    // Update Settings
-    int updateUserSettings(@Param("userId") long userId, @Param("key") String key, @Param("value") boolean value);
-
-    // Update & Delete Letters
     int updateLetterReadStatus(@Param("userId") long userId, @Param("letterId") long letterId);
     int deleteLetter(@Param("userId") long userId, @Param("letterId") long letterId);
 
-    // Update Bot Intimacy (Interaction)
-    int updateBotIntimacy(@Param("userId") long userId, @Param("expGain") int expGain);
-    int updateLastInteractedAt(@Param("userId") long userId);
+    // 4. Settings
+    UserSettingsDTO selectUserSettings(long userId);
+    int updateUserSettings(@Param("userId") long userId, @Param("key") String key, @Param("value") boolean value);
 }

@@ -8,7 +8,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.Map;
 
 @RestController
@@ -40,7 +39,6 @@ public class MyPageController {
     public ResponseEntity<BotMenuDTO> interactWithBot(
             @AuthenticationPrincipal CustomUser user,
             @RequestBody BotInteractDTO interactDTO) {
-        // 상호작용 후 업데이트된 봇 정보를 다시 반환
         BotMenuDTO updatedBotInfo = myPageService.interactWithBot(user.getUser().getUserId(), interactDTO.getActionType());
         return ResponseEntity.ok(updatedBotInfo);
     }

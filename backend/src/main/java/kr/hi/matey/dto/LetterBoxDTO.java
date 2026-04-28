@@ -11,11 +11,11 @@ public class LetterBoxDTO {
     @Data
     public static class LetterDTO {
         private long id;
-        private String type; // RECONNECT, MIDNIGHT 등
+        private String type;
         private String sender;
         private String title;
-        private String preview; // content
-        private String date; // createdAt 포맷팅
-        private boolean unread; // !is_read
+        private String preview;
+        private String date;
+        private boolean unread;
     }
 }
