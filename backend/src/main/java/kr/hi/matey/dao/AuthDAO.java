@@ -37,6 +37,8 @@ public interface AuthDAO {
 
 	boolean updateFinalPassword(@Param("email") String email, @Param("encodedPassword") String encodedPassword);
 
+	void markTokenAsUsed(@Param("email") String email);
+	
 	boolean clearResetToken(@Param("email") String email);
 
 	void saveAutoLoginInfo(@Param("userId") Long userId, @Param("refreshToken") String refreshToken, @Param("expiryDate") LocalDateTime expiryDate);

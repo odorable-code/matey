@@ -109,6 +109,13 @@
 	    WHERE email = #{email}
 	</update>
 	
+	<update id="markTokenAsUsed">
+	    UPDATE PASSWORD_RESET_TOKEN 
+	    SET used_at = NOW() 
+	    WHERE user_id = (SELECT user_id FROM USER WHERE email = #{email})
+	    AND used_at IS NULL
+	</update>
+	
 	<update id="clearResetToken">
 	    UPDATE PASSWORD_RESET_TOKEN
 	    SET 

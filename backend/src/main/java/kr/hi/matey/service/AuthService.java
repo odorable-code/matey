@@ -165,9 +165,15 @@ public class AuthService {
 			return false;
 		}
 		
+		System.out.println(resetOpt);
 		UserVO vo = new UserVO();
 		
 		PasswordResetDTO dto = resetOpt.get();
+		System.out.println("email :" + dto.getEmail());
+		System.out.println("expiresat :" + dto.getExpiresAt());
+		System.out.println("tokenhash :" + dto.getTokenHash());
+		System.out.println("createdat :" + dto.getCreatedAt());
+		
 	    
         if (dto.getExpiresAt() == null || dto.getExpiresAt().isBefore(LocalDateTime.now())) {
             return false;
@@ -180,13 +186,20 @@ public class AuthService {
 	            return false; // 암호화 실패 (현실적으로 거의 발생하지 않음)
 	        }
 	        
-	        boolean isUpdated = authDAO.updateFinalPassword(vo.getEmail(), encodedPassword);
+	        boolean isUpdated = authDAO.updateFinalPassword(dto.getEmail(), encodedPassword);
+	        System.out.println("newPassword :" + newpassword);
 	        
 	        if(isUpdated) {
-	            // 성공하면 토큰 무효화 (이것도 DB에 반영되어야 함)
-	            authDAO.clearResetToken(vo.getEmail());
+	            // 4. 성공 시 t.used_at에 시점 기록 (토큰 무효화)
+	            authDAO.markTokenAsUsed(dto.getEmail()); 
 	            return true;
 	        }
+	        
+//	        if(isUpdated) {
+//	            // 성공하면 db의 토큰 무효화
+//	            authDAO.clearResetToken(dto.getEmail());
+//	            return true;
+//	        }
 	        else {
 	        	return false;
 	        }
