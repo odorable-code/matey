@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import styles from './DashboardContent.module.css';
-import useAnimatedNumber, { usePrefersReducedMotion } from '../hook/useAnimatedNumber';
+import useAnimatedNumber, { usePrefersReducedMotion } from '../hooks/useAnimatedNumber';
 
 const STAGE_FADE_DURATION = 900;
 const DAILY_GREETING_STORAGE_KEY = 'matey-daily-greeting-last-seen-v2';

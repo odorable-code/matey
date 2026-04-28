@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import styles from './SettingsContent.module.css';
+import { myPageAPI } from '../../../../utils/api';
 
 const initialSettings = {
   pushNotice: true,
@@ -17,11 +18,26 @@ const accountInfo = {
 function SettingsContent() {
   const [settings, setSettings] = useState(initialSettings);
 
+  useEffect(() => {
+    myPageAPI.getSettings().then(data => {
+      if (data) {
+        setSettings(prev => ({
+          ...prev,
+          pushNotice: data.pushNotice ?? prev.pushNotice,
+        }));
+      }
+    }).catch(console.error);
+  }, []);
+
   const toggleSetting = (key) => {
-    setSettings((prev) => ({
-      ...prev,
-      [key]: !prev[key],
-    }));
+    setSettings((prev) => {
+      const updated = { ...prev, [key]: !prev[key] };
+      // Call API to update the setting, only mapping what backend expects
+      if (key === 'pushNotice') {
+        myPageAPI.updateSettings({ pushNotice: updated.pushNotice }).catch(console.error);
+      }
+      return updated;
+    });
   };
 
   const settingGroups = [

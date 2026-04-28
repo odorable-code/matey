@@ -1,29 +1,29 @@
-/* src/components/7_MyPage/MyPage.css */
-@import '../../styles/variables.css';
+/* src/components/7_MyPage/pages/MyPageContainer.module.css */
+@import '../../../styles/variables.css';
 
-.my-page-root {
+.pageRoot {
   position: relative;
   min-height: 100vh;
   color: var(--matey-color-text-strong);
 }
 
-.my-page-root * {
+.pageRoot * {
   box-sizing: border-box;
 }
 
-.my-page-root button,
-.my-page-root input,
-.my-page-root select,
-.my-page-root textarea {
+.pageRoot button,
+.pageRoot input,
+.pageRoot select,
+.pageRoot textarea {
   font-family: var(--font-family);
 }
 
-.my-page-root a {
+.pageRoot a {
   color: inherit;
 }
 
-.my-page-shell::before,
-.my-page-shell::after {
+.pageShell::before,
+.pageShell::after {
   content: '';
   position: absolute;
   border-radius: 999px;
@@ -32,7 +32,7 @@
   z-index: 0;
 }
 
-.my-page-shell::before {
+.pageShell::before {
   top: 90px;
   left: -60px;
   width: 240px;
@@ -40,7 +40,7 @@
   background: rgba(121, 183, 255, 0.18);
 }
 
-.my-page-shell::after {
+.pageShell::after {
   top: 80px;
   right: -40px;
   width: 260px;
@@ -48,38 +48,38 @@
   background: rgba(255, 147, 183, 0.14);
 }
 
-.my-page-shell__container,
-.my-page-shell__grid,
-.my-page-shell__sidebar,
-.my-page-shell__main {
+.pageShellContainer,
+.pageShellGrid,
+.pageShellSidebar,
+.pageShellMain {
   position: relative;
   z-index: 1;
 }
 
-.my-page-sidebar button:hover,
-.my-page-sidebar button:focus-visible {
+.pageSidebar button:hover,
+.pageSidebar button:focus-visible {
   transform: translateY(-1px);
   outline: none;
 }
 
-.my-page-sidebar button.is-active {
+.pageSidebar button[aria-current='page'] {
   color: var(--matey-color-text-strong);
 }
 
-.my-page-hero {
+.pageHero {
   transition:
     transform var(--matey-transition-base),
     box-shadow var(--matey-transition-base),
     border-color var(--matey-transition-base);
 }
 
-.my-page-content {
+.pageContent {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-.my-page-content__head {
+.pageContentHead {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -87,7 +87,7 @@
   padding: 0 4px;
 }
 
-.my-page-content__badge {
+.pageContentBadge {
   min-height: 34px;
   padding: 0 14px;
   border-radius: 999px;
@@ -104,12 +104,12 @@
   letter-spacing: 0.06em;
 }
 
-.my-page-content__copy {
+.pageContentCopy {
   min-width: 0;
   flex: 1;
 }
 
-.my-page-content__title {
+.pageContentTitle {
   margin: 0;
   color: var(--matey-color-text-strong);
   font-size: clamp(24px, 2vw, 30px);
@@ -118,7 +118,7 @@
   letter-spacing: -0.04em;
 }
 
-.my-page-content__subtitle {
+.pageContentSubtitle {
   margin: 8px 0 0;
   color: var(--matey-color-text-body);
   font-size: 14px;
@@ -126,7 +126,7 @@
   font-weight: 700;
 }
 
-.my-page-content__panel {
+.pageContentPanel {
   min-height: 420px;
   border-radius: var(--matey-radius-card-lg);
   border: 1px solid rgba(132, 146, 181, 0.12);
@@ -139,42 +139,41 @@
   overflow: hidden;
 }
 
-.my-page-section {
+.pageSection {
   padding: 24px;
 }
 
-.my-page-section__grid {
+.pageSectionGrid {
   display: grid;
   gap: 18px;
 }
 
-.my-page-section__grid--2 {
+.pageSectionGrid2 {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.my-page-section__grid--3 {
+.pageSectionGrid3 {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.my-page-section__stack {
+.pageSectionStack {
   display: flex;
   flex-direction: column;
   gap: 18px;
 }
 
-.my-page-card {
+.pageCard {
   border-radius: var(--matey-radius-card);
   border: 1px solid rgba(132, 146, 181, 0.1);
-  background:
-    linear-gradient(180deg, rgba(255,255,255,0.94) 0%, rgba(249,250,255,0.98) 100%);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, rgba(249, 250, 255, 0.98) 100%);
   box-shadow: 0 14px 30px rgba(140, 149, 175, 0.08);
 }
 
-.my-page-card__inner {
+.pageCardInner {
   padding: 20px;
 }
 
-.my-page-empty {
+.pageEmpty {
   min-height: 280px;
   display: grid;
   place-items: center;
@@ -183,19 +182,19 @@
   color: var(--matey-color-text-soft);
 }
 
-.my-page-empty__emoji {
+.pageEmptyEmoji {
   font-size: 40px;
   margin-bottom: 12px;
 }
 
-.my-page-empty__title {
+.pageEmptyTitle {
   margin: 0;
   font-size: 18px;
   font-weight: 900;
   color: var(--matey-color-text-strong);
 }
 
-.my-page-empty__description {
+.pageEmptyDescription {
   margin: 8px 0 0;
   font-size: 14px;
   line-height: 1.7;
@@ -204,108 +203,108 @@
 }
 
 @media (max-width: 1180px) {
-  .my-page-shell__grid {
+  .pageShellGrid {
     grid-template-columns: 210px minmax(0, 1fr) !important;
   }
 }
 
 @media (max-width: 1024px) {
-  .my-page-shell {
+  .pageShell {
     padding-top: calc(var(--matey-header-height, 82px) + 18px) !important;
     padding-bottom: 40px !important;
   }
 
-  .my-page-shell__container {
+  .pageShellContainer {
     width: min(var(--matey-max-width, 1240px), calc(100% - 24px)) !important;
   }
 
-  .my-page-shell__grid {
+  .pageShellGrid {
     grid-template-columns: 1fr !important;
     gap: 18px !important;
   }
 
-  .my-page-shell__sidebar {
+  .pageShellSidebar {
     position: relative !important;
     top: 0 !important;
   }
 
-  .my-page-content__head {
+  .pageContentHead {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .my-page-section__grid--3 {
+  .pageSectionGrid3 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 768px) {
-  .my-page-hero {
+  .pageHero {
     padding: 12px !important;
     border-radius: 28px !important;
   }
 
-  .my-page-sidebar {
+  .pageSidebar {
     padding: 16px 12px 14px !important;
     border-radius: 28px !important;
   }
 
-  .my-page-content__panel {
+  .pageContentPanel {
     border-radius: 28px;
   }
 
-  .my-page-section {
+  .pageSection {
     padding: 18px;
   }
 
-  .my-page-section__grid--2,
-  .my-page-section__grid--3 {
+  .pageSectionGrid2,
+  .pageSectionGrid3 {
     grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 640px) {
-  .my-page-shell {
+  .pageShell {
     padding-top: calc(var(--matey-header-height, 82px) + 14px) !important;
   }
 
-  .my-page-shell__container {
+  .pageShellContainer {
     width: calc(100% - 20px) !important;
   }
 
-  .my-page-content {
+  .pageContent {
     gap: 14px;
   }
 
-  .my-page-content__title {
+  .pageContentTitle {
     font-size: 22px;
   }
 
-  .my-page-content__subtitle {
+  .pageContentSubtitle {
     font-size: 13px;
   }
 
-  .my-page-content__panel {
+  .pageContentPanel {
     min-height: 360px;
     border-radius: 24px;
   }
 
-  .my-page-section {
+  .pageSection {
     padding: 16px;
   }
 
-  .my-page-card {
+  .pageCard {
     border-radius: 22px;
   }
 
-  .my-page-card__inner {
+  .pageCardInner {
     padding: 16px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .my-page-sidebar button,
-  .my-page-hero {
+  .pageSidebar button,
+  .pageHero {
     transition: none !important;
   }
 }

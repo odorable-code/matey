@@ -1,17 +1,28 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import styles from './ProfileCard.module.css';
+import { myPageAPI } from '../../../utils/api';
 
 const DEFAULT_PROFILE_IMAGE = '/images/mypage/bot/matey-profile.png';
 
-const profileData = {
-  // TODO: API 연동 - 실제 사용자 프로필 데이터로 교체
-  greeting: '반가워요',
-  nickname: '성호',
-  email: 'sungho@example.com',
-  profileImage: DEFAULT_PROFILE_IMAGE,
-};
-
 function ProfileCard() {
+  const [profileData, setProfileData] = useState({
+    greeting: '반가워요',
+    nickname: '성호',
+    email: 'sungho@example.com',
+    profileImage: DEFAULT_PROFILE_IMAGE,
+  });
+
+  useEffect(() => {
+    myPageAPI.getProfile().then(data => {
+      setProfileData({
+        greeting: data.greeting || '',
+        nickname: data.nickname || '',
+        email: data.email || '',
+        profileImage: data.profileImage || DEFAULT_PROFILE_IMAGE,
+      });
+    }).catch(console.error);
+  }, []);
+
   const handleImageError = (event) => {
     event.currentTarget.src = DEFAULT_PROFILE_IMAGE;
   };

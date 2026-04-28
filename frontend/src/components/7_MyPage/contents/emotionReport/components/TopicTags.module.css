@@ -1,0 +1,154 @@
+.section {
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  gap: 14px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.sectionEyebrow {
+  display: inline-flex;
+  align-items: center;
+  color: #917db4;
+  font-size: 11px;
+  line-height: 1.2;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.sectionTitle {
+  margin: 8px 0 0;
+  color: #2f2a3f;
+  font-size: 22px;
+  line-height: 1.2;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  word-break: keep-all;
+}
+
+.sectionDescription {
+  margin: 0;
+  max-width: 420px;
+  color: #766e8b;
+  font-size: 13px;
+  line-height: 1.65;
+  font-weight: 700;
+  text-align: right;
+  word-break: keep-all;
+}
+
+.card {
+  min-width: 0;
+  padding: 18px;
+  border-radius: 24px;
+  border: 1px solid rgba(229, 219, 247, 0.96);
+  background:
+    radial-gradient(circle at top right, rgba(157, 140, 255, 0.10), transparent 34%),
+    radial-gradient(circle at bottom left, rgba(255, 187, 215, 0.10), transparent 32%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(249, 244, 255, 0.90) 100%);
+  box-shadow: 0 12px 24px rgba(138, 115, 181, 0.08);
+  display: grid;
+  gap: 14px;
+}
+
+.tagList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag {
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(216, 201, 243, 0.94);
+  background: rgba(255, 255, 255, 0.82);
+  color: #7d6ea1;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  box-shadow: 0 6px 14px rgba(138, 115, 181, 0.05);
+}
+
+.noteList {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 8px;
+}
+
+.noteItem {
+  color: #766e8b;
+  font-size: 13px;
+  line-height: 1.65;
+  font-weight: 700;
+  word-break: keep-all;
+}
+
+.emptyState {
+  min-height: 180px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  color: #7a728f;
+  font-size: 13px;
+  line-height: 1.6;
+  font-weight: 700;
+  border-radius: 18px;
+  border: 1px dashed rgba(217, 204, 241, 0.92);
+  background: rgba(255, 255, 255, 0.62);
+  padding: 16px;
+}
+
+@media (max-width: 1180px) {
+  .sectionDescription {
+    max-width: none;
+    text-align: left;
+  }
+}
+
+@media (max-width: 768px) {
+  .section {
+    gap: 12px;
+  }
+
+  .sectionHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .sectionTitle {
+    font-size: 20px;
+  }
+
+  .card {
+    padding: 16px;
+    border-radius: 20px;
+  }
+
+  .tag {
+    min-height: 32px;
+    padding: 0 11px;
+    font-size: 11px;
+  }
+
+  .noteItem {
+    font-size: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .tag {
+    transition: none;
+  }
+}

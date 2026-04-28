@@ -157,15 +157,14 @@ public class AuthService {
 	// 비번 재설정(재설정된 비번 db에 저장)
 	@Transactional
 	public boolean updatePassword(String token, String newpassword) {
-		
-		
+
 		Optional<PasswordResetDTO> resetOpt = authDAO.findUserVOByToken(token);
+		System.out.println(resetOpt) ;
 
 		if (resetOpt.isEmpty()) {
 			return false;
 		}
-		
-		System.out.println(resetOpt);
+		System.out.println("resetOpt.isEmpty() 밑 :" + resetOpt);
 		UserVO vo = new UserVO();
 		
 		PasswordResetDTO dto = resetOpt.get();
