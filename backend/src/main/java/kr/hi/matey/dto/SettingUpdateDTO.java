@@ -3,6 +3,6 @@ import lombok.Data;
 
 @Data
 public class SettingUpdateDTO {
-    private String settingKey; // pushNotice, emailNotice, gentleTone 등
+    private String settingKey; // pushNotice, satisfactionPopup, marketingNotice
     private boolean settingValue;
 }
