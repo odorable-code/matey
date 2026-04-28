@@ -82,6 +82,7 @@ function MyPageContainer() {
       case 'settings':
         return <SettingsContent />;
 
+      // activeMenu가 'dashboard'일 때와 그 외의 정의되지 않은 모든 값일 때 해당 내용을 실행
       case 'dashboard':
       default:
         return (
