@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import styles from './ProfileCard.module.css';
-import { myPageAPI } from '../../utils/api';
+import { myPageAPI } from '../../../utils/api';
 
 const DEFAULT_PROFILE_IMAGE = '/images/mypage/bot/matey-profile.png';
 

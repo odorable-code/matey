@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import styles from './SettingsContent.module.css';
-import { myPageAPI } from '../../../utils/api';
+import { myPageAPI } from '../../../../utils/api';
 
 const initialSettings = {
   pushNotice: true,
