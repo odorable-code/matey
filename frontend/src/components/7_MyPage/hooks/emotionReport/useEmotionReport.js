@@ -1,24 +1,26 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
-/**
- * 이미지 교체 방법
- * 1) 지금은 imageUrl / imagePath를 비워 둠
- * 2) 나중에 사용자가 직접 업로드한 경로로 아래 값만 바꾸면 됨
- *    예: imageUrl: '/images/emotion-report/cat.png'
- */
+const CURRENT_YEAR = 2026;
 
-export const REPORT_TAB_OPTIONS = [
+const DEFAULT_TAB_OPTIONS = [
   { key: 'emotion', label: '감정 리포트' },
   { key: 'history', label: '대화 히스토리' },
 ];
 
-export const REPORT_PERIOD_OPTIONS = [
+const DEFAULT_PERIOD_OPTIONS = [
   { key: '7d', label: '최근 7일' },
   { key: '30d', label: '최근 30일' },
   { key: '90d', label: '최근 90일' },
 ];
 
-export const BOT_OPTIONS = [
+const CHARACTER_IMAGE_MAP = {
+  cat: '/images/emotion-report/cat.png',
+  bear: '/images/emotion-report/bear.png',
+  dog: '/images/emotion-report/dog.png',
+  hamster: '/images/emotion-report/hamster.png',
+};
+
+const FALLBACK_HERO_BOTS = [
   {
     key: 'cat',
     name: '냥이',
@@ -26,8 +28,18 @@ export const BOT_OPTIONS = [
     fallbackLabel: '냥',
     accentColor: '#9A85FF',
     softColor: '#F2ECFF',
-    imageUrl: '',
-    imagePath: '',
+    imageUrl: CHARACTER_IMAGE_MAP.cat,
+    imagePath: CHARACTER_IMAGE_MAP.cat,
+    cardObjectPosition: 'center 14%',
+    reportObjectPosition: 'center bottom',
+    title: '냥이 피드백',
+    summary: '감정을 크게 보기보다 어디서 흔들렸는지 먼저 짚어야 해.',
+    bullets: [
+      '결과 불안이 감정보다 먼저 커지는 흐름이 보여.',
+      '비교가 시작되면 자책으로 이어지는 패턴이 있어.',
+      '기준을 조금 낮추면 전체 감정 흐름이 가벼워질 수 있어.',
+    ],
+    chips: ['현실 점검', '자책 교정', '기준 재정비'],
   },
   {
     key: 'bear',
@@ -36,8 +48,18 @@ export const BOT_OPTIONS = [
     fallbackLabel: '곰',
     accentColor: '#F3A55C',
     softColor: '#FFF1E4',
-    imageUrl: '',
-    imagePath: '',
+    imageUrl: CHARACTER_IMAGE_MAP.bear,
+    imagePath: CHARACTER_IMAGE_MAP.bear,
+    cardObjectPosition: 'center 18%',
+    reportObjectPosition: 'center bottom',
+    title: '곰이 리포트',
+    summary: '지친 날에는 더 잘하려 하기보다 먼저 버티는 마음을 안아줘야 해.',
+    bullets: [
+      '무거운 날에도 다시 돌아오려는 힘이 있어.',
+      '해결보다 안정이 먼저 필요한 날이 보여.',
+      '자기비판을 줄이면 회복도 조금 더 빨라질 수 있어.',
+    ],
+    chips: ['안정감', '버팀', '따뜻한 위로'],
   },
   {
     key: 'dog',
@@ -46,8 +68,18 @@ export const BOT_OPTIONS = [
     fallbackLabel: '강',
     accentColor: '#7DBBF7',
     softColor: '#ECF6FF',
-    imageUrl: '',
-    imagePath: '',
+    imageUrl: CHARACTER_IMAGE_MAP.dog,
+    imagePath: CHARACTER_IMAGE_MAP.dog,
+    cardObjectPosition: 'center 16%',
+    reportObjectPosition: 'center bottom',
+    title: '강아지 리포트',
+    summary: '큰 결론보다 작은 실행 하나를 같이 잡아주는 게 중요해 보여.',
+    bullets: [
+      '불안이 올라와도 다시 움직이려는 흐름이 있어.',
+      '혼자 다 해결하려 할수록 부담이 커질 수 있어.',
+      '작게 시작하면 훨씬 덜 무겁게 움직일 수 있어.',
+    ],
+    chips: ['공감', '응원', '작은 실행'],
   },
   {
     key: 'hamster',
@@ -56,793 +88,533 @@ export const BOT_OPTIONS = [
     fallbackLabel: '햄',
     accentColor: '#C6A5FF',
     softColor: '#F4EEFF',
-    imageUrl: '',
-    imagePath: '',
-  },
-];
-
-const HERO_REPORT_MAP = {
-  cat: {
-    title: '냥이 피드백',
-    summary:
-      '감정을 너무 크게 보기보다, 정확히 어디서 흔들렸는지부터 짚어야 해. 지금 필요한 건 예민함이 아니라 해석이야.',
-    bullets: [
-      '결과 불안이 감정보다 먼저 몸집을 키우는 흐름이 보여.',
-      '비교가 시작되면 바로 자책으로 이어지는 연결이 자주 보여.',
-      '기준을 조금만 조절해도 전체 감정 흐름이 훨씬 가벼워질 수 있어.',
-    ],
-    chips: ['현실 점검', '자책 교정', '기준 재정비'],
-  },
-  bear: {
-    title: '곰이 리포트',
-    summary:
-      '지친 날이 있어도 결국 다시 돌아오려는 힘이 보여. 지금은 더 잘하려 하기보다, 버티고 있는 마음을 먼저 안아줘야 해.',
-    bullets: [
-      '감정이 무거운 날에도 완전히 놓지 않고 다시 돌아오려는 힘이 있어.',
-      '해결보다 안정이 먼저 필요한 날이 자주 보여.',
-      '자기비판을 줄이면 회복 속도도 더 부드럽게 올라갈 가능성이 커.',
-    ],
-    chips: ['안정감', '버팀', '따뜻한 위로'],
-  },
-  dog: {
-    title: '강아지 리포트',
-    summary:
-      '많이 힘든데도 계속 해보려는 마음이 남아 있어. 그래서 지금은 큰 결론보다 작은 실행 하나를 같이 잡아주는 게 중요해 보여.',
-    bullets: [
-      '불안이 올라와도 도움을 찾고 다시 움직이려는 흐름이 분명히 있어.',
-      '혼자 다 해결하려 할수록 감정 부담이 더 커지는 장면이 보여.',
-      '작은 계획으로 쪼개면 훨씬 덜 무겁게 시작할 수 있어.',
-    ],
-    chips: ['공감', '응원', '작은 실행'],
-  },
-  hamster: {
+    imageUrl: CHARACTER_IMAGE_MAP.hamster,
+    imagePath: CHARACTER_IMAGE_MAP.hamster,
+    cardObjectPosition: 'center 12%',
+    reportObjectPosition: 'center bottom',
     title: '햄이 리포트',
-    summary:
-      '감정이 생활 리듬하고 같이 흔들리는 패턴이 보여. 마음을 한 번에 바꾸기보다 하루 루틴 하나를 잡는 게 더 효과적일 수 있어.',
+    summary: '감정이 생활 리듬과 같이 흔들리는 패턴이 보여.',
     bullets: [
-      '수면이나 일상 리듬이 흐트러진 날 감정 반응도 더 커지는 편이야.',
-      '작은 루틴 하나만 안정돼도 전체 감정 흐름이 정돈될 수 있어.',
-      '거창한 다짐보다 생활 단위의 작은 회복이 더 중요해 보여.',
+      '수면이나 루틴이 흔들리면 감정 반응도 커져.',
+      '작은 루틴 하나만 안정돼도 흐름이 정돈될 수 있어.',
+      '거창한 다짐보다 생활 단위 회복이 중요해.',
     ],
     chips: ['루틴', '생활 정리', '잔잔한 회복'],
   },
-};
+];
 
-const BOT_ANALYSIS_MAP = {
-  cat: {
-    stability: 82,
-    recovery: 76,
-    acceptance: 68,
-    coreTitle: '불안과 자책이 반복되지만, 감정의 원인을 정확히 짚으려는 흐름도 보여요.',
-    coreDescription:
-      '결과 중심의 압박 때문에 스스로를 몰아붙이는 순간이 있었지만, 문제를 감정이 아닌 상황 구조로 보려는 시도도 함께 나타났어요.',
-    flow: [
-      { label: '불안', value: 72 },
-      { label: '자책', value: 56 },
-      { label: '정리', value: 49 },
-      { label: '위로', value: 42 },
-      { label: '집중', value: 36 },
-    ],
-    distribution: [
-      { label: '불안', value: 34, color: '#9A85FF', description: '압박과 걱정이 높았던 구간' },
-      { label: '안정', value: 24, color: '#7ED4C7', description: '스스로 정리된 흐름' },
-      { label: '자책', value: 22, color: '#FF8DB3', description: '스스로를 몰아붙인 표현' },
-      { label: '위로', value: 20, color: '#FFB38A', description: '회복을 찾는 감정 반응' },
-    ],
-    defaultTopics: ['시험', '비교', '자기기대', '불안', '자책'],
-  },
-  bear: {
-    stability: 86,
-    recovery: 81,
-    acceptance: 78,
-    coreTitle: '지친 마음이 자주 보였지만, 다시 버티고 일어나는 힘도 분명히 있어요.',
-    coreDescription:
-      '부담감이 반복되는 날에도 완전히 무너지기보다 다시 일상으로 돌아오려는 회복 흐름이 꾸준히 나타났어요.',
-    flow: [
-      { label: '위로', value: 68 },
-      { label: '안정', value: 61 },
-      { label: '불안', value: 48 },
-      { label: '회복', value: 46 },
-      { label: '자책', value: 33 },
-    ],
-    distribution: [
-      { label: '안정', value: 31, color: '#7ED4C7', description: '감정이 정리된 구간' },
-      { label: '위로', value: 29, color: '#F3A55C', description: '따뜻한 회복 흐름' },
-      { label: '불안', value: 23, color: '#9A85FF', description: '걱정이 올라온 장면' },
-      { label: '자책', value: 17, color: '#FF8DB3', description: '스스로에게 엄격했던 구간' },
-    ],
-    defaultTopics: ['위로', '버팀', '회복', '일상', '마음정리'],
-  },
-  dog: {
-    stability: 79,
-    recovery: 83,
-    acceptance: 71,
-    coreTitle: '마음이 흔들릴 때마다 도움을 찾고 다시 해보려는 의지가 분명히 보여요.',
-    coreDescription:
-      '힘들다고 느끼는 순간이 있어도 그대로 멈추기보다 해결 방법을 함께 찾으려는 흐름이 자주 등장했어요.',
-    flow: [
-      { label: '공감', value: 70 },
-      { label: '불안', value: 55 },
-      { label: '실행', value: 51 },
-      { label: '안정', value: 47 },
-      { label: '위로', value: 40 },
-    ],
-    distribution: [
-      { label: '공감', value: 30, color: '#FF8DB3', description: '감정을 이해받고 싶은 흐름' },
-      { label: '불안', value: 27, color: '#9A85FF', description: '걱정과 긴장이 올라온 구간' },
-      { label: '안정', value: 23, color: '#7ED4C7', description: '다시 가라앉은 장면' },
-      { label: '실행', value: 20, color: '#FFB38A', description: '해결책을 찾는 흐름' },
-    ],
-    defaultTopics: ['응원', '실행', '공감', '불안', '계획'],
-  },
-  hamster: {
-    stability: 77,
-    recovery: 74,
-    acceptance: 73,
-    coreTitle: '복잡한 감정이 생활 리듬과 연결되어 나타나는 패턴이 보여요.',
-    coreDescription:
-      '마음이 흔들릴 때 수면, 식사, 공부 루틴도 같이 영향을 받는 흐름이 보여서 작은 생활 단위 정리가 중요해 보여요.',
-    flow: [
-      { label: '루틴', value: 63 },
-      { label: '불안', value: 52 },
-      { label: '안정', value: 48 },
-      { label: '회복', value: 41 },
-      { label: '집중', value: 35 },
-    ],
-    distribution: [
-      { label: '루틴', value: 28, color: '#F2C94C', description: '생활 리듬과 연결된 흐름' },
-      { label: '불안', value: 26, color: '#9A85FF', description: '걱정이 올라온 구간' },
-      { label: '안정', value: 24, color: '#7ED4C7', description: '정돈된 장면' },
-      { label: '회복', value: 22, color: '#FFB38A', description: '잔잔히 나아진 흐름' },
-    ],
-    defaultTopics: ['루틴', '생활관리', '회복', '불안', '집중'],
-  },
-};
-
-const BOT_HISTORY_REPORTS = {
-  cat: {
-    toneLabel: '직설형 리포트',
-    summary:
-      '지금 가장 눈에 띄는 건 결과 압박 때문에 스스로를 몰아붙이는 흐름이 반복된다는 점이에요.',
-    feedbackTitle: '자책보다 먼저 원인을 분리해서 봐야 해요.',
-    feedbackBody:
-      '불안의 원인을 감정 탓으로 돌리기보다, 실제로 무엇이 부담이었는지부터 분리해서 보면 감정이 훨씬 덜 무거워질 수 있어요.',
-    actionTips: [
-      '오늘 가장 흔들린 순간을 하나만 고르기',
-      '그 순간의 원인을 감정/상황으로 나눠 적기',
-      '결과 기준 대신 과정 기준 문장 하나 만들기',
-    ],
-    meters: [
-      { label: '현실 점검', value: 84 },
-      { label: '자책 경향', value: 62 },
-      { label: '회복 가능성', value: 74 },
-    ],
-  },
-  bear: {
-    toneLabel: '든든한 위로형',
-    summary:
-      '감정이 힘들게 올라오는 날에도 완전히 무너지기보다 다시 버티려는 힘이 계속 남아 있어요.',
-    feedbackTitle: '지금은 잘하려는 마음보다 버틴 마음을 먼저 봐야 해요.',
-    feedbackBody:
-      '감정이 흔들린 날에도 결국 다시 일상으로 돌아가려는 흐름이 있으니, 지금은 자기비판보다 자기인정이 더 필요한 시기예요.',
-    actionTips: [
-      '오늘 버텨낸 것 1가지 적기',
-      '나를 너무 몰아붙인 문장 지우기',
-      '휴식 시간도 계획에 포함시키기',
-    ],
-    meters: [
-      { label: '안정감', value: 88 },
-      { label: '회복력', value: 81 },
-      { label: '자기수용', value: 78 },
-    ],
-  },
-  dog: {
-    toneLabel: '공감·응원형',
-    summary:
-      '힘들다는 표현 뒤에 “그래도 해보겠다”는 의지가 같이 붙는 날이 많았어요.',
-    feedbackTitle: '지금은 큰 결론보다 작은 실행 하나면 충분해요.',
-    feedbackBody:
-      '마음이 복잡할수록 해결을 크게 잡기 쉬운데, 지금은 오늘 할 수 있는 가장 작은 행동 한 가지로 시작하는 게 좋아요.',
-    actionTips: [
-      '오늘 할 일 1개만 정하기',
-      '불안할 때 바로 할 호흡 루틴 만들기',
-      '도움 요청 문장 미리 준비해두기',
-    ],
-    meters: [
-      { label: '공감 민감도', value: 86 },
-      { label: '실행 연결', value: 77 },
-      { label: '감정 회복', value: 82 },
-    ],
-  },
-  hamster: {
-    toneLabel: '세심한 생활형',
-    summary:
-      '감정 흐름이 생활 리듬과 꽤 밀접하게 연결되어 있어서 작은 습관 정리가 중요해 보여요.',
-    feedbackTitle: '생활 단위를 정리하면 감정도 같이 따라올 가능성이 커요.',
-    feedbackBody:
-      '지금은 마음을 한 번에 다 바꾸려 하기보다 수면, 식사, 공부 같은 작은 루틴 하나를 안정시키는 게 먼저예요.',
-    actionTips: [
-      '취침 시간 30분만 고정하기',
-      '하루 첫 할 일 하나만 일정에 넣기',
-      '감정이 흔들린 날의 생활 패턴 기록하기',
-    ],
-    meters: [
-      { label: '루틴 민감도', value: 83 },
-      { label: '생활 회복', value: 72 },
-      { label: '집중 회복', value: 69 },
-    ],
-  },
-};
-
-const DAILY_REPORTS = {
-  '2026-04-27': {
-    dateKey: '2026-04-27',
-    displayDate: '4월 27일',
-    dominantEmotion: '불안',
-    activeTimeRange: '22:00 ~ 23:30',
-    conversationCount: 5,
-    summaryTitle: '시험 결과와 비교에 대한 압박이 크게 올라온 날',
-    mainConcern: '성적이 기대에 못 미칠까 봐 불안한 마음',
-    dominantTopics: ['시험', '성적', '비교'],
-    memo: [
-      '오늘은 결과에 대한 압박이 특히 크게 느껴졌어요.',
-      '친구와 비교하면서 스스로를 깎아내리는 말이 반복됐어요.',
-      '그래도 마지막에는 다시 계획을 세워보려는 흐름이 남아 있었어요.',
-    ],
-    timeline: [
-      {
-        id: 1,
-        title: '시험 결과 불안',
-        description: '점수와 결과를 미리 걱정하는 표현이 반복됐어요.',
-      },
-      {
-        id: 2,
-        title: '비교 후 자책',
-        description: '주변 사람과 비교한 뒤 스스로를 과하게 평가했어요.',
-      },
-      {
-        id: 3,
-        title: '다시 정리 시도',
-        description: '마지막에는 일정을 다시 정리하며 회복 흐름이 보였어요.',
-      },
-    ],
-    chatPreview: [
-      {
-        id: 'd1-u1',
-        role: 'user',
-        name: '사용자',
-        time: '22:08',
-        text: '나 이번 시험 망한 것 같아. 다들 잘하는 것 같은데 나만 뒤처지는 느낌이야.',
-      },
-      {
-        id: 'd1-b1',
-        role: 'bot',
-        name: '냥이',
-        time: '22:09',
-        text: '지금은 결과를 확정한 것도 아닌데 벌써 스스로를 탈락 처리하고 있어. 그건 너무 빨라.',
-      },
-      {
-        id: 'd1-u2',
-        role: 'user',
-        name: '사용자',
-        time: '22:16',
-        text: '그래도 진짜 자신이 없어. 계속 비교하게 돼.',
-      },
-      {
-        id: 'd1-b2',
-        role: 'bot',
-        name: '강아지',
-        time: '22:17',
-        text: '많이 불안했겠다. 오늘은 비교를 멈추고 내일 할 한 가지만 같이 정해보자.',
-      },
-    ],
-  },
-  '2026-04-24': {
-    dateKey: '2026-04-24',
-    displayDate: '4월 24일',
-    dominantEmotion: '위로',
-    activeTimeRange: '21:00 ~ 22:10',
-    conversationCount: 4,
-    summaryTitle: '지친 마음을 털어놓으며 위로를 찾은 날',
-    mainConcern: '계속 버티는 게 맞는지에 대한 회의감',
-    dominantTopics: ['위로', '버팀', '진로'],
-    memo: [
-      '오늘은 “버티는 게 맞는지”에 대한 피로감이 자주 나왔어요.',
-      '감정을 해결하려 하기보다 누군가 알아주길 바라는 흐름이 강했어요.',
-      '위로를 받은 뒤에는 마음이 조금 가라앉는 반응이 있었어요.',
-    ],
-    timeline: [
-      {
-        id: 1,
-        title: '지침 표현',
-        description: '버겁고 지친 마음을 직접적으로 표현했어요.',
-      },
-      {
-        id: 2,
-        title: '공감 요청',
-        description: '답을 찾기보다 위로와 인정이 더 필요한 상태였어요.',
-      },
-      {
-        id: 3,
-        title: '감정 완화',
-        description: '대화 후 감정 온도가 조금 낮아졌어요.',
-      },
-    ],
-    chatPreview: [
-      {
-        id: 'd2-u1',
-        role: 'user',
-        name: '사용자',
-        time: '21:14',
-        text: '요즘 그냥 계속 버티는 느낌이야. 이게 맞는 건지도 모르겠어.',
-      },
-      {
-        id: 'd2-b1',
-        role: 'bot',
-        name: '곰이',
-        time: '21:15',
-        text: '그렇게 버티고 있다는 것만으로도 이미 많이 해내고 있는 거야. 오늘은 답보다 마음을 먼저 쉬게 하자.',
-      },
-    ],
-  },
-  '2026-04-21': {
-    dateKey: '2026-04-21',
-    displayDate: '4월 21일',
-    dominantEmotion: '공감',
-    activeTimeRange: '20:30 ~ 21:20',
-    conversationCount: 3,
-    summaryTitle: '해결보다 공감과 응원이 더 필요했던 날',
-    mainConcern: '해야 할 일은 많은데 손이 잘 안 가는 상태',
-    dominantTopics: ['미루기', '압박', '응원'],
-    memo: [
-      '해야 할 일이 많다는 부담이 있었지만 바로 실행으로 이어지지 않았어요.',
-      '혼나기보다 같이 정리해주는 톤에 더 잘 반응했어요.',
-      '작은 계획으로 쪼개면 시작할 수 있겠다는 말이 나왔어요.',
-    ],
-    timeline: [
-      {
-        id: 1,
-        title: '할 일 압박',
-        description: '해야 할 일이 너무 많아 시작 자체가 어려웠어요.',
-      },
-      {
-        id: 2,
-        title: '공감 반응',
-        description: '공감 받았을 때 감정이 먼저 풀렸어요.',
-      },
-      {
-        id: 3,
-        title: '작은 실행 계획',
-        description: '일정을 작게 나누며 다시 시도할 여지가 생겼어요.',
-      },
-    ],
-    chatPreview: [
-      {
-        id: 'd3-u1',
-        role: 'user',
-        name: '사용자',
-        time: '20:41',
-        text: '할 건 많은데 시작이 너무 싫어. 괜히 더 미루게 돼.',
-      },
-      {
-        id: 'd3-b1',
-        role: 'bot',
-        name: '강아지',
-        time: '20:42',
-        text: '그럴 수 있어. 오늘은 다 하려고 하지 말고 가장 작은 한 가지부터 같이 정해보자.',
-      },
-    ],
-  },
-  '2026-04-18': {
-    dateKey: '2026-04-18',
-    displayDate: '4월 18일',
-    dominantEmotion: '루틴',
-    activeTimeRange: '07:30 ~ 08:10',
-    conversationCount: 2,
-    summaryTitle: '생활 리듬이 무너지며 감정도 흔들린 날',
-    mainConcern: '수면 부족으로 하루 시작부터 지쳐 있는 상태',
-    dominantTopics: ['수면', '루틴', '피로'],
-    memo: [
-      '수면 부족이 감정 예민함으로 바로 이어졌어요.',
-      '생활 루틴을 조금만 정리해도 감정 반응이 달라질 가능성이 보여요.',
-    ],
-    timeline: [
-      {
-        id: 1,
-        title: '수면 부족',
-        description: '피로감이 대화 전체 톤에 영향을 줬어요.',
-      },
-      {
-        id: 2,
-        title: '루틴 필요',
-        description: '감정보다 생활 리듬 정리가 더 우선일 수 있어요.',
-      },
-    ],
-    chatPreview: [
-      {
-        id: 'd4-u1',
-        role: 'user',
-        name: '사용자',
-        time: '07:36',
-        text: '잠을 제대로 못 자서 하루 시작부터 너무 예민해.',
-      },
-      {
-        id: 'd4-b1',
-        role: 'bot',
-        name: '햄이',
-        time: '07:37',
-        text: '오늘은 감정을 다 고치려 하지 말고, 수면이 흔들린 날의 루틴부터 정리해보자.',
-      },
-    ],
-  },
-  '2026-04-10': {
-    dateKey: '2026-04-10',
-    displayDate: '4월 10일',
-    dominantEmotion: '안정',
-    activeTimeRange: '18:00 ~ 19:00',
-    conversationCount: 3,
-    summaryTitle: '감정이 비교적 안정적으로 정리된 날',
-    mainConcern: '불안을 키우지 않고 하루를 마무리하고 싶은 마음',
-    dominantTopics: ['안정', '회복', '일상'],
-    memo: [
-      '오늘은 감정이 크게 요동치기보다 차분하게 정리되는 흐름이 있었어요.',
-      '스스로를 다그치기보다 하루를 정리하려는 말들이 더 많았어요.',
-    ],
-    timeline: [
-      {
-        id: 1,
-        title: '감정 완화',
-        description: '불안이 크게 커지지 않고 유지됐어요.',
-      },
-      {
-        id: 2,
-        title: '하루 정리',
-        description: '계획과 감정을 함께 정리하려는 흐름이 보였어요.',
-      },
-    ],
-    chatPreview: [
-      {
-        id: 'd5-u1',
-        role: 'user',
-        name: '사용자',
-        time: '18:22',
-        text: '오늘은 그래도 조금 덜 흔들린 것 같아.',
-      },
-      {
-        id: 'd5-b1',
-        role: 'bot',
-        name: '곰이',
-        time: '18:23',
-        text: '그 흐름이 정말 중요해. 크게 나아지지 않아도 덜 흔들린 하루는 충분히 의미 있어.',
-      },
-    ],
-  },
-  '2026-03-29': {
-    dateKey: '2026-03-29',
-    displayDate: '3월 29일',
-    dominantEmotion: '회복',
-    activeTimeRange: '19:30 ~ 20:20',
-    conversationCount: 3,
-    summaryTitle: '조금씩 다시 해보려는 마음이 살아난 날',
-    mainConcern: '쉬었다가 다시 시작하는 것에 대한 죄책감',
-    dominantTopics: ['회복', '재시작', '죄책감'],
-    memo: [
-      '쉬고 난 뒤 다시 시작해도 괜찮은지 묻는 말이 있었어요.',
-      '완벽하게 돌아오지 않아도 재시작 자체를 긍정하는 흐름이 나왔어요.',
-    ],
-    timeline: [
-      {
-        id: 1,
-        title: '쉬는 것에 대한 죄책감',
-        description: '휴식 후 다시 시작하는 걸 불안해했어요.',
-      },
-      {
-        id: 2,
-        title: '재시작 허용',
-        description: '조금씩 돌아와도 된다는 감각이 생겼어요.',
-      },
-    ],
-    chatPreview: [
-      {
-        id: 'd6-u1',
-        role: 'user',
-        name: '사용자',
-        time: '19:44',
-        text: '쉬고 나니까 더 죄책감이 들어. 다시 시작해도 되나 싶어.',
-      },
-      {
-        id: 'd6-b1',
-        role: 'bot',
-        name: '강아지',
-        time: '19:45',
-        text: '그럼, 다시 시작하는 건 늦은 게 아니라 돌아오는 과정이야.',
-      },
-    ],
-  },
-};
-
-function parseDateKey(dateKey) {
-  const [year, month, day] = dateKey.split('-').map(Number);
-  return new Date(year, month - 1, day);
-}
-
-function getReferenceDate(dailyReports) {
-  const lastDateKey = Object.keys(dailyReports).sort().slice(-1)[0];
-  return lastDateKey ? parseDateKey(lastDateKey) : new Date();
-}
-
-function getDiffDays(baseDate, targetDate) {
-  const diff = baseDate.getTime() - targetDate.getTime();
-  return Math.floor(diff / (1000 * 60 * 60 * 24));
-}
-
-function getPeriodDays(periodKey) {
-  if (periodKey === '90d') return 90;
-  if (periodKey === '30d') return 30;
-  return 7;
-}
-
-function filterDailyReportsByPeriod(dailyReports, selectedPeriod) {
-  const maxDays = getPeriodDays(selectedPeriod);
-  const referenceDate = getReferenceDate(dailyReports);
-
-  return Object.entries(dailyReports)
-    .filter(([dateKey]) => {
-      const diffDays = getDiffDays(referenceDate, parseDateKey(dateKey));
-      return diffDays >= 0 && diffDays < maxDays;
-    })
-    .sort(([a], [b]) => a.localeCompare(b))
-    .reduce((acc, [dateKey, value]) => {
-      acc[dateKey] = value;
-      return acc;
-    }, {});
-}
-
-function getLastDateKey(dailyReports) {
-  const keys = Object.keys(dailyReports).sort();
-  return keys[keys.length - 1] || '';
-}
-
-function getTopTopics(filteredDailyReports, limit = 8) {
-  const topicCounter = {};
-
-  Object.values(filteredDailyReports).forEach((report) => {
-    (report.dominantTopics || []).forEach((topic) => {
-      topicCounter[topic] = (topicCounter[topic] || 0) + 1;
-    });
-  });
-
-  return Object.entries(topicCounter)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, limit)
-    .map(([topic]) => topic);
-}
-
-function getStrongestEmotion(filteredDailyReports) {
-  const emotionCounter = {};
-
-  Object.values(filteredDailyReports).forEach((report) => {
-    const key = report.dominantEmotion || '감정';
-    emotionCounter[key] = (emotionCounter[key] || 0) + 1;
-  });
-
-  const [topEmotion] =
-    Object.entries(emotionCounter).sort((a, b) => b[1] - a[1])[0] || [];
-
-  return topEmotion || '-';
-}
-
-function getMostActiveTimeRange(filteredDailyReports) {
-  const counter = {};
-
-  Object.values(filteredDailyReports).forEach((report) => {
-    const range = report.activeTimeRange || '-';
-    counter[range] = (counter[range] || 0) + 1;
-  });
-
-  const [topRange] =
-    Object.entries(counter).sort((a, b) => b[1] - a[1])[0] || [];
-
-  return topRange || '-';
-}
-
-function buildSummaryTimeline(filteredDailyReports) {
-  return Object.values(filteredDailyReports)
-    .sort((a, b) => b.dateKey.localeCompare(a.dateKey))
-    .slice(0, 3)
-    .map((report, index) => ({
-      id: index + 1,
-      title: report.summaryTitle,
-      description: report.mainConcern,
-    }));
-}
-
-function buildHeroBots() {
-  return BOT_OPTIONS.map((bot) => ({
-    ...bot,
-    ...HERO_REPORT_MAP[bot.key],
-  }));
-}
-
-function buildEmotionTabData(selectedBot, filteredDailyReports) {
-  const botAnalysis = BOT_ANALYSIS_MAP[selectedBot.key] || BOT_ANALYSIS_MAP.cat;
-  const heroBots = buildHeroBots();
-  const selectedHero =
-    heroBots.find((hero) => hero.key === selectedBot.key) || heroBots[0];
-
-  const topTopics = getTopTopics(filteredDailyReports);
-  const totalConversations = Object.values(filteredDailyReports).reduce(
-    (sum, report) => sum + (report.conversationCount || 0),
-    0
-  );
-
-  const latestTimeline = buildSummaryTimeline(filteredDailyReports);
-
-  return {
-    heroBots,
-    selectedHero,
+const FALLBACK_REPORT_DATA = {
+  tabOptions: DEFAULT_TAB_OPTIONS,
+  periodOptions: DEFAULT_PERIOD_OPTIONS,
+  heroBots: FALLBACK_HERO_BOTS,
+  emotionTab: {
+    heroBots: FALLBACK_HERO_BOTS,
+    selectedHero: FALLBACK_HERO_BOTS[0],
     statCards: [
-      {
-        id: 'conversation-count',
-        label: '대화량',
-        value: `${totalConversations}회`,
-        caption: '선택 기간 동안 기록된 대화 횟수',
-      },
-      {
-        id: 'stability',
-        label: '안정도',
-        value: `${botAnalysis.stability}%`,
-        caption: '감정이 급격히 무너지지 않은 흐름',
-      },
-      {
-        id: 'recovery',
-        label: '회복도',
-        value: `${botAnalysis.recovery}%`,
-        caption: '감정이 다시 정리되는 힘',
-      },
-      {
-        id: 'acceptance',
-        label: '자기수용',
-        value: `${botAnalysis.acceptance}%`,
-        caption: '자책보다 수용으로 이동한 흐름',
-      },
+      { id: 'conversation-count', label: '대화량', value: '12회', caption: '선택 기간 동안 기록된 대화 횟수' },
+      { id: 'stability', label: '안정도', value: '77%', caption: '감정이 급격히 무너지지 않은 흐름' },
+      { id: 'recovery', label: '회복도', value: '74%', caption: '감정이 다시 정리되는 힘' },
+      { id: 'acceptance', label: '자기수용', value: '73%', caption: '자책보다 수용으로 이동한 흐름' },
     ],
     coreEmotion: {
-      title: botAnalysis.coreTitle,
-      description: botAnalysis.coreDescription,
-      tags: topTopics.length ? topTopics.slice(0, 4) : botAnalysis.defaultTopics,
+      title: '복잡한 감정이 생활 리듬과 연결되어 나타나는 패턴이 보여요.',
+      description:
+        '하루 루틴이 흔들릴 때 감정 반응도 함께 커지는 흐름이 보여서, 마음과 생활 리듬을 같이 정리할 필요가 있어 보여요.',
+      tags: ['루틴', '불안', '회복', '집중'],
     },
     emotionDistribution: {
-      total: totalConversations || 0,
-      items: botAnalysis.distribution,
+      total: 12,
+      items: [
+        { label: '불안', value: 28, color: '#9A85FF', description: '압박과 걱정이 높았던 구간' },
+        { label: '회복', value: 26, color: '#F2C94C', description: '다시 정리되는 흐름' },
+        { label: '안정', value: 24, color: '#7ED4C7', description: '감정이 가라앉은 장면' },
+        { label: '계획', value: 22, color: '#FFB38A', description: '정리와 실행으로 이어진 흐름' },
+      ],
     },
-    emotionFlow: botAnalysis.flow,
-    topicTags: topTopics.length ? topTopics : botAnalysis.defaultTopics,
-    summaryTimeline:
-      latestTimeline.length > 0
-        ? latestTimeline
-        : [
-            {
-              id: 1,
-              title: '아직 요약 가능한 타임라인이 충분하지 않아요.',
-              description: '대화 기록이 더 쌓이면 여기서 감정 흐름을 더 풍부하게 보여줄 수 있어요.',
-            },
+    topicTags: ['시험', '비교', '불안', '미래', '회복', '루틴', '위로'],
+    summaryTimeline: [
+      {
+        id: 1,
+        title: '시험 결과와 비교 불안이 자주 등장한 날',
+        description: '외부 기준 때문에 스스로를 과하게 평가한 장면이 있었어요.',
+      },
+      {
+        id: 2,
+        title: '지친 마음을 위로받고 싶어한 날',
+        description: '해결보다 먼저 감정을 이해받고 싶은 흐름이 보였어요.',
+      },
+      {
+        id: 3,
+        title: '생활 리듬 정리가 더 필요했던 날',
+        description: '수면과 루틴이 흔들리며 감정 반응도 같이 커졌어요.',
+      },
+    ],
+  },
+  chatHistoryTab: {
+    heroBots: FALLBACK_HERO_BOTS,
+    dateOptions: [
+      { key: '04-21', label: '4월 21일' },
+      { key: '04-22', label: '4월 22일' },
+      { key: '04-23', label: '4월 23일' },
+      { key: '04-24', label: '4월 24일' },
+      { key: '04-25', label: '4월 25일' },
+    ],
+    byDate: {
+      '04-21': {
+        selectedBotKey: 'cat',
+        summary: {
+          title: '메모와 대화 흐름이 같이 남아 있는 하루예요.',
+          description: '먼저 감정을 정리하고 작은 계획으로 넘어가려는 흐름이 보여요.',
+          chips: ['불안 완화', '작은 계획', '위로 필요'],
+        },
+        overviewCards: [
+          { id: 'conversation-count', label: '대화 조각', value: '8개', caption: '선택한 날짜에 남은 주요 대화 기록' },
+          { id: 'memo-count', label: '메모 수', value: '3개', caption: '감정 메모와 핵심 포인트' },
+          { id: 'dominant-emotion', label: '주 감정', value: '불안', caption: '가장 강하게 반복된 감정 톤' },
+          { id: 'focus-topic', label: '집중 주제', value: '시험', caption: '대화에서 많이 다뤄진 주제' },
+        ],
+        chatEntries: [
+          { id: 1, time: '09:12', speaker: 'me', emotion: '불안', message: '시험 결과가 생각보다 잘 안 나와서 계속 신경 쓰여.' },
+          { id: 2, time: '09:13', speaker: 'bot', emotion: '공감', message: '결과 자체보다 “내가 뒤처진 것 같다”는 느낌이 더 크게 남은 것 같아.' },
+          { id: 3, time: '09:16', speaker: 'me', emotion: '비교', message: '주변 친구들하고 비교하게 돼서 더 마음이 무거워.' },
+          { id: 4, time: '09:18', speaker: 'bot', emotion: '정리', message: '비교가 시작되면 감정보다 자책이 먼저 커지는 흐름이 보여.' },
+        ],
+        noteCards: [
+          { id: 'memo-1', title: '메모 01', description: '결과보다 비교 때문에 감정이 더 흔들렸다고 느낀 날.' },
+          { id: 'memo-2', title: '메모 02', description: '해결책보다 이해받고 싶다는 욕구가 더 크게 올라온 흐름.' },
+          { id: 'memo-3', title: '메모 03', description: '밤이 될수록 피로와 자책이 함께 올라오는 패턴.' },
+        ],
+        insight: {
+          headline: '이 날의 대화는 “비교 → 자책 → 위로 필요” 흐름으로 이어졌어요.',
+          description: '감정을 없애려 하기보다 비교가 시작되는 지점을 먼저 알아차리는 게 중요해 보여요.',
+          meta: [
+            { label: '반복 패턴', value: '비교 후 자책' },
+            { label: '회복 포인트', value: '작은 기준 재설정' },
+            { label: '추천 포커스', value: '밤 루틴 가볍게 정리' },
           ],
-  };
-}
+          tags: ['비교', '자책', '위로', '회복'],
+        },
+        botInterpretation: {
+          title: '봇 해석 메모',
+          summary: '감정이 커진 원인은 결과 자체보다 스스로를 평가하는 기준이 높아진 데 있어 보여요.',
+          bullets: [
+            '비교가 시작되면 감정이 빠르게 무거워지는 패턴이 반복돼요.',
+            '하루 후반으로 갈수록 피로와 감정 반응이 같이 올라와요.',
+            '해결보다 안정이 먼저 필요한 날로 해석할 수 있어요.',
+          ],
+        },
+      },
+      '04-22': {
+        selectedBotKey: 'bear',
+        summary: {
+          title: '지친 마음을 먼저 다독이려는 흐름이 보여요.',
+          description: '해결책보다 위로와 안정이 먼저 필요했던 날로 보여요.',
+          chips: ['위로', '안정', '회복 필요'],
+        },
+        overviewCards: [
+          { id: 'conversation-count', label: '대화 조각', value: '6개', caption: '선택한 날짜에 남은 주요 대화 기록' },
+          { id: 'memo-count', label: '메모 수', value: '2개', caption: '감정 메모와 핵심 포인트' },
+          { id: 'dominant-emotion', label: '주 감정', value: '지침', caption: '가장 강하게 반복된 감정 톤' },
+          { id: 'focus-topic', label: '집중 주제', value: '휴식', caption: '대화에서 많이 다뤄진 주제' },
+        ],
+        chatEntries: [
+          { id: 1, time: '20:11', speaker: 'me', emotion: '지침', message: '오늘은 아무것도 하기 싫고 그냥 쉬고 싶어.' },
+          { id: 2, time: '20:13', speaker: 'bot', emotion: '위로', message: '지금은 의욕보다 회복이 먼저 필요한 신호처럼 들려.' },
+          { id: 3, time: '20:17', speaker: 'me', emotion: '무기력', message: '쉬어도 괜찮은데, 쉬면 또 불안해질까 봐 걱정돼.' },
+          { id: 4, time: '20:19', speaker: 'bot', emotion: '안정', message: '오늘 쉬는 건 미루는 게 아니라 다시 버틸 힘을 만드는 시간이야.' },
+        ],
+        noteCards: [
+          { id: 'memo-1', title: '메모 01', description: '해야 할 일보다 먼저 몸과 마음이 지쳐 있던 날.' },
+          { id: 'memo-2', title: '메모 02', description: '쉬고 싶지만 쉬는 것 자체에 불안을 느끼는 흐름.' },
+        ],
+        insight: {
+          headline: '이 날의 대화는 “지침 → 쉬고 싶음 → 쉬는 것에 대한 불안”으로 이어졌어요.',
+          description: '쉼이 필요하다는 신호를 받아들이는 연습이 중요해 보여요.',
+          meta: [
+            { label: '반복 패턴', value: '지침 후 불안' },
+            { label: '회복 포인트', value: '쉼 허용하기' },
+            { label: '추천 포커스', value: '과한 자책 줄이기' },
+          ],
+          tags: ['지침', '쉼', '불안', '회복'],
+        },
+        botInterpretation: {
+          title: '봇 해석 메모',
+          summary: '오늘은 성과보다 회복이 우선인 날이에요.',
+          bullets: [
+            '휴식에 대한 죄책감이 감정을 더 무겁게 만들 수 있어요.',
+            '오늘의 핵심은 생산성이 아니라 안정이에요.',
+            '하루를 가볍게 마무리하는 루틴이 도움이 될 수 있어요.',
+          ],
+        },
+      },
+      '04-23': {
+        selectedBotKey: 'dog',
+        summary: {
+          title: '감정이 무거워도 다시 움직이려는 마음이 남아 있는 날이에요.',
+          description: '불안과 걱정은 있었지만 다시 해보려는 의지가 드러났어요.',
+          chips: ['응원', '작은 실행', '다시 시작'],
+        },
+        overviewCards: [
+          { id: 'conversation-count', label: '대화 조각', value: '7개', caption: '선택한 날짜에 남은 주요 대화 기록' },
+          { id: 'memo-count', label: '메모 수', value: '3개', caption: '감정 메모와 핵심 포인트' },
+          { id: 'dominant-emotion', label: '주 감정', value: '걱정', caption: '가장 강하게 반복된 감정 톤' },
+          { id: 'focus-topic', label: '집중 주제', value: '다시 시작', caption: '대화에서 많이 다뤄진 주제' },
+        ],
+        chatEntries: [
+          { id: 1, time: '08:34', speaker: 'me', emotion: '걱정', message: '어제 못한 걸 오늘도 못할까 봐 걱정돼.' },
+          { id: 2, time: '08:35', speaker: 'bot', emotion: '응원', message: '오늘은 다 해내는 것보다 다시 시작했다는 사실이 더 중요해.' },
+          { id: 3, time: '08:40', speaker: 'me', emotion: '의지', message: '그럼 진짜 작은 것 하나만 해볼까 싶어.' },
+          { id: 4, time: '08:41', speaker: 'bot', emotion: '격려', message: '좋아. 작게 시작하면 부담이 줄고 움직일 힘도 다시 생길 거야.' },
+        ],
+        noteCards: [
+          { id: 'memo-1', title: '메모 01', description: '불안은 있었지만 멈추지 않으려는 흐름이 보인 날.' },
+          { id: 'memo-2', title: '메모 02', description: '큰 계획보다 작은 시작이 더 중요했던 날.' },
+          { id: 'memo-3', title: '메모 03', description: '응원이 있을 때 행동으로 이어질 가능성이 커졌음.' },
+        ],
+        insight: {
+          headline: '이 날의 대화는 “걱정 → 다시 시도 → 작은 실행” 흐름으로 이어졌어요.',
+          description: '성공보다 재시작 자체에 의미를 두는 태도가 도움이 되는 날이었어요.',
+          meta: [
+            { label: '반복 패턴', value: '걱정 후 시도' },
+            { label: '회복 포인트', value: '작게 시작하기' },
+            { label: '추천 포커스', value: '첫 행동 낮추기' },
+          ],
+          tags: ['걱정', '시도', '응원', '시작'],
+        },
+        botInterpretation: {
+          title: '봇 해석 메모',
+          summary: '완벽하게 하려는 부담보다 다시 움직이려는 힘이 더 중요하게 보였어요.',
+          bullets: [
+            '작게 시작했을 때 감정 부담이 줄어드는 패턴이 보여요.',
+            '응원과 지지가 행동으로 이어지는 연결이 있어요.',
+            '오늘은 결과보다 재시작 자체를 인정해주는 게 중요해요.',
+          ],
+        },
+      },
+      '04-24': {
+        selectedBotKey: 'hamster',
+        summary: {
+          title: '생활 리듬이 감정에 직접 영향을 준 하루예요.',
+          description: '수면과 루틴이 흔들리면서 감정 기복도 함께 커졌어요.',
+          chips: ['루틴', '생활 정리', '수면'],
+        },
+        overviewCards: [
+          { id: 'conversation-count', label: '대화 조각', value: '5개', caption: '선택한 날짜에 남은 주요 대화 기록' },
+          { id: 'memo-count', label: '메모 수', value: '2개', caption: '감정 메모와 핵심 포인트' },
+          { id: 'dominant-emotion', label: '주 감정', value: '예민함', caption: '가장 강하게 반복된 감정 톤' },
+          { id: 'focus-topic', label: '집중 주제', value: '수면', caption: '대화에서 많이 다뤄진 주제' },
+        ],
+        chatEntries: [
+          { id: 1, time: '10:02', speaker: 'me', emotion: '예민함', message: '잠을 설쳐서 그런지 사소한 것도 다 거슬려.' },
+          { id: 2, time: '10:05', speaker: 'bot', emotion: '정리', message: '오늘 감정은 마음 문제이기도 하지만 생활 리듬 영향도 커 보여.' },
+        ],
+        noteCards: [
+          { id: 'memo-1', title: '메모 01', description: '수면 부족이 감정 예민함으로 연결된 날.' },
+          { id: 'memo-2', title: '메모 02', description: '큰 해결보다 루틴 회복이 우선인 흐름.' },
+        ],
+        insight: {
+          headline: '이 날의 대화는 “수면 흔들림 → 예민함 증가” 흐름으로 이어졌어요.',
+          description: '감정 해석과 함께 생활 리듬 점검이 같이 필요한 날이었어요.',
+          meta: [
+            { label: '반복 패턴', value: '수면 후 예민함' },
+            { label: '회복 포인트', value: '루틴 복구' },
+            { label: '추천 포커스', value: '취침 전 정리' },
+          ],
+          tags: ['수면', '루틴', '예민함', '정리'],
+        },
+        botInterpretation: {
+          title: '봇 해석 메모',
+          summary: '오늘의 감정은 생활 리듬과 더 밀접하게 연결돼 있어 보여요.',
+          bullets: [
+            '생활 패턴이 흔들릴수록 감정 반응도 커져요.',
+            '작은 루틴 회복이 전체 안정에 도움이 돼요.',
+            '자기비난보다 생활 리듬 점검이 먼저예요.',
+          ],
+        },
+      },
+      '04-25': {
+        selectedBotKey: 'cat',
+        summary: {
+          title: '감정을 정리하면서 현실적인 기준도 다시 세운 날이에요.',
+          description: '막연한 불안을 줄이고 지금 할 수 있는 만큼만 해보려는 방향 전환이 있었어요.',
+          chips: ['현실 점검', '기준 재설정', '감정 정리'],
+        },
+        overviewCards: [
+          { id: 'conversation-count', label: '대화 조각', value: '6개', caption: '선택한 날짜에 남은 주요 대화 기록' },
+          { id: 'memo-count', label: '메모 수', value: '3개', caption: '감정 메모와 핵심 포인트' },
+          { id: 'dominant-emotion', label: '주 감정', value: '정리', caption: '가장 강하게 반복된 감정 톤' },
+          { id: 'focus-topic', label: '집중 주제', value: '기준 조절', caption: '대화에서 많이 다뤄진 주제' },
+        ],
+        chatEntries: [
+          { id: 1, time: '22:12', speaker: 'me', emotion: '정리', message: '오늘은 무조건 잘해야 한다는 생각을 조금 내려놔보려고 해.' },
+          { id: 2, time: '22:13', speaker: 'bot', emotion: '해석', message: '좋아. 기준을 현실적으로 조절하는 순간 감정 부담도 같이 줄어들 수 있어.' },
+        ],
+        noteCards: [
+          { id: 'memo-1', title: '메모 01', description: '과한 기준을 낮추며 숨통이 트인 날.' },
+          { id: 'memo-2', title: '메모 02', description: '감정을 없애기보다 다루는 방향으로 바뀐 흐름.' },
+          { id: 'memo-3', title: '메모 03', description: '현실 점검이 불안을 낮추는 데 도움이 됨.' },
+        ],
+        insight: {
+          headline: '이 날의 대화는 “막연한 불안 → 기준 점검 → 감정 정리”로 이어졌어요.',
+          description: '감정을 억누르기보다 기준을 조절하면서 현실적인 안정감을 만든 날이에요.',
+          meta: [
+            { label: '반복 패턴', value: '불안 후 기준 점검' },
+            { label: '회복 포인트', value: '현실적인 기대치' },
+            { label: '추천 포커스', value: '하루 마감 정리' },
+          ],
+          tags: ['정리', '불안 완화', '기준', '현실 점검'],
+        },
+        botInterpretation: {
+          title: '봇 해석 메모',
+          summary: '오늘은 감정에 끌려가기보다 스스로 기준을 조절하면서 안정을 찾으려는 흐름이 보였어요.',
+          bullets: [
+            '현실적인 기준 조절이 감정 부담을 줄였어요.',
+            '막연한 불안이 정리 가능한 걱정으로 바뀌는 흐름이 있었어요.',
+            '작은 정리가 큰 안정보다 먼저 도움이 되는 날이었어요.',
+          ],
+        },
+      },
+    },
+  },
+  historyOverview: {
+    overviewCards: [
+      { id: 'days', label: '기록 날짜', value: '5일', caption: '대화 히스토리가 남아 있는 날짜 수' },
+      { id: 'memo', label: '메모 합계', value: '12개', caption: '기록된 감정 메모 수' },
+    ],
+  },
+};
 
-function buildHistoryOverview(filteredDailyReports) {
-  const dateCount = Object.keys(filteredDailyReports).length;
+const getOptionKey = (item) =>
+  item?.key ?? item?.value ?? item?.id ?? item?.tabKey ?? item?.periodKey ?? '';
 
-  return {
-    conversationCount: `${dateCount}일`,
-    strongestEmotion: getStrongestEmotion(filteredDailyReports),
-    activeTimeRange: getMostActiveTimeRange(filteredDailyReports),
-    latestDateKey: getLastDateKey(filteredDailyReports),
-  };
-}
+const getOptionLabel = (item) =>
+  item?.label ?? item?.name ?? item?.title ?? item?.text ?? '';
+
+const parseFlexibleDate = (value) => {
+  if (!value) return null;
+  if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
+  if (typeof value !== 'string') return null;
+
+  const trimmed = value.trim();
+
+  let match = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (match) {
+    const [, year, month, day] = match.map(Number);
+    return new Date(year, month - 1, day);
+  }
+
+  match = trimmed.match(/^(\d{2})-(\d{2})$/);
+  if (match) {
+    const [, month, day] = match.map(Number);
+    return new Date(CURRENT_YEAR, month - 1, day);
+  }
+
+  match = trimmed.match(/^(\d{1,2})월\s*(\d{1,2})일$/);
+  if (match) {
+    const [, month, day] = match.map(Number);
+    return new Date(CURRENT_YEAR, month - 1, day);
+  }
+
+  return null;
+};
+
+const formatFullDateKey = (date) => {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '';
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(
+    date.getDate(),
+  ).padStart(2, '0')}`;
+};
+
+const formatShortKey = (date) => {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '';
+  return `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+};
+
+const normalizeDateOptions = (chatHistoryData = {}) => {
+  const raw = chatHistoryData?.dateOptions || chatHistoryData?.dates || chatHistoryData?.historyDates || [];
+
+  if (Array.isArray(raw) && raw.length > 0) {
+    return raw
+      .map((item) => {
+        const key = getOptionKey(item);
+        const label = getOptionLabel(item) || key;
+        const date = parseFlexibleDate(key) || parseFlexibleDate(label) || null;
+
+        return {
+          key,
+          label,
+          date,
+          fullKey: date ? formatFullDateKey(date) : '',
+          shortKey: date ? formatShortKey(date) : '',
+        };
+      })
+      .filter((item) => item.key);
+  }
+
+  return [
+    {
+      key: '04-21',
+      label: '4월 21일',
+      date: new Date(CURRENT_YEAR, 3, 21),
+      fullKey: '2026-04-21',
+      shortKey: '04-21',
+    },
+  ];
+};
+
+const mergeUniqueByKey = (items = []) => {
+  const seen = new Set();
+  return items.filter((item) => {
+    const key = getOptionKey(item);
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
+const isSameDateValue = (option, value) =>
+  !!option &&
+  !!value &&
+  (option.key === value || option.fullKey === value || option.shortKey === value);
 
 function useEmotionReport() {
-  const [activeTab, setActiveTab] = useState('emotion');
-  const [selectedPeriod, setSelectedPeriod] = useState('7d');
-  const [selectedBotKey, setSelectedBotKey] = useState('cat');
-
-  const filteredDailyReports = useMemo(
-    () => filterDailyReportsByPeriod(DAILY_REPORTS, selectedPeriod),
-    [selectedPeriod]
-  );
-
-  const [selectedDate, setSelectedDate] = useState(
-    getLastDateKey(filteredDailyReports)
-  );
-
-  useEffect(() => {
-    if (!filteredDailyReports[selectedDate]) {
-      setSelectedDate(getLastDateKey(filteredDailyReports));
-    }
-  }, [filteredDailyReports, selectedDate]);
-
-  const selectedBot = useMemo(
-    () => BOT_OPTIONS.find((bot) => bot.key === selectedBotKey) || BOT_OPTIONS[0],
-    [selectedBotKey]
-  );
-
-  const botMeta = useMemo(
-    () =>
-      BOT_OPTIONS.reduce((acc, bot) => {
-        acc[bot.key] = bot;
-        return acc;
-      }, {}),
-    []
-  );
-
-  const emotionTabData = useMemo(
-    () => buildEmotionTabData(selectedBot, filteredDailyReports),
-    [selectedBot, filteredDailyReports]
-  );
-
-  const historyOverview = useMemo(
-    () => buildHistoryOverview(filteredDailyReports),
-    [filteredDailyReports]
-  );
-
-  const chatHistoryTabData = useMemo(
-    () => ({
-      selectedDate,
-      selectedBotKey,
-      dailyReports: filteredDailyReports,
-      botReports: BOT_HISTORY_REPORTS,
-      botMeta,
-      overview: historyOverview,
-    }),
-    [selectedDate, selectedBotKey, filteredDailyReports, botMeta, historyOverview]
-  );
+  // 실제 API 연결 중이면 여기만 교체
+  // const rawReportData = apiData ?? FALLBACK_REPORT_DATA;
+  const rawReportData = FALLBACK_REPORT_DATA;
 
   const reportData = useMemo(
-    () => ({
-      activeTab,
-      selectedPeriod,
-      selectedBotKey,
-      selectedDate,
-      emotionTab: emotionTabData,
-      chatHistoryTab: chatHistoryTabData,
-      chatHistoryTabData,
-    }),
-    [
-      activeTab,
-      selectedPeriod,
-      selectedBotKey,
-      selectedDate,
-      emotionTabData,
-      chatHistoryTabData,
-    ]
+    () =>
+      rawReportData && Object.keys(rawReportData).length > 0
+        ? rawReportData
+        : FALLBACK_REPORT_DATA,
+    [rawReportData],
   );
 
-  const handleTabChange = (tabKey) => {
-    setActiveTab(tabKey);
-  };
+  const emotionTabData = useMemo(() => {
+    if (reportData?.emotionTab && Object.keys(reportData.emotionTab).length > 0) {
+      return reportData.emotionTab;
+    }
+    if (reportData?.emotionReport && Object.keys(reportData.emotionReport).length > 0) {
+      return reportData.emotionReport;
+    }
+    return FALLBACK_REPORT_DATA.emotionTab;
+  }, [reportData]);
 
-  const handlePeriodChange = (periodKey) => {
-    setSelectedPeriod(periodKey);
-  };
+  const chatHistoryTabData = useMemo(() => {
+    if (reportData?.chatHistoryTab && Object.keys(reportData.chatHistoryTab).length > 0) {
+      return reportData.chatHistoryTab;
+    }
+    if (reportData?.chatHistory && Object.keys(reportData.chatHistory).length > 0) {
+      return reportData.chatHistory;
+    }
+    return FALLBACK_REPORT_DATA.chatHistoryTab;
+  }, [reportData]);
 
-  const handleBotChange = (botKey) => {
-    setSelectedBotKey(botKey);
-  };
+  const historyOverview = useMemo(() => {
+    if (reportData?.historyOverview && Object.keys(reportData.historyOverview).length > 0) {
+      return reportData.historyOverview;
+    }
+    return FALLBACK_REPORT_DATA.historyOverview;
+  }, [reportData]);
 
-  const handleDateChange = (dateKey) => {
-    setSelectedDate(dateKey);
-  };
+  const tabOptions = useMemo(
+    () =>
+      Array.isArray(reportData?.tabOptions) && reportData.tabOptions.length > 0
+        ? reportData.tabOptions
+        : DEFAULT_TAB_OPTIONS,
+    [reportData],
+  );
+
+  const periodOptions = useMemo(
+    () =>
+      Array.isArray(reportData?.periodOptions) && reportData.periodOptions.length > 0
+        ? reportData.periodOptions
+        : DEFAULT_PERIOD_OPTIONS,
+    [reportData],
+  );
+
+  const botOptions = useMemo(
+    () =>
+      mergeUniqueByKey([
+        ...(Array.isArray(reportData?.botOptions) ? reportData.botOptions : []),
+        ...(Array.isArray(reportData?.heroBots) ? reportData.heroBots : []),
+        ...(Array.isArray(emotionTabData?.heroBots) ? emotionTabData.heroBots : []),
+        ...(Array.isArray(chatHistoryTabData?.heroBots) ? chatHistoryTabData.heroBots : []),
+        ...FALLBACK_HERO_BOTS,
+      ]),
+    [reportData, emotionTabData, chatHistoryTabData],
+  );
+
+  const chatDateOptions = useMemo(
+    () => normalizeDateOptions(chatHistoryTabData),
+    [chatHistoryTabData],
+  );
+
+  const defaultActiveTab = getOptionKey(tabOptions[0]) || 'emotion';
+  const defaultPeriod =
+    getOptionKey(periodOptions[1]) ||
+    getOptionKey(periodOptions[0]) ||
+    '30d';
+  const defaultBotKey = getOptionKey(botOptions[0]) || 'cat';
+  const defaultDate = chatDateOptions[0]?.key || '';
+
+  const [activeTab, setActiveTab] = useState(defaultActiveTab);
+  const [selectedPeriod, setSelectedPeriod] = useState(defaultPeriod);
+  const [selectedBotKey, setSelectedBotKey] = useState(defaultBotKey);
+  const [selectedDate, setSelectedDate] = useState(defaultDate);
+
+  useEffect(() => {
+    const valid = tabOptions.some((item) => getOptionKey(item) === activeTab);
+    if (!valid) setActiveTab(defaultActiveTab);
+  }, [tabOptions, activeTab, defaultActiveTab]);
+
+  useEffect(() => {
+    const valid = periodOptions.some((item) => getOptionKey(item) === selectedPeriod);
+    if (!valid) setSelectedPeriod(defaultPeriod);
+  }, [periodOptions, selectedPeriod, defaultPeriod]);
+
+  useEffect(() => {
+    if (!botOptions.length) {
+      if (selectedBotKey !== '') setSelectedBotKey('');
+      return;
+    }
+    const valid = botOptions.some((item) => getOptionKey(item) === selectedBotKey);
+    if (!valid) setSelectedBotKey(defaultBotKey);
+  }, [botOptions, selectedBotKey, defaultBotKey]);
+
+  useEffect(() => {
+    if (!chatDateOptions.length) {
+      if (selectedDate !== '') setSelectedDate('');
+      return;
+    }
+    const valid = chatDateOptions.some((item) => isSameDateValue(item, selectedDate));
+    if (!valid) setSelectedDate(defaultDate);
+  }, [chatDateOptions, selectedDate, defaultDate]);
+
+  const handleTabChange = useCallback((nextKey) => {
+    setActiveTab(nextKey);
+  }, []);
+
+  const handlePeriodChange = useCallback((nextKey) => {
+    setSelectedPeriod(nextKey);
+  }, []);
+
+  const handleBotChange = useCallback((nextKey) => {
+    setSelectedBotKey(nextKey);
+  }, []);
+
+  const handleDateChange = useCallback((nextKey) => {
+    setSelectedDate(nextKey);
+  }, []);
 
   return {
     activeTab,
     selectedPeriod,
     selectedBotKey,
-    selectedBot,
     selectedDate,
-    tabOptions: REPORT_TAB_OPTIONS,
-    periodOptions: REPORT_PERIOD_OPTIONS,
-    botOptions: BOT_OPTIONS,
+    tabOptions,
+    periodOptions,
+    botOptions,
     reportData,
     emotionTabData,
     chatHistoryTabData,

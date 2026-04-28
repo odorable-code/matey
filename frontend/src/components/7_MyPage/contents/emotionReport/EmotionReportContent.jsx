@@ -6,6 +6,17 @@ import useEmotionReport from '../../hooks/emotionReport/useEmotionReport';
 
 const cx = (...items) => items.filter(Boolean).join(' ');
 
+const DEFAULT_TAB_OPTIONS = [
+  { key: 'emotion', label: '감정 리포트' },
+  { key: 'history', label: '대화 히스토리' },
+];
+
+const DEFAULT_PERIOD_OPTIONS = [
+  { key: '7d', label: '최근 7일' },
+  { key: '30d', label: '최근 30일' },
+  { key: '90d', label: '최근 90일' },
+];
+
 const getOptionKey = (item) =>
   item?.key ?? item?.value ?? item?.id ?? item?.tabKey ?? item?.periodKey ?? '';
 
@@ -23,8 +34,6 @@ const isHistoryTab = (tabKey, label) => {
 };
 
 function EmotionReportContent() {
-  const hook = useEmotionReport?.() ?? {};
-
   const {
     activeTab,
     selectedPeriod,
@@ -41,56 +50,38 @@ function EmotionReportContent() {
     handlePeriodChange,
     handleBotChange,
     handleDateChange,
-    setActiveTab,
-    setSelectedPeriod,
-    setSelectedBotKey,
-    setSelectedDate,
-  } = hook;
+  } = useEmotionReport();
 
-  const onTabChange = handleTabChange ?? setActiveTab ?? (() => {});
-  const onPeriodChange = handlePeriodChange ?? setSelectedPeriod ?? (() => {});
-  const onBotChange = handleBotChange ?? setSelectedBotKey ?? (() => {});
-  const onDateChange = handleDateChange ?? setSelectedDate ?? (() => {});
+  const resolvedTabOptions = useMemo(
+    () =>
+      Array.isArray(tabOptions) && tabOptions.length > 0
+        ? tabOptions
+        : DEFAULT_TAB_OPTIONS,
+    [tabOptions],
+  );
 
-  const resolvedTabOptions = useMemo(() => {
-    if (Array.isArray(tabOptions) && tabOptions.length > 0) return tabOptions;
-
-    return [
-      { key: 'emotion', label: '감정 리포트' },
-      { key: 'history', label: '대화 히스토리' },
-    ];
-  }, [tabOptions]);
-
-  const resolvedPeriodOptions = useMemo(() => {
-    if (Array.isArray(periodOptions) && periodOptions.length > 0) return periodOptions;
-
-    return [
-      { key: '7d', label: '최근 7일' },
-      { key: '30d', label: '최근 30일' },
-      { key: '90d', label: '최근 90일' },
-    ];
-  }, [periodOptions]);
+  const resolvedPeriodOptions = useMemo(
+    () =>
+      Array.isArray(periodOptions) && periodOptions.length > 0
+        ? periodOptions
+        : DEFAULT_PERIOD_OPTIONS,
+    [periodOptions],
+  );
 
   const currentTab =
     resolvedTabOptions.find((item) => getOptionKey(item) === activeTab) ||
     resolvedTabOptions[0] ||
-    { key: 'emotion', label: '감정 리포트' };
+    DEFAULT_TAB_OPTIONS[0];
 
   const currentTabKey = getOptionKey(currentTab) || 'emotion';
   const currentTabLabel = getOptionLabel(currentTab) || '감정 리포트';
   const historyMode = isHistoryTab(currentTabKey, currentTabLabel);
 
   const currentPeriodKey =
-    getOptionKey(selectedPeriod) ||
     selectedPeriod ||
+    getOptionKey(resolvedPeriodOptions[1]) ||
     getOptionKey(resolvedPeriodOptions[0]) ||
-    '7d';
-
-  const currentBot =
-    botOptions.find((item) => getOptionKey(item) === selectedBotKey) ||
-    emotionTabData?.heroBots?.find((item) => getOptionKey(item) === selectedBotKey) ||
-    reportData?.heroBots?.find((item) => getOptionKey(item) === selectedBotKey) ||
-    null;
+    '30d';
 
   const headingCopy = historyMode
     ? {
@@ -110,7 +101,7 @@ function EmotionReportContent() {
     <section
       className={cx(
         styles.page,
-        historyMode ? styles.pageHistory : styles.pageEmotion
+        historyMode ? styles.pageHistory : styles.pageEmotion,
       )}
     >
       <div className={styles.header}>
@@ -131,11 +122,11 @@ function EmotionReportContent() {
               <button
                 key={optionKey}
                 type="button"
-                onClick={() => onTabChange(optionKey)}
+                onClick={() => handleTabChange(optionKey)}
                 className={cx(
                   styles.headerTab,
                   historyTab ? styles.headerTabHistory : styles.headerTabEmotion,
-                  active && styles.headerTabActive
+                  active && styles.headerTabActive,
                 )}
               >
                 {historyTab ? '대화 히스토리' : '감정 리포트'}
@@ -145,39 +136,39 @@ function EmotionReportContent() {
         </div>
       </div>
 
-      <div className={styles.filterBar}>
-        <span className={styles.filterLabel}>
-          기간 선택
-        </span>
+      {!historyMode ? (
+        <div className={styles.filterBar}>
+          <span className={styles.filterLabel}>기간 선택</span>
 
-        <div className={styles.filterRow}>
-          {resolvedPeriodOptions.map((option) => {
-            const optionKey = getOptionKey(option);
-            const active = optionKey === currentPeriodKey;
+          <div className={styles.filterRow}>
+            {resolvedPeriodOptions.map((option) => {
+              const optionKey = getOptionKey(option);
+              const active = optionKey === currentPeriodKey;
 
-            return (
-              <button
-                key={optionKey}
-                type="button"
-                onClick={() => onPeriodChange(optionKey)}
-                className={cx(
-                  styles.filterButton,
-                  active && styles.filterButtonActive
-                )}
-              >
-                {getOptionLabel(option)}
-              </button>
-            );
-          })}
+              return (
+                <button
+                  key={optionKey}
+                  type="button"
+                  onClick={() => handlePeriodChange(optionKey)}
+                  className={cx(
+                    styles.filterButton,
+                    active && styles.filterButtonActive,
+                  )}
+                >
+                  {getOptionLabel(option)}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      ) : null}
 
       <div className={styles.contentArea}>
         {historyMode ? (
           <ChatHistoryTab
             data={chatHistoryTabData}
             selectedDate={selectedDate}
-            onDateChange={onDateChange}
+            onDateChange={handleDateChange}
             selectedBotKey={selectedBotKey}
             botOptions={botOptions}
             reportData={reportData}
@@ -189,7 +180,7 @@ function EmotionReportContent() {
             reportData={reportData}
             selectedBotKey={selectedBotKey}
             selectedPeriod={currentPeriodKey}
-            onBotChange={onBotChange}
+            onBotChange={handleBotChange}
             botOptions={botOptions}
           />
         )}
