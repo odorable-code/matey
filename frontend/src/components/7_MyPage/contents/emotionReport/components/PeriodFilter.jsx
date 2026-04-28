@@ -1,3 +1,9 @@
+/**
+ * [파일 용도]
+ * 감정 리포트의 조회 기간(7일, 30일 등)을 선택할 수 있는 필터링 컴포넌트입니다.
+ * 사용자가 선택한 기간에 따라 전체 리포트의 데이터 기준점을 변경하는 트리거 역할을 수행합니다.
+ */
+
 import React, { useMemo } from 'react';
 import styles from './PeriodFilter.module.css';
 

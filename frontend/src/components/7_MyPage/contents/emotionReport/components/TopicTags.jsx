@@ -1,3 +1,9 @@
+/**
+ * [파일 용도]
+ * 대화 데이터에서 추출된 주요 키워드(태그)와 추가적인 분석 메모를 시각화하는 리포트 컴포넌트입니다.
+ * 사용자가 어떤 주제로 대화를 나눴는지 한눈에 파악할 수 있도록 해시태그 클라우드와 리스트 형태로 정보를 제공합니다.
+ */
+
 import React, { useMemo } from 'react';
 import styles from './TopicTags.module.css';
 

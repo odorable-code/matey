@@ -48,15 +48,6 @@ function EmotionReportContent() {
     setSelectedDate,
   } = hook;
 
-  if (isLoading) {
-    return <div style={{ padding: '2rem', textAlign: 'center' }}>감정 리포트를 불러오는 중입니다...</div>;
-  }
-
-  const onTabChange = handleTabChange ?? setActiveTab ?? (() => {});
-  const onPeriodChange = handlePeriodChange ?? setSelectedPeriod ?? (() => {});
-  const onBotChange = handleBotChange ?? setSelectedBotKey ?? (() => {});
-  const onDateChange = handleDateChange ?? setSelectedDate ?? (() => {});
-
   const resolvedTabOptions = useMemo(() => {
     if (Array.isArray(tabOptions) && tabOptions.length > 0) return tabOptions;
 
@@ -75,6 +66,17 @@ function EmotionReportContent() {
       { key: '90d', label: '최근 90일' },
     ];
   }, [periodOptions]);
+
+  if (isLoading) {
+    return <div style={{ padding: '2rem', textAlign: 'center' }}>감정 리포트를 불러오는 중입니다...</div>;
+  }
+
+  const onTabChange = handleTabChange ?? setActiveTab ?? (() => {});
+  const onPeriodChange = handlePeriodChange ?? setSelectedPeriod ?? (() => {});
+  const onBotChange = handleBotChange ?? setSelectedBotKey ?? (() => {});
+  const onDateChange = handleDateChange ?? setSelectedDate ?? (() => {});
+
+  
 
   const currentTab =
     resolvedTabOptions.find((item) => getOptionKey(item) === activeTab) ||

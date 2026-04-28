@@ -1,3 +1,12 @@
+/**
+ * CoreEmotion 컴포넌트
+ * * 용도:
+ * 1. 서비스('Matey'/'Huggy')의 감정 분석 리포트에서 사용자의 '핵심 감정' 상태를 시각화하여 요약해주는 컴포넌트입니다.
+ * 2. 특정 기간 동안 가장 지배적이었던 감정(dominantEmotion)과 그에 대한 상세 설명을 상단에 강조하여 표시합니다.
+ * 3. 전체적인 감정 분포(distribution)를 키워드 태그 형태의 프리뷰와 도넛 차트(EmotionDonut)를 통해 한눈에 비교할 수 있도록 제공합니다.
+ * 4. 사용자가 자신의 주된 정서적 흐름과 비중을 직관적으로 파악할 수 있게 돕는 대시보드의 핵심 위젯 역할을 합니다.
+ */
+
 import React, { useMemo } from 'react';
 import styles from './CoreEmotion.module.css';
 import EmotionDonut from './EmotionDonut';

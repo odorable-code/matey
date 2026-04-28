@@ -1,3 +1,9 @@
+/**
+ * [파일 용도]
+ * 입력받은 감정 데이터의 항목별 비중을 도넛 차트(Donut Chart) 형태로 시각화하고,
+ * 각 항목의 수치와 백분율(%)을 범례와 프로그레스 바를 통해 직관적으로 보여주는 리포트 컴포넌트입니다.
+ */
+
 import React, { useMemo } from 'react';
 import styles from './EmotionDonut.module.css';
 

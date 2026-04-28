@@ -1,3 +1,9 @@
+/**
+ * [파일 용도]
+ * 특정 기간 내의 주요 대화 흐름이나 사건을 시간 순서에 따라 수직 타임라인 형태로 보여주는 리포트 컴포넌트입니다.
+ * 텍스트 기반의 요약 정보를 단계별(Step-by-step)로 구조화하여 사용자가 대화의 맥락을 쉽게 파악하도록 돕습니다.
+ */
+
 import React, { useMemo } from 'react';
 import styles from './SummaryTimeline.module.css';
 

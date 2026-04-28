@@ -1,3 +1,12 @@
+/**
+ * ChatHistoryTab 컴포넌트
+ * * 용도:
+ * 1. 서비스('Matey') 내 사용자의 과거 대화 기록을 날짜별, 채팅방별로 조회하는 히스토리 탭 UI입니다.
+ * 2. 캘린더 인터페이스를 통해 특정 날짜를 선택하고, 해당 날짜에 생성된 여러 채팅방 목록을 탐색할 수 있습니다.
+ * 3. 선택된 채팅방의 대화 내역(Preview)과 더불어, 각 AI 상담사(봇) 캐릭터별 감정 분석 리포트 및 인사이트를 제공합니다.
+ * 4. 프로젝트 'Huggy' 및 'Matey'의 주요 기능인 감정 분석 데이터(Mood Score, Tag, Summary)를 시각화하여 보여주는 역할을 합니다.
+ */
+
 import React, { useEffect, useMemo, useState } from 'react';
 import styles from './ChatHistoryTab.module.css';
 

@@ -1,3 +1,9 @@
+/**
+ * [파일 용도]
+ * 선택한 기간 내의 감정 데이터 변화를 시각화하고, 
+ * 평균 지표·최고점·추세(상승/하강) 등의 통계 정보를 요약해서 보여주는 리포트 컴포넌트입니다.
+ */
+
 import React, { useMemo } from 'react';
 import styles from './EmotionChange.module.css';
 

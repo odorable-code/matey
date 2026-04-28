@@ -1,3 +1,9 @@
+/**
+ * [파일 용도]
+ * 리포트 내의 서로 다른 섹션(예: 감정 분석, 대화 히스토리)을 전환할 수 있는 탭 네비게이션 컴포넌트입니다.
+ * 접근성을 고려한 ARIA 속성을 지원하며, 각 탭의 제목과 함께 보조 설명을 포함하여 현재 위치를 직관적으로 파악하게 돕습니다.
+ */
+
 import React, { useMemo } from 'react';
 import styles from './TabNavigation.module.css';
 

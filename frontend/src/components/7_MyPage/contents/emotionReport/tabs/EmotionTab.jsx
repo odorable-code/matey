@@ -1,3 +1,10 @@
+/**
+ * [파일 용도]
+ * 감정 리포트의 핵심인 '감정 분석' 탭의 전체 레이아웃과 콘텐츠를 관리하는 메인 컴포넌트입니다.
+ * 4가지 캐릭터(냥이, 곰이, 강아지, 햄이)별 맞춤형 피드백 리포트, 통계 카드, SVG 기반 도넛 차트, 
+ * 그리고 핵심 감정 해석을 애니메이션 효과와 함께 종합적으로 렌더링합니다.
+ */
+
 import React, { useEffect, useMemo, useState } from 'react';
 import styles from './EmotionTab.module.css';
 

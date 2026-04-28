@@ -1,3 +1,9 @@
+/**
+ * [파일 용도]
+ * AI(메이티)가 분석한 사용자의 감정 흐름 피드백을 표시하는 리포트 컴포넌트입니다.
+ * 해석 결과, 핵심 요약, 상세 본문 및 성향을 나타내는 톤 태그(#태그)를 카드 형태로 구조화하여 보여줍니다.
+ */
+
 import React, { useMemo } from 'react';
 import styles from './MateyFeedback.module.css';
 
