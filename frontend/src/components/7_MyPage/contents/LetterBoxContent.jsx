@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import styles from './LetterBoxContent.module.css';
 import useAnimatedNumber, { usePrefersReducedMotion } from '../hook/useAnimatedNumber';
+import { myPageAPI } from '../../../utils/api';
 
 const defaultLetters = {
   featured: {
@@ -69,8 +70,33 @@ function AnimatedStatCard({ item, index, prefersReducedMotion }) {
   );
 }
 
-function LetterBoxContent({ letterData = defaultLetters }) {
+function LetterBoxContent() {
   const prefersReducedMotion = usePrefersReducedMotion();
+  const [letterData, setLetterData] = useState(defaultLetters);
+
+  useEffect(() => {
+    myPageAPI.getLetters().then(data => {
+      if (data) {
+        setLetterData(prev => ({
+          ...prev,
+          stats: [
+            { label: '읽지 않은 편지', value: String(data.unreadCount ?? prev.stats[0].value) },
+            { label: '이번 주 도착', value: String(data.weeklyCount ?? prev.stats[1].value) },
+          ],
+          items: data.items ?? prev.items,
+        }));
+      }
+    }).catch(console.error);
+  }, []);
+
+  const handleReadLetter = (id) => {
+    myPageAPI.readLetter(id).then(() => {
+      setLetterData(prev => ({
+        ...prev,
+        items: prev.items.map(item => item.id === id ? { ...item, unread: false } : item)
+      }));
+    }).catch(console.error);
+  };
 
   return (
     <section className={styles.page}>

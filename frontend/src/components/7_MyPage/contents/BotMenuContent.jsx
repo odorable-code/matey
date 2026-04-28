@@ -1,6 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import styles from './BotMenuContent.module.css';
 import useAnimatedNumber, { usePrefersReducedMotion } from '../hook/useAnimatedNumber';
+import { myPageAPI } from '../../../utils/api';
 
 const defaultBotData = {
   level: 4,
@@ -81,8 +82,24 @@ function AnimatedSummaryCard({ item, prefersReducedMotion }) {
   );
 }
 
-function BotMenuContent({ botData = defaultBotData }) {
+function BotMenuContent() {
+  const [botData, setBotData] = useState(defaultBotData);
   const prefersReducedMotion = usePrefersReducedMotion();
+
+  useEffect(() => {
+    myPageAPI.getBotMenu().then(data => {
+      if (data) {
+        setBotData(prev => ({
+          ...prev,
+          level: data.level ?? prev.level,
+          remainPoint: data.remainPoint ?? prev.remainPoint,
+          progressPercent: data.progressPercent ?? prev.progressPercent,
+          backgrounds: data.backgrounds ?? prev.backgrounds,
+          motions: data.motions ?? prev.motions,
+        }));
+      }
+    }).catch(console.error);
+  }, []);
 
   const animatedLevel = useAnimatedNumber(botData.level ?? 0, 900, {
     reducedMotion: prefersReducedMotion,

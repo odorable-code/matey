@@ -377,3 +377,20 @@ export const adminAPI = {
     });
   },
 };
+
+// ==========================================
+// MyPage API
+// ==========================================
+
+export const myPageAPI = {
+  getProfile: () => request('/api/mypage/profile'),
+  updateProfile: (data) => request('/api/mypage/profile', { method: 'PUT', body: data }),
+  getBotMenu: () => request('/api/mypage/bot-menu'),
+  interactBot: (data) => request('/api/mypage/bot/interact', { method: 'POST', body: data }),
+  getLetters: () => request('/api/mypage/letters'),
+  readLetter: (letterId) => request(`/api/mypage/letters/${letterId}/read`, { method: 'PATCH' }),
+  deleteLetter: (letterId) => request(`/api/mypage/letters/${letterId}`, { method: 'DELETE' }),
+  getSettings: () => request('/api/mypage/settings'),
+  updateSettings: (data) => request('/api/mypage/settings', { method: 'PATCH', body: data }),
+};
+

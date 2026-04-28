@@ -1,17 +1,18 @@
 import React, { useEffect, useRef, useState } from 'react';
 import styles from './ProfileInfoContent.module.css';
+import { myPageAPI } from '../../../utils/api';
 
 const DEFAULT_PROFILE_IMAGE = '/images/mypage/bot/matey-profile.png';
 
 const initialProfile = {
-  userId: 'seongho_1024',
-  nickname: '성호',
-  name: '김성호',
-  email: 'sungho@example.com',
-  phone: '010-1234-5678',
-  birthDate: '1999-10-24',
-  gender: '남성',
-  joinedAt: '2026-01-05',
+  userId: '',
+  nickname: '',
+  name: '',
+  email: '',
+  phone: '',
+  birthDate: '',
+  gender: '선택 안 함',
+  joinedAt: '',
   profileImage: DEFAULT_PROFILE_IMAGE,
 };
 
@@ -20,6 +21,24 @@ function ProfileInfoContent() {
   const [profile, setProfile] = useState(initialProfile);
   const [draft, setDraft] = useState(initialProfile);
   const [isEditMode, setIsEditMode] = useState(false);
+
+  useEffect(() => {
+    myPageAPI.getProfile().then(data => {
+      const fetched = {
+        userId: data.userId || '',
+        nickname: data.nickname || '',
+        name: data.name || '',
+        email: data.email || '',
+        phone: data.phone || '',
+        birthDate: data.birthDate || '',
+        gender: data.gender || '선택 안 함',
+        joinedAt: data.joinedAt || '',
+        profileImage: data.profileImage || DEFAULT_PROFILE_IMAGE,
+      };
+      setProfile(fetched);
+      setDraft(fetched);
+    }).catch(console.error);
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -49,8 +68,15 @@ function ProfileInfoContent() {
   };
 
   const handleSaveEdit = () => {
-    setProfile({ ...draft });
-    setIsEditMode(false);
+    myPageAPI.updateProfile({
+      nickname: draft.nickname,
+      phone: draft.phone,
+      gender: draft.gender,
+      profileImage: draft.profileImage
+    }).then(() => {
+      setProfile({ ...draft });
+      setIsEditMode(false);
+    }).catch(console.error);
   };
 
   const handleEditableChange = (field, value) => {
