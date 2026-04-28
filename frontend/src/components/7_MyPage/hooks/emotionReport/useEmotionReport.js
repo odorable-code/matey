@@ -1,18 +1,56 @@
+/**
+ * [파일 역할]
+ * - 감정 리포트 화면에서 쓰는 상태와 데이터 정리를 담당하는 커스텀 훅
+ * - 탭, 기간, 캐릭터, 날짜 선택 상태를 한 곳에서 관리
+ *
+ * [여기서 찾을 것]
+ * - 현재 더미 데이터: FALLBACK_REPORT_DATA
+ * - 탭 기본값: DEFAULT_TAB_OPTIONS
+ * - 기간 기본값: DEFAULT_PERIOD_OPTIONS
+ * - 기본 캐릭터 데이터: FALLBACK_HERO_BOTS
+ * - 실제 선택 상태: activeTab / selectedPeriod / selectedBotKey / selectedDate
+ *
+ * [수정 포인트]
+ * - API 연결 시작: useEmotionReport 함수 안 rawReportData 부분
+ * - 기본 탭 문구 수정: DEFAULT_TAB_OPTIONS
+ * - 기간 문구 수정: DEFAULT_PERIOD_OPTIONS
+ * - 캐릭터 수정: FALLBACK_HERO_BOTS
+ * - 더미 리포트 내용 수정: FALLBACK_REPORT_DATA
+ *
+ * [주의]
+ * - 이 파일은 데이터가 많아서 길지만,
+ *   아래 큰 주석 단위로 끊어서 보면 훨씬 보기 쉬움
+ */
+
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+/* =========================
+   날짜 기본 연도
+   - "04-21" 같은 값이 들어오면 2026년 기준으로 해석
+========================= */
 const CURRENT_YEAR = 2026;
 
+/* =========================
+   기본 탭 목록
+========================= */
 const DEFAULT_TAB_OPTIONS = [
   { key: 'emotion', label: '감정 리포트' },
   { key: 'history', label: '대화 히스토리' },
 ];
 
+/* =========================
+   기본 기간 목록
+========================= */
 const DEFAULT_PERIOD_OPTIONS = [
   { key: '7d', label: '최근 7일' },
   { key: '30d', label: '최근 30일' },
   { key: '90d', label: '최근 90일' },
 ];
 
+/* =========================
+   캐릭터 이미지 경로
+   - 이미지 파일 바꾸려면 여기 수정
+========================= */
 const CHARACTER_IMAGE_MAP = {
   cat: '/images/emotion-report/cat.png',
   bear: '/images/emotion-report/bear.png',
@@ -20,6 +58,10 @@ const CHARACTER_IMAGE_MAP = {
   hamster: '/images/emotion-report/hamster.png',
 };
 
+/* =========================
+   감정 리포트 대표 캐릭터 기본 데이터
+   - 캐릭터 이름/색상/설명/칩 텍스트 수정 가능
+========================= */
 const FALLBACK_HERO_BOTS = [
   {
     key: 'cat',
@@ -103,6 +145,14 @@ const FALLBACK_HERO_BOTS = [
   },
 ];
 
+/* =========================
+   전체 더미 데이터
+   - 아직 API 연결 전일 때 화면에 보여줄 데이터
+   - 감정 리포트 / 히스토리 / 요약 카드까지 포함
+   *
+   * [나중에 수정할 때]
+   * - 문구/숫자/카드 내용 바꾸려면 여기 수정
+========================= */
 const FALLBACK_REPORT_DATA = {
   tabOptions: DEFAULT_TAB_OPTIONS,
   periodOptions: DEFAULT_PERIOD_OPTIONS,
@@ -384,6 +434,13 @@ const FALLBACK_REPORT_DATA = {
   },
 };
 
+/* =========================
+   아래부터는 데이터 모양을 맞춰주는 보조 함수들
+   - 키 추출
+   - 라벨 추출
+   - 날짜 문자열 파싱
+   - 날짜 옵션 정리
+========================= */
 const getOptionKey = (item) =>
   item?.key ?? item?.value ?? item?.id ?? item?.tabKey ?? item?.periodKey ?? '';
 
@@ -421,7 +478,7 @@ const parseFlexibleDate = (value) => {
 const formatFullDateKey = (date) => {
   if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '';
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(
-    date.getDate(),
+    date.getDate()
   ).padStart(2, '0')}`;
 };
 
@@ -431,7 +488,11 @@ const formatShortKey = (date) => {
 };
 
 const normalizeDateOptions = (chatHistoryData = {}) => {
-  const raw = chatHistoryData?.dateOptions || chatHistoryData?.dates || chatHistoryData?.historyDates || [];
+  const raw =
+    chatHistoryData?.dateOptions ||
+    chatHistoryData?.dates ||
+    chatHistoryData?.historyDates ||
+    [];
 
   if (Array.isArray(raw) && raw.length > 0) {
     return raw
@@ -464,9 +525,11 @@ const normalizeDateOptions = (chatHistoryData = {}) => {
 
 const mergeUniqueByKey = (items = []) => {
   const seen = new Set();
+
   return items.filter((item) => {
     const key = getOptionKey(item);
     if (!key || seen.has(key)) return false;
+
     seen.add(key);
     return true;
   });
@@ -477,52 +540,79 @@ const isSameDateValue = (option, value) =>
   !!value &&
   (option.key === value || option.fullKey === value || option.shortKey === value);
 
+/* =========================
+   메인 훅 시작
+   - 실제 화면에서 import해서 쓰는 부분
+========================= */
 function useEmotionReport() {
-  // 실제 API 연결 중이면 여기만 교체
-  // const rawReportData = apiData ?? FALLBACK_REPORT_DATA;
+  /* =========================
+     실제 API 연결 위치
+     - 나중에 서버 데이터 붙일 때 여기 교체
+     - 예: const rawReportData = apiData ?? FALLBACK_REPORT_DATA;
+  ========================= */
   const rawReportData = FALLBACK_REPORT_DATA;
 
+  /* =========================
+     전체 데이터 안전하게 정리
+  ========================= */
   const reportData = useMemo(
     () =>
       rawReportData && Object.keys(rawReportData).length > 0
         ? rawReportData
         : FALLBACK_REPORT_DATA,
-    [rawReportData],
+    [rawReportData]
   );
 
+  /* =========================
+     감정 리포트 탭 데이터 정리
+  ========================= */
   const emotionTabData = useMemo(() => {
     if (reportData?.emotionTab && Object.keys(reportData.emotionTab).length > 0) {
       return reportData.emotionTab;
     }
+
     if (reportData?.emotionReport && Object.keys(reportData.emotionReport).length > 0) {
       return reportData.emotionReport;
     }
+
     return FALLBACK_REPORT_DATA.emotionTab;
   }, [reportData]);
 
+  /* =========================
+     대화 히스토리 탭 데이터 정리
+  ========================= */
   const chatHistoryTabData = useMemo(() => {
     if (reportData?.chatHistoryTab && Object.keys(reportData.chatHistoryTab).length > 0) {
       return reportData.chatHistoryTab;
     }
+
     if (reportData?.chatHistory && Object.keys(reportData.chatHistory).length > 0) {
       return reportData.chatHistory;
     }
+
     return FALLBACK_REPORT_DATA.chatHistoryTab;
   }, [reportData]);
 
+  /* =========================
+     히스토리 개요 데이터 정리
+  ========================= */
   const historyOverview = useMemo(() => {
     if (reportData?.historyOverview && Object.keys(reportData.historyOverview).length > 0) {
       return reportData.historyOverview;
     }
+
     return FALLBACK_REPORT_DATA.historyOverview;
   }, [reportData]);
 
+  /* =========================
+     탭 / 기간 / 봇 / 날짜 옵션 정리
+  ========================= */
   const tabOptions = useMemo(
     () =>
       Array.isArray(reportData?.tabOptions) && reportData.tabOptions.length > 0
         ? reportData.tabOptions
         : DEFAULT_TAB_OPTIONS,
-    [reportData],
+    [reportData]
   );
 
   const periodOptions = useMemo(
@@ -530,7 +620,7 @@ function useEmotionReport() {
       Array.isArray(reportData?.periodOptions) && reportData.periodOptions.length > 0
         ? reportData.periodOptions
         : DEFAULT_PERIOD_OPTIONS,
-    [reportData],
+    [reportData]
   );
 
   const botOptions = useMemo(
@@ -542,27 +632,38 @@ function useEmotionReport() {
         ...(Array.isArray(chatHistoryTabData?.heroBots) ? chatHistoryTabData.heroBots : []),
         ...FALLBACK_HERO_BOTS,
       ]),
-    [reportData, emotionTabData, chatHistoryTabData],
+    [reportData, emotionTabData, chatHistoryTabData]
   );
 
   const chatDateOptions = useMemo(
     () => normalizeDateOptions(chatHistoryTabData),
-    [chatHistoryTabData],
+    [chatHistoryTabData]
   );
 
+  /* =========================
+     기본 선택값
+  ========================= */
   const defaultActiveTab = getOptionKey(tabOptions[0]) || 'emotion';
-  const defaultPeriod =
-    getOptionKey(periodOptions[1]) ||
-    getOptionKey(periodOptions[0]) ||
-    '30d';
+  const defaultPeriod = getOptionKey(periodOptions[1]) || getOptionKey(periodOptions[0]) || '30d';
   const defaultBotKey = getOptionKey(botOptions[0]) || 'cat';
   const defaultDate = chatDateOptions[0]?.key || '';
 
+  /* =========================
+     실제 선택 상태
+     - 탭
+     - 기간
+     - 캐릭터
+     - 날짜
+  ========================= */
   const [activeTab, setActiveTab] = useState(defaultActiveTab);
   const [selectedPeriod, setSelectedPeriod] = useState(defaultPeriod);
   const [selectedBotKey, setSelectedBotKey] = useState(defaultBotKey);
   const [selectedDate, setSelectedDate] = useState(defaultDate);
 
+  /* =========================
+     데이터가 바뀌었을 때 선택값 유효성 다시 확인
+     - 없는 값이면 기본값으로 되돌림
+  ========================= */
   useEffect(() => {
     const valid = tabOptions.some((item) => getOptionKey(item) === activeTab);
     if (!valid) setActiveTab(defaultActiveTab);
@@ -578,6 +679,7 @@ function useEmotionReport() {
       if (selectedBotKey !== '') setSelectedBotKey('');
       return;
     }
+
     const valid = botOptions.some((item) => getOptionKey(item) === selectedBotKey);
     if (!valid) setSelectedBotKey(defaultBotKey);
   }, [botOptions, selectedBotKey, defaultBotKey]);
@@ -587,10 +689,15 @@ function useEmotionReport() {
       if (selectedDate !== '') setSelectedDate('');
       return;
     }
+
     const valid = chatDateOptions.some((item) => isSameDateValue(item, selectedDate));
     if (!valid) setSelectedDate(defaultDate);
   }, [chatDateOptions, selectedDate, defaultDate]);
 
+  /* =========================
+     선택값 변경 함수
+     - 컴포넌트에서 onClick / onChange로 연결해서 사용
+  ========================= */
   const handleTabChange = useCallback((nextKey) => {
     setActiveTab(nextKey);
   }, []);
@@ -607,6 +714,9 @@ function useEmotionReport() {
     setSelectedDate(nextKey);
   }, []);
 
+  /* =========================
+     바깥으로 내보내는 값들
+  ========================= */
   return {
     activeTab,
     selectedPeriod,

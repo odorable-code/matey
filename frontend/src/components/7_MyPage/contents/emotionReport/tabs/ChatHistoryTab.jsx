@@ -1,8 +1,40 @@
+/**
+ * [파일 역할]
+ * - 감정 리포트 > 대화 히스토리 탭 화면
+ * - 날짜 선택, 대화방 선택, 대화 흐름, 메모, 요약 카드까지 모두 담당
+ *
+ * [여기서 찾을 것]
+ * - 기본 더미 데이터: FALLBACK_CHAT_HISTORY_DATA
+ * - 날짜 파싱/달력 관련: parseFlexibleDate, buildCalendarMatrix
+ * - 대화방 데이터 정리: normalizeChatRooms
+ * - 현재 날짜별 데이터 추출: resolveScopedData
+ * - 숫자 애니메이션: AnimatedValue
+ * - 실제 UI 시작: function ChatHistoryTab
+ *
+ * [수정 포인트]
+ * - 날짜 데이터/대화 더미 수정: FALLBACK_CHAT_HISTORY_DATA
+ * - 달력 표시 방식 수정: calendarMatrix / calendarGrid 부분
+ * - 대화방 목록 UI 수정: roomList 영역
+ * - 대화 말풍선 UI 수정: timelineList 영역
+ * - 메모 / 요약 카드 수정: noteCards, overviewCards 관련 부분
+ *
+ * [주의]
+ * - 이 파일은 데이터 보정 함수가 많아서 길어 보이지만,
+ *   실제 핵심은 "날짜 고르기 → 대화방 고르기 → 아래 내용 보여주기" 구조임
+ */
+
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import styles from './ChatHistoryTab.module.css';
 
+/* =========================
+   className 합칠 때 쓰는 함수
+========================= */
 const cx = (...items) => items.filter(Boolean).join(' ');
 
+/* =========================
+   캐릭터 이미지 경로
+   - 이미지 바꾸려면 여기 수정
+========================= */
 const CHARACTER_IMAGE_MAP = {
   cat: '/images/emotion-report/cat.png',
   bear: '/images/emotion-report/bear.png',
@@ -10,18 +42,35 @@ const CHARACTER_IMAGE_MAP = {
   hamster: '/images/emotion-report/hamster.png',
 };
 
+/* =========================
+   날짜 표시 관련 기본값
+========================= */
 const CURRENT_YEAR = 2026;
 const WEEKDAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
 
+/* =========================
+   option에서 key / label 꺼내는 함수
+========================= */
 const getOptionKey = (item) =>
   item?.key ?? item?.value ?? item?.id ?? item?.date ?? item?.day ?? '';
 
 const getOptionLabel = (item) =>
   item?.label ?? item?.name ?? item?.title ?? item?.text ?? item?.date ?? '';
 
+/* =========================
+   여러 텍스트 후보 중 먼저 쓸 수 있는 문자열 찾기
+========================= */
 const resolveText = (...values) =>
   values.find((value) => typeof value === 'string' && value.trim()) || '';
 
+/* =========================
+   대화 히스토리 기본 더미 데이터
+   - 아직 API 연결 전일 때 보여주는 내용
+   - 날짜별 대화방, 메모, 대화 흐름, 인사이트 포함
+   *
+   * [수정 포인트]
+   * - 날짜/대화/문구/메모 전부 여기서 수정 가능
+========================= */
 const FALLBACK_CHAT_HISTORY_DATA = {
   dateOptions: [
     { key: '04-21', label: '4월 21일' },
@@ -477,6 +526,13 @@ const FALLBACK_CHAT_HISTORY_DATA = {
   },
 };
 
+/* =========================
+   날짜 문자열 파싱 함수
+   - 2026-04-21
+   - 04-21
+   - 4월 21일
+   형태를 Date로 바꿔줌
+========================= */
 const parseFlexibleDate = (value) => {
   if (!value) return null;
 
@@ -509,6 +565,9 @@ const parseFlexibleDate = (value) => {
   return null;
 };
 
+/* =========================
+   날짜 key 만들기 함수들
+========================= */
 const formatMonthKey = (date) => {
   if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '';
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
@@ -517,7 +576,7 @@ const formatMonthKey = (date) => {
 const formatFullDateKey = (date) => {
   if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '';
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(
-    date.getDate(),
+    date.getDate()
   ).padStart(2, '0')}`;
 };
 
@@ -525,10 +584,13 @@ const formatShortKey = (date) => {
   if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '';
   return `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(
     2,
-    '0',
+    '0'
   )}`;
 };
 
+/* =========================
+   날짜 같은 날인지 비교
+========================= */
 const isSameDay = (a, b) =>
   a &&
   b &&
@@ -536,6 +598,9 @@ const isSameDay = (a, b) =>
   a.getMonth() === b.getMonth() &&
   a.getDate() === b.getDate();
 
+/* =========================
+   달력 6주(42칸)짜리 날짜 배열 만들기
+========================= */
 const buildCalendarMatrix = (anchorDate) => {
   const monthStart = new Date(anchorDate.getFullYear(), anchorDate.getMonth(), 1);
   const gridStart = new Date(monthStart);
@@ -548,6 +613,10 @@ const buildCalendarMatrix = (anchorDate) => {
   });
 };
 
+/* =========================
+   날짜 옵션 정규화
+   - 다양한 데이터 구조를 하나의 형식으로 맞춤
+========================= */
 const normalizeDateOptions = (sourceData = {}, historyOverview = null) => {
   const raw =
     sourceData?.dateOptions ||
@@ -579,6 +648,7 @@ const normalizeDateOptions = (sourceData = {}, historyOverview = null) => {
 
   return FALLBACK_CHAT_HISTORY_DATA.dateOptions.map((item) => {
     const date = parseFlexibleDate(item.key) || parseFlexibleDate(item.label);
+
     return {
       key: item.key,
       label: item.label,
@@ -590,6 +660,10 @@ const normalizeDateOptions = (sourceData = {}, historyOverview = null) => {
   });
 };
 
+/* =========================
+   대화 기록 정규화
+   - speaker / time / message 형식을 통일
+========================= */
 const normalizeChatEntries = (raw) => {
   if (!Array.isArray(raw) || raw.length === 0) {
     return FALLBACK_CHAT_HISTORY_DATA.byDate['04-21'].chatRooms[0].chatEntries;
@@ -597,6 +671,7 @@ const normalizeChatEntries = (raw) => {
 
   return raw.map((entry, index) => {
     const rawSpeaker = `${entry?.speaker || entry?.role || entry?.type || ''}`.toLowerCase();
+
     const speaker =
       rawSpeaker.includes('bot') || rawSpeaker.includes('assistant')
         ? 'bot'
@@ -614,6 +689,10 @@ const normalizeChatEntries = (raw) => {
   });
 };
 
+/* =========================
+   현재 선택한 날짜 기준으로 데이터 찾는 함수
+   - byDate / dateMap / entries 등 여러 구조 대응
+========================= */
 const resolveScopedData = (sourceData, currentDateOption) => {
   const keyCandidates = [
     currentDateOption?.key,
@@ -631,12 +710,14 @@ const resolveScopedData = (sourceData, currentDateOption) => {
 
   for (const map of objectMaps) {
     if (!map || typeof map !== 'object' || Array.isArray(map)) continue;
+
     for (const key of keyCandidates) {
       if (map[key]) return map[key];
     }
   }
 
   const entryList = sourceData?.entries || sourceData?.history;
+
   if (Array.isArray(entryList) && entryList.length > 0) {
     const matched = entryList.find((entry) => {
       const rawDate = entry?.date || entry?.dateKey || entry?.key || entry?.label;
@@ -646,7 +727,7 @@ const resolveScopedData = (sourceData, currentDateOption) => {
       const entryKey = entry?.dateKey || entry?.key || rawDate;
 
       return keyCandidates.some(
-        (key) => key === rawDate || key === fullKey || key === shortKey || key === entryKey,
+        (key) => key === rawDate || key === fullKey || key === shortKey || key === entryKey
       );
     });
 
@@ -656,10 +737,14 @@ const resolveScopedData = (sourceData, currentDateOption) => {
   return sourceData;
 };
 
+/* =========================
+   봇 프로필 정리
+   - key만 있어도 이미지/이름 등을 최대한 맞춰줌
+========================= */
 const resolveBotProfile = (botKey, mergedBots = []) => {
   const target =
     mergedBots.find(
-      (item) => item?.key === botKey || item?.id === botKey || item?.value === botKey,
+      (item) => item?.key === botKey || item?.id === botKey || item?.value === botKey
     ) || mergedBots[0];
 
   if (!target) {
@@ -690,6 +775,9 @@ const resolveBotProfile = (botKey, mergedBots = []) => {
   };
 };
 
+/* =========================
+   대화방 1개 데이터 정리
+========================= */
 const normalizeRoomItem = (room, index, mergedBots = [], fallbackBotKey = 'cat') => {
   const botKey =
     room?.botKey ||
@@ -699,7 +787,7 @@ const normalizeRoomItem = (room, index, mergedBots = [], fallbackBotKey = 'cat')
 
   const botProfile = resolveBotProfile(botKey, mergedBots);
   const entries = normalizeChatEntries(
-    room?.chatEntries || room?.chatLogs || room?.messages || room?.timeline,
+    room?.chatEntries || room?.chatLogs || room?.messages || room?.timeline
   );
   const lastEntry = entries[entries.length - 1];
 
@@ -722,6 +810,9 @@ const normalizeRoomItem = (room, index, mergedBots = [], fallbackBotKey = 'cat')
   };
 };
 
+/* =========================
+   날짜 기준 대화방 목록 정리
+========================= */
 const normalizeChatRooms = (scopedData, sourceData, mergedBots, fallbackBotKey) => {
   const raw =
     scopedData?.chatRooms ||
@@ -733,7 +824,7 @@ const normalizeChatRooms = (scopedData, sourceData, mergedBots, fallbackBotKey) 
 
   if (Array.isArray(raw) && raw.length > 0) {
     return raw.map((room, index) =>
-      normalizeRoomItem(room, index, mergedBots, fallbackBotKey),
+      normalizeRoomItem(room, index, mergedBots, fallbackBotKey)
     );
   }
 
@@ -750,7 +841,7 @@ const normalizeChatRooms = (scopedData, sourceData, mergedBots, fallbackBotKey) 
         lastMessage: resolveText(
           scopedData?.lastMessage,
           scopedData?.summary?.title,
-          scopedData?.summary?.description,
+          scopedData?.summary?.description
         ),
         summary: scopedData?.summary,
         overviewCards: scopedData?.overviewCards,
@@ -765,11 +856,14 @@ const normalizeChatRooms = (scopedData, sourceData, mergedBots, fallbackBotKey) 
       },
       0,
       mergedBots,
-      fallbackBotKey,
+      fallbackBotKey
     ),
   ];
 };
 
+/* =========================
+   숫자 애니메이션용 보조 함수
+========================= */
 function splitAnimatedValue(rawValue) {
   const text = String(rawValue ?? '');
   const match = text.match(/^(-?\d+(?:\.\d+)?)(.*)$/);
@@ -789,6 +883,10 @@ function splitAnimatedValue(rawValue) {
   };
 }
 
+/* =========================
+   숫자 카운트업 애니메이션 컴포넌트
+   - 카드 숫자 표시할 때 사용
+========================= */
 function AnimatedValue({
   value,
   duration = 900,
@@ -810,6 +908,7 @@ function AnimatedValue({
 
     let frameId = null;
     let startTime = null;
+
     hasAnimatedRef.current = true;
     setDisplayValue(0);
 
@@ -846,6 +945,12 @@ function AnimatedValue({
   return <span className={className}>{finalText}</span>;
 }
 
+/* =========================
+   메인 컴포넌트 시작
+   - 날짜 선택
+   - 대화방 선택
+   - 요약 / 메모 / 대화 흐름 / 통계 카드 표시
+========================= */
 function ChatHistoryTab({
   data,
   selectedDate,
@@ -855,17 +960,26 @@ function ChatHistoryTab({
   reportData,
   historyOverview,
 }) {
+  /* =========================
+     사용할 원본 데이터 결정
+  ========================= */
   const sourceData =
     data ||
     reportData?.chatHistoryTab ||
     historyOverview ||
     FALLBACK_CHAT_HISTORY_DATA;
 
+  /* =========================
+     날짜 목록 정리
+  ========================= */
   const dateOptions = useMemo(
     () => normalizeDateOptions(sourceData, historyOverview),
-    [sourceData, historyOverview],
+    [sourceData, historyOverview]
   );
 
+  /* =========================
+     현재 선택 날짜 계산
+  ========================= */
   const currentDateKey = useMemo(() => {
     if (!dateOptions.length) return '';
 
@@ -873,7 +987,7 @@ function ChatHistoryTab({
       (item) =>
         item.key === selectedDate ||
         item.fullKey === selectedDate ||
-        item.shortKey === selectedDate,
+        item.shortKey === selectedDate
     );
 
     return matched?.key || dateOptions[0].key;
@@ -884,12 +998,15 @@ function ChatHistoryTab({
       (item) =>
         item.key === currentDateKey ||
         item.fullKey === currentDateKey ||
-        item.shortKey === currentDateKey,
+        item.shortKey === currentDateKey
     ) || dateOptions[0];
 
   const currentDateLabel = currentDateOption?.label || currentDateKey;
   const anchorDate = currentDateOption?.date || new Date(CURRENT_YEAR, 3, 1);
 
+  /* =========================
+     달력 그리기용 데이터
+  ========================= */
   const calendarMatrix = useMemo(() => buildCalendarMatrix(anchorDate), [anchorDate]);
 
   const selectableDateMap = useMemo(() => {
@@ -900,11 +1017,17 @@ function ChatHistoryTab({
     return map;
   }, [dateOptions]);
 
+  /* =========================
+     현재 날짜에 해당하는 데이터 찾기
+  ========================= */
   const scopedData = useMemo(
     () => resolveScopedData(sourceData, currentDateOption),
-    [sourceData, currentDateOption],
+    [sourceData, currentDateOption]
   );
 
+  /* =========================
+     봇 목록 합치기
+  ========================= */
   const mergedBots = useMemo(
     () => [
       ...(Array.isArray(botOptions) ? botOptions : []),
@@ -914,9 +1037,12 @@ function ChatHistoryTab({
         ? FALLBACK_CHAT_HISTORY_DATA.heroBots
         : []),
     ],
-    [botOptions, reportData, sourceData],
+    [botOptions, reportData, sourceData]
   );
 
+  /* =========================
+     현재 날짜의 대화방 목록 정리
+  ========================= */
   const chatRooms = useMemo(() => {
     const fallbackBotKey =
       scopedData?.selectedBotKey ||
@@ -928,6 +1054,9 @@ function ChatHistoryTab({
     return normalizeChatRooms(scopedData, sourceData, mergedBots, fallbackBotKey);
   }, [scopedData, sourceData, mergedBots, selectedBotKey]);
 
+  /* =========================
+     현재 선택된 대화방 id
+  ========================= */
   const [selectedRoomId, setSelectedRoomId] = useState(chatRooms[0]?.id || '');
 
   useEffect(() => {
@@ -943,11 +1072,17 @@ function ChatHistoryTab({
     }
   }, [chatRooms, selectedRoomId, currentDateKey]);
 
+  /* =========================
+     현재 선택된 대화방 데이터
+  ========================= */
   const currentRoom =
     chatRooms.find((room) => room.id === selectedRoomId) || chatRooms[0] || null;
 
   const roomBot = currentRoom?.botProfile || null;
 
+  /* =========================
+     요약 / 메모 / 인사이트 / 봇 해석 / 통계 카드 정리
+  ========================= */
   const summary =
     currentRoom?.summary ||
     scopedData?.summary ||
@@ -993,7 +1128,7 @@ function ChatHistoryTab({
         item?.description,
         item?.text,
         item?.content,
-        item?.summary,
+        item?.summary
       ),
     }));
   }, [currentRoom, scopedData, sourceData, historyOverview]);
@@ -1064,6 +1199,9 @@ function ChatHistoryTab({
     summary,
   ]);
 
+  /* =========================
+     화면에서 바로 쓰기 좋게 2차 가공
+  ========================= */
   const insightMeta = Array.isArray(insight?.meta) ? insight.meta : [];
   const summaryChips = Array.isArray(summary?.chips) ? summary.chips : [];
   const insightTags = Array.isArray(insight?.tags) ? insight.tags : [];
@@ -1071,6 +1209,7 @@ function ChatHistoryTab({
 
   const mergedTags = [...new Set([...summaryChips, ...insightTags])].slice(0, 5);
   const compactOverviewCards = overviewCards.slice(0, 3);
+
   const interpretationBullets = Array.isArray(botInterpretation?.bullets)
     ? botInterpretation.bullets.slice(0, 3)
     : [];
@@ -1086,6 +1225,11 @@ function ChatHistoryTab({
     botInterpretation?.summary ||
     '선택한 날짜의 감정 흐름과 핵심 포인트를 요약했어요.';
 
+  /* =========================
+     이벤트 함수
+     - 날짜 선택
+     - 대화방 선택
+  ========================= */
   const handleDateSelect = (nextKey) => {
     onDateChange?.(nextKey);
   };
@@ -1094,8 +1238,19 @@ function ChatHistoryTab({
     setSelectedRoomId(roomId);
   };
 
+  /* =========================
+     실제 화면 렌더링
+     - 상단: 달력 + 대화방 목록
+     - 중단: 요약 / 메모 / 대화 흐름
+     - 하단: 숫자 카드
+  ========================= */
   return (
     <section className={styles.chatHistoryTab}>
+      {/* =========================
+          상단 영역
+          - 왼쪽: 날짜 달력
+          - 오른쪽: 대화방 목록
+      ========================= */}
       <div
         className={`${styles.topBar} ${styles.panelEntrance}`}
         style={{ '--enter-delay': '40ms' }}
@@ -1141,7 +1296,7 @@ function ChatHistoryTab({
                     styles.dayCell,
                     !isCurrentMonth && styles.dayCellMuted,
                     hasRecord && styles.dayCellHasRecord,
-                    isSelected && styles.dayCellSelected,
+                    isSelected && styles.dayCellSelected
                   )}
                 >
                   <span className={styles.dayNumber}>{date.getDate()}</span>
@@ -1220,6 +1375,11 @@ function ChatHistoryTab({
         </div>
       </div>
 
+      {/* =========================
+          중간 본문 영역
+          - 왼쪽: 요약 / 메모
+          - 오른쪽: 대화 흐름
+      ========================= */}
       <div className={styles.contentGrid}>
         <div className={styles.sideColumn}>
           <article
@@ -1320,14 +1480,14 @@ function ChatHistoryTab({
                     key={entry.id}
                     className={cx(
                       styles.timelineItem,
-                      isBot ? styles.timelineItemBot : styles.timelineItemMe,
+                      isBot ? styles.timelineItemBot : styles.timelineItemMe
                     )}
                   >
                     <div className={styles.timelineMeta}>
                       <span
                         className={cx(
                           styles.speakerBadge,
-                          isBot ? styles.speakerBadgeBot : styles.speakerBadgeMe,
+                          isBot ? styles.speakerBadgeBot : styles.speakerBadgeMe
                         )}
                       >
                         {isBot ? 'BOT' : 'ME'}
@@ -1343,7 +1503,7 @@ function ChatHistoryTab({
                     <div
                       className={cx(
                         styles.bubble,
-                        isBot ? styles.bubbleBot : styles.bubbleMe,
+                        isBot ? styles.bubbleBot : styles.bubbleMe
                       )}
                     >
                       {entry.message}
@@ -1358,6 +1518,9 @@ function ChatHistoryTab({
         </article>
       </div>
 
+      {/* =========================
+          하단 통계 카드
+      ========================= */}
       <div className={styles.statGrid}>
         {compactOverviewCards.map((card, index) => (
           <article
