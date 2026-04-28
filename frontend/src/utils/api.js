@@ -1,7 +1,7 @@
 // 주소 끝에 붙은 슬래시 제거
 // 어떤 사람은 ...api, 어떤 사람은 ...api/ 로 쓸 수도 있으니.
 const API_BASE_URL = (
-  process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api'
+  process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080'
 ).replace(/\/$/, '');
 
 const BACKEND_BASE_URL = API_BASE_URL.replace(/\/api$/, '');
@@ -11,6 +11,7 @@ function getStoredToken() {
   return localStorage.getItem(TOKEN_KEY);
 }
 
+// LocalStorage의 Access Token을 지움!
 export function setStoredToken(token) {
   if (token) {
     // TOKEN_KEY 라는 변수의 값을 token으로 지정
@@ -95,18 +96,29 @@ function normalizeUser(payload) {
   return payload?.user || payload?.data?.user || payload?.data || null;
 }
 
-export async function login({ email, password }) {
-  const payload = await request('api/v1/auth/login', {
+export async function login({ email, password, rememberMe }) {
+  const payload = await request('/api/v1/auth/login', {
     method: 'POST',
-    body: { email, password },
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: { email, password, rememberMe },
   });
 
   const accessToken = normalizeToken(payload);
+
+  if (!accessToken) {
+    // 토큰이 없는데 message가 있다면 그 메시지를, 없으면 기본 에러를 던집니다.
+    throw new Error(payload?.message || '로그인 정보를 확인해주세요.');
+  }
+
   const user = normalizeUser(payload);
 
-  if (accessToken) {
-    setStoredToken(accessToken);
-  }
+  // if (!payload.ok) {
+  //   throw new Error(payload.message || '로그인에 실패했어요.');
+  // }
+
+  setStoredToken(accessToken);
 
   return {
     raw: payload,
@@ -116,14 +128,37 @@ export async function login({ email, password }) {
   };
 }
 
-export async function signup({ nickname, email, password }) {
-  const payload = await request('api/v1/auth/signup', {
+export async function signup({ 
+  userName,
+  nickname,
+  email,
+  password,
+  termsAgreed,
+  privacyAgreed,
+  marketingAgreed
+}) {
+  console.log(userName);
+
+  const payload = await request('/api/v1/auth/signup', {
     method: 'POST',
-    body: { nickname, email, password },
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: {
+      userName,
+      nickname,
+      email,
+      password,
+      termsAgreed: termsAgreed, 
+      privacyAgreed: privacyAgreed, 
+      marketingAgreed: marketingAgreed
+    },
+    isJson : true,
   });
 
   const accessToken = normalizeToken(payload);
   const user = normalizeUser(payload);
+
 
   if (accessToken) {
     setStoredToken(accessToken);
@@ -132,9 +167,18 @@ export async function signup({ nickname, email, password }) {
   return {
     raw: payload,
     accessToken,
-    // user,
+    user,
     message: payload?.message || '회원가입이 완료되었어요.',
   };
+}
+
+export async function checkEmailDuplicate(email) {
+  // 이메일을 쿼리 스트링으로 전달 (api/v1/auth/check-email?email=...)
+  const payload = await request(`/api/v1/auth/check-email?email=${encodeURIComponent(email)}`, {
+    method: 'GET',
+  });
+
+  return payload?.isEmailDuplicate || false;
 }
 
 export async function getMyProfile() {
@@ -145,9 +189,21 @@ export async function getMyProfile() {
   return normalizeUser(payload) || payload;
 }
 
+export async function checkNickNameDuplicate(nickname) {
+  // 이메일을 쿼리 스트링으로 전달 (api/v1/auth/check-email?email=...)
+  const payload = await request(`/api/v1/auth/check-nickname?nickname=${encodeURIComponent(nickname)}`, {
+    method: 'GET',
+  });
+
+  return payload?.isNicknameDuplicate || false;
+}
+
 export async function forgotPassword(email) {
-  const payload = await request('api/v1/auth/forgot-password', {
+  const payload = await request('/api/v1/auth/forgot-password', {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: { email },
   });
 
@@ -159,12 +215,54 @@ export async function forgotPassword(email) {
   };
 }
 
+export async function resetPassword(token, newPassword) {
+  const payload = await request('/api/v1/auth/reset-password', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body:({ 
+      token,
+      newPassword
+    }),
+  });
+
+  return {
+    raw: payload,
+    message:
+      payload?.message || 
+      '비밀번호가 성공적으로 변경되었습니다.',
+  };
+}
+
+export async function forgotId(userName, nickname) {
+  const payload = await request('/api/v1/auth/forgot-id', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: { userName, nickname },
+  });
+
+
+  return {
+    raw: payload,
+    message:
+      payload?.message ||
+      '입력하신 정보와 일치하는 아이디를 찾았어요.',
+  };
+}
+
 export async function logout() {
   try {
-    const payload = await request('api/v1/auth/logout', {
+    const payload = await request('/api/v1/auth/logout', {
       method: 'POST',
+      headers: {
+      'Content-Type': 'application/json',
+    },
       body: {},
     });
+
 
     setStoredToken(null);
 

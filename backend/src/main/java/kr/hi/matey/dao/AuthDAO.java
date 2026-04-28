@@ -1,13 +1,60 @@
 package kr.hi.matey.dao;
 
+import java.time.LocalDateTime;
+import java.util.Optional;
+
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import kr.hi.matey.dto.PasswordResetDTO;
 import kr.hi.matey.dto.UserDTO;
 import kr.hi.matey.vo.UserVO;
+import kr.hi.matey.util.CustomUser;
 
 @Mapper
 public interface AuthDAO {
-	boolean insertUser(@Param("user") UserDTO user);
+	
+	// 이메일 중복 확인(회원가입시)
+	int isEmailDuplicateSignup(String email);
+	
+	// 닉네임 중복 확인(회원가입시)
+	int isNicknameDuplicateSignup(String nickname);
+	
+	boolean insertUser(UserVO userVO);
+	
+	int insertUserRole(@Param("userId") Long userId, @Param("roleId") int roleId);
+
+	UserVO findByEmail(String email);
+	
+	String findId(UserDTO user);
+	
+	// 비번 재설정
+	boolean isEmailDuplicatePw(UserVO userVO);
+
+	boolean updateResetToken(@Param("email") String email, @Param("token") String token);
+
+	Optional<PasswordResetDTO> findUserVOByToken(String token);
+
+	boolean updateFinalPassword(@Param("email") String email, @Param("encodedPassword") String encodedPassword);
+
+	boolean clearResetToken(@Param("email") String email);
+
+	void saveAutoLoginInfo(@Param("userId") Long userId, @Param("refreshToken") String refreshToken, @Param("expiryDate") LocalDateTime expiryDate);
+
+	int removeAutoLoginToken(Long userId, Object object);
+
+	UserVO selectUser(String email);
+
+	
+
+	
+
+
+	
+
+	
+
+	
+	
 	
 }
