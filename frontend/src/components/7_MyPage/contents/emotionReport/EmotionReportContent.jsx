@@ -26,6 +26,7 @@ function EmotionReportContent() {
   const hook = useEmotionReport?.() ?? {};
 
   const {
+    isLoading,
     activeTab,
     selectedPeriod,
     selectedBotKey,
@@ -46,6 +47,10 @@ function EmotionReportContent() {
     setSelectedBotKey,
     setSelectedDate,
   } = hook;
+
+  if (isLoading) {
+    return <div style={{ padding: '2rem', textAlign: 'center' }}>감정 리포트를 불러오는 중입니다...</div>;
+  }
 
   const onTabChange = handleTabChange ?? setActiveTab ?? (() => {});
   const onPeriodChange = handlePeriodChange ?? setSelectedPeriod ?? (() => {});

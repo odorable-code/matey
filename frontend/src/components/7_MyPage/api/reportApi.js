@@ -57,7 +57,7 @@ const requestJson = async (url, options = {}) => {
 };
 
 const REPORT_ENDPOINTS = [
-  '/api/report/emotion',
+  '/api/emotion-report/dashboard',
 ];
 
 const REPORT_REFRESH_ENDPOINTS = [

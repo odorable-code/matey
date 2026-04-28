@@ -1,11 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-
-/**
- * 이미지 교체 방법
- * 1) 지금은 imageUrl / imagePath를 비워 둠
- * 2) 나중에 사용자가 직접 업로드한 경로로 아래 값만 바꾸면 됨
- *    예: imageUrl: '/images/emotion-report/cat.png'
- */
+import { getEmotionReports } from '../../api/reportApi';
 
 export const REPORT_TAB_OPTIONS = [
   { key: 'emotion', label: '감정 리포트' },
@@ -199,375 +193,15 @@ const BOT_ANALYSIS_MAP = {
   },
 };
 
-const BOT_HISTORY_REPORTS = {
-  cat: {
-    toneLabel: '직설형 리포트',
-    summary:
-      '지금 가장 눈에 띄는 건 결과 압박 때문에 스스로를 몰아붙이는 흐름이 반복된다는 점이에요.',
-    feedbackTitle: '자책보다 먼저 원인을 분리해서 봐야 해요.',
-    feedbackBody:
-      '불안의 원인을 감정 탓으로 돌리기보다, 실제로 무엇이 부담이었는지부터 분리해서 보면 감정이 훨씬 덜 무거워질 수 있어요.',
-    actionTips: [
-      '오늘 가장 흔들린 순간을 하나만 고르기',
-      '그 순간의 원인을 감정/상황으로 나눠 적기',
-      '결과 기준 대신 과정 기준 문장 하나 만들기',
-    ],
-    meters: [
-      { label: '현실 점검', value: 84 },
-      { label: '자책 경향', value: 62 },
-      { label: '회복 가능성', value: 74 },
-    ],
-  },
-  bear: {
-    toneLabel: '든든한 위로형',
-    summary:
-      '감정이 힘들게 올라오는 날에도 완전히 무너지기보다 다시 버티려는 힘이 계속 남아 있어요.',
-    feedbackTitle: '지금은 잘하려는 마음보다 버틴 마음을 먼저 봐야 해요.',
-    feedbackBody:
-      '감정이 흔들린 날에도 결국 다시 일상으로 돌아가려는 흐름이 있으니, 지금은 자기비판보다 자기인정이 더 필요한 시기예요.',
-    actionTips: [
-      '오늘 버텨낸 것 1가지 적기',
-      '나를 너무 몰아붙인 문장 지우기',
-      '휴식 시간도 계획에 포함시키기',
-    ],
-    meters: [
-      { label: '안정감', value: 88 },
-      { label: '회복력', value: 81 },
-      { label: '자기수용', value: 78 },
-    ],
-  },
-  dog: {
-    toneLabel: '공감·응원형',
-    summary:
-      '힘들다는 표현 뒤에 “그래도 해보겠다”는 의지가 같이 붙는 날이 많았어요.',
-    feedbackTitle: '지금은 큰 결론보다 작은 실행 하나면 충분해요.',
-    feedbackBody:
-      '마음이 복잡할수록 해결을 크게 잡기 쉬운데, 지금은 오늘 할 수 있는 가장 작은 행동 한 가지로 시작하는 게 좋아요.',
-    actionTips: [
-      '오늘 할 일 1개만 정하기',
-      '불안할 때 바로 할 호흡 루틴 만들기',
-      '도움 요청 문장 미리 준비해두기',
-    ],
-    meters: [
-      { label: '공감 민감도', value: 86 },
-      { label: '실행 연결', value: 77 },
-      { label: '감정 회복', value: 82 },
-    ],
-  },
-  hamster: {
-    toneLabel: '세심한 생활형',
-    summary:
-      '감정 흐름이 생활 리듬과 꽤 밀접하게 연결되어 있어서 작은 습관 정리가 중요해 보여요.',
-    feedbackTitle: '생활 단위를 정리하면 감정도 같이 따라올 가능성이 커요.',
-    feedbackBody:
-      '지금은 마음을 한 번에 다 바꾸려 하기보다 수면, 식사, 공부 같은 작은 루틴 하나를 안정시키는 게 먼저예요.',
-    actionTips: [
-      '취침 시간 30분만 고정하기',
-      '하루 첫 할 일 하나만 일정에 넣기',
-      '감정이 흔들린 날의 생활 패턴 기록하기',
-    ],
-    meters: [
-      { label: '루틴 민감도', value: 83 },
-      { label: '생활 회복', value: 72 },
-      { label: '집중 회복', value: 69 },
-    ],
-  },
-};
-
-const DAILY_REPORTS = {
-  '2026-04-27': {
-    dateKey: '2026-04-27',
-    displayDate: '4월 27일',
-    dominantEmotion: '불안',
-    activeTimeRange: '22:00 ~ 23:30',
-    conversationCount: 5,
-    summaryTitle: '시험 결과와 비교에 대한 압박이 크게 올라온 날',
-    mainConcern: '성적이 기대에 못 미칠까 봐 불안한 마음',
-    dominantTopics: ['시험', '성적', '비교'],
-    memo: [
-      '오늘은 결과에 대한 압박이 특히 크게 느껴졌어요.',
-      '친구와 비교하면서 스스로를 깎아내리는 말이 반복됐어요.',
-      '그래도 마지막에는 다시 계획을 세워보려는 흐름이 남아 있었어요.',
-    ],
-    timeline: [
-      {
-        id: 1,
-        title: '시험 결과 불안',
-        description: '점수와 결과를 미리 걱정하는 표현이 반복됐어요.',
-      },
-      {
-        id: 2,
-        title: '비교 후 자책',
-        description: '주변 사람과 비교한 뒤 스스로를 과하게 평가했어요.',
-      },
-      {
-        id: 3,
-        title: '다시 정리 시도',
-        description: '마지막에는 일정을 다시 정리하며 회복 흐름이 보였어요.',
-      },
-    ],
-    chatPreview: [
-      {
-        id: 'd1-u1',
-        role: 'user',
-        name: '사용자',
-        time: '22:08',
-        text: '나 이번 시험 망한 것 같아. 다들 잘하는 것 같은데 나만 뒤처지는 느낌이야.',
-      },
-      {
-        id: 'd1-b1',
-        role: 'bot',
-        name: '냥이',
-        time: '22:09',
-        text: '지금은 결과를 확정한 것도 아닌데 벌써 스스로를 탈락 처리하고 있어. 그건 너무 빨라.',
-      },
-      {
-        id: 'd1-u2',
-        role: 'user',
-        name: '사용자',
-        time: '22:16',
-        text: '그래도 진짜 자신이 없어. 계속 비교하게 돼.',
-      },
-      {
-        id: 'd1-b2',
-        role: 'bot',
-        name: '강아지',
-        time: '22:17',
-        text: '많이 불안했겠다. 오늘은 비교를 멈추고 내일 할 한 가지만 같이 정해보자.',
-      },
-    ],
-  },
-  '2026-04-24': {
-    dateKey: '2026-04-24',
-    displayDate: '4월 24일',
-    dominantEmotion: '위로',
-    activeTimeRange: '21:00 ~ 22:10',
-    conversationCount: 4,
-    summaryTitle: '지친 마음을 털어놓으며 위로를 찾은 날',
-    mainConcern: '계속 버티는 게 맞는지에 대한 회의감',
-    dominantTopics: ['위로', '버팀', '진로'],
-    memo: [
-      '오늘은 “버티는 게 맞는지”에 대한 피로감이 자주 나왔어요.',
-      '감정을 해결하려 하기보다 누군가 알아주길 바라는 흐름이 강했어요.',
-      '위로를 받은 뒤에는 마음이 조금 가라앉는 반응이 있었어요.',
-    ],
-    timeline: [
-      {
-        id: 1,
-        title: '지침 표현',
-        description: '버겁고 지친 마음을 직접적으로 표현했어요.',
-      },
-      {
-        id: 2,
-        title: '공감 요청',
-        description: '답을 찾기보다 위로와 인정이 더 필요한 상태였어요.',
-      },
-      {
-        id: 3,
-        title: '감정 완화',
-        description: '대화 후 감정 온도가 조금 낮아졌어요.',
-      },
-    ],
-    chatPreview: [
-      {
-        id: 'd2-u1',
-        role: 'user',
-        name: '사용자',
-        time: '21:14',
-        text: '요즘 그냥 계속 버티는 느낌이야. 이게 맞는 건지도 모르겠어.',
-      },
-      {
-        id: 'd2-b1',
-        role: 'bot',
-        name: '곰이',
-        time: '21:15',
-        text: '그렇게 버티고 있다는 것만으로도 이미 많이 해내고 있는 거야. 오늘은 답보다 마음을 먼저 쉬게 하자.',
-      },
-    ],
-  },
-  '2026-04-21': {
-    dateKey: '2026-04-21',
-    displayDate: '4월 21일',
-    dominantEmotion: '공감',
-    activeTimeRange: '20:30 ~ 21:20',
-    conversationCount: 3,
-    summaryTitle: '해결보다 공감과 응원이 더 필요했던 날',
-    mainConcern: '해야 할 일은 많은데 손이 잘 안 가는 상태',
-    dominantTopics: ['미루기', '압박', '응원'],
-    memo: [
-      '해야 할 일이 많다는 부담이 있었지만 바로 실행으로 이어지지 않았어요.',
-      '혼나기보다 같이 정리해주는 톤에 더 잘 반응했어요.',
-      '작은 계획으로 쪼개면 시작할 수 있겠다는 말이 나왔어요.',
-    ],
-    timeline: [
-      {
-        id: 1,
-        title: '할 일 압박',
-        description: '해야 할 일이 너무 많아 시작 자체가 어려웠어요.',
-      },
-      {
-        id: 2,
-        title: '공감 반응',
-        description: '공감 받았을 때 감정이 먼저 풀렸어요.',
-      },
-      {
-        id: 3,
-        title: '작은 실행 계획',
-        description: '일정을 작게 나누며 다시 시도할 여지가 생겼어요.',
-      },
-    ],
-    chatPreview: [
-      {
-        id: 'd3-u1',
-        role: 'user',
-        name: '사용자',
-        time: '20:41',
-        text: '할 건 많은데 시작이 너무 싫어. 괜히 더 미루게 돼.',
-      },
-      {
-        id: 'd3-b1',
-        role: 'bot',
-        name: '강아지',
-        time: '20:42',
-        text: '그럴 수 있어. 오늘은 다 하려고 하지 말고 가장 작은 한 가지부터 같이 정해보자.',
-      },
-    ],
-  },
-  '2026-04-18': {
-    dateKey: '2026-04-18',
-    displayDate: '4월 18일',
-    dominantEmotion: '루틴',
-    activeTimeRange: '07:30 ~ 08:10',
-    conversationCount: 2,
-    summaryTitle: '생활 리듬이 무너지며 감정도 흔들린 날',
-    mainConcern: '수면 부족으로 하루 시작부터 지쳐 있는 상태',
-    dominantTopics: ['수면', '루틴', '피로'],
-    memo: [
-      '수면 부족이 감정 예민함으로 바로 이어졌어요.',
-      '생활 루틴을 조금만 정리해도 감정 반응이 달라질 가능성이 보여요.',
-    ],
-    timeline: [
-      {
-        id: 1,
-        title: '수면 부족',
-        description: '피로감이 대화 전체 톤에 영향을 줬어요.',
-      },
-      {
-        id: 2,
-        title: '루틴 필요',
-        description: '감정보다 생활 리듬 정리가 더 우선일 수 있어요.',
-      },
-    ],
-    chatPreview: [
-      {
-        id: 'd4-u1',
-        role: 'user',
-        name: '사용자',
-        time: '07:36',
-        text: '잠을 제대로 못 자서 하루 시작부터 너무 예민해.',
-      },
-      {
-        id: 'd4-b1',
-        role: 'bot',
-        name: '햄이',
-        time: '07:37',
-        text: '오늘은 감정을 다 고치려 하지 말고, 수면이 흔들린 날의 루틴부터 정리해보자.',
-      },
-    ],
-  },
-  '2026-04-10': {
-    dateKey: '2026-04-10',
-    displayDate: '4월 10일',
-    dominantEmotion: '안정',
-    activeTimeRange: '18:00 ~ 19:00',
-    conversationCount: 3,
-    summaryTitle: '감정이 비교적 안정적으로 정리된 날',
-    mainConcern: '불안을 키우지 않고 하루를 마무리하고 싶은 마음',
-    dominantTopics: ['안정', '회복', '일상'],
-    memo: [
-      '오늘은 감정이 크게 요동치기보다 차분하게 정리되는 흐름이 있었어요.',
-      '스스로를 다그치기보다 하루를 정리하려는 말들이 더 많았어요.',
-    ],
-    timeline: [
-      {
-        id: 1,
-        title: '감정 완화',
-        description: '불안이 크게 커지지 않고 유지됐어요.',
-      },
-      {
-        id: 2,
-        title: '하루 정리',
-        description: '계획과 감정을 함께 정리하려는 흐름이 보였어요.',
-      },
-    ],
-    chatPreview: [
-      {
-        id: 'd5-u1',
-        role: 'user',
-        name: '사용자',
-        time: '18:22',
-        text: '오늘은 그래도 조금 덜 흔들린 것 같아.',
-      },
-      {
-        id: 'd5-b1',
-        role: 'bot',
-        name: '곰이',
-        time: '18:23',
-        text: '그 흐름이 정말 중요해. 크게 나아지지 않아도 덜 흔들린 하루는 충분히 의미 있어.',
-      },
-    ],
-  },
-  '2026-03-29': {
-    dateKey: '2026-03-29',
-    displayDate: '3월 29일',
-    dominantEmotion: '회복',
-    activeTimeRange: '19:30 ~ 20:20',
-    conversationCount: 3,
-    summaryTitle: '조금씩 다시 해보려는 마음이 살아난 날',
-    mainConcern: '쉬었다가 다시 시작하는 것에 대한 죄책감',
-    dominantTopics: ['회복', '재시작', '죄책감'],
-    memo: [
-      '쉬고 난 뒤 다시 시작해도 괜찮은지 묻는 말이 있었어요.',
-      '완벽하게 돌아오지 않아도 재시작 자체를 긍정하는 흐름이 나왔어요.',
-    ],
-    timeline: [
-      {
-        id: 1,
-        title: '쉬는 것에 대한 죄책감',
-        description: '휴식 후 다시 시작하는 걸 불안해했어요.',
-      },
-      {
-        id: 2,
-        title: '재시작 허용',
-        description: '조금씩 돌아와도 된다는 감각이 생겼어요.',
-      },
-    ],
-    chatPreview: [
-      {
-        id: 'd6-u1',
-        role: 'user',
-        name: '사용자',
-        time: '19:44',
-        text: '쉬고 나니까 더 죄책감이 들어. 다시 시작해도 되나 싶어.',
-      },
-      {
-        id: 'd6-b1',
-        role: 'bot',
-        name: '강아지',
-        time: '19:45',
-        text: '그럼, 다시 시작하는 건 늦은 게 아니라 돌아오는 과정이야.',
-      },
-    ],
-  },
-};
-
 function parseDateKey(dateKey) {
   const [year, month, day] = dateKey.split('-').map(Number);
   return new Date(year, month - 1, day);
 }
 
 function getReferenceDate(dailyReports) {
-  const lastDateKey = Object.keys(dailyReports).sort().slice(-1)[0];
+  const keys = Object.keys(dailyReports);
+  if (keys.length === 0) return new Date();
+  const lastDateKey = keys.sort().slice(-1)[0];
   return lastDateKey ? parseDateKey(lastDateKey) : new Date();
 }
 
@@ -583,6 +217,7 @@ function getPeriodDays(periodKey) {
 }
 
 function filterDailyReportsByPeriod(dailyReports, selectedPeriod) {
+  if (!dailyReports || Object.keys(dailyReports).length === 0) return {};
   const maxDays = getPeriodDays(selectedPeriod);
   const referenceDate = getReferenceDate(dailyReports);
 
@@ -599,6 +234,7 @@ function filterDailyReportsByPeriod(dailyReports, selectedPeriod) {
 }
 
 function getLastDateKey(dailyReports) {
+  if (!dailyReports) return '';
   const keys = Object.keys(dailyReports).sort();
   return keys[keys.length - 1] || '';
 }
@@ -743,21 +379,42 @@ function buildHistoryOverview(filteredDailyReports) {
 }
 
 function useEmotionReport() {
+  const [dailyReportsData, setDailyReportsData] = useState({});
+  const [botHistoryReportsData, setBotHistoryReportsData] = useState({});
+  const [isLoading, setIsLoading] = useState(true);
+
   const [activeTab, setActiveTab] = useState('emotion');
   const [selectedPeriod, setSelectedPeriod] = useState('7d');
   const [selectedBotKey, setSelectedBotKey] = useState('cat');
+  const [selectedDate, setSelectedDate] = useState('');
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const response = await getEmotionReports();
+        if (response && response.data) {
+          setDailyReportsData(response.data.dailyReports || {});
+          setBotHistoryReportsData(response.data.botHistoryReports || {});
+          const defaultDate = getLastDateKey(response.data.dailyReports || {});
+          setSelectedDate(defaultDate);
+        }
+      } catch (error) {
+        console.error('Failed to fetch emotion reports:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   const filteredDailyReports = useMemo(
-    () => filterDailyReportsByPeriod(DAILY_REPORTS, selectedPeriod),
-    [selectedPeriod]
-  );
-
-  const [selectedDate, setSelectedDate] = useState(
-    getLastDateKey(filteredDailyReports)
+    () => filterDailyReportsByPeriod(dailyReportsData, selectedPeriod),
+    [dailyReportsData, selectedPeriod]
   );
 
   useEffect(() => {
-    if (!filteredDailyReports[selectedDate]) {
+    if (!filteredDailyReports[selectedDate] && Object.keys(filteredDailyReports).length > 0) {
       setSelectedDate(getLastDateKey(filteredDailyReports));
     }
   }, [filteredDailyReports, selectedDate]);
@@ -791,11 +448,11 @@ function useEmotionReport() {
       selectedDate,
       selectedBotKey,
       dailyReports: filteredDailyReports,
-      botReports: BOT_HISTORY_REPORTS,
+      botReports: botHistoryReportsData,
       botMeta,
       overview: historyOverview,
     }),
-    [selectedDate, selectedBotKey, filteredDailyReports, botMeta, historyOverview]
+    [selectedDate, selectedBotKey, filteredDailyReports, botHistoryReportsData, botMeta, historyOverview]
   );
 
   const reportData = useMemo(
@@ -835,6 +492,7 @@ function useEmotionReport() {
   };
 
   return {
+    isLoading,
     activeTab,
     selectedPeriod,
     selectedBotKey,
