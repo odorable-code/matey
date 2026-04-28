@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import styles from './EmotionTab.module.css';
 
 const CHARACTER_IMAGE_MAP = {
@@ -18,6 +18,8 @@ const FALLBACK_HERO_BOTS = [
     softColor: '#F2ECFF',
     imageUrl: '',
     imagePath: '',
+    cardObjectPosition: 'center 14%',
+    reportObjectPosition: 'center bottom',
     title: '냥이 피드백',
     summary:
       '감정을 너무 크게 보기보다, 정확히 어디서 흔들렸는지부터 짚어야 해. 지금 필요한 건 예민함이 아니라 해석이야.',
@@ -37,6 +39,8 @@ const FALLBACK_HERO_BOTS = [
     softColor: '#FFF1E4',
     imageUrl: '',
     imagePath: '',
+    cardObjectPosition: 'center 18%',
+    reportObjectPosition: 'center bottom',
     title: '곰이 리포트',
     summary:
       '지친 날이 있어도 결국 다시 돌아오려는 힘이 보여. 지금은 더 잘하려 하기보다, 버티고 있는 마음을 먼저 안아줘야 해.',
@@ -56,6 +60,8 @@ const FALLBACK_HERO_BOTS = [
     softColor: '#ECF6FF',
     imageUrl: '',
     imagePath: '',
+    cardObjectPosition: 'center 16%',
+    reportObjectPosition: 'center bottom',
     title: '강아지 리포트',
     summary:
       '많이 힘든데도 계속 해보려는 마음이 남아 있어. 그래서 지금은 큰 결론보다 작은 실행 하나를 같이 잡아주는 게 중요해 보여.',
@@ -75,6 +81,8 @@ const FALLBACK_HERO_BOTS = [
     softColor: '#F4EEFF',
     imageUrl: '',
     imagePath: '',
+    cardObjectPosition: 'center 12%',
+    reportObjectPosition: 'center bottom',
     title: '햄이 리포트',
     summary:
       '감정이 생활 리듬하고 같이 흔들리는 패턴이 보여. 마음을 한 번에 바꾸기보다 하루 루틴 하나를 잡는 게 더 효과적일 수 있어.',
@@ -151,13 +159,6 @@ const FALLBACK_EMOTION_DATA = {
       },
     ],
   },
-  emotionFlow: [
-    { label: '불안', value: 72 },
-    { label: '자책', value: 56 },
-    { label: '정리', value: 49 },
-    { label: '위로', value: 42 },
-    { label: '집중', value: 36 },
-  ],
   topicTags: ['시험', '비교', '불안', '미래', '회복', '루틴', '위로'],
   summaryTimeline: [
     {
@@ -199,7 +200,7 @@ function buildDonutSegments(items = []) {
 }
 
 function polarToCartesian(cx, cy, r, angleInDegrees) {
-  const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180.0;
+  const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180;
 
   return {
     x: cx + r * Math.cos(angleInRadians),
@@ -227,6 +228,69 @@ function describeArc(cx, cy, r, startAngle, endAngle) {
   ].join(' ');
 }
 
+function splitAnimatedValue(rawValue) {
+  const text = String(rawValue ?? '');
+  const match = text.match(/^(-?\d+(?:\.\d+)?)(.*)$/);
+
+  if (!match) {
+    return {
+      numericValue: 0,
+      suffix: text,
+      hasNumber: false,
+    };
+  }
+
+  return {
+    numericValue: Number(match[1]) || 0,
+    suffix: match[2] || '',
+    hasNumber: true,
+  };
+}
+
+function AnimatedValue({ value, duration = 900, className, decimals = 0 }) {
+  const { numericValue, suffix, hasNumber } = splitAnimatedValue(value);
+  const [displayValue, setDisplayValue] = useState(0);
+
+  useEffect(() => {
+    if (!hasNumber) return undefined;
+
+    let frameId = null;
+    let startTime = null;
+
+    const animate = (timestamp) => {
+      if (!startTime) startTime = timestamp;
+
+      const progress = Math.min((timestamp - startTime) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const nextValue = numericValue * eased;
+
+      setDisplayValue(nextValue);
+
+      if (progress < 1) {
+        frameId = window.requestAnimationFrame(animate);
+      }
+    };
+
+    setDisplayValue(0);
+    frameId = window.requestAnimationFrame(animate);
+
+    return () => {
+      if (frameId) window.cancelAnimationFrame(frameId);
+    };
+  }, [numericValue, duration, hasNumber]);
+
+  if (!hasNumber) {
+    return <span className={className}>{value}</span>;
+  }
+
+  const finalText =
+    decimals > 0
+      ? `${displayValue.toFixed(decimals)}${suffix}`
+      : `${Math.round(displayValue)}${suffix}`;
+
+  return <span className={className}>{finalText}</span>;
+}
+
 function EmotionTab({
   data,
   reportData,
@@ -237,7 +301,9 @@ function EmotionTab({
   onBotChange,
   onBotSelect,
 }) {
-  const sourceData = data || emotionData || reportData?.emotionTab || FALLBACK_EMOTION_DATA;
+  const sourceData =
+    data || emotionData || reportData?.emotionTab || FALLBACK_EMOTION_DATA;
+
   const changeBot = onBotChange ?? onBotSelect ?? (() => {});
 
   const {
@@ -246,54 +312,82 @@ function EmotionTab({
     statCards = FALLBACK_EMOTION_DATA.statCards,
     coreEmotion = FALLBACK_EMOTION_DATA.coreEmotion,
     emotionDistribution = FALLBACK_EMOTION_DATA.emotionDistribution,
-    emotionFlow = FALLBACK_EMOTION_DATA.emotionFlow,
     topicTags = FALLBACK_EMOTION_DATA.topicTags,
     summaryTimeline = FALLBACK_EMOTION_DATA.summaryTimeline,
   } = sourceData;
 
   const resolvedHeroBots = useMemo(() => {
-    const source = Array.isArray(heroBots) && heroBots.length > 0 ? heroBots : FALLBACK_HERO_BOTS;
+    const fromData =
+      Array.isArray(heroBots) && heroBots.length > 0 ? heroBots : FALLBACK_HERO_BOTS;
 
-    return source.map((hero) => ({
-      ...hero,
-      imageUrl:
-        hero.imageUrl ||
-        hero.imagePath ||
-        CHARACTER_IMAGE_MAP[hero.key] ||
-        '',
-    }));
-  }, [heroBots]);
+    return fromData.map((hero) => {
+      const botOption =
+        botOptions.find(
+          (item) =>
+            item?.key === hero.key ||
+            item?.id === hero.key ||
+            item?.value === hero.key,
+        ) || {};
+
+      return {
+        ...hero,
+        ...botOption,
+        imageUrl:
+          hero.imageUrl ||
+          hero.imagePath ||
+          botOption.imageUrl ||
+          botOption.imagePath ||
+          CHARACTER_IMAGE_MAP[hero.key] ||
+          '',
+        cardObjectPosition:
+          hero.cardObjectPosition ||
+          botOption.cardObjectPosition ||
+          'center 16%',
+        reportObjectPosition:
+          hero.reportObjectPosition ||
+          botOption.reportObjectPosition ||
+          'center bottom',
+      };
+    });
+  }, [heroBots, botOptions]);
 
   const activeHero =
     resolvedHeroBots.find((bot) => bot.key === selectedBotKey) ||
-    selectedHero ||
+    resolvedHeroBots.find((bot) => bot.key === selectedHero?.key) ||
     resolvedHeroBots[0] ||
     FALLBACK_HERO_BOTS[0];
 
   const donutSegments = useMemo(
     () => buildDonutSegments(emotionDistribution.items || []),
-    [emotionDistribution.items]
+    [emotionDistribution.items],
   );
 
-  const compactFlow = useMemo(() => (emotionFlow || []).slice(0, 5), [emotionFlow]);
-  const timelinePreview = useMemo(() => (summaryTimeline || []).slice(0, 3), [summaryTimeline]);
-
-  const maxFlowValue = useMemo(() => {
-    if (!compactFlow.length) return 1;
-    return Math.max(...compactFlow.map((item) => item.value || 0), 1);
-  }, [compactFlow]);
+  const timelinePreview = useMemo(
+    () => (summaryTimeline || []).slice(0, 3),
+    [summaryTimeline],
+  );
 
   const selectedPeriodLabel =
     selectedPeriod === '90d'
       ? '최근 90일'
       : selectedPeriod === '30d'
-      ? '최근 30일'
-      : '최근 7일';
+        ? '최근 30일'
+        : '최근 7일';
 
   const reportTopicSummary =
     (topicTags || []).length > 0
       ? `${topicTags.slice(0, 3).join(' · ')} 중심의 감정 대화가 반복됐어요.`
       : '반복 주제가 쌓이면 이 영역에 자동으로 정리돼요.';
+
+  const entranceDelayMap = {
+    report: '40ms',
+    stats: '120ms',
+    donut: '200ms',
+    topic: '280ms',
+    core: '360ms',
+  };
+
+  const animationKey = `${activeHero.key}-${selectedPeriodLabel}`;
 
   return (
     <section className={styles.emotionTab}>
@@ -319,11 +413,12 @@ function EmotionTab({
                       src={hero.imageUrl}
                       alt={`${hero.name} 캐릭터`}
                       className={styles.heroPortrait}
+                      style={{
+                        objectPosition: hero.cardObjectPosition || 'center 16%',
+                      }}
                     />
                   ) : (
-                    <div className={styles.heroPlaceholder}>
-                      {hero.fallbackLabel}
-                    </div>
+                    <div className={styles.heroPlaceholder}>{hero.fallbackLabel}</div>
                   )}
                 </div>
 
@@ -338,10 +433,12 @@ function EmotionTab({
       </div>
 
       <article
-        className={styles.selectedReportPanel}
+        key={`report-${animationKey}`}
+        className={`${styles.selectedReportPanel} ${styles.panelEntrance}`}
         style={{
           '--hero-accent': activeHero.accentColor,
           '--hero-soft': activeHero.softColor,
+          '--enter-delay': entranceDelayMap.report,
         }}
       >
         <div className={styles.selectedReportInner}>
@@ -352,11 +449,12 @@ function EmotionTab({
                   src={activeHero.imageUrl}
                   alt={`${activeHero.name} 메인 캐릭터`}
                   className={styles.reportVisualImage}
+                  style={{
+                    objectPosition: activeHero.reportObjectPosition || 'center bottom',
+                  }}
                 />
               ) : (
-                <div className={styles.heroPlaceholder}>
-                  {activeHero.fallbackLabel}
-                </div>
+                <div className={styles.heroPlaceholder}>{activeHero.fallbackLabel}</div>
               )}
             </div>
 
@@ -369,7 +467,8 @@ function EmotionTab({
                     {activeHero.name}가 작성한 감정 리포트
                   </h3>
                   <p className={styles.reportSubtitle}>
-                    {selectedPeriodLabel} 동안 반복된 감정 흐름을 {activeHero.typeLabel} 톤으로 정리했어요.
+                    {selectedPeriodLabel} 동안 반복된 감정 흐름을 {activeHero.typeLabel} 톤으로
+                    정리했어요.
                   </p>
                 </div>
               </div>
@@ -396,51 +495,30 @@ function EmotionTab({
         </div>
       </article>
 
-      <div className={styles.statGrid}>
+      <div
+        key={`stats-${animationKey}`}
+        className={`${styles.statGrid} ${styles.panelEntrance}`}
+        style={{ '--enter-delay': entranceDelayMap.stats }}
+      >
         {(statCards || []).map((card) => (
           <article key={card.id} className={styles.statCard}>
             <span className={styles.statLabel}>{card.label}</span>
-            <strong className={styles.statValue}>{card.value}</strong>
+            <AnimatedValue
+              key={`${animationKey}-${card.id}-${card.value}`}
+              value={card.value}
+              className={styles.statValue}
+            />
             <p className={styles.statCaption}>{card.caption}</p>
           </article>
         ))}
       </div>
 
-      <div className={styles.mainGrid}>
-        <article className={`${styles.panel} ${styles.corePanel}`}>
-          <div className={styles.panelHeader}>
-            <div>
-              <span className={styles.panelEyebrow}>CORE EMOTION</span>
-              <h3 className={styles.panelTitle}>핵심 감정 해석</h3>
-            </div>
-          </div>
-
-          <strong className={styles.coreHeadline}>{coreEmotion.title}</strong>
-          <p className={styles.coreDescription}>{coreEmotion.description}</p>
-
-          <div className={styles.coreMetaStrip}>
-            <div className={styles.coreMetaBox}>
-              <span className={styles.coreMetaLabel}>리포트 작성 봇</span>
-              <strong className={styles.coreMetaValue}>{activeHero.name}</strong>
-            </div>
-            <div className={styles.coreMetaBox}>
-              <span className={styles.coreMetaLabel}>누적 감정 수</span>
-              <strong className={styles.coreMetaValue}>
-                {emotionDistribution.total || 0}
-              </strong>
-            </div>
-          </div>
-
-          <div className={styles.chipRow}>
-            {(coreEmotion.tags || []).map((tag) => (
-              <span key={tag} className={styles.topicChip}>
-                {tag}
-              </span>
-            ))}
-          </div>
-        </article>
-
-        <article className={`${styles.panel} ${styles.donutPanel}`}>
+      <div className={styles.bottomPanelGrid}>
+        <article
+          key={`donut-${animationKey}`}
+          className={`${styles.panel} ${styles.donutPanel} ${styles.panelEntrance}`}
+          style={{ '--enter-delay': entranceDelayMap.donut }}
+        >
           <div className={styles.panelHeader}>
             <div>
               <span className={styles.panelEyebrow}>EMOTION MIX</span>
@@ -452,6 +530,7 @@ function EmotionTab({
             <div className={styles.donutLayout}>
               <div className={styles.donutWrap}>
                 <svg
+                  key={`svg-${animationKey}`}
                   viewBox="0 0 120 120"
                   className={styles.donutChart}
                   role="img"
@@ -465,27 +544,34 @@ function EmotionTab({
                     stroke="rgba(228, 221, 247, 0.95)"
                     strokeWidth="14"
                   />
-                  {donutSegments.map((segment) => {
+                  {donutSegments.map((segment, index) => {
                     const startAngle = segment.start * 360;
                     const endAngle = (segment.start + segment.portion) * 360;
 
                     return (
                       <path
-                        key={segment.label}
+                        key={`${animationKey}-${segment.label}`}
                         d={describeArc(60, 60, 42, startAngle, endAngle)}
                         fill="none"
                         stroke={segment.color || '#9A85FF'}
                         strokeWidth="14"
                         strokeLinecap="round"
+                        pathLength="100"
+                        className={styles.donutSegment}
+                        style={{
+                          '--segment-delay': `${220 + index * 90}ms`,
+                        }}
                       />
                     );
                   })}
                 </svg>
 
                 <div className={styles.donutCenter}>
-                  <strong className={styles.donutTotal}>
-                    {emotionDistribution.total || 0}
-                  </strong>
+                  <AnimatedValue
+                    key={`${animationKey}-donut-total-${emotionDistribution.total || 0}`}
+                    value={emotionDistribution.total || 0}
+                    className={styles.donutTotal}
+                  />
                   <span className={styles.donutCenterLabel}>TOTAL</span>
                 </div>
               </div>
@@ -503,7 +589,11 @@ function EmotionTab({
                         {item.description || '감정 분포 데이터'}
                       </span>
                     </div>
-                    <span className={styles.legendValue}>{item.value}%</span>
+                    <AnimatedValue
+                      key={`${animationKey}-legend-${item.label}-${item.value}`}
+                      value={`${item.value}%`}
+                      className={styles.legendValue}
+                    />
                   </div>
                 ))}
               </div>
@@ -514,56 +604,12 @@ function EmotionTab({
             </div>
           )}
         </article>
-      </div>
 
-      <div className={styles.insightGrid}>
-        <article className={`${styles.panel} ${styles.flowPanel}`}>
-          <div className={styles.panelHeader}>
-            <div>
-              <span className={styles.panelEyebrow}>FLOW SNAPSHOT</span>
-              <h3 className={styles.panelTitle}>감정 흐름 요약</h3>
-            </div>
-          </div>
-
-          <div className={styles.flowList}>
-            {(compactFlow || []).map((item) => {
-              const width = ((item.value || 0) / maxFlowValue) * 100;
-
-              return (
-                <div key={item.label} className={styles.flowRow}>
-                  <span className={styles.flowLabel}>{item.label}</span>
-                  <div className={styles.flowTrack}>
-                    <div
-                      className={styles.flowFill}
-                      style={{ width: `${width}%` }}
-                    />
-                  </div>
-                  <span className={styles.flowValue}>{item.value}</span>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className={styles.flowMetaGrid}>
-            <div className={styles.flowMetaCard}>
-              <span className={styles.flowMetaLabel}>대화 수</span>
-              <strong className={styles.flowMetaValue}>12회</strong>
-              <span className={styles.flowMetaCaption}>선택 기간 기준</span>
-            </div>
-            <div className={styles.flowMetaCard}>
-              <span className={styles.flowMetaLabel}>활동일</span>
-              <strong className={styles.flowMetaValue}>6일</strong>
-              <span className={styles.flowMetaCaption}>기록이 남은 날</span>
-            </div>
-            <div className={styles.flowMetaCard}>
-              <span className={styles.flowMetaLabel}>반복 주제</span>
-              <strong className={styles.flowMetaValue}>관계 · 불안</strong>
-              <span className={styles.flowMetaCaption}>자주 나온 키워드</span>
-            </div>
-          </div>
-        </article>
-
-        <article className={`${styles.panel} ${styles.topicPanel}`}>
+        <article
+          key={`topic-${animationKey}`}
+          className={`${styles.panel} ${styles.topicPanel} ${styles.panelEntrance}`}
+          style={{ '--enter-delay': entranceDelayMap.topic }}
+        >
           <div className={styles.panelHeader}>
             <div>
               <span className={styles.panelEyebrow}>TOPICS & TIMELINE</span>
@@ -593,6 +639,45 @@ function EmotionTab({
                   <p className={styles.timelineDescription}>{item.description}</p>
                 </div>
               </div>
+            ))}
+          </div>
+        </article>
+
+        <article
+          key={`core-${animationKey}`}
+          className={`${styles.panel} ${styles.corePanel} ${styles.panelEntrance}`}
+          style={{ '--enter-delay': entranceDelayMap.core }}
+        >
+          <div className={styles.panelHeader}>
+            <div>
+              <span className={styles.panelEyebrow}>CORE EMOTION</span>
+              <h3 className={styles.panelTitle}>핵심 감정 해석</h3>
+            </div>
+          </div>
+
+          <strong className={styles.coreHeadline}>{coreEmotion.title}</strong>
+          <p className={styles.coreDescription}>{coreEmotion.description}</p>
+
+          <div className={styles.coreMetaStrip}>
+            <div className={styles.coreMetaBox}>
+              <span className={styles.coreMetaLabel}>리포트 작성 봇</span>
+              <strong className={styles.coreMetaValue}>{activeHero.name}</strong>
+            </div>
+            <div className={styles.coreMetaBox}>
+              <span className={styles.coreMetaLabel}>누적 감정 수</span>
+              <AnimatedValue
+                key={`${animationKey}-total-${emotionDistribution.total || 0}`}
+                value={emotionDistribution.total || 0}
+                className={styles.coreMetaValue}
+              />
+            </div>
+          </div>
+
+          <div className={styles.chipRow}>
+            {(coreEmotion.tags || []).map((tag) => (
+              <span key={tag} className={styles.topicChip}>
+                {tag}
+              </span>
             ))}
           </div>
         </article>

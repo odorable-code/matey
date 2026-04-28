@@ -147,7 +147,7 @@ function EmotionReportContent() {
 
       <div className={styles.filterBar}>
         <span className={styles.filterLabel}>
-          기간 선택{currentBot?.name ? ` · ${currentBot.name} 기준 리포트` : ''}
+          기간 선택
         </span>
 
         <div className={styles.filterRow}>
