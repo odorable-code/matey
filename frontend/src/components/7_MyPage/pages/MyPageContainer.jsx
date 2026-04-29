@@ -1,3 +1,21 @@
+/**
+ * [파일 역할]
+ * - 마이페이지의 전체 화면 흐름을 관리하는 메인 컨테이너 파일
+ * - 왼쪽 메뉴 클릭에 따라 오른쪽에 어떤 콘텐츠를 보여줄지 결정
+ *
+ * [여기서 찾을 것]
+ * - 메뉴 목록 수정: menuItems
+ * - 메뉴 클릭 동작: handleMenuSelect
+ * - 기본으로 열리는 화면 수정: useState('dashboard')
+ * - 각 메뉴별 화면 연결: renderContent
+ * - 화면 전환 애니메이션 대상 처리: useEffect 아래 applyRevealItems
+ *
+ * [수정 포인트]
+ * - 새 메뉴 추가: menuItems + renderContent 둘 다 수정
+ * - 기본 화면 바꾸기: activeMenu 초기값 변경
+ * - Dashboard에 넘기는 값 수정: renderContent 안 DashboardContent props 수정
+ */
+
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import layoutStyles from '../layout/MyPageLayout.module.css';
 
@@ -12,10 +30,30 @@ import LetterBoxContent from '../contents/letterBox/LetterBoxContent';
 import SettingsContent from '../contents/settings/SettingsContent';
 
 function MyPageContainer() {
+  /* =========================
+     현재 선택된 메뉴 상태
+     - 기본값: dashboard
+  ========================= */
   const [activeMenu, setActiveMenu] = useState('dashboard');
+
+  /* =========================
+     화면 전환용 key
+     - 메뉴 바뀔 때마다 +1
+     - section key를 바꿔서 화면 전환 효과를 다시 실행
+  ========================= */
   const [transitionKey, setTransitionKey] = useState(0);
+
+  /* =========================
+     오른쪽 콘텐츠 영역 DOM 참조
+     - 카드들에 reveal 효과 적용할 때 사용
+  ========================= */
   const contentPanelRef = useRef(null);
 
+  /* =========================
+     왼쪽 사이드 메뉴 목록
+     - 메뉴 이름 바꾸려면 여기 수정
+     - 새 메뉴 추가하려면 여기 + renderContent 둘 다 수정
+  ========================= */
   const menuItems = useMemo(
     () => [
       {
@@ -52,12 +90,22 @@ function MyPageContainer() {
     []
   );
 
+  /* =========================
+     왼쪽 메뉴 클릭하는 코드
+     - 같은 메뉴를 다시 누르면 아무 일도 안 함
+     - 다른 메뉴를 누르면 activeMenu 변경
+  ========================= */
   const handleMenuSelect = (menuKey) => {
     if (menuKey === activeMenu) return;
+
     setActiveMenu(menuKey);
     setTransitionKey((prev) => prev + 1);
   };
 
+  /* =========================
+     대시보드 안에서 "메이티 정보"로 이동시키는 코드
+     - DashboardContent 내부 버튼 등에서 사용 가능
+  ========================= */
   const handleInteractionSelect = () => {
     if (activeMenu !== 'botMenu') {
       setActiveMenu('botMenu');
@@ -65,6 +113,10 @@ function MyPageContainer() {
     }
   };
 
+  /* =========================
+     현재 메뉴에 따라 오른쪽 화면 바꿔주는 코드
+     - 메뉴 추가/삭제할 때 가장 중요하게 보는 곳
+  ========================= */
   const renderContent = () => {
     switch (activeMenu) {
       case 'profileInfo':
@@ -95,6 +147,16 @@ function MyPageContainer() {
     }
   };
 
+  /* =========================
+     화면 카드 reveal 효과 대상 잡는 코드
+     - content 안의 article/card 요소를 찾아서
+       data-reveal-item 속성을 붙임
+     - CSS 애니메이션용 보조 처리라고 생각하면 됨
+     *
+     * [나중에 수정할 때]
+     * - 애니메이션을 아예 끄고 싶으면 이 useEffect를 제거
+     * - 카드 인식 조건 바꾸려면 rect.width / rect.height 부분 수정
+  ========================= */
   useEffect(() => {
     const root = contentPanelRef.current;
     if (!root) return undefined;
@@ -150,6 +212,11 @@ function MyPageContainer() {
     };
   }, [activeMenu, transitionKey]);
 
+  /* =========================
+     실제 화면 그리는 코드
+     - 왼쪽: 프로필 카드 + 사이드 메뉴
+     - 오른쪽: 선택된 콘텐츠
+  ========================= */
   return (
     <div className={layoutStyles.page}>
       <div className={layoutStyles.container}>
