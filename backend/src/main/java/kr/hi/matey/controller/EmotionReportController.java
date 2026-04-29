@@ -3,8 +3,11 @@ package kr.hi.matey.controller;
 import kr.hi.matey.dto.EmotionReportDTO;
 import kr.hi.matey.dto.EmotionReportResponseDTO;
 import kr.hi.matey.service.EmotionReportService;
+import kr.hi.matey.util.CustomUser;
 import lombok.RequiredArgsConstructor;
+import org.apache.catalina.util.CustomObjectInputStream;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -15,12 +18,43 @@ import java.util.List;
 public class EmotionReportController {
 
     private final EmotionReportService emotionReportService;
+    
+    
+    // 봇 + 기간
+    // 냥이 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    // 여기서부터 건영ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
 
     // --- Dashboard 통계용 (기존) ---
     @GetMapping("/dashboard")
-    public ResponseEntity<EmotionReportResponseDTO> getEmotionReportDashboard() {
-        // TODO: JWT 등 인증 모듈 연동 후 SecurityContext에서 실제 userId를 가져오도록 수정
-        Long userId = 1L; 
+    public ResponseEntity<EmotionReportResponseDTO> getEmotionReportDashboard(
+            @AuthenticationPrincipal CustomUser user
+    ) {
+        Long userId = user.getUser().getUserId();
         EmotionReportResponseDTO data = emotionReportService.getEmotionReportData(userId);
         return ResponseEntity.ok(data);
     }
@@ -36,8 +70,10 @@ public class EmotionReportController {
 
     // Read (List)
     @GetMapping
-    public ResponseEntity<List<EmotionReportDTO>> getReportList() {
-        Long userId = 1L; // TODO: SecurityContext
+    public ResponseEntity<List<EmotionReportDTO>> getReportList(
+            @AuthenticationPrincipal CustomUser user
+            ) {
+        Long userId = user.getUser().getUserId();
         List<EmotionReportDTO> list = emotionReportService.getReportList(userId);
         return ResponseEntity.ok(list);
     }

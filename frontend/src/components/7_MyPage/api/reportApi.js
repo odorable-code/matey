@@ -1,4 +1,10 @@
 /**
+ * * 용도:
+ * 1. 서비스('Matey')의 감정 분석 리포트와 관련된 모든 서버 통신(API 호출)을 전담하는 모듈입니다.
+ * 2. JWT 토큰을 활용한 인증 헤더 설정 및 응답 데이터의 규격화(normalizeResponse)를 자동으로 처리합니다.
+ * 3. 대시보드 요약 정보, 리포트 상세 내역, 리포트 갱신(Refresh) 등 다양한 엔드포인트를 통합 관리합니다.
+ * 4. API 경로가 변경되거나 여러 후보군이 있을 경우를 대비하여 순차적 요청(tryGet, tryPost) 로직을 통해 통신 안정성을 확보합니다.
+ * 5. 프론트엔드 컴포넌트에서 감정 데이터를 쉽고 일관되게 불러올 수 있도록 다양한 별칭(Alias) 함수들을 내보냅니다.
  * [파일 역할]
  * - 감정 리포트 관련 서버 요청을 모아둔 API 파일
  * - GET / POST 요청 공통 처리와 엔드포인트 후보 관리 담당
@@ -222,16 +228,6 @@ const tryPost = async (endpoints, payload = {}) => {
 ========================= */
 export const getEmotionReports = async (params = {}) => tryGet(REPORT_ENDPOINTS, params);
 export const getEmotionReport = async (params = {}) => getEmotionReports(params);
-export const getReports = async (params = {}) => getEmotionReports(params);
-export const getReport = async (params = {}) => getEmotionReports(params);
-export const fetchEmotionReports = async (params = {}) => getEmotionReports(params);
-export const fetchEmotionReport = async (params = {}) => getEmotionReports(params);
-export const fetchReports = async (params = {}) => getEmotionReports(params);
-export const fetchReport = async (params = {}) => getEmotionReports(params);
-export const requestEmotionReports = async (params = {}) => getEmotionReports(params);
-export const requestEmotionReport = async (params = {}) => getEmotionReports(params);
-export const loadEmotionReports = async (params = {}) => getEmotionReports(params);
-export const loadEmotionReport = async (params = {}) => getEmotionReports(params);
 
 /* =========================
    감정 리포트 상세 조회
@@ -267,16 +263,6 @@ export const refreshEmotionReports = async (payload = {}) =>
 export default {
   getEmotionReports,
   getEmotionReport,
-  getReports,
-  getReport,
-  fetchEmotionReports,
-  fetchEmotionReport,
-  fetchReports,
-  fetchReport,
-  requestEmotionReports,
-  requestEmotionReport,
-  loadEmotionReports,
-  loadEmotionReport,
   getEmotionReportDetail,
   getReportDetail,
   refreshEmotionReports,
