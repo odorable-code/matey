@@ -2,35 +2,79 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="kr.hi.matey.dao.AdminDAO">
 
-    <select id="selectAdminUserList" resultType="kr.hi.matey.dto.UserDTO2">
+    <!-- ========================================== -->
+    <!-- 실시간 운영 통계 및 지표 -->
+    <!-- ========================================== -->
+    <select id="selectDashboardOverview" resultType="map">
         SELECT
-        u.user_id,
-        u.email,
-        u.nickname,
-        u.status,
-        u.last_login_at,
-        u.created_at,
-        r.role_code as role,
-        r.role_name,
-        (SELECT COUNT(*) FROM CHAT_ROOM cr WHERE cr.user_id = u.user_id) as conversations,
-        (SELECT COUNT(*) FROM COUNSEL_FEEDBACK cf
-        JOIN MESSAGE m ON cf.message_id = m.message_id
-        JOIN CHAT_ROOM cr ON m.chat_room_id = cr.chat_room_id
-        WHERE cr.user_id = u.user_id) as feedbackCount,
-        IFNULL((SELECT activity_score FROM USER_ACTIVITY_DAILY uad
-        WHERE uad.user_id = u.user_id
-        ORDER BY activity_date DESC LIMIT 1), 0) as attendance
+            (SELECT COUNT(*) FROM USER) as totalUsers,
+            (SELECT COUNT(*) FROM USER WHERE status = 'ACTIVE') as activeUsers,
+            (SELECT COUNT(*) FROM USER WHERE created_at >= CURDATE()) as newUsersToday,
+            (SELECT COUNT(*) FROM SUPPORT WHERE status = 'PENDING') as pendingFeedbacks,
+            (SELECT COUNT(*) FROM USER_ROLE ur JOIN ROLE r ON ur.role_id = r.role_id
+             WHERE r.role_code IN ('ADMIN', 'SUPER_ADMIN')) as adminCount,
+            (SELECT COUNT(*) FROM MESSAGE_ANALYSIS) as totalReports,
+            (SELECT COUNT(DISTINCT chat_room_id) FROM CHAT_ROOM 
+             WHERE updated_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)) as activeConversations
+    </select>
+
+    <select id="selectLiveMetrics" resultType="map">
+        SELECT
+            DATE_FORMAT(created_at, '%H:00') as label,
+            COUNT(*) as value
+        FROM MESSAGE
+        WHERE created_at >= DATE_SUB(NOW(), INTERVAL 8 HOUR)
+        GROUP BY label
+        ORDER BY label ASC
+    </select>
+
+    <select id="selectEmotionDistribution" resultType="map">
+        SELECT
+            ec.emotion_name as label,
+            COUNT(ma.analysis_id) as value
+        FROM MESSAGE_ANALYSIS ma
+        JOIN EMOTION_CATEGORY ec ON ma.dominant_emotion_id = ec.emotion_id
+        GROUP BY ec.emotion_id, ec.emotion_name
+        ORDER BY value DESC
+    </select>
+
+    <select id="selectConcernDistribution" resultType="map">
+        SELECT
+            c.name as label,
+            COUNT(p.post_id) as value
+        FROM POST p
+        JOIN CATEGORY c ON p.category_id = c.category_id
+        GROUP BY c.category_id, c.name
+        ORDER BY value DESC
+    </select>
+
+    <!-- ========================================== -->
+    <!-- 사용자 관리 (CRUD + 필터/검색) -->
+    <!-- ========================================== -->
+    <select id="selectUsers" resultType="kr.hi.matey.dto.UserDTO2">
+        SELECT
+            u.user_id as userId,
+            u.email,
+            u.nickname,
+            u.status,
+            u.login_type as loginType,
+            u.last_login_at as lastLoginAt,
+            u.created_at as createdAt,
+            r.role_code as roleName,
+            (SELECT COUNT(*) FROM CHAT_ROOM cr WHERE cr.user_id = u.user_id) as conversationCount,
+            IFNULL((SELECT activity_score FROM USER_ACTIVITY_DAILY uad
+                    WHERE uad.user_id = u.user_id
+                    ORDER BY activity_date DESC LIMIT 1), 0) as activityScore
         FROM USER u
         LEFT JOIN USER_ROLE ur ON u.user_id = ur.user_id
         LEFT JOIN ROLE r ON ur.role_id = r.role_id
         <where>
             <if test="keyword != null and keyword != ''">
                 AND (u.nickname LIKE CONCAT('%', #{keyword}, '%')
-                OR u.email LIKE CONCAT('%', #{keyword}, '%')
-                OR u.user_name LIKE CONCAT('%', #{keyword}, '%'))
+                OR u.email LIKE CONCAT('%', #{keyword}, '%'))
             </if>
-            <if test="roleCode != null and roleCode != 'ALL'">
-                AND r.role_code = #{roleCode}
+            <if test="role != null and role != 'ALL'">
+                AND r.role_code = #{role}
             </if>
             <if test="status != null and status != 'ALL'">
                 AND u.status = #{status}
@@ -39,30 +83,71 @@
         ORDER BY u.created_at DESC
     </select>
 
-    <update id="updateUserStatus">
-        UPDATE USER SET status = #{status}, updated_at = NOW()
+    <select id="selectUserById" resultType="kr.hi.matey.dto.UserDTO2">
+        SELECT
+            u.user_id as userId,
+            u.email,
+            u.nickname,
+            u.status,
+            u.login_type as loginType,
+            u.last_login_at as lastLoginAt,
+            u.created_at as createdAt,
+            r.role_code as roleName,
+            (SELECT COUNT(*) FROM CHAT_ROOM cr WHERE cr.user_id = u.user_id) as conversationCount,
+            IFNULL((SELECT activity_score FROM USER_ACTIVITY_DAILY uad
+                    WHERE uad.user_id = u.user_id
+                    ORDER BY activity_date DESC LIMIT 1), 0) as activityScore
+        FROM USER u
+        LEFT JOIN USER_ROLE ur ON u.user_id = ur.user_id
+        LEFT JOIN ROLE r ON ur.role_id = r.role_id
+        WHERE u.user_id = #{userId}
+    </select>
+
+    <update id="updateUser">
+        UPDATE USER
+        <set>
+            <if test="data.nickname != null">nickname = #{data.nickname},</if>
+            <if test="data.status != null">status = #{data.status},</if>
+            updated_at = NOW()
+        </set>
         WHERE user_id = #{userId}
     </update>
 
     <update id="updateUserRole">
-        UPDATE USER_ROLE SET role_id = #{roleId}
+        UPDATE USER_ROLE 
+        SET role_id = (SELECT role_id FROM ROLE WHERE role_code = #{roleCode})
         WHERE user_id = #{userId}
     </update>
 
-    <select id="selectSupportList" resultType="kr.hi.matey.dto.FeedbackDTO">
+    <update id="deleteUser">
+        UPDATE USER SET status = 'DELETED', updated_at = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- ========================================== -->
+    <!-- 일괄 작업 (Batch Operations) -->
+    <!-- ========================================== -->
+    <update id="bulkUpdateUserStatus">
+        UPDATE USER SET status = #{status}, updated_at = NOW()
+        WHERE user_id IN
+        <foreach item="id" collection="userIds" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <!-- ========================================== -->
+    <!-- 사용자 피드백 관리 -->
+    <!-- ========================================== -->
+    <select id="selectFeedbacks" resultType="kr.hi.matey.dto.FeedbackDTO">
         SELECT
-        s.support_id,
-        s.user_id,
-        u.nickname as userNickname,
-        s.title,
-        s.content,
-        s.status,
-        s.created_at,
-        sr.reason_name as category,
-        CASE
-        WHEN sr.request_type = 'REPORT' THEN 'HIGH'
-        ELSE 'MEDIUM'
-        END as priority
+            s.support_id as supportId,
+            s.user_id as userId,
+            u.nickname as userNickname,
+            s.title,
+            s.content,
+            s.status,
+            s.created_at as createdAt,
+            sr.reason_name as reasonName
         FROM SUPPORT s
         JOIN USER u ON s.user_id = u.user_id
         JOIN SUPPORT_REASON sr ON s.support_reason_id = sr.support_reason_id
@@ -74,93 +159,43 @@
         ORDER BY s.created_at DESC
     </select>
 
-    <update id="updateSupportStatus">
+    <select id="selectFeedbackById" resultType="kr.hi.matey.dto.FeedbackDTO">
+        SELECT
+            s.support_id as supportId,
+            s.user_id as userId,
+            u.nickname as userNickname,
+            s.title,
+            s.content,
+            s.status,
+            s.created_at as createdAt,
+            sr.reason_name as reasonName
+        FROM SUPPORT s
+        JOIN USER u ON s.user_id = u.user_id
+        JOIN SUPPORT_REASON sr ON s.support_reason_id = sr.support_reason_id
+        WHERE s.support_id = #{supportId}
+    </select>
+
+    <update id="updateFeedbackStatus">
         UPDATE SUPPORT SET status = #{status} WHERE support_id = #{supportId}
     </update>
 
-    <select id="selectSummaryCounts" resultType="map">
-        SELECT
-        (SELECT COUNT(*) FROM USER) as totalUsers,
-        (SELECT COUNT(*) FROM USER WHERE status = 'ACTIVE') as activeUsers,
-        (SELECT COUNT(*) FROM SUPPORT WHERE status = 'PENDING') as pendingFeedbacks,
-        (SELECT COUNT(*) FROM USER_ROLE ur JOIN ROLE r ON ur.role_id = r.role_id
-        WHERE r.role_code IN ('ADMIN', 'SUPER_ADMIN')) as adminCount
-    </select>
-
-    <select id="selectEmotionStats" resultType="map">
-        SELECT
-        ec.emotion_name as label,
-        COUNT(ma.analysis_id) as value,
-        'violet' as color FROM MESSAGE_ANALYSIS ma
-        JOIN EMOTION_CATEGORY ec ON ma.dominant_emotion_id = ec.emotion_id
-        GROUP BY ec.emotion_id, ec.emotion_name
-    </select>
-
-    <select id="selectCategoryStats" resultType="map">
-        SELECT
-        c.name as label,
-        COUNT(p.post_id) as value
-        FROM POST p
-        JOIN CATEGORY c ON p.category_id = c.category_id
-        GROUP BY c.category_id, c.name
-    </select>
-
-    <select id="selectLiveCounselSeries" resultType="map">
-        SELECT
-        DATE_FORMAT(created_at, '%H:00') as label,
-        COUNT(*) as value
-        FROM MESSAGE
-        WHERE created_at >= DATE_SUB(NOW(), INTERVAL 8 HOUR)
-        GROUP BY label
-        ORDER BY label ASC
-    </select>
-
-    <!-- ========================================== -->
-    <!-- 통계 & 대시보드 추가 -->
-    <!-- ========================================== -->
-
-    <select id="selectUserCount" resultType="long">
-        SELECT COUNT(*) FROM USER
-    </select>
-
-    <select id="selectActiveConversationCount" resultType="long">
-        SELECT COUNT(DISTINCT chat_room_id) FROM CHAT_ROOM 
-        WHERE updated_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
-    </select>
-
-    <select id="selectAvgAttendance" resultType="int">
-        SELECT AVG(activity_score) FROM USER_ACTIVITY_DAILY 
-        WHERE activity_date >= DATE_SUB(NOW(), INTERVAL 30 DAY)
-    </select>
-
-    <!-- ========================================== -->
-    <!-- 사용자 관리 추가 -->
-    <!-- ========================================== -->
-
-    <update id="updateUserNickname">
-        UPDATE USER SET nickname = #{nickname}, updated_at = NOW()
-        WHERE user_id = #{userId}
-    </update>
-
-    <delete id="deleteUser">
-        UPDATE USER SET status = 'DELETED', updated_at = NOW()
-        WHERE user_id = #{userId}
+    <delete id="deleteFeedback">
+        DELETE FROM SUPPORT WHERE support_id = #{supportId}
     </delete>
 
     <!-- ========================================== -->
-    <!-- 활동 로그 -->
+    <!-- 관리자 활동 로그 -->
     <!-- ========================================== -->
-
-    <select id="selectAdminActivityLogs" resultType="map">
+    <select id="selectAdminLogs" resultType="kr.hi.matey.dto.AdminLogDTO">
         SELECT
-        log_id as id,
-        actor,
-        actor_role as actorRole,
-        category,
-        action,
-        target,
-        detail,
-        created_at as createdAt
+            log_id as id,
+            actor,
+            actor_role as actorRole,
+            category,
+            action,
+            target,
+            detail,
+            created_at as createdAt
         FROM ADMIN_ACTION_LOG
         <where>
             <if test="keyword != null and keyword != ''">
@@ -181,21 +216,24 @@
                 <if test="period == 'WEEK'">
                     AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
                 </if>
+                <if test="period == 'MONTH'">
+                    AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+                </if>
             </if>
         </where>
         ORDER BY created_at DESC
-        LIMIT 120
+        LIMIT 100
     </select>
 
-    <insert id="insertAdminLog">
+    <insert id="insertAdminLog" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO ADMIN_ACTION_LOG (actor, actor_role, category, action, target, detail, created_at)
         VALUES (
-            #{log.actor},
-            #{log.actorRole},
-            #{log.category},
-            #{log.action},
-            #{log.target},
-            #{log.detail},
+            #{actor},
+            #{actorRole},
+            #{category},
+            #{action},
+            #{target},
+            #{detail},
             NOW()
         )
     </insert>

@@ -83,6 +83,7 @@ function EmotionReportContent() {
      - 탭, 기간, 날짜, 봇 선택 상태 전부 여기서 받아옴
   ========================= */
   const {
+    isLoading,
     activeTab,
     selectedPeriod,
     selectedBotKey,
