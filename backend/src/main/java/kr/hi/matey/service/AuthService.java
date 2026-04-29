@@ -79,25 +79,6 @@ public class AuthService {
     }
 
 
-	// 로그인
-	//public boolean login(UserDTO user) {
-	//	
-	//	try {
-	//		
-	//		UserVO savedUser = authDAO.findByEmail(user.getEmail());
-	//		if (savedUser == null) {
-	//			return false;
-	//    }
-	//	    boolean isMatch = encoder.matches(user.getPassword(), savedUser.getPassword());
-	//	    return isMatch;
-	//		
-    //    } catch (Exception e) {
-    //        e.printStackTrace();
-    //        return false;
-    //    }
-	//}
-
-
 	// 아이디(이메일) 찾기
 	public String findId(UserDTO user) {
 		String id = authDAO.findId(user);
