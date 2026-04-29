@@ -6,49 +6,99 @@
 
     <select id="selectSupportList" resultType="kr.hi.matey.dto.SupportDTO">
         SELECT
-        id,
-        user_id as userId,
-        title,
-        content,
-        status,
-        category,
-        email,
-        created_at as createdAt,
-        updated_at as updatedAt
-        FROM support_tickets
-        WHERE user_id = #{userId}
-        ORDER BY created_at DESC
+            s.support_id as supportId,
+            s.user_id as userId,
+            s.title,
+            s.content,
+            s.status,
+            s.support_reason_id as supportReasonId,
+            sr.reason_name as reasonName,
+            (
+                SELECT sa.content
+                FROM SUPPORT_ANSWER sa
+                WHERE sa.support_id = s.support_id
+                ORDER BY sa.created_at DESC
+                LIMIT 1
+            ) as answerContent,
+            s.created_at as createdAt
+        FROM SUPPORT s
+        JOIN SUPPORT_REASON sr ON s.support_reason_id = sr.support_reason_id
+        WHERE s.user_id = #{userId}
+        ORDER BY s.created_at DESC
     </select>
 
-    <insert id="insertSupportTicket" parameterType="kr.hi.matey.dto.SupportDTO" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO support_tickets (
-        user_id,
-        title,
-        content,
-        status,
-        category,
-        email,
-        created_at,
-        updated_at
+    <insert id="insertSupportTicket" parameterType="kr.hi.matey.dto.SupportDTO" useGeneratedKeys="true" keyProperty="supportId">
+        INSERT INTO SUPPORT (
+            user_id,
+            title,
+            content,
+            status,
+            support_reason_id,
+            created_at
         ) VALUES (
-        #{userId},
-        #{title},
-        #{content},
-        #{status},
-        #{category},
-        #{email},
-        NOW(),
-        NOW()
+            #{userId},
+            #{title},
+            #{content},
+            #{status},
+            #{supportReasonId},
+            NOW()
         )
     </insert>
 
+    <select id="selectSupportReasons" resultType="kr.hi.matey.dto.SupportReasonDTO">
+        SELECT
+            support_reason_id as supportReasonId,
+            target_type as targetType,
+            reason_name as reasonName,
+            is_active as isActive
+        FROM SUPPORT_REASON
+        WHERE is_active = 1
+        ORDER BY support_reason_id ASC
+    </select>
+
     <select id="selectFaqList" resultType="kr.hi.matey.dto.FaqDTO">
         SELECT
-        id,
-        question,
-        answer
-        FROM faq_items
-        ORDER BY sort_order ASC
+            faq_id as faqId,
+            question,
+            answer,
+            created_at as createdAt,
+            updated_at as updatedAt
+        FROM ADMIN_FAQ
+        ORDER BY created_at DESC
     </select>
+
+    <select id="selectFaqById" resultType="kr.hi.matey.dto.FaqDTO">
+        SELECT
+            faq_id as faqId,
+            question,
+            answer,
+            created_at as createdAt,
+            updated_at as updatedAt
+        FROM ADMIN_FAQ
+        WHERE faq_id = #{faqId}
+    </select>
+
+    <insert id="insertFaq" parameterType="kr.hi.matey.dto.FaqDTO" useGeneratedKeys="true" keyProperty="faqId">
+        INSERT INTO ADMIN_FAQ (
+            question,
+            answer,
+            created_at,
+            updated_at
+        ) VALUES (
+            #{question},
+            #{answer},
+            NOW(),
+            NOW()
+        )
+    </insert>
+
+    <update id="updateFaq" parameterType="kr.hi.matey.dto.FaqDTO">
+        UPDATE ADMIN_FAQ
+        SET
+            question = #{question},
+            answer = #{answer},
+            updated_at = NOW()
+        WHERE faq_id = #{faqId}
+    </update>
 
 </mapper>

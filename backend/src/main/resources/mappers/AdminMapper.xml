@@ -179,63 +179,17 @@
         UPDATE SUPPORT SET status = #{status} WHERE support_id = #{supportId}
     </update>
 
+    <insert id="insertSupportAnswer">
+        INSERT INTO SUPPORT_ANSWER (content, support_id, user_id)
+        VALUES (
+            #{content},
+            #{supportId},
+            (SELECT user_id FROM SUPPORT WHERE support_id = #{supportId})
+        )
+    </insert>
+
     <delete id="deleteFeedback">
         DELETE FROM SUPPORT WHERE support_id = #{supportId}
     </delete>
-
-    <!-- ========================================== -->
-    <!-- 관리자 활동 로그 -->
-    <!-- ========================================== -->
-    <select id="selectAdminLogs" resultType="kr.hi.matey.dto.AdminLogDTO">
-        SELECT
-            log_id as id,
-            actor,
-            actor_role as actorRole,
-            category,
-            action,
-            target,
-            detail,
-            created_at as createdAt
-        FROM ADMIN_ACTION_LOG
-        <where>
-            <if test="keyword != null and keyword != ''">
-                AND (actor LIKE CONCAT('%', #{keyword}, '%')
-                OR target LIKE CONCAT('%', #{keyword}, '%')
-                OR detail LIKE CONCAT('%', #{keyword}, '%'))
-            </if>
-            <if test="category != null and category != 'ALL'">
-                AND category = #{category}
-            </if>
-            <if test="actor != null and actor != 'ALL'">
-                AND actor = #{actor}
-            </if>
-            <if test="period != null and period != 'ALL'">
-                <if test="period == 'TODAY'">
-                    AND created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)
-                </if>
-                <if test="period == 'WEEK'">
-                    AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
-                </if>
-                <if test="period == 'MONTH'">
-                    AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
-                </if>
-            </if>
-        </where>
-        ORDER BY created_at DESC
-        LIMIT 100
-    </select>
-
-    <insert id="insertAdminLog" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO ADMIN_ACTION_LOG (actor, actor_role, category, action, target, detail, created_at)
-        VALUES (
-            #{actor},
-            #{actorRole},
-            #{category},
-            #{action},
-            #{target},
-            #{detail},
-            NOW()
-        )
-    </insert>
 
 </mapper>
