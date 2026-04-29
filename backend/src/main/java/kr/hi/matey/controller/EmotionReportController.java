@@ -3,8 +3,10 @@ package kr.hi.matey.controller;
 import kr.hi.matey.dto.EmotionReportDTO;
 import kr.hi.matey.dto.EmotionReportResponseDTO;
 import kr.hi.matey.service.EmotionReportService;
+import kr.hi.matey.util.CustomUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,9 +20,11 @@ public class EmotionReportController {
 
     // --- Dashboard 통계용 (기존) ---
     @GetMapping("/dashboard")
-    public ResponseEntity<EmotionReportResponseDTO> getEmotionReportDashboard() {
-        // TODO: JWT 등 인증 모듈 연동 후 SecurityContext에서 실제 userId를 가져오도록 수정
-        Long userId = 1L; 
+    public ResponseEntity<EmotionReportResponseDTO> getEmotionReportDashboard(
+            @AuthenticationPrincipal CustomUser user
+            ) {
+
+        Long userId = user.getUser().getUserId();
         EmotionReportResponseDTO data = emotionReportService.getEmotionReportData(userId);
         return ResponseEntity.ok(data);
     }
