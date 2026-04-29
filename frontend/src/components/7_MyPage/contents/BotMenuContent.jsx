@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import styles from './BotMenuContent.module.css';
-import useAnimatedNumber, { usePrefersReducedMotion } from '../hook/useAnimatedNumber';
+import useAnimatedNumber, { usePrefersReducedMotion } from '../hooks/useAnimatedNumber';
 
 const defaultBotData = {
   level: 4,

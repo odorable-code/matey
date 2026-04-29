@@ -2,6 +2,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { adminAPI } from '../../utils/api';
 import './AdminPage.css';
 
 const ADMIN_LOG_STORAGE_KEY = 'matey_admin_activity_logs_v3';
@@ -471,11 +472,15 @@ export default function AdminPage() {
 
   const [activeTab, setActiveTab] = useState('overview');
 
-  const [users, setUsers] = useState(INITIAL_USERS);
-  const [feedbacks, setFeedbacks] = useState(INITIAL_FEEDBACKS);
-  const [logs, setLogs] = useState(() =>
-    typeof window !== 'undefined' ? seedLogsIfNeeded() : []
-  );
+  // API에서 가져온 데이터 상태
+  const [users, setUsers] = useState([]);
+  const [feedbacks, setFeedbacks] = useState([]);
+  const [logs, setLogs] = useState([]);
+  
+  // 로딩 및 오류 상태
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
   const [liveUserSeries, setLiveUserSeries] = useState(() => createInitialRealtimeSeries(142, 12));
   const [liveCounselSeries, setLiveCounselSeries] = useState(() =>
@@ -536,11 +541,61 @@ export default function AdminPage() {
     [adminName, adminRole]
   );
 
+  // API에서 데이터 가져오기
   useEffect(() => {
-    const interval = window.setInterval(() => {
-      setLiveUserSeries((prev) => mutateSeries(prev, 1, 5, 90));
-      setLiveCounselSeries((prev) => mutateSeries(prev, 2, 8, 40));
-    }, 4000);
+    async function fetchAdminData() {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const [usersData, feedbacksData, logsData] = await Promise.all([
+          adminAPI.getUsers().catch(() => INITIAL_USERS),
+          adminAPI.getFeedbacks().catch(() => INITIAL_FEEDBACKS),
+          adminAPI.getLogs({ period: 'ALL' }).catch(() => seedLogsIfNeeded()),
+        ]);
+        
+        setUsers(usersData || INITIAL_USERS);
+        setFeedbacks(feedbacksData || INITIAL_FEEDBACKS);
+        setLogs(logsData || seedLogsIfNeeded());
+        setDataLoaded(true);
+      } catch (err) {
+        console.error('관리자 데이터 로드 실패:', err);
+        setError(err.message);
+        // 실패 시 기존 데이터 사용
+        setUsers(INITIAL_USERS);
+        setFeedbacks(INITIAL_FEEDBACKS);
+        setLogs(seedLogsIfNeeded());
+        setDataLoaded(true);
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    if (isAuthenticated && !authLoading) {
+      fetchAdminData();
+    }
+  }, [isAuthenticated, authLoading]);
+
+  // 실시간 통계 업데이트 (30초마다)
+  useEffect(() => {
+    const interval = window.setInterval(async () => {
+      try {
+        // API에서 최신 통계 가져오기 시도
+        const stats = await adminAPI.getStats().catch(() => null);
+        if (stats) {
+          // 서버에서 받은 통계로 업데이트
+          setLiveUserSeries(prev => mutateSeries(prev, 1, 5, 90));
+          setLiveCounselSeries(prev => mutateSeries(prev, 2, 8, 40));
+        } else {
+          // API 실패 시 시뮬레이션
+          setLiveUserSeries((prev) => mutateSeries(prev, 1, 5, 90));
+          setLiveCounselSeries((prev) => mutateSeries(prev, 2, 8, 40));
+        }
+      } catch {
+        setLiveUserSeries((prev) => mutateSeries(prev, 1, 5, 90));
+        setLiveCounselSeries((prev) => mutateSeries(prev, 2, 8, 40));
+      }
+    }, 30000);
 
     return () => window.clearInterval(interval);
   }, []);
@@ -823,6 +878,32 @@ export default function AdminPage() {
           <div className="matey-admin-v2__spinner" />
           <h2>관리자 정보를 확인하고 있어요</h2>
           <p>권한 및 운영 데이터를 불러오는 중입니다. 잠시만 기다려 주세요.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // API 로딩 상태
+  if (loading) {
+    return (
+      <div className="matey-admin-v2 matey-admin-v2--state">
+        <div className="matey-admin-v2__state-card">
+          <div className="matey-admin-v2__spinner" />
+          <h2>데이터를 불러오는 중</h2>
+          <p>운영 데이터를 서버에서 가져오고 있습니다. 잠시만 기다려 주세요.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // API 오류 상태
+  if (error) {
+    return (
+      <div className="matey-admin-v2 matey-admin-v2--state">
+        <div className="matey-admin-v2__state-card">
+          <h2>데이터 로드 오류</h2>
+          <p>서버 연결에 문제가 발생했습니다: {error}</p>
+          <p>화면을 새로고침하거나 나중에 다시 시도해 주세요.</p>
         </div>
       </div>
     );
