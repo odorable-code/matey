@@ -40,6 +40,7 @@ public class MyPageService {
 
     @Transactional
     public BotMenuDTO interactWithBot(long userId, String actionType) {
+        // 1. 행동에 따른 경험치 획득량 결정
         int expGain = switch (actionType) {
             case "feed" -> 10;
             case "touch" -> 5;
@@ -49,16 +50,29 @@ public class MyPageService {
         };
 
         if (expGain > 0) {
-            myPageDAO.updateBotIntimacy(userId, expGain);
+            // 2. 현재 상태 조회 (DB에서 현재 레벨과 경험치를 가져옴)
+            BotStatusDTO status = myPageDAO.getBotStatus(userId);
+            int newExp = status.getExp() + expGain;
+            int newLevel = status.getLevel();
+
+            // 3. 레벨업 판단 로직 (경험치 100당 1레벨업)
+            if (newExp >= 100) {
+                int levelUpAmount = newExp / 100;
+                newLevel += levelUpAmount;
+                newExp = newExp % 100; // 100을 넘은 나머지만 유지
+
+                // 레벨업 반영
+                myPageDAO.updateBotLevel(userId, newLevel);
+            }
+
+            // 4. 경험치 업데이트
+            myPageDAO.updateBotExp(userId, newExp);
         }
+
+        // 상호작용 시간 갱신 및 결과 반환
         myPageDAO.updateLastInteractedAt(userId);
-
-        // TODO: 경험치가 100이 넘었을 때 레벨업을 처리하는 로직 추가 가능
-
         return getBotMenuData(userId);
-    }
-
-    @Transactional(readOnly = true)
+    }    @Transactional(readOnly = true)
     public LetterBoxDTO getLetterBoxData(long userId) {
         LetterBoxDTO dto = new LetterBoxDTO();
         dto.setUnreadCount(myPageDAO.countUnreadLetters(userId));

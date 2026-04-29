@@ -135,10 +135,27 @@
         WHERE user_id = #{userId}
     </update>
 
+    <select id="getBotStatus" resultType="BotStatusDTO">
+        SELECT
+        ubr.intimacy_ID as level,
+        ubr.intimacy_score as exp  FROM USER_BOT_RELATION ubr
+        JOIN EXCLUSIVE e ON ubr.exclusive_id = e.exclusive_id
+        WHERE e.user_id = #{userId}
+    </select>
+
+    <update id="updateBotLevel">
+        UPDATE USER_BOT_RELATION ubr
+        JOIN EXCLUSIVE e ON ubr.exclusive_id = e.exclusive_id
+        SET ubr.intimacy_ID = #{intimacyId}
+        WHERE e.user_id = #{userId}
+    </update>
+
     <update id="updateLastInteractedAt">
-        UPDATE USER_BOT_RELATION
-        SET last_interacted_at = NOW(), updated_at = NOW()
-        WHERE user_id = #{userId}
+        UPDATE USER_BOT_RELATION ubr
+        JOIN EXCLUSIVE e ON ubr.exclusive_id = e.exclusive_id
+        SET ubr.last_interacted_at = NOW(),
+        ubr.updated_at = NOW()
+        WHERE e.user_id = #{userId}
     </update>
 
 </mapper>
