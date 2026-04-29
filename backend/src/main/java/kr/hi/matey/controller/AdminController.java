@@ -70,7 +70,7 @@ public class AdminController {
             @PathVariable Long userId, 
             @RequestBody Map<String, String> body,
             @AuthenticationPrincipal CustomUser user) {
-        String actorRoleCode = user.getUser().getRole() != null ? user.getUser().getRole().getRole_code() : null;
+        String actorRoleCode = user.getUser().getRoleCode();
         if (!"SUPER_ADMIN".equals(actorRoleCode)) {
             return ResponseEntity.status(403).body("forbidden");
         }
@@ -152,7 +152,7 @@ public class AdminController {
             @RequestBody kr.hi.matey.dto.FaqDTO faqDTO,
             @AuthenticationPrincipal CustomUser user
     ) {
-        String roleCode = user.getUser().getRole() != null ? user.getUser().getRole().getRole_code() : null;
+        String roleCode = user.getUser().getRoleCode();
         if (!"ADMIN".equals(roleCode) && !"SUPER_ADMIN".equals(roleCode)) {
             return ResponseEntity.status(403).body("forbidden");
         }
@@ -167,7 +167,7 @@ public class AdminController {
             @RequestBody kr.hi.matey.dto.FaqDTO faqDTO,
             @AuthenticationPrincipal CustomUser user
     ) {
-        String roleCode = user.getUser().getRole() != null ? user.getUser().getRole().getRole_code() : null;
+        String roleCode = user.getUser().getRoleCode();
         if (!"ADMIN".equals(roleCode) && !"SUPER_ADMIN".equals(roleCode)) {
             return ResponseEntity.status(403).body("forbidden");
         }
@@ -187,7 +187,7 @@ public class AdminController {
             @RequestBody Map<String, String> body,
             @AuthenticationPrincipal CustomUser user
     ) {
-        String roleCode = user.getUser().getRole() != null ? user.getUser().getRole().getRole_code() : null;
+        String roleCode = user.getUser().getRoleCode();
         if (!"ADMIN".equals(roleCode) && !"SUPER_ADMIN".equals(roleCode)) {
             return ResponseEntity.status(403).body("forbidden");
         }
@@ -206,7 +206,7 @@ public class AdminController {
             @RequestBody kr.hi.matey.dto.AdminNoticeDTO dto,
             @AuthenticationPrincipal CustomUser user
     ) {
-        String roleCode = user.getUser().getRole() != null ? user.getUser().getRole().getRole_code() : null;
+        String roleCode = user.getUser().getRoleCode();
         if (!"ADMIN".equals(roleCode) && !"SUPER_ADMIN".equals(roleCode)) {
             return ResponseEntity.status(403).body("forbidden");
         }
@@ -221,7 +221,7 @@ public class AdminController {
             @RequestBody kr.hi.matey.dto.AdminNoticeDTO dto,
             @AuthenticationPrincipal CustomUser user
     ) {
-        String roleCode = user.getUser().getRole() != null ? user.getUser().getRole().getRole_code() : null;
+        String roleCode = user.getUser().getRoleCode();
         if (!"ADMIN".equals(roleCode) && !"SUPER_ADMIN".equals(roleCode)) {
             return ResponseEntity.status(403).body("forbidden");
         }

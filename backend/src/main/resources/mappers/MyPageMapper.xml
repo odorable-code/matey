@@ -135,6 +135,13 @@
         WHERE user_id = #{userId}
     </update>
 
+    <!-- MyPageService 호환용: intimacy_score를 절대값(exp)으로 갱신 -->
+    <update id="updateBotExp">
+        UPDATE USER_BOT_RELATION
+        SET intimacy_score = #{exp}, updated_at = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
     <select id="getBotStatus" resultType="BotStatusDTO">
         SELECT
         ubr.intimacy_ID as level,

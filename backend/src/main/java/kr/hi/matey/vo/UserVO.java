@@ -25,4 +25,6 @@ public class UserVO {
     private Timestamp created_at;
     private Timestamp updated_at;
     private RoleVO role;
+    // ROLE.role_code를 직접 매핑해서, 관리자 권한 체크가 끊기지 않게 한다.
+    private String roleCode;
 }

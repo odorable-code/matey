@@ -52,14 +52,18 @@
 	    WHERE email = #{email}
 	</select>
 	
-	<select id="selectUser" resultType="kr.hi.matey.vo.UserVO">
+    <!-- 인증 사용자 조회 시 ROLE.role_code도 함께 로딩 (관리자 권한 체크 지원) -->
+	<select id="selectUser" resultType="kr.hi.matey.vo.UserVO" parameterType="string">
 	    SELECT
-	        user_id,
-	        email,
-	        password,
-	        nickname
-	    FROM USER
-	    WHERE email = #{email}
+	        u.user_id,
+	        u.email,
+	        u.password,
+	        u.nickname,
+	        r.role_code as roleCode
+	    FROM USER u
+	    LEFT JOIN USER_ROLE ur ON u.user_id = ur.user_id
+	    LEFT JOIN ROLE r ON ur.role_id = r.role_id
+	    WHERE u.email = #{email}
 	</select>
 	
 	<select id="findId" parameterType="kr.hi.matey.dto.UserDTO" resultType="string">

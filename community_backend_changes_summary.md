@@ -113,7 +113,30 @@ Endpoints:
 
 ---
 
-## 6) Build verification
+## 6) Admin 권한 로딩/체크 정합성 보완
+
+일부 관리자 API는 `CustomUser` principal에서 `ADMIN/SUPER_ADMIN` 권한을 읽어야 동작합니다.  
+기존에는 인증 사용자 조회(`AuthMapper.selectUser`)가 ROLE 정보를 포함하지 않아 관리자 권한 체크가 실패할 수 있었습니다.
+
+반영 내용:
+- `backend/src/main/java/kr/hi/matey/vo/UserVO.java`: `roleCode` 필드 추가
+- `backend/src/main/resources/mappers/AuthMapper.xml`: `selectUser`에 `ROLE.role_code` 조인/조회 추가
+- `backend/src/main/java/kr/hi/matey/util/CustomUser.java`: `vo.getRoleCode()` 기반으로 권한 생성
+- `backend/src/main/java/kr/hi/matey/controller/AdminController.java`: role 체크를 `getRoleCode()`로 변경
+- `backend/src/main/java/kr/hi/matey/controller/AuthController.java`: `/me` 응답에 `roleCode` 필드 추가
+
+---
+
+## 7) 컴파일용 MyPageDAO 메서드 보완
+
+- `MyPageService`가 `myPageDAO.updateBotExp(...)`를 호출하는데, `MyPageDAO`에 해당 메서드 시그니처/매퍼가 없어 컴파일 에러가 발생했습니다.
+- 따라서 아래를 추가해 빌드 성공 상태를 유지했습니다.
+  - `backend/src/main/java/kr/hi/matey/dao/MyPageDAO.java`: `updateBotExp` 메서드 추가
+  - `backend/src/main/resources/mappers/MyPageMapper.xml`: `updateBotExp` SQL 추가
+
+---
+
+## 8) Build verification
 
 - `backend`:
   - `./gradlew build -x test` succeeded after refactors.
