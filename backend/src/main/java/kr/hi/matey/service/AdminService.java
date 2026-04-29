@@ -1,6 +1,7 @@
 package kr.hi.matey.service;
 
 import kr.hi.matey.dao.AdminDAO;
+import kr.hi.matey.dto.AdminLogDTO;
 import kr.hi.matey.dto.FeedbackDTO;
 import kr.hi.matey.dto.UserDTO2;
 import lombok.RequiredArgsConstructor;
@@ -14,94 +15,148 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class AdminService {
-    private final AdminDAO adminMapper;
+    private final AdminDAO adminDAO;
 
     // ==========================================
-    // 통계 & 대시보드
+    // 실시간 운영 통계 및 지표
     // ==========================================
-
-    public Map<String, Object> getDashboardData() {
+    public Map<String, Object> getDashboardOverview() {
         Map<String, Object> data = new HashMap<>();
-        data.put("summary", adminMapper.selectSummaryCounts());
-        data.put("emotionStats", adminMapper.selectEmotionStats());
-        data.put("concernStats", adminMapper.selectCategoryStats());
+        data.put("overview", adminDAO.selectDashboardOverview());
+        data.put("liveMetrics", adminDAO.selectLiveMetrics());
+        data.put("emotionDistribution", adminDAO.selectEmotionDistribution());
+        data.put("concernDistribution", adminDAO.selectConcernDistribution());
         return data;
     }
 
-    public Map<String, Object> getStats() {
-        Map<String, Object> stats = new HashMap<>();
-        stats.put("summary", adminMapper.selectSummaryCounts());
-        stats.put("userCount", adminMapper.selectUserCount());
-        stats.put("activeConversations", adminMapper.selectActiveConversationCount());
-        stats.put("avgAttendance", adminMapper.selectAvgAttendance());
-        return stats;
-    }
-
-    public List<Map<String, Object>> getEmotionStats() {
-        return adminMapper.selectEmotionStats();
-    }
-
-    public List<Map<String, Object>> getConcernStats() {
-        return adminMapper.selectCategoryStats();
+    public List<Map<String, Object>> getLiveMetrics() {
+        return adminDAO.selectLiveMetrics();
     }
 
     // ==========================================
-    // 사용자 관리
+    // 사용자 관리 (CRUD + 필터/검색)
     // ==========================================
-
     public List<UserDTO2> findUsers(String keyword, String role, String status) {
-        return adminMapper.selectAdminUserList(keyword, role, status);
+        return adminDAO.selectUsers(keyword, role, status);
+    }
+
+    public UserDTO2 getUserDetail(Long userId) {
+        return adminDAO.selectUserById(userId);
     }
 
     @Transactional
-    public void updateUser(Long userId, Map<String, Object> data) {
-        if (data.containsKey("status")) {
-            adminMapper.updateUserStatus(userId, (String) data.get("status"));
-        }
-        if (data.containsKey("nickname")) {
-            adminMapper.updateUserNickname(userId, (String) data.get("nickname"));
-        }
+    public void updateUser(Long userId, Map<String, Object> data, String adminActor) {
+        adminDAO.updateUser(userId, data);
+        
+        // Log
+        AdminLogDTO log = new AdminLogDTO();
+        log.setActor(adminActor);
+        log.setActorRole("ADMIN");
+        log.setCategory("USER_MGMT");
+        log.setAction("UPDATE");
+        log.setTarget("User ID: " + userId);
+        log.setDetail("Updated fields: " + data.keySet().toString());
+        adminDAO.insertAdminLog(log);
     }
 
     @Transactional
-    public void deleteUser(Long userId) {
-        adminMapper.deleteUser(userId);
+    public void updateUserRole(Long userId, String roleCode, String adminActor) {
+        adminDAO.updateUserRole(userId, roleCode);
+
+        // Log
+        AdminLogDTO log = new AdminLogDTO();
+        log.setActor(adminActor);
+        log.setActorRole("SUPER_ADMIN");
+        log.setCategory("ROLE_MGMT");
+        log.setAction("UPDATE");
+        log.setTarget("User ID: " + userId);
+        log.setDetail("Role changed to " + roleCode);
+        adminDAO.insertAdminLog(log);
     }
 
     @Transactional
-    public void bulkUpdateStatus(List<Long> userIds, String status) {
-        userIds.forEach(id -> adminMapper.updateUserStatus(id, status));
-    }
+    public void deleteUser(Long userId, String adminActor) {
+        adminDAO.deleteUser(userId);
 
-    @Transactional
-    public void updateUserRole(Long userId, String roleCode) {
-        Long roleId = adminMapper.selectRoleIdByCode(roleCode);
-        adminMapper.updateUserRole(userId, roleId);
+        // Log
+        AdminLogDTO log = new AdminLogDTO();
+        log.setActor(adminActor);
+        log.setActorRole("ADMIN");
+        log.setCategory("USER_MGMT");
+        log.setAction("DELETE");
+        log.setTarget("User ID: " + userId);
+        log.setDetail("User soft deleted.");
+        adminDAO.insertAdminLog(log);
     }
 
     // ==========================================
-    // 피드백 관리
+    // 일괄 작업 (Batch Operations)
     // ==========================================
+    @Transactional
+    public void bulkUpdateUserStatus(List<Long> userIds, String status, String adminActor) {
+        adminDAO.bulkUpdateUserStatus(userIds, status);
 
+        // Log
+        AdminLogDTO log = new AdminLogDTO();
+        log.setActor(adminActor);
+        log.setActorRole("ADMIN");
+        log.setCategory("USER_MGMT");
+        log.setAction("BULK_UPDATE");
+        log.setTarget(userIds.size() + " Users");
+        log.setDetail("Batch updated status to " + status);
+        adminDAO.insertAdminLog(log);
+    }
+
+    // ==========================================
+    // 사용자 피드백 관리
+    // ==========================================
     public List<FeedbackDTO> findFeedbacks(String status) {
-        return adminMapper.selectSupportList(status);
+        return adminDAO.selectFeedbacks(status);
+    }
+
+    public FeedbackDTO getFeedbackDetail(Long supportId) {
+        return adminDAO.selectFeedbackById(supportId);
     }
 
     @Transactional
-    public void changeFeedbackStatus(Long supportId, String status) {
-        adminMapper.updateSupportStatus(supportId, status);
-    }
+    public void changeFeedbackStatus(Long supportId, String status, String adminActor) {
+        adminDAO.updateFeedbackStatus(supportId, status);
 
-    // ==========================================
-    // 활동 로그
-    // ==========================================
-
-    public List<Map<String, Object>> findLogs(String period, String keyword, String category, String actor) {
-        return adminMapper.selectAdminActivityLogs(keyword, period, category, actor);
+        // Log
+        AdminLogDTO log = new AdminLogDTO();
+        log.setActor(adminActor);
+        log.setActorRole("ADMIN");
+        log.setCategory("FEEDBACK_MGMT");
+        log.setAction("UPDATE");
+        log.setTarget("Support ID: " + supportId);
+        log.setDetail("Feedback status changed to " + status);
+        adminDAO.insertAdminLog(log);
     }
 
     @Transactional
-    public void insertLog(Map<String, Object> log) {
-        adminMapper.insertAdminLog(log);
+    public void deleteFeedback(Long supportId, String adminActor) {
+        adminDAO.deleteFeedback(supportId);
+
+        // Log
+        AdminLogDTO log = new AdminLogDTO();
+        log.setActor(adminActor);
+        log.setActorRole("ADMIN");
+        log.setCategory("FEEDBACK_MGMT");
+        log.setAction("DELETE");
+        log.setTarget("Support ID: " + supportId);
+        log.setDetail("Feedback deleted permanently.");
+        adminDAO.insertAdminLog(log);
+    }
+
+    // ==========================================
+    // 관리자 활동 로그
+    // ==========================================
+    public List<AdminLogDTO> findLogs(String period, String keyword, String category, String actor) {
+        return adminDAO.selectAdminLogs(period, keyword, category, actor);
+    }
+
+    @Transactional
+    public void createLog(AdminLogDTO log) {
+        adminDAO.insertAdminLog(log);
     }
 }
