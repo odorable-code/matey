@@ -1,13 +1,35 @@
 /**
- * [파일 용도]
- * 감정 리포트의 핵심인 '감정 분석' 탭의 전체 레이아웃과 콘텐츠를 관리하는 메인 컴포넌트입니다.
- * 4가지 캐릭터(냥이, 곰이, 강아지, 햄이)별 맞춤형 피드백 리포트, 통계 카드, SVG 기반 도넛 차트, 
- * 그리고 핵심 감정 해석을 애니메이션 효과와 함께 종합적으로 렌더링합니다.
+ * [파일 역할]
+ * - 감정 리포트 탭 본문 화면
+ * - 캐릭터 선택, 대표 리포트, 통계 카드, 감정 분포 차트,
+ *   자주 나온 주제, 핵심 감정 해석을 보여줌
+ *
+ * [여기서 찾을 것]
+ * - 캐릭터 기본 데이터: FALLBACK_HERO_BOTS
+ * - 감정 리포트 기본 데이터: FALLBACK_EMOTION_DATA
+ * - 도넛 차트 계산: buildDonutSegments / describeArc
+ * - 숫자 애니메이션: AnimatedValue
+ * - 현재 선택된 캐릭터 계산: activeHero
+ * - 실제 화면 렌더링: function EmotionTab
+ *
+ * [수정 포인트]
+ * - 캐릭터 이름/색상/설명 바꾸기: FALLBACK_HERO_BOTS
+ * - 통계 카드 바꾸기: FALLBACK_EMOTION_DATA.statCards
+ * - 감정 분포 바꾸기: FALLBACK_EMOTION_DATA.emotionDistribution
+ * - 핵심 감정 문구 바꾸기: FALLBACK_EMOTION_DATA.coreEmotion
+ * - 주제 태그/타임라인 수정: FALLBACK_EMOTION_DATA.topicTags / summaryTimeline
+ *
+ * [주의]
+ * - 이 파일은 "감정 리포트 한 장"을 보여주는 파일
+ * - 실제 선택 상태(selectedBotKey, selectedPeriod)는 부모/useEmotionReport에서 들어옴
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
 import styles from './EmotionTab.module.css';
 
+/* =========================
+   캐릭터 이미지 경로
+========================= */
 const CHARACTER_IMAGE_MAP = {
   cat: '/images/emotion-report/cat.png',
   bear: '/images/emotion-report/bear.png',
@@ -15,6 +37,13 @@ const CHARACTER_IMAGE_MAP = {
   hamster: '/images/emotion-report/hamster.png',
 };
 
+/* =========================
+   대표 캐릭터 기본 데이터
+   - 이름 / 색상 / 설명 / 핵심 문장
+   *
+   * [수정 포인트]
+   * - 캐릭터별 성격, 색상, 카드 문구는 여기서 수정
+========================= */
 const FALLBACK_HERO_BOTS = [
   {
     key: 'cat',
@@ -102,6 +131,13 @@ const FALLBACK_HERO_BOTS = [
   },
 ];
 
+/* =========================
+   감정 리포트 기본 더미 데이터
+   - 아직 API 연결 전일 때 사용하는 데이터
+   *
+   * [수정 포인트]
+   * - 통계 카드 / 핵심 감정 / 감정 분포 / 태그 / 타임라인 전부 여기서 수정 가능
+========================= */
 const FALLBACK_EMOTION_DATA = {
   heroBots: FALLBACK_HERO_BOTS,
   selectedHero: FALLBACK_HERO_BOTS[0],
@@ -186,6 +222,9 @@ const FALLBACK_EMOTION_DATA = {
   ],
 };
 
+/* =========================
+   도넛 차트용 비율 계산 함수
+========================= */
 function buildDonutSegments(items = []) {
   const total = items.reduce((sum, item) => sum + (item.value || 0), 0);
   if (!total) return [];
@@ -206,6 +245,9 @@ function buildDonutSegments(items = []) {
   });
 }
 
+/* =========================
+   SVG 원형 차트 좌표 계산 함수
+========================= */
 function polarToCartesian(cx, cy, r, angleInDegrees) {
   const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180;
 
@@ -215,6 +257,9 @@ function polarToCartesian(cx, cy, r, angleInDegrees) {
   };
 }
 
+/* =========================
+   SVG 원호 path 만드는 함수
+========================= */
 function describeArc(cx, cy, r, startAngle, endAngle) {
   const start = polarToCartesian(cx, cy, r, endAngle);
   const end = polarToCartesian(cx, cy, r, startAngle);
@@ -235,6 +280,10 @@ function describeArc(cx, cy, r, startAngle, endAngle) {
   ].join(' ');
 }
 
+/* =========================
+   숫자 + 단위 분리 함수
+   예: "77%" => 77 / "%"
+========================= */
 function splitAnimatedValue(rawValue) {
   const text = String(rawValue ?? '');
   const match = text.match(/^(-?\d+(?:\.\d+)?)(.*)$/);
@@ -254,6 +303,10 @@ function splitAnimatedValue(rawValue) {
   };
 }
 
+/* =========================
+   숫자 카운트업 애니메이션 컴포넌트
+   - 통계 카드 / 분포 / 총합 숫자에 사용
+========================= */
 function AnimatedValue({ value, duration = 900, className, decimals = 0 }) {
   const { numericValue, suffix, hasNumber } = splitAnimatedValue(value);
   const [displayValue, setDisplayValue] = useState(0);
@@ -298,6 +351,15 @@ function AnimatedValue({ value, duration = 900, className, decimals = 0 }) {
   return <span className={className}>{finalText}</span>;
 }
 
+/* =========================
+   메인 컴포넌트 시작
+   - 캐릭터 선택
+   - 리포트 본문
+   - 통계 카드
+   - 감정 분포 차트
+   - 자주 나온 주제
+   - 핵심 감정 해석
+========================= */
 function EmotionTab({
   data,
   reportData,
@@ -308,11 +370,22 @@ function EmotionTab({
   onBotChange,
   onBotSelect,
 }) {
+  /* =========================
+     사용할 원본 데이터 결정
+  ========================= */
   const sourceData =
     data || emotionData || reportData?.emotionTab || FALLBACK_EMOTION_DATA;
 
+  /* =========================
+     봇 클릭 시 호출할 함수
+     - onBotChange가 있으면 그걸 사용
+     - 없으면 onBotSelect 사용
+  ========================= */
   const changeBot = onBotChange ?? onBotSelect ?? (() => {});
 
+  /* =========================
+     sourceData에서 필요한 값 꺼내기
+  ========================= */
   const {
     heroBots = FALLBACK_HERO_BOTS,
     selectedHero,
@@ -323,6 +396,11 @@ function EmotionTab({
     summaryTimeline = FALLBACK_EMOTION_DATA.summaryTimeline,
   } = sourceData;
 
+  /* =========================
+     캐릭터 목록 정리
+     - heroBots + botOptions 정보 합침
+     - 이미지나 위치값 없는 경우 기본값 보정
+  ========================= */
   const resolvedHeroBots = useMemo(() => {
     const fromData =
       Array.isArray(heroBots) && heroBots.length > 0 ? heroBots : FALLBACK_HERO_BOTS;
@@ -333,7 +411,7 @@ function EmotionTab({
           (item) =>
             item?.key === hero.key ||
             item?.id === hero.key ||
-            item?.value === hero.key,
+            item?.value === hero.key
         ) || {};
 
       return {
@@ -358,22 +436,34 @@ function EmotionTab({
     });
   }, [heroBots, botOptions]);
 
+  /* =========================
+     현재 선택된 캐릭터 계산
+  ========================= */
   const activeHero =
     resolvedHeroBots.find((bot) => bot.key === selectedBotKey) ||
     resolvedHeroBots.find((bot) => bot.key === selectedHero?.key) ||
     resolvedHeroBots[0] ||
     FALLBACK_HERO_BOTS[0];
 
+  /* =========================
+     감정 분포 차트 데이터 계산
+  ========================= */
   const donutSegments = useMemo(
     () => buildDonutSegments(emotionDistribution.items || []),
-    [emotionDistribution.items],
+    [emotionDistribution.items]
   );
 
+  /* =========================
+     타임라인은 3개까지만 미리보기로 보여줌
+  ========================= */
   const timelinePreview = useMemo(
     () => (summaryTimeline || []).slice(0, 3),
-    [summaryTimeline],
+    [summaryTimeline]
   );
 
+  /* =========================
+     선택 기간 문구 변환
+  ========================= */
   const selectedPeriodLabel =
     selectedPeriod === '90d'
       ? '최근 90일'
@@ -381,11 +471,17 @@ function EmotionTab({
         ? '최근 30일'
         : '최근 7일';
 
+  /* =========================
+     주제 태그 요약 문구
+  ========================= */
   const reportTopicSummary =
     (topicTags || []).length > 0
       ? `${topicTags.slice(0, 3).join(' · ')} 중심의 감정 대화가 반복됐어요.`
       : '반복 주제가 쌓이면 이 영역에 자동으로 정리돼요.';
 
+  /* =========================
+     패널 등장 애니메이션 지연값
+  ========================= */
   const entranceDelayMap = {
     report: '40ms',
     stats: '120ms',
@@ -394,10 +490,20 @@ function EmotionTab({
     core: '360ms',
   };
 
+  /* =========================
+     캐릭터 / 기간이 바뀔 때 애니메이션 다시 적용하기 위한 key
+  ========================= */
   const animationKey = `${activeHero.key}-${selectedPeriodLabel}`;
 
+  /* =========================
+     실제 화면 렌더링
+  ========================= */
   return (
     <section className={styles.emotionTab}>
+      {/* =========================
+          상단 캐릭터 선택 카드
+          - 어떤 동물 리포트를 볼지 고르는 영역
+      ========================= */}
       <div className={styles.heroGrid}>
         {resolvedHeroBots.map((hero) => {
           const isActive = hero.key === activeHero.key;
@@ -439,6 +545,10 @@ function EmotionTab({
         })}
       </div>
 
+      {/* =========================
+          메인 리포트 카드
+          - 선택된 캐릭터가 작성한 리포트처럼 보이는 영역
+      ========================= */}
       <article
         key={`report-${animationKey}`}
         className={`${styles.selectedReportPanel} ${styles.panelEntrance}`}
@@ -502,6 +612,10 @@ function EmotionTab({
         </div>
       </article>
 
+      {/* =========================
+          통계 카드 영역
+          - 대화량, 안정도, 회복도, 자기수용 등
+      ========================= */}
       <div
         key={`stats-${animationKey}`}
         className={`${styles.statGrid} ${styles.panelEntrance}`}
@@ -520,7 +634,16 @@ function EmotionTab({
         ))}
       </div>
 
+      {/* =========================
+          하단 3개 패널
+          - 왼쪽: 감정 분포
+          - 가운데: 자주 나온 주제 + 타임라인
+          - 오른쪽: 핵심 감정 해석
+      ========================= */}
       <div className={styles.bottomPanelGrid}>
+        {/* =========================
+            감정 분포 도넛 차트
+        ========================= */}
         <article
           key={`donut-${animationKey}`}
           className={`${styles.panel} ${styles.donutPanel} ${styles.panelEntrance}`}
@@ -551,6 +674,7 @@ function EmotionTab({
                     stroke="rgba(228, 221, 247, 0.95)"
                     strokeWidth="14"
                   />
+
                   {donutSegments.map((segment, index) => {
                     const startAngle = segment.start * 360;
                     const endAngle = (segment.start + segment.portion) * 360;
@@ -590,12 +714,14 @@ function EmotionTab({
                       className={styles.legendColor}
                       style={{ backgroundColor: item.color || '#9A85FF' }}
                     />
+
                     <div className={styles.legendTextGroup}>
                       <span className={styles.legendLabel}>{item.label}</span>
                       <span className={styles.legendSub}>
                         {item.description || '감정 분포 데이터'}
                       </span>
                     </div>
+
                     <AnimatedValue
                       key={`${animationKey}-legend-${item.label}-${item.value}`}
                       value={`${item.value}%`}
@@ -612,6 +738,9 @@ function EmotionTab({
           )}
         </article>
 
+        {/* =========================
+            자주 나온 주제 / 타임라인
+        ========================= */}
         <article
           key={`topic-${animationKey}`}
           className={`${styles.panel} ${styles.topicPanel} ${styles.panelEntrance}`}
@@ -650,6 +779,9 @@ function EmotionTab({
           </div>
         </article>
 
+        {/* =========================
+            핵심 감정 해석 카드
+        ========================= */}
         <article
           key={`core-${animationKey}`}
           className={`${styles.panel} ${styles.corePanel} ${styles.panelEntrance}`}
@@ -670,6 +802,7 @@ function EmotionTab({
               <span className={styles.coreMetaLabel}>리포트 작성 봇</span>
               <strong className={styles.coreMetaValue}>{activeHero.name}</strong>
             </div>
+
             <div className={styles.coreMetaBox}>
               <span className={styles.coreMetaLabel}>누적 감정 수</span>
               <AnimatedValue
