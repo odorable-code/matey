@@ -11,6 +11,7 @@ import java.util.Map;
 public interface EmotionReportDAO {
     // Dashboard (대시보드 통계용 읽기)
     List<Map<String, Object>> selectDailyEmotionStats(@Param("userId") Long userId);
+    List<Map<String, Object>> selectChatPreviews(@Param("userId") Long userId, @Param("dateKey") String dateKey);
     List<Map<String, Object>> selectBotHistoryStats(@Param("userId") Long userId);
 
     // CRUD
