@@ -3,6 +3,8 @@ package kr.hi.matey.dto;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -39,5 +41,6 @@ public class UserDTO {
     private LocalDateTime tokenExpiryDate;
     private String resetToken;
 
+    @JsonProperty("rememberMe")
     private boolean rememberMe;
 }

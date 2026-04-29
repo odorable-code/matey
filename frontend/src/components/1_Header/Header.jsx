@@ -181,6 +181,7 @@ function Header() {
     }
   };
 
+  console.log(logout);
   const handleLogout = async () => {
     try {
       await logout();

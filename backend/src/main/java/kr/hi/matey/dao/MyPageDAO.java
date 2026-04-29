@@ -28,4 +28,15 @@ public interface MyPageDAO {
     // 4. Settings
     UserSettingsDTO selectUserSettings(long userId);
     int updateUserSettings(@Param("userId") long userId, @Param("key") String key, @Param("value") boolean value);
+
+    // 1. 사용자의 봇 친밀도 정보 조회 (EXCLUSIVE와 JOIN 필요)
+    BotStatusDTO getBotStatus(long userId);
+
+    // 2. 친밀도 단계(레벨) 업데이트
+    void updateBotLevel(@Param("userId") long userId, @Param("intimacyId") int intimacyId);
+
+    // 3. 친밀도 점수(경험치) 업데이트 - USER_BOT_RELATION의 intimacy_score(또는 별도 컬럼) 기준
+    // 스키마에 점수 저장 컬럼이 안보여서, 기존 필드를 활용하거나 추가가 필요해 보입니다.
+    // 여기서는 'intimacy_ID'를 레벨로 보고 진행합니다.
+    void updateIntimacyScore(@Param("userId") long userId, @Param("score") int score);
 }
