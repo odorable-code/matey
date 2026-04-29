@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { forgotPassword, validateEmail } from '../../utils/api';
 import './ForgotPasswordPage.css';
+import ResetPasswordPage from './ResetPasswordPage';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -56,8 +57,7 @@ export default function ForgotPasswordPage() {
       setSubmitState({
         loading: false,
         success:
-          result?.message ||
-          '비밀번호 재설정 링크를 이메일로 보냈어요. 메일함을 확인해 주세요.',
+          result.raw?.message,
         error: '',
       });
     } catch (error) {
@@ -152,6 +152,10 @@ export default function ForgotPasswordPage() {
                 >
                   이메일
                 </label>
+
+                <Link to="/reset-password" >
+                  reset-password
+                </Link>
 
                 <input
                   id="forgot-password-email"

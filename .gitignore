@@ -540,4 +540,5 @@ poetry.toml
 pyrightconfig.json
 
 # End of https://www.toptal.com/developers/gitignore/api/node,java,python
-
+GEMINI.md
+dummy_data_csv/**

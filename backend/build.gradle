@@ -52,6 +52,8 @@ dependencies {
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5' // JSON 파싱용
 	// WebClient 사용을 위해 추가
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+	// 자바 애플리케이션에서 이메일을 발송하는 데 필요한 모든 도구(JavaMailSender, SimpleMailMessage 등)를 한데 모아 바로 쓸 수 있게 해주는 라이브러리
+	implementation 'org.springframework.boot:spring-boot-starter-mail'
 }
 
 tasks.named('test') {

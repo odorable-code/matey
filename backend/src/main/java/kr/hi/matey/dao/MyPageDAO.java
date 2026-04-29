@@ -1,21 +1,31 @@
 package kr.hi.matey.dao;
 
-import kr.hi.matey.vo.UserVO;
+import kr.hi.matey.dto.*;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-
-import kr.hi.matey.dto.UserProfileDTO;
-
 import java.util.List;
-import java.util.Map;
 
 @Mapper
 public interface MyPageDAO {
-    // 사용자의 기본 프로필과 구독 정보를 조인해서 가져옴
-    UserVO getUserProfile(@Param("userId") long userId);
+    // 1. Profile
+    UserProfileDTO selectUserProfile(long userId);
+    int updateUserProfile(@Param("userId") long userId, @Param("dto") ProfileUpdateDTO dto);
 
-    // 결제 내역 조회
-    List<Map<String, Object>> getPaymentHistory(@Param("userId") long userId);
+    // 2. Bot Menu & Interaction
+    BotMenuDTO selectBotRelationInfo(long userId);
+    List<BotMenuDTO.BackgroundDTO> selectUserBackgrounds(@Param("userLevel") int userLevel);
+    List<BotMenuDTO.MotionDTO> selectUserMotions(@Param("userLevel") int userLevel);
+    int updateBotIntimacy(@Param("userId") long userId, @Param("expGain") int expGain);
+    int updateLastInteractedAt(long userId);
 
-    void setUserProfile(long userId);
+    // 3. Letters
+    int countUnreadLetters(long userId);
+    int countWeeklyLetters(long userId);
+    List<LetterBoxDTO.LetterDTO> selectBotLetters(long userId);
+    int updateLetterReadStatus(@Param("userId") long userId, @Param("letterId") long letterId);
+    int deleteLetter(@Param("userId") long userId, @Param("letterId") long letterId);
+
+    // 4. Settings
+    UserSettingsDTO selectUserSettings(long userId);
+    int updateUserSettings(@Param("userId") long userId, @Param("key") String key, @Param("value") boolean value);
 }

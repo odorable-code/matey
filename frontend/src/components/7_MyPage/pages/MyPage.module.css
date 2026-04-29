@@ -1,0 +1,310 @@
+/* src/components/7_MyPage/pages/MyPageContainer.module.css */
+@import '../../../styles/variables.css';
+
+.pageRoot {
+  position: relative;
+  min-height: 100vh;
+  color: var(--matey-color-text-strong);
+}
+
+.pageRoot * {
+  box-sizing: border-box;
+}
+
+.pageRoot button,
+.pageRoot input,
+.pageRoot select,
+.pageRoot textarea {
+  font-family: var(--font-family);
+}
+
+.pageRoot a {
+  color: inherit;
+}
+
+.pageShell::before,
+.pageShell::after {
+  content: '';
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(56px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.pageShell::before {
+  top: 90px;
+  left: -60px;
+  width: 240px;
+  height: 240px;
+  background: rgba(121, 183, 255, 0.18);
+}
+
+.pageShell::after {
+  top: 80px;
+  right: -40px;
+  width: 260px;
+  height: 260px;
+  background: rgba(255, 147, 183, 0.14);
+}
+
+.pageShellContainer,
+.pageShellGrid,
+.pageShellSidebar,
+.pageShellMain {
+  position: relative;
+  z-index: 1;
+}
+
+.pageSidebar button:hover,
+.pageSidebar button:focus-visible {
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.pageSidebar button[aria-current='page'] {
+  color: var(--matey-color-text-strong);
+}
+
+.pageHero {
+  transition:
+    transform var(--matey-transition-base),
+    box-shadow var(--matey-transition-base),
+    border-color var(--matey-transition-base);
+}
+
+.pageContent {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pageContentHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 0 4px;
+}
+
+.pageContentBadge {
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  border: 1px solid rgba(108, 158, 255, 0.12);
+  background: rgba(255, 255, 255, 0.76);
+  box-shadow: 0 10px 22px rgba(141, 154, 186, 0.08);
+  color: var(--matey-color-secondary);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+}
+
+.pageContentCopy {
+  min-width: 0;
+  flex: 1;
+}
+
+.pageContentTitle {
+  margin: 0;
+  color: var(--matey-color-text-strong);
+  font-size: clamp(24px, 2vw, 30px);
+  line-height: 1.15;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+}
+
+.pageContentSubtitle {
+  margin: 8px 0 0;
+  color: var(--matey-color-text-body);
+  font-size: 14px;
+  line-height: 1.72;
+  font-weight: 700;
+}
+
+.pageContentPanel {
+  min-height: 420px;
+  border-radius: var(--matey-radius-card-lg);
+  border: 1px solid rgba(132, 146, 181, 0.12);
+  background:
+    radial-gradient(circle at top left, rgba(121, 183, 255, 0.08), transparent 20%),
+    radial-gradient(circle at top right, rgba(255, 147, 183, 0.08), transparent 22%),
+    rgba(255, 255, 255, 0.88);
+  box-shadow: var(--matey-shadow-card);
+  backdrop-filter: blur(18px);
+  overflow: hidden;
+}
+
+.pageSection {
+  padding: 24px;
+}
+
+.pageSectionGrid {
+  display: grid;
+  gap: 18px;
+}
+
+.pageSectionGrid2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.pageSectionGrid3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.pageSectionStack {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.pageCard {
+  border-radius: var(--matey-radius-card);
+  border: 1px solid rgba(132, 146, 181, 0.1);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, rgba(249, 250, 255, 0.98) 100%);
+  box-shadow: 0 14px 30px rgba(140, 149, 175, 0.08);
+}
+
+.pageCardInner {
+  padding: 20px;
+}
+
+.pageEmpty {
+  min-height: 280px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 24px;
+  color: var(--matey-color-text-soft);
+}
+
+.pageEmptyEmoji {
+  font-size: 40px;
+  margin-bottom: 12px;
+}
+
+.pageEmptyTitle {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--matey-color-text-strong);
+}
+
+.pageEmptyDescription {
+  margin: 8px 0 0;
+  font-size: 14px;
+  line-height: 1.7;
+  font-weight: 700;
+  color: var(--matey-color-text-body);
+}
+
+@media (max-width: 1180px) {
+  .pageShellGrid {
+    grid-template-columns: 210px minmax(0, 1fr) !important;
+  }
+}
+
+@media (max-width: 1024px) {
+  .pageShell {
+    padding-top: calc(var(--matey-header-height, 82px) + 18px) !important;
+    padding-bottom: 40px !important;
+  }
+
+  .pageShellContainer {
+    width: min(var(--matey-max-width, 1240px), calc(100% - 24px)) !important;
+  }
+
+  .pageShellGrid {
+    grid-template-columns: 1fr !important;
+    gap: 18px !important;
+  }
+
+  .pageShellSidebar {
+    position: relative !important;
+    top: 0 !important;
+  }
+
+  .pageContentHead {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .pageSectionGrid3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .pageHero {
+    padding: 12px !important;
+    border-radius: 28px !important;
+  }
+
+  .pageSidebar {
+    padding: 16px 12px 14px !important;
+    border-radius: 28px !important;
+  }
+
+  .pageContentPanel {
+    border-radius: 28px;
+  }
+
+  .pageSection {
+    padding: 18px;
+  }
+
+  .pageSectionGrid2,
+  .pageSectionGrid3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .pageShell {
+    padding-top: calc(var(--matey-header-height, 82px) + 14px) !important;
+  }
+
+  .pageShellContainer {
+    width: calc(100% - 20px) !important;
+  }
+
+  .pageContent {
+    gap: 14px;
+  }
+
+  .pageContentTitle {
+    font-size: 22px;
+  }
+
+  .pageContentSubtitle {
+    font-size: 13px;
+  }
+
+  .pageContentPanel {
+    min-height: 360px;
+    border-radius: 24px;
+  }
+
+  .pageSection {
+    padding: 16px;
+  }
+
+  .pageCard {
+    border-radius: 22px;
+  }
+
+  .pageCardInner {
+    padding: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pageSidebar button,
+  .pageHero {
+    transition: none !important;
+  }
+}

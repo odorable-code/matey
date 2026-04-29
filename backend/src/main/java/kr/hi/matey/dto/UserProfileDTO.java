@@ -1,17 +1,14 @@
 package kr.hi.matey.dto;
-
 import lombok.Data;
 
 @Data
 public class UserProfileDTO {
-    private String id;
+    private Long userId;
     private String nickname;
+    private String name;
     private String email;
-    private String phone;
-    private String bio;
-    private String status;
-    private String subscriptionName;
-    private Long points;
-    private Integer totalSessions;
-    private String lastLoginAt;
+    private String birthDate;
+    private String gender;
+    private String joinedAt;
+    private String profileImage;
 }

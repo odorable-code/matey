@@ -5,6 +5,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import kr.hi.matey.dao.AuthDAO;
 import kr.hi.matey.dao.UserDAO;
 import kr.hi.matey.util.CustomUser;
 import kr.hi.matey.vo.UserVO;
@@ -15,10 +16,11 @@ import lombok.AllArgsConstructor;
 public class MemberDetailService implements UserDetailsService {
 
     private final UserDAO userDAO;
+    private final AuthDAO authDAO;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        UserVO user = userDAO.selectUser(username);
+        UserVO user = authDAO.selectUser(username);
         if (user == null) {
             throw new UsernameNotFoundException("사용자를 찾을 수 없습니다: " + username);
         }
