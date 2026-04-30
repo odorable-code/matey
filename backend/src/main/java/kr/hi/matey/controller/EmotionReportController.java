@@ -21,8 +21,8 @@ public class EmotionReportController {
     // --- Dashboard 통계용 (기존) ---
     @GetMapping("/dashboard")
     public ResponseEntity<EmotionReportResponseDTO> getEmotionReportDashboard(
-            @AuthenticationPrincipal CustomUser user
-            ) {
+        @AuthenticationPrincipal CustomUser user
+    ) {
 
         Long userId = user.getUser().getUserId();
         EmotionReportResponseDTO data = emotionReportService.getEmotionReportData(userId);
@@ -41,7 +41,7 @@ public class EmotionReportController {
     // Read (List)
     @GetMapping
     public ResponseEntity<List<EmotionReportDTO>> getReportList(
-            @AuthenticationPrincipal CustomUser user
+        @AuthenticationPrincipal CustomUser user
     ) {
         Long userId = user.getUser().getUserId();
         List<EmotionReportDTO> list = emotionReportService.getReportList(userId);
@@ -58,8 +58,8 @@ public class EmotionReportController {
     // Update
     @PutMapping("/{analysisId}")
     public ResponseEntity<String> updateReport(
-            @PathVariable Long analysisId, 
-            @RequestBody EmotionReportDTO dto
+        @PathVariable Long analysisId,
+        @RequestBody EmotionReportDTO dto
     ) {
         emotionReportService.updateReport(analysisId, dto);
         return ResponseEntity.ok("수정되었습니다.");
