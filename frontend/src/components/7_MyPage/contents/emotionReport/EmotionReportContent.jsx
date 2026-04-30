@@ -23,11 +23,48 @@
  * - 이 파일은 "화면 분기 + 상단 UI" 담당이라고 생각하면 쉬움
  */
 
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
+import ReportApi from '../../api/reportApi';
 import styles from './EmotionReportContent.module.css';
 import EmotionTab from './tabs/EmotionTab';
 import ChatHistoryTab from './tabs/ChatHistoryTab';
 import useEmotionReport from '../../hooks/emotionReport/useEmotionReport';
+
+function EmotionReportContentRequest() {
+  const {
+    selectedPeriod,      // 기간 (7d, 30d 등)
+    selectedBotKey,      // 동물 키 (cat, bear 등)
+    handlePeriodChange,
+    handleBotChange,     // 동물 변경 함수
+    // ... 기타 필요한 변수들
+  } = useEmotionReport();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!selectedPeriod || !selectedBotKey) return;
+
+      try {
+        console.log(`서버 요청: 동물(${selectedBotKey}), 기간(${selectedPeriod})`);
+        
+        const response = await fetch(
+          `http://localhost:8000/api/report?period=${selectedPeriod}&bot=${selectedBotKey}`
+        );
+        
+        const result = await response.json();
+        console.log("서버 응답 데이터:", result);
+
+        // TODO: 여기서 받은 result를 상태에 저장하여 화면을 업데이트하세요.
+        
+      } catch (error) {
+        console.error("데이터 로드 실패:", error);
+      }
+    };
+
+    fetchData();
+  }, [selectedPeriod, selectedBotKey]); // [중요] 두 값 중 하나만 바뀌어도 다시 실행됩니다.
+
+  // ... 나머지 리턴 코드
+}
 
 /* =========================
    className 합칠 때 쓰는 간단 함수
