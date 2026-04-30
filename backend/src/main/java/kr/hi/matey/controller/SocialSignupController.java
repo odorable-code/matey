@@ -15,7 +15,7 @@ import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/auth/social")
+@RequestMapping("/api/v1/auth/social")
 public class SocialSignupController {
 
     private final SocialSignupService socialSignupService;

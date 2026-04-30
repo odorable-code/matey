@@ -2,8 +2,8 @@ package kr.hi.matey.vo;
 
 import lombok.Data;
 
+import java.sql.Date;
 import java.sql.Timestamp;
-import java.time.LocalDateTime;
 
 
 @Data
@@ -14,7 +14,10 @@ public class UserVO {
     private String nickname;
     private String userName;
     private Long birthDate;
-    private Long gender;
+    /** DB USER.gender — VARCHAR(10), 예: MALE, FEMALE */
+    private String gender;
+    /** 소셜 가입 INSERT 전용 — DB USER.birth_date (DATE) */
+    private Date birthDateSql;
     private String profile_image;
     private String login_type;
     private String status;
