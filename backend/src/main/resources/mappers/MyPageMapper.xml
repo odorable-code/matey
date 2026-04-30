@@ -142,7 +142,7 @@
         WHERE user_id = #{userId}
     </update>
 
-    <select id="getBotStatus" resultType="BotStatusDTO">
+    <select id="getBotStatus" resultType="kr.hi.matey.dto.BotStatusDTO">
         SELECT
         ubr.intimacy_ID as level,
         ubr.intimacy_score as exp  FROM USER_BOT_RELATION ubr
