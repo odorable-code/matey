@@ -48,7 +48,7 @@
     <select id="selectSupportReasons" resultType="kr.hi.matey.dto.SupportReasonDTO">
         SELECT
             support_reason_id as supportReasonId,
-            target_type as targetType,
+            reason_code as targetType,
             reason_name as reasonName,
             is_active as isActive
         FROM SUPPORT_REASON

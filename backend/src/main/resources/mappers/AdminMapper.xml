@@ -33,7 +33,7 @@
             ec.emotion_name as label,
             COUNT(ma.analysis_id) as value
         FROM MESSAGE_ANALYSIS ma
-        JOIN EMOTION_CATEGORY ec ON ma.dominant_emotion_id = ec.emotion_id
+        JOIN EMOTION_CATEGORY ec ON ma.emotion_id = ec.emotion_id
         GROUP BY ec.emotion_id, ec.emotion_name
         ORDER BY value DESC
     </select>
@@ -61,10 +61,11 @@
             u.last_login_at as lastLoginAt,
             u.created_at as createdAt,
             r.role_code as roleName,
-            (SELECT COUNT(*) FROM CHAT_ROOM cr WHERE cr.user_id = u.user_id) as conversationCount,
-            IFNULL((SELECT activity_score FROM USER_ACTIVITY_DAILY uad
-                    WHERE uad.user_id = u.user_id
-                    ORDER BY activity_date DESC LIMIT 1), 0) as activityScore
+            (SELECT COUNT(*)
+             FROM CHAT_ROOM cr
+             JOIN EXCLUSIVE e2 ON cr.exclusive_id = e2.exclusive_id
+             WHERE e2.user_id = u.user_id) as conversationCount,
+            0 as activityScore
         FROM USER u
         LEFT JOIN USER_ROLE ur ON u.user_id = ur.user_id
         LEFT JOIN ROLE r ON ur.role_id = r.role_id
@@ -93,10 +94,11 @@
             u.last_login_at as lastLoginAt,
             u.created_at as createdAt,
             r.role_code as roleName,
-            (SELECT COUNT(*) FROM CHAT_ROOM cr WHERE cr.user_id = u.user_id) as conversationCount,
-            IFNULL((SELECT activity_score FROM USER_ACTIVITY_DAILY uad
-                    WHERE uad.user_id = u.user_id
-                    ORDER BY activity_date DESC LIMIT 1), 0) as activityScore
+            (SELECT COUNT(*)
+             FROM CHAT_ROOM cr
+             JOIN EXCLUSIVE e2 ON cr.exclusive_id = e2.exclusive_id
+             WHERE e2.user_id = u.user_id) as conversationCount,
+            0 as activityScore
         FROM USER u
         LEFT JOIN USER_ROLE ur ON u.user_id = ur.user_id
         LEFT JOIN ROLE r ON ur.role_id = r.role_id
@@ -176,15 +178,15 @@
     </select>
 
     <update id="updateFeedbackStatus">
-        UPDATE SUPPORT SET status = #{status} WHERE support_id = #{supportId}
+        UPDATE SUPPORT SET status = #{status}, updated_at = NOW() WHERE support_id = #{supportId}
     </update>
 
     <insert id="insertSupportAnswer">
-        INSERT INTO SUPPORT_ANSWER (content, support_id, user_id)
+        INSERT INTO SUPPORT_ANSWER (content, support_id, admin_user_id)
         VALUES (
             #{content},
             #{supportId},
-            (SELECT user_id FROM SUPPORT WHERE support_id = #{supportId})
+            #{adminUserId}
         )
     </insert>
 

@@ -13,12 +13,16 @@
             MAX(ec.emotion_name) as dominantEmotion,
             DATE_FORMAT(MIN(m.created_at), '%H:%i') as minTime,
             DATE_FORMAT(MAX(m.created_at), '%H:%i') as maxTime,
-            MAX(ma.recommended_action) as recommendedAction
+            MAX(rs.name) as recommendedAction
         FROM MESSAGE m
         JOIN CHAT_ROOM cr ON m.chat_room_id = cr.chat_room_id
-        LEFT JOIN MESSAGE_ANALYSIS ma ON m.message_id = ma.message_id
-        LEFT JOIN EMOTION_CATEGORY ec ON ma.dominant_emotion_id = ec.emotion_id
-        WHERE cr.user_id = #{userId}
+        JOIN EXCLUSIVE e ON cr.exclusive_id = e.exclusive_id
+        LEFT JOIN CHAT_ANALYSIS_SESSION cas ON cas.chat_room_id = cr.chat_room_id
+           AND m.message_id BETWEEN cas.start_message_id AND cas.end_message_id
+        LEFT JOIN MESSAGE_ANALYSIS ma ON ma.session_id = cas.session_id
+        LEFT JOIN EMOTION_CATEGORY ec ON ma.emotion_id = ec.emotion_id
+        LEFT JOIN RESPONSE_STRATEGY rs ON ma.strategy_id = rs.strategy_id
+        WHERE e.user_id = #{userId}
         GROUP BY DATE_FORMAT(m.created_at, '%Y-%m-%d'), DATE_FORMAT(m.created_at, '%c월 %d일')
         ORDER BY dateKey DESC
     </select>
@@ -26,13 +30,16 @@
     <select id="selectChatPreviews" resultType="map">
         SELECT 
             m.message_id as id,
-            LOWER(m.sender_type) as role,
-            CASE WHEN m.sender_type = 'USER' THEN '나' ELSE IFNULL(b.name, '시스템') END as name,
+            LOWER(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(m.content, '$.senderType')), 'USER')) as role,
+            CASE 
+                WHEN UPPER(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(m.content, '$.senderType')), 'USER')) = 'USER' THEN '나'
+                ELSE '메이티'
+            END as name,
             DATE_FORMAT(m.created_at, '%p %h:%i') as time
         FROM MESSAGE m
         JOIN CHAT_ROOM cr ON m.chat_room_id = cr.chat_room_id
-        LEFT JOIN BOT b ON cr.bot_id = b.bot_id
-        WHERE cr.user_id = #{userId}
+        JOIN EXCLUSIVE e ON cr.exclusive_id = e.exclusive_id
+        WHERE e.user_id = #{userId}
           AND DATE_FORMAT(m.created_at, '%Y-%m-%d') = #{dateKey}
         ORDER BY m.created_at ASC
         LIMIT 3
@@ -40,12 +47,13 @@
 
     <select id="selectBotHistoryStats" resultType="map">
         SELECT 
-            b.species_type as botKey,
+            b.name as botKey,
             COUNT(cr.chat_room_id) as chatCount
-        FROM BOT b
-        JOIN CHAT_ROOM cr ON b.bot_id = cr.bot_id
-        WHERE cr.user_id = #{userId}
-        GROUP BY b.species_type
+        FROM CHAT_ROOM cr
+        JOIN EXCLUSIVE e ON cr.exclusive_id = e.exclusive_id
+        JOIN BOT b ON e.bot_id = b.bot_id
+        WHERE e.user_id = #{userId}
+        GROUP BY b.bot_id, b.name
     </select>
 
     <!-- CRUD Operations for EmotionReport (MESSAGE_ANALYSIS) -->
@@ -53,9 +61,23 @@
     <!-- Create -->
     <insert id="insertEmotionReport" useGeneratedKeys="true" keyProperty="analysisId">
         INSERT INTO MESSAGE_ANALYSIS (
-            message_id, dominant_emotion_id, risk_level, is_high_risk, recommended_action, analyzed_at
+            emotion_id, session_id, strategy_id, analyzed_at
         ) VALUES (
-            #{messageId}, #{dominantEmotionId}, #{riskLevel}, #{isHighRisk}, #{recommendedAction}, NOW()
+            #{dominantEmotionId},
+            (
+                SELECT cas.session_id
+                FROM CHAT_ANALYSIS_SESSION cas
+                WHERE #{messageId} BETWEEN cas.start_message_id AND cas.end_message_id
+                ORDER BY cas.session_id DESC
+                LIMIT 1
+            ),
+            (
+                SELECT rs.strategy_id
+                FROM RESPONSE_STRATEGY rs
+                WHERE rs.risk_level = 1
+                LIMIT 1
+            ),
+            NOW()
         )
     </insert>
 
@@ -63,16 +85,18 @@
     <select id="selectEmotionReportList" resultType="kr.hi.matey.dto.EmotionReportDTO">
         SELECT 
             ma.analysis_id as analysisId,
-            ma.message_id as messageId,
-            ma.dominant_emotion_id as dominantEmotionId,
-            ma.risk_level as riskLevel,
-            ma.is_high_risk as isHighRisk,
-            ma.recommended_action as recommendedAction,
+            cas.end_message_id as messageId,
+            ma.emotion_id as dominantEmotionId,
+            NULL as riskLevel,
+            NULL as isHighRisk,
+            rs.name as recommendedAction,
             ma.analyzed_at as analyzedAt
         FROM MESSAGE_ANALYSIS ma
-        JOIN MESSAGE m ON ma.message_id = m.message_id
-        JOIN CHAT_ROOM cr ON m.chat_room_id = cr.chat_room_id
-        WHERE cr.user_id = #{userId}
+        JOIN CHAT_ANALYSIS_SESSION cas ON ma.session_id = cas.session_id
+        JOIN CHAT_ROOM cr ON cas.chat_room_id = cr.chat_room_id
+        JOIN EXCLUSIVE e ON cr.exclusive_id = e.exclusive_id
+        LEFT JOIN RESPONSE_STRATEGY rs ON ma.strategy_id = rs.strategy_id
+        WHERE e.user_id = #{userId}
         ORDER BY ma.analyzed_at DESC
     </select>
 
@@ -80,11 +104,11 @@
     <select id="selectEmotionReportById" resultType="kr.hi.matey.dto.EmotionReportDTO">
         SELECT 
             analysis_id as analysisId,
-            message_id as messageId,
-            dominant_emotion_id as dominantEmotionId,
-            risk_level as riskLevel,
-            is_high_risk as isHighRisk,
-            recommended_action as recommendedAction,
+            NULL as messageId,
+            emotion_id as dominantEmotionId,
+            NULL as riskLevel,
+            NULL as isHighRisk,
+            NULL as recommendedAction,
             analyzed_at as analyzedAt
         FROM MESSAGE_ANALYSIS
         WHERE analysis_id = #{analysisId}
@@ -94,10 +118,7 @@
     <update id="updateEmotionReport">
         UPDATE MESSAGE_ANALYSIS
         <set>
-            <if test="dominantEmotionId != null">dominant_emotion_id = #{dominantEmotionId},</if>
-            <if test="riskLevel != null">risk_level = #{riskLevel},</if>
-            <if test="isHighRisk != null">is_high_risk = #{isHighRisk},</if>
-            <if test="recommendedAction != null">recommended_action = #{recommendedAction}</if>
+            <if test="dominantEmotionId != null">emotion_id = #{dominantEmotionId}</if>
         </set>
         WHERE analysis_id = #{analysisId}
     </update>

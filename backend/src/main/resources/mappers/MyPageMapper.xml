@@ -19,10 +19,11 @@
 
     <select id="selectBotRelationInfo" resultType="kr.hi.matey.dto.BotMenuDTO">
         SELECT
-        intimacy_level as level,
-        intimacy_score as remainPoint
-        FROM USER_BOT_RELATION
-        WHERE user_id = #{userId}
+        ubr.intimacy_id as level,
+        ubr.intimacy_id as remainPoint
+        FROM USER_BOT_RELATION ubr
+        JOIN EXCLUSIVE e ON ubr.exclusive_id = e.exclusive_id
+        WHERE e.user_id = #{userId}
         LIMIT 1
     </select>
 
@@ -46,34 +47,43 @@
         ELSE '보유'
         END as tag
         FROM BOT_MOTION
-        ORDER BY sort_order ASC
+        ORDER BY motion_id ASC
     </select>
 
     <select id="countUnreadLetters" resultType="int">
-        SELECT COUNT(*) FROM BOT_LETTER WHERE user_id = #{userId} AND is_read = FALSE
+        SELECT COUNT(*)
+        FROM BOT_LETTER bl
+        JOIN EXCLUSIVE e ON bl.exclusive_id = e.exclusive_id
+        WHERE e.user_id = #{userId}
+          AND bl.is_read = FALSE
     </select>
 
     <select id="countWeeklyLetters" resultType="int">
-        SELECT COUNT(*) FROM BOT_LETTER
-        WHERE user_id = #{userId} AND created_at &gt;= DATE_SUB(NOW(), INTERVAL 7 DAY)
+        SELECT COUNT(*)
+        FROM BOT_LETTER bl
+        JOIN EXCLUSIVE e ON bl.exclusive_id = e.exclusive_id
+        WHERE e.user_id = #{userId}
+          AND bl.created_at &gt;= DATE_SUB(NOW(), INTERVAL 7 DAY)
     </select>
 
     <select id="selectBotLetters" resultType="kr.hi.matey.dto.LetterBoxDTO$LetterDTO">
         SELECT
-        letter_id as id,
-        letter_type as type,
+        bl.letter_id as id,
+        blt.name as type,
         '메이티' as sender,
-        title,
-        content as preview,
+        bl.title,
+        bl.content as preview,
         CASE
-        WHEN DATE(created_at) = CURDATE() THEN '오늘'
-        WHEN DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) THEN '어제'
-        ELSE DATE_FORMAT(created_at, '%Y-%m-%d')
+        WHEN DATE(bl.created_at) = CURDATE() THEN '오늘'
+        WHEN DATE(bl.created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) THEN '어제'
+        ELSE DATE_FORMAT(bl.created_at, '%Y-%m-%d')
         END as date,
-        NOT is_read as unread
-        FROM BOT_LETTER
-        WHERE user_id = #{userId}
-        ORDER BY created_at DESC
+        NOT bl.is_read as unread
+        FROM BOT_LETTER bl
+        JOIN EXCLUSIVE e ON bl.exclusive_id = e.exclusive_id
+        JOIN BOT_LETTER_TYPE blt ON bl.letter_type_id = blt.letter_type_id
+        WHERE e.user_id = #{userId}
+        ORDER BY bl.created_at DESC
     </select>
 
     <select id="selectUserSettings" resultType="kr.hi.matey.dto.UserSettingsDTO">
@@ -119,33 +129,42 @@
     </update>
 
     <update id="updateLetterReadStatus">
-        UPDATE BOT_LETTER
-        SET is_read = TRUE, read_at = NOW()
-        WHERE letter_id = #{letterId} AND user_id = #{userId}
+        UPDATE BOT_LETTER bl
+        JOIN EXCLUSIVE e ON bl.exclusive_id = e.exclusive_id
+        SET bl.is_read = TRUE, bl.read_at = NOW()
+        WHERE bl.letter_id = #{letterId}
+          AND e.user_id = #{userId}
     </update>
 
     <delete id="deleteLetter">
-        DELETE FROM BOT_LETTER
-        WHERE letter_id = #{letterId} AND user_id = #{userId}
+        DELETE bl FROM BOT_LETTER bl
+        JOIN EXCLUSIVE e ON bl.exclusive_id = e.exclusive_id
+        WHERE bl.letter_id = #{letterId}
+          AND e.user_id = #{userId}
     </delete>
 
     <update id="updateBotIntimacy">
-        UPDATE USER_BOT_RELATION
-        SET intimacy_score = intimacy_score + #{expGain}, updated_at = NOW()
-        WHERE user_id = #{userId}
+        UPDATE USER_BOT_RELATION ubr
+        JOIN EXCLUSIVE e ON ubr.exclusive_id = e.exclusive_id
+        SET ubr.intimacy_id = ubr.intimacy_id + #{expGain},
+            ubr.updated_at = NOW()
+        WHERE e.user_id = #{userId}
     </update>
 
     <!-- MyPageService 호환용: intimacy_score를 절대값(exp)으로 갱신 -->
     <update id="updateBotExp">
-        UPDATE USER_BOT_RELATION
-        SET intimacy_score = #{exp}, updated_at = NOW()
-        WHERE user_id = #{userId}
+        UPDATE USER_BOT_RELATION ubr
+        JOIN EXCLUSIVE e ON ubr.exclusive_id = e.exclusive_id
+        SET ubr.intimacy_id = #{exp},
+            ubr.updated_at = NOW()
+        WHERE e.user_id = #{userId}
     </update>
 
     <select id="getBotStatus" resultType="BotStatusDTO">
         SELECT
-        ubr.intimacy_ID as level,
-        ubr.intimacy_score as exp  FROM USER_BOT_RELATION ubr
+        ubr.intimacy_id as level,
+        ubr.intimacy_id as exp
+        FROM USER_BOT_RELATION ubr
         JOIN EXCLUSIVE e ON ubr.exclusive_id = e.exclusive_id
         WHERE e.user_id = #{userId}
     </select>
@@ -153,7 +172,7 @@
     <update id="updateBotLevel">
         UPDATE USER_BOT_RELATION ubr
         JOIN EXCLUSIVE e ON ubr.exclusive_id = e.exclusive_id
-        SET ubr.intimacy_ID = #{intimacyId}
+        SET ubr.intimacy_id = #{intimacyId}
         WHERE e.user_id = #{userId}
     </update>
 
