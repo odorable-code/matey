@@ -193,7 +193,7 @@ public class AdminController {
         }
 
         String content = body.get("content");
-        adminService.answerSupportTicket(supportId, content);
+        adminService.answerSupportTicket(supportId, content, user.getUser().getUserId());
         return ResponseEntity.ok("답변이 등록되었습니다.");
     }
 

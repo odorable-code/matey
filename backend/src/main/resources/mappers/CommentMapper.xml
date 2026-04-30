@@ -15,7 +15,7 @@
             u.nickname as userNickname,
             cm.post_id as postId,
             cm.created_at as createdAt,
-            cm.updated_at as updatedAt
+            cm.created_at as updatedAt
         FROM COMMENT cm
         JOIN USER u ON cm.user_id = u.user_id
         WHERE cm.post_id = #{postId}
@@ -40,8 +40,7 @@
         UPDATE COMMENT
         SET
             content = #{dto.content},
-            parent_comment_id = #{dto.parentCommentId},
-            updated_at = NOW()
+            parent_comment_id = #{dto.parentCommentId}
         WHERE comment_id = #{commentId}
           AND user_id = #{userId}
     </update>
