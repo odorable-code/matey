@@ -21,7 +21,7 @@
            AND m.message_id BETWEEN cas.start_message_id AND cas.end_message_id
         LEFT JOIN MESSAGE_ANALYSIS ma ON ma.session_id = cas.session_id
         LEFT JOIN EMOTION_CATEGORY ec ON ma.emotion_id = ec.emotion_id
-        LEFT JOIN RESPONSE_STRATEGY rs ON ma.strategy_id = rs.strategy_id
+        LEFT JOIN RESPONSE_STRATEGY rs ON ma.risk_level = rs.risk_level
         WHERE e.user_id = #{userId}
         GROUP BY DATE_FORMAT(m.created_at, '%Y-%m-%d'), DATE_FORMAT(m.created_at, '%c월 %d일')
         ORDER BY dateKey DESC
@@ -61,7 +61,7 @@
     <!-- Create -->
     <insert id="insertEmotionReport" useGeneratedKeys="true" keyProperty="analysisId">
         INSERT INTO MESSAGE_ANALYSIS (
-            emotion_id, session_id, strategy_id, analyzed_at
+            emotion_id, session_id, risk_level, analyzed_at
         ) VALUES (
             #{dominantEmotionId},
             (
@@ -71,12 +71,7 @@
                 ORDER BY cas.session_id DESC
                 LIMIT 1
             ),
-            (
-                SELECT rs.strategy_id
-                FROM RESPONSE_STRATEGY rs
-                WHERE rs.risk_level = 1
-                LIMIT 1
-            ),
+            COALESCE(#{riskLevel}, 1),
             NOW()
         )
     </insert>
@@ -95,7 +90,7 @@
         JOIN CHAT_ANALYSIS_SESSION cas ON ma.session_id = cas.session_id
         JOIN CHAT_ROOM cr ON cas.chat_room_id = cr.chat_room_id
         JOIN EXCLUSIVE e ON cr.exclusive_id = e.exclusive_id
-        LEFT JOIN RESPONSE_STRATEGY rs ON ma.strategy_id = rs.strategy_id
+        LEFT JOIN RESPONSE_STRATEGY rs ON ma.risk_level = rs.risk_level
         WHERE e.user_id = #{userId}
         ORDER BY ma.analyzed_at DESC
     </select>
