@@ -1,626 +1,68 @@
 /**
  * [파일 역할]
  * - 감정 리포트 > 대화 히스토리 탭 화면
- * - 날짜 선택, 대화방 선택, 대화 흐름, 메모, 요약 카드까지 모두 담당
+ * - 날짜 선택(달력), 대화방 선택, 대화 흐름, 메모, 요약 카드까지 모두 담당
  *
  * [여기서 찾을 것]
- * - 기본 더미 데이터: FALLBACK_CHAT_HISTORY_DATA
- * - 날짜 파싱/달력 관련: parseFlexibleDate, buildCalendarMatrix
- * - 대화방 데이터 정리: normalizeChatRooms
- * - 현재 날짜별 데이터 추출: resolveScopedData
- * - 숫자 애니메이션: AnimatedValue
- * - 실제 UI 시작: function ChatHistoryTab
+ * - 달력 UI: calendarGrid 영역
+ * - 대화방 목록 UI: roomList 영역
+ * - 대화 말풍선 UI: timelineList 영역
+ * - 메모 카드 UI: memoPanel 영역
+ * - 통계 카드 UI: statGrid 영역
  *
  * [수정 포인트]
- * - 날짜 데이터/대화 더미 수정: FALLBACK_CHAT_HISTORY_DATA
- * - 달력 표시 방식 수정: calendarMatrix / calendarGrid 부분
- * - 대화방 목록 UI 수정: roomList 영역
+ * - 더미 데이터 바꾸기: emotionReport.fallback.js → FALLBACK_CHAT_HISTORY_DATA
+ * - 캐릭터 바꾸기: emotionReport.constants.js → FALLBACK_HERO_BOTS
  * - 대화 말풍선 UI 수정: timelineList 영역
- * - 메모 / 요약 카드 수정: noteCards, overviewCards 관련 부분
+ * - 메모/요약 카드 수정: memoPanel / insightHero 영역
  *
- * [주의]
- * - 이 파일은 데이터 보정 함수가 많아서 길어 보이지만,
- *   실제 핵심은 "날짜 고르기 → 대화방 고르기 → 아래 내용 보여주기" 구조임
+ * [이전 대비 달라진 점]
+ * - 상수/유틸/더미 데이터 → 전부 공용 파일에서 import
+ * - 과잉 방어 코드 제거 (실제 쓰이는 키만 체크)
+ * - AnimatedValue → 공용 splitAnimatedValue 사용
+ * - 이 파일에는 "화면 렌더링 + 데이터 정리 함수"만 남음
  */
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import styles from './ChatHistoryTab.module.css';
 
 /* =========================
-   className 합칠 때 쓰는 함수
+   공용 파일에서 가져오기
 ========================= */
-const cx = (...items) => items.filter(Boolean).join(' ');
+import {
+  FALLBACK_HERO_BOTS,
+  CHARACTER_IMAGE_MAP,
+  CURRENT_YEAR,
+  WEEKDAY_LABELS,
+} from '../../../hooks/emotionReport/emotionReport.constants';
 
-/* =========================
-   캐릭터 이미지 경로
-   - 이미지 바꾸려면 여기 수정
-========================= */
-const CHARACTER_IMAGE_MAP = {
-  cat: '/images/emotion-report/cat.png',
-  bear: '/images/emotion-report/bear.png',
-  dog: '/images/emotion-report/dog.png',
-  hamster: '/images/emotion-report/hamster.png',
-};
+import {
+  cx,
+  getOptionKey,
+  getOptionLabel,
+  resolveText,
+  parseFlexibleDate,
+  formatFullDateKey,
+  formatShortKey,
+  formatMonthKey,
+  isSameDay,
+  buildCalendarMatrix,
+  splitAnimatedValue,
+} from '../../../hooks/emotionReport/emotionReport.utils';
 
-/* =========================
-   날짜 표시 관련 기본값
-========================= */
-const CURRENT_YEAR = 2026;
-const WEEKDAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
-
-/* =========================
-   option에서 key / label 꺼내는 함수
-========================= */
-const getOptionKey = (item) =>
-  item?.key ?? item?.value ?? item?.id ?? item?.date ?? item?.day ?? '';
-
-const getOptionLabel = (item) =>
-  item?.label ?? item?.name ?? item?.title ?? item?.text ?? item?.date ?? '';
-
-/* =========================
-   여러 텍스트 후보 중 먼저 쓸 수 있는 문자열 찾기
-========================= */
-const resolveText = (...values) =>
-  values.find((value) => typeof value === 'string' && value.trim()) || '';
-
-/* =========================
-   대화 히스토리 기본 더미 데이터
-   - 아직 API 연결 전일 때 보여주는 내용
-   - 날짜별 대화방, 메모, 대화 흐름, 인사이트 포함
-   *
-   * [수정 포인트]
-   * - 날짜/대화/문구/메모 전부 여기서 수정 가능
-========================= */
-const FALLBACK_CHAT_HISTORY_DATA = {
-  dateOptions: [
-    { key: '04-21', label: '4월 21일' },
-    { key: '04-22', label: '4월 22일' },
-    { key: '04-23', label: '4월 23일' },
-    { key: '04-24', label: '4월 24일' },
-    { key: '04-25', label: '4월 25일' },
-  ],
-  heroBots: [
-    {
-      key: 'cat',
-      name: '냥이',
-      typeLabel: '직설형 리포터',
-      imageUrl: CHARACTER_IMAGE_MAP.cat,
-      fallbackLabel: '냥',
-      cardObjectPosition: 'center 14%',
-    },
-    {
-      key: 'bear',
-      name: '곰이',
-      typeLabel: '든든한 위로형',
-      imageUrl: CHARACTER_IMAGE_MAP.bear,
-      fallbackLabel: '곰',
-      cardObjectPosition: 'center 14%',
-    },
-    {
-      key: 'dog',
-      name: '강아지',
-      typeLabel: '공감·응원형',
-      imageUrl: CHARACTER_IMAGE_MAP.dog,
-      fallbackLabel: '강',
-      cardObjectPosition: 'center 14%',
-    },
-    {
-      key: 'hamster',
-      name: '햄이',
-      typeLabel: '세심한 생활형',
-      imageUrl: CHARACTER_IMAGE_MAP.hamster,
-      fallbackLabel: '햄',
-      cardObjectPosition: 'center 14%',
-    },
-  ],
-  byDate: {
-    '04-21': {
-      chatRooms: [
-        {
-          id: 'room-cat-0421',
-          botKey: 'cat',
-          title: '냥이와의 대화',
-          lastMessage: '오늘은 비교를 멈추는 기준 하나만 정해보자.',
-          lastTime: '09:18',
-          summary: {
-            title: '메모와 대화 흐름이 같이 남아 있는 하루예요.',
-            description:
-              '해결을 서두르기보다 먼저 감정을 정리하고, 그 다음에 작은 계획으로 넘어가려는 흐름이 보여요.',
-            chips: ['불안 완화', '작은 계획', '위로 필요'],
-          },
-          overviewCards: [
-            {
-              id: 'conversation-count',
-              label: '대화 조각',
-              value: '8개',
-              caption: '선택한 날짜에 남은 주요 대화 기록',
-            },
-            {
-              id: 'memo-count',
-              label: '메모 수',
-              value: '3개',
-              caption: '감정 메모와 핵심 포인트',
-            },
-            {
-              id: 'dominant-emotion',
-              label: '주 감정',
-              value: '불안',
-              caption: '가장 강하게 반복된 감정 톤',
-            },
-            {
-              id: 'focus-topic',
-              label: '집중 주제',
-              value: '시험',
-              caption: '대화에서 많이 다뤄진 주제',
-            },
-          ],
-          chatEntries: [
-            {
-              id: 1,
-              time: '09:12',
-              speaker: 'me',
-              emotion: '불안',
-              message: '시험 결과가 생각보다 잘 안 나와서 계속 신경 쓰여.',
-            },
-            {
-              id: 2,
-              time: '09:13',
-              speaker: 'bot',
-              emotion: '공감',
-              message:
-                '결과 자체보다 “내가 뒤처진 것 같다”는 느낌이 더 크게 남은 것 같아.',
-            },
-            {
-              id: 3,
-              time: '09:16',
-              speaker: 'me',
-              emotion: '비교',
-              message: '주변 친구들하고 비교하게 돼서 더 마음이 무거워.',
-            },
-            {
-              id: 4,
-              time: '09:18',
-              speaker: 'bot',
-              emotion: '정리',
-              message:
-                '비교가 시작되면 감정보다 자책이 먼저 커지는 흐름이 보여. 오늘은 비교를 멈추는 기준 하나만 정해보자.',
-            },
-          ],
-          noteCards: [
-            {
-              id: 'memo-1',
-              title: '메모 01',
-              description: '결과보다 비교 때문에 감정이 더 흔들렸다고 느낀 날.',
-            },
-            {
-              id: 'memo-2',
-              title: '메모 02',
-              description: '해결책보다 “이해받고 싶다”는 욕구가 더 크게 올라온 흐름.',
-            },
-            {
-              id: 'memo-3',
-              title: '메모 03',
-              description: '밤이 될수록 피로와 자책이 함께 올라오는 패턴이 보였음.',
-            },
-          ],
-          insight: {
-            headline: '이 날의 대화는 “비교 → 자책 → 위로 필요” 흐름으로 이어졌어요.',
-            description:
-              '감정 자체를 없애려 하기보다, 비교가 시작되는 지점을 먼저 알아차리는 게 더 중요해 보여요.',
-            meta: [
-              { label: '반복 패턴', value: '비교 후 자책' },
-              { label: '회복 포인트', value: '작은 기준 재설정' },
-              { label: '추천 포커스', value: '밤 루틴 가볍게 정리' },
-            ],
-            tags: ['비교', '자책', '위로', '회복'],
-          },
-          botInterpretation: {
-            summary:
-              '감정이 커진 원인은 결과 자체보다, 스스로를 평가하는 기준이 갑자기 높아진 데 있어 보여요.',
-            bullets: [
-              '비교가 시작되면 감정이 빠르게 무거워지는 패턴이 반복돼요.',
-              '하루 후반으로 갈수록 피로와 감정 반응이 같이 올라와요.',
-              '해결보다 안정이 먼저 필요한 날로 해석할 수 있어요.',
-            ],
-          },
-        },
-        {
-          id: 'room-bear-0421',
-          botKey: 'bear',
-          title: '곰이와의 대화',
-          lastMessage: '오늘은 잘 버틴 날이야. 해결보다 먼저 쉬어도 괜찮아.',
-          lastTime: '21:06',
-          summary: {
-            title: '지친 마음을 먼저 다독이려는 흐름이 보여요.',
-            description:
-              '해결책보다 위로와 안정이 먼저 필요했던 날로 보이고, 감정을 천천히 내려놓으려는 움직임이 있었어요.',
-            chips: ['위로', '안정', '회복 필요'],
-          },
-          overviewCards: [
-            {
-              id: 'conversation-count',
-              label: '대화 조각',
-              value: '6개',
-              caption: '선택한 날짜에 남은 주요 대화 기록',
-            },
-            {
-              id: 'memo-count',
-              label: '메모 수',
-              value: '2개',
-              caption: '감정 메모와 핵심 포인트',
-            },
-            {
-              id: 'dominant-emotion',
-              label: '주 감정',
-              value: '피로',
-              caption: '가장 강하게 반복된 감정 톤',
-            },
-            {
-              id: 'focus-topic',
-              label: '집중 주제',
-              value: '휴식',
-              caption: '대화에서 많이 다뤄진 주제',
-            },
-          ],
-          chatEntries: [
-            {
-              id: 1,
-              time: '21:01',
-              speaker: 'me',
-              emotion: '피로',
-              message: '오늘은 하루 종일 버틴 느낌이라 너무 지쳐.',
-            },
-            {
-              id: 2,
-              time: '21:03',
-              speaker: 'bot',
-              emotion: '위로',
-              message: '오늘은 잘 버틴 날이야. 해결보다 먼저 쉬어도 괜찮아.',
-            },
-            {
-              id: 3,
-              time: '21:05',
-              speaker: 'me',
-              emotion: '무기력',
-              message: '쉬어도 괜히 죄책감이 들어서 편하게 못 쉬겠어.',
-            },
-            {
-              id: 4,
-              time: '21:06',
-              speaker: 'bot',
-              emotion: '안정',
-              message: '오늘 쉬는 건 포기가 아니라, 다시 버틸 힘을 만드는 시간이야.',
-            },
-          ],
-          noteCards: [
-            {
-              id: 'memo-1',
-              title: '메모 01',
-              description: '몸과 마음이 먼저 지쳐 있었던 흐름.',
-            },
-            {
-              id: 'memo-2',
-              title: '메모 02',
-              description: '휴식이 필요하지만 쉬는 것에도 죄책감을 느낌.',
-            },
-          ],
-          insight: {
-            headline: '이 날의 대화는 “피로 → 위로 필요 → 쉼 허용하기”로 이어졌어요.',
-            description:
-              '성과보다 회복을 우선순위에 두는 연습이 필요한 날처럼 보여요.',
-            meta: [
-              { label: '반복 패턴', value: '피로 후 죄책감' },
-              { label: '회복 포인트', value: '휴식 허용' },
-              { label: '추천 포커스', value: '마감 루틴 단순화' },
-            ],
-            tags: ['피로', '휴식', '위로', '회복'],
-          },
-          botInterpretation: {
-            summary:
-              '오늘은 해결하려고 애쓰기보다, 지친 마음을 안전하게 내려놓는 게 더 중요해 보여요.',
-            bullets: [
-              '지친 날일수록 자기비판이 같이 올라오는 패턴이 보여요.',
-              '회복은 미루는 것이 아니라 다음 움직임을 위한 준비예요.',
-              '오늘의 핵심은 생산성보다 안정이에요.',
-            ],
-          },
-        },
-      ],
-    },
-    '04-22': {
-      chatRooms: [
-        {
-          id: 'room-dog-0422',
-          botKey: 'dog',
-          title: '강아지와의 대화',
-          lastMessage: '작게 시작하면 훨씬 덜 무겁게 다시 움직일 수 있어.',
-          lastTime: '08:41',
-          summary: {
-            title: '감정이 무거워도 다시 움직이려는 마음이 남아 있는 날이에요.',
-            description:
-              '불안과 걱정은 있었지만, 작게라도 다시 해보려는 의지가 대화 안에 드러났어요.',
-            chips: ['응원', '작은 실행', '다시 시작'],
-          },
-          overviewCards: [
-            {
-              id: 'conversation-count',
-              label: '대화 조각',
-              value: '7개',
-              caption: '선택한 날짜에 남은 주요 대화 기록',
-            },
-            {
-              id: 'memo-count',
-              label: '메모 수',
-              value: '3개',
-              caption: '감정 메모와 핵심 포인트',
-            },
-            {
-              id: 'dominant-emotion',
-              label: '주 감정',
-              value: '걱정',
-              caption: '가장 강하게 반복된 감정 톤',
-            },
-            {
-              id: 'focus-topic',
-              label: '집중 주제',
-              value: '다시 시작',
-              caption: '대화에서 많이 다뤄진 주제',
-            },
-          ],
-          chatEntries: [
-            {
-              id: 1,
-              time: '08:34',
-              speaker: 'me',
-              emotion: '걱정',
-              message: '어제 못한 걸 오늘도 못할까 봐 걱정돼.',
-            },
-            {
-              id: 2,
-              time: '08:35',
-              speaker: 'bot',
-              emotion: '응원',
-              message: '오늘은 다 해내는 것보다, 다시 시작했다는 사실이 더 중요해.',
-            },
-            {
-              id: 3,
-              time: '08:40',
-              speaker: 'me',
-              emotion: '의지',
-              message: '그럼 진짜 작은 것 하나만 해볼까 싶어.',
-            },
-            {
-              id: 4,
-              time: '08:41',
-              speaker: 'bot',
-              emotion: '격려',
-              message: '좋아. 작게 시작하면 훨씬 덜 무겁게 다시 움직일 수 있어.',
-            },
-          ],
-          noteCards: [
-            {
-              id: 'memo-1',
-              title: '메모 01',
-              description: '불안은 있었지만 멈추지 않으려는 흐름이 보인 날.',
-            },
-            {
-              id: 'memo-2',
-              title: '메모 02',
-              description: '큰 계획보다 작은 시작이 더 중요했던 날.',
-            },
-          ],
-          insight: {
-            headline: '이 날의 대화는 “걱정 → 다시 시도 → 작은 실행” 흐름으로 이어졌어요.',
-            description:
-              '성공보다 재시작 자체에 의미를 두는 태도가 도움이 되는 날이었어요.',
-            meta: [
-              { label: '반복 패턴', value: '걱정 후 시도' },
-              { label: '회복 포인트', value: '작게 시작하기' },
-              { label: '추천 포커스', value: '첫 행동 낮추기' },
-            ],
-            tags: ['걱정', '시도', '응원', '시작'],
-          },
-          botInterpretation: {
-            summary:
-              '완벽하게 하려는 부담보다, 다시 움직이려는 힘이 더 중요하게 보였어요.',
-            bullets: [
-              '작게 시작했을 때 감정 부담이 줄어드는 패턴이 보여요.',
-              '응원과 지지가 행동으로 이어지는 연결이 있어요.',
-              '오늘은 결과보다 재시작 자체를 인정해주는 게 중요해요.',
-            ],
-          },
-        },
-      ],
-    },
-    '04-23': {
-      chatRooms: [
-        {
-          id: 'room-ham-0423',
-          botKey: 'hamster',
-          title: '햄이와의 대화',
-          lastMessage: '오늘 감정은 생활 리듬 영향도 커 보여.',
-          lastTime: '10:05',
-          summary: {
-            title: '생활 리듬이 감정에 직접 영향을 준 하루예요.',
-            description:
-              '수면과 하루 루틴이 흔들리면서 감정 기복도 함께 커졌고, 정리가 필요한 흐름이 보였어요.',
-            chips: ['루틴', '생활 정리', '수면'],
-          },
-          overviewCards: [
-            {
-              id: 'conversation-count',
-              label: '대화 조각',
-              value: '5개',
-              caption: '선택한 날짜에 남은 주요 대화 기록',
-            },
-            {
-              id: 'memo-count',
-              label: '메모 수',
-              value: '2개',
-              caption: '감정 메모와 핵심 포인트',
-            },
-            {
-              id: 'dominant-emotion',
-              label: '주 감정',
-              value: '예민함',
-              caption: '가장 강하게 반복된 감정 톤',
-            },
-            {
-              id: 'focus-topic',
-              label: '집중 주제',
-              value: '수면',
-              caption: '대화에서 많이 다뤄진 주제',
-            },
-          ],
-          chatEntries: [
-            {
-              id: 1,
-              time: '10:02',
-              speaker: 'me',
-              emotion: '예민함',
-              message: '잠을 설쳐서 그런지 사소한 것도 다 거슬려.',
-            },
-            {
-              id: 2,
-              time: '10:05',
-              speaker: 'bot',
-              emotion: '정리',
-              message: '오늘 감정은 마음 문제이기도 하지만, 생활 리듬 영향도 커 보여.',
-            },
-          ],
-          noteCards: [
-            {
-              id: 'memo-1',
-              title: '메모 01',
-              description: '수면 부족이 감정 예민함으로 연결된 날.',
-            },
-            {
-              id: 'memo-2',
-              title: '메모 02',
-              description: '큰 해결보다 루틴 회복이 우선인 흐름.',
-            },
-          ],
-          insight: {
-            headline: '이 날의 대화는 “수면 흔들림 → 예민함 증가” 흐름으로 이어졌어요.',
-            description:
-              '감정 해석과 함께 생활 리듬 점검이 같이 필요한 날이었어요.',
-            meta: [
-              { label: '반복 패턴', value: '수면 후 예민함' },
-              { label: '회복 포인트', value: '루틴 복구' },
-              { label: '추천 포커스', value: '취침 전 정리' },
-            ],
-            tags: ['수면', '루틴', '예민함', '정리'],
-          },
-          botInterpretation: {
-            summary:
-              '오늘의 감정은 생각보다 생활 리듬과 더 밀접하게 연결돼 있어 보여요.',
-            bullets: [
-              '생활 패턴이 흔들릴수록 감정 반응도 커져요.',
-              '작은 루틴 회복이 전체 안정에 도움이 돼요.',
-              '자기비난보다 생활 리듬 점검이 먼저예요.',
-            ],
-          },
-        },
-      ],
-    },
-  },
-};
-
-/* =========================
-   날짜 문자열 파싱 함수
-   - 2026-04-21
-   - 04-21
-   - 4월 21일
-   형태를 Date로 바꿔줌
-========================= */
-const parseFlexibleDate = (value) => {
-  if (!value) return null;
-
-  if (value instanceof Date && !Number.isNaN(value.getTime())) {
-    return value;
-  }
-
-  if (typeof value !== 'string') return null;
-
-  const trimmed = value.trim();
-
-  let match = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (match) {
-    const [, year, month, day] = match.map(Number);
-    return new Date(year, month - 1, day);
-  }
-
-  match = trimmed.match(/^(\d{2})-(\d{2})$/);
-  if (match) {
-    const [, month, day] = match.map(Number);
-    return new Date(CURRENT_YEAR, month - 1, day);
-  }
-
-  match = trimmed.match(/^(\d{1,2})월\s*(\d{1,2})일$/);
-  if (match) {
-    const [, month, day] = match.map(Number);
-    return new Date(CURRENT_YEAR, month - 1, day);
-  }
-
-  return null;
-};
-
-/* =========================
-   날짜 key 만들기 함수들
-========================= */
-const formatMonthKey = (date) => {
-  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '';
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-};
-
-const formatFullDateKey = (date) => {
-  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '';
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(
-    date.getDate()
-  ).padStart(2, '0')}`;
-};
-
-const formatShortKey = (date) => {
-  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '';
-  return `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(
-    2,
-    '0'
-  )}`;
-};
-
-/* =========================
-   날짜 같은 날인지 비교
-========================= */
-const isSameDay = (a, b) =>
-  a &&
-  b &&
-  a.getFullYear() === b.getFullYear() &&
-  a.getMonth() === b.getMonth() &&
-  a.getDate() === b.getDate();
-
-/* =========================
-   달력 6주(42칸)짜리 날짜 배열 만들기
-========================= */
-const buildCalendarMatrix = (anchorDate) => {
-  const monthStart = new Date(anchorDate.getFullYear(), anchorDate.getMonth(), 1);
-  const gridStart = new Date(monthStart);
-  gridStart.setDate(monthStart.getDate() - monthStart.getDay());
-
-  return Array.from({ length: 42 }, (_, index) => {
-    const current = new Date(gridStart);
-    current.setDate(gridStart.getDate() + index);
-    return current;
-  });
-};
+import {
+  FALLBACK_CHAT_HISTORY_DATA,
+  FALLBACK_DAY_DATA,
+} from '../../../hooks/emotionReport/emotionReport.fallback';
 
 /* =========================
    날짜 옵션 정규화
-   - 다양한 데이터 구조를 하나의 형식으로 맞춤
+   - 서버에서 받은 날짜 데이터를 통일된 형태로 변환
+   - key, label, date, fullKey, shortKey, monthKey를 모두 갖춘 배열로 반환
 ========================= */
 const normalizeDateOptions = (sourceData = {}, historyOverview = null) => {
   const raw =
     sourceData?.dateOptions ||
-    sourceData?.dates ||
     historyOverview?.dateOptions ||
     FALLBACK_CHAT_HISTORY_DATA.dateOptions;
 
@@ -644,10 +86,11 @@ const normalizeDateOptions = (sourceData = {}, historyOverview = null) => {
           .filter((item) => item.key)
       : [];
 
+  /* --- 정리된 결과가 있으면 반환, 없으면 기본값 --- */
   if (normalized.length > 0) return normalized;
 
   return FALLBACK_CHAT_HISTORY_DATA.dateOptions.map((item) => {
-    const date = parseFlexibleDate(item.key) || parseFlexibleDate(item.label);
+    const date = parseFlexibleDate(item.key);
 
     return {
       key: item.key,
@@ -662,91 +105,69 @@ const normalizeDateOptions = (sourceData = {}, historyOverview = null) => {
 
 /* =========================
    대화 기록 정규화
-   - speaker / time / message 형식을 통일
+   - speaker를 'me' 또는 'bot'으로 통일
+   - time, emotion, message를 안전하게 꺼냄
 ========================= */
 const normalizeChatEntries = (raw) => {
+  /* --- 데이터가 없으면 기본 대화 반환 --- */
   if (!Array.isArray(raw) || raw.length === 0) {
-    return FALLBACK_CHAT_HISTORY_DATA.byDate['04-21'].chatRooms[0].chatEntries;
+    return FALLBACK_DAY_DATA.chatRooms[0].chatEntries;
   }
 
   return raw.map((entry, index) => {
-    const rawSpeaker = `${entry?.speaker || entry?.role || entry?.type || ''}`.toLowerCase();
+    const rawSpeaker = `${entry?.speaker || entry?.role || ''}`.toLowerCase();
 
+    /* --- bot/assistant/system → 'bot', 나머지 → 'me' --- */
     const speaker =
-      rawSpeaker.includes('bot') || rawSpeaker.includes('assistant')
+      rawSpeaker.includes('bot') || rawSpeaker.includes('assistant') || rawSpeaker.includes('system')
         ? 'bot'
-        : rawSpeaker.includes('system')
-          ? 'bot'
-          : 'me';
+        : 'me';
 
     return {
       id: entry?.id ?? index,
-      time: resolveText(entry?.time, entry?.timestamp, entry?.dateTime) || '--:--',
+      time: resolveText(entry?.time, entry?.timestamp) || '--:--',
       speaker,
-      emotion: resolveText(entry?.emotion, entry?.tag, entry?.label),
-      message: resolveText(entry?.message, entry?.text, entry?.content, entry?.summary),
+      emotion: resolveText(entry?.emotion, entry?.tag),
+      message: resolveText(entry?.message, entry?.text, entry?.content),
     };
   });
 };
 
 /* =========================
-   현재 선택한 날짜 기준으로 데이터 찾는 함수
-   - byDate / dateMap / entries 등 여러 구조 대응
+   현재 선택한 날짜 기준으로 데이터 찾기
+   - byDate 객체에서 해당 날짜의 데이터를 꺼냄
+   - key, fullKey, shortKey 순서로 찾아봄
 ========================= */
 const resolveScopedData = (sourceData, currentDateOption) => {
+  /* --- 찾을 key 후보 목록 --- */
   const keyCandidates = [
     currentDateOption?.key,
     currentDateOption?.fullKey,
     currentDateOption?.shortKey,
-    currentDateOption?.label,
   ].filter(Boolean);
 
-  const objectMaps = [
-    sourceData?.dailyData,
-    sourceData?.byDate,
-    sourceData?.dateMap,
-    sourceData?.historyByDate,
-  ];
+  /* --- byDate에서 찾기 --- */
+  const byDate = sourceData?.byDate;
 
-  for (const map of objectMaps) {
-    if (!map || typeof map !== 'object' || Array.isArray(map)) continue;
-
+  if (byDate && typeof byDate === 'object') {
     for (const key of keyCandidates) {
-      if (map[key]) return map[key];
+      if (byDate[key]) return byDate[key];
     }
   }
 
-  const entryList = sourceData?.entries || sourceData?.history;
-
-  if (Array.isArray(entryList) && entryList.length > 0) {
-    const matched = entryList.find((entry) => {
-      const rawDate = entry?.date || entry?.dateKey || entry?.key || entry?.label;
-      const date = parseFlexibleDate(rawDate);
-      const fullKey = date ? formatFullDateKey(date) : '';
-      const shortKey = date ? formatShortKey(date) : '';
-      const entryKey = entry?.dateKey || entry?.key || rawDate;
-
-      return keyCandidates.some(
-        (key) => key === rawDate || key === fullKey || key === shortKey || key === entryKey
-      );
-    });
-
-    if (matched) return matched;
-  }
-
+  /* --- 못 찾으면 sourceData 자체 반환 --- */
   return sourceData;
 };
 
 /* =========================
    봇 프로필 정리
-   - key만 있어도 이미지/이름 등을 최대한 맞춰줌
+   - key로 봇을 찾고, 이미지/이름 등 기본값 보정
 ========================= */
 const resolveBotProfile = (botKey, mergedBots = []) => {
   const target =
-    mergedBots.find(
-      (item) => item?.key === botKey || item?.id === botKey || item?.value === botKey
-    ) || mergedBots[0];
+    mergedBots.find((item) => item?.key === botKey) || mergedBots[0];
 
+  /* --- 봇을 못 찾으면 최소한의 기본 프로필 반환 --- */
   if (!target) {
     return {
       key: botKey || 'cat',
@@ -758,16 +179,15 @@ const resolveBotProfile = (botKey, mergedBots = []) => {
     };
   }
 
-  const resolvedKey = target?.key || target?.id || target?.value || botKey || 'cat';
+  const resolvedKey = target?.key || botKey || 'cat';
 
   return {
     ...target,
     key: resolvedKey,
-    name: target?.name || target?.label || '봇',
-    typeLabel: target?.typeLabel || target?.description || '대화 해석 봇',
+    name: target?.name || '봇',
+    typeLabel: target?.typeLabel || '대화 해석 봇',
     imageUrl:
       target?.imageUrl ||
-      target?.imagePath ||
       CHARACTER_IMAGE_MAP[resolvedKey] ||
       '',
     fallbackLabel: target?.fallbackLabel || (target?.name || '봇').slice(0, 1),
@@ -777,34 +197,31 @@ const resolveBotProfile = (botKey, mergedBots = []) => {
 
 /* =========================
    대화방 1개 데이터 정리
+   - 봇 프로필, 대화 기록, 제목, 마지막 메시지 등을 통일된 형태로 반환
 ========================= */
 const normalizeRoomItem = (room, index, mergedBots = [], fallbackBotKey = 'cat') => {
-  const botKey =
-    room?.botKey ||
-    room?.selectedBotKey ||
-    room?.bot?.key ||
-    fallbackBotKey;
-
+  const botKey = room?.botKey || fallbackBotKey;
   const botProfile = resolveBotProfile(botKey, mergedBots);
+
   const entries = normalizeChatEntries(
-    room?.chatEntries || room?.chatLogs || room?.messages || room?.timeline
+    room?.chatEntries || room?.chatLogs || room?.messages
   );
   const lastEntry = entries[entries.length - 1];
 
   return {
-    id: room?.id ?? room?.roomId ?? `${botKey}-${index}`,
+    id: room?.id ?? `${botKey}-${index}`,
     botKey,
     botProfile,
     title: resolveText(room?.title, room?.name) || `${botProfile.name}와의 대화`,
     lastMessage:
-      resolveText(room?.lastMessage, room?.preview, room?.summaryText) ||
+      resolveText(room?.lastMessage, room?.preview) ||
       lastEntry?.message ||
       '대화 내용이 없어요.',
     lastTime: resolveText(room?.lastTime, room?.time, lastEntry?.time),
     summary: room?.summary,
     overviewCards: room?.overviewCards,
     chatEntries: entries,
-    noteCards: room?.noteCards || room?.notes || room?.memos,
+    noteCards: room?.noteCards || room?.notes,
     insight: room?.insight,
     botInterpretation: room?.botInterpretation,
   };
@@ -812,45 +229,34 @@ const normalizeRoomItem = (room, index, mergedBots = [], fallbackBotKey = 'cat')
 
 /* =========================
    날짜 기준 대화방 목록 정리
+   - scopedData에서 chatRooms 배열을 찾아서 정리
+   - 없으면 scopedData 자체를 하나의 대화방으로 변환
 ========================= */
 const normalizeChatRooms = (scopedData, sourceData, mergedBots, fallbackBotKey) => {
-  const raw =
-    scopedData?.chatRooms ||
-    scopedData?.rooms ||
-    scopedData?.conversationRooms ||
-    sourceData?.chatRooms ||
-    sourceData?.rooms ||
-    [];
+  const raw = scopedData?.chatRooms || sourceData?.chatRooms || [];
 
+  /* --- chatRooms 배열이 있으면 각각 정리해서 반환 --- */
   if (Array.isArray(raw) && raw.length > 0) {
     return raw.map((room, index) =>
       normalizeRoomItem(room, index, mergedBots, fallbackBotKey)
     );
   }
 
+  /* --- 없으면 scopedData를 하나의 대화방으로 변환 --- */
   return [
     normalizeRoomItem(
       {
         id: scopedData?.id || 'default-room',
-        botKey:
-          scopedData?.selectedBotKey ||
-          scopedData?.botKey ||
-          scopedData?.bot?.key ||
-          fallbackBotKey,
+        botKey: scopedData?.botKey || fallbackBotKey,
         title: '대화방',
         lastMessage: resolveText(
           scopedData?.lastMessage,
-          scopedData?.summary?.title,
-          scopedData?.summary?.description
+          scopedData?.summary?.title
         ),
         summary: scopedData?.summary,
         overviewCards: scopedData?.overviewCards,
-        chatEntries:
-          scopedData?.chatEntries ||
-          scopedData?.chatLogs ||
-          scopedData?.messages ||
-          scopedData?.timeline,
-        noteCards: scopedData?.noteCards || scopedData?.notes || scopedData?.memos,
+        chatEntries: scopedData?.chatEntries || scopedData?.chatLogs,
+        noteCards: scopedData?.noteCards || scopedData?.notes,
         insight: scopedData?.insight,
         botInterpretation: scopedData?.botInterpretation,
       },
@@ -862,30 +268,9 @@ const normalizeChatRooms = (scopedData, sourceData, mergedBots, fallbackBotKey) 
 };
 
 /* =========================
-   숫자 애니메이션용 보조 함수
-========================= */
-function splitAnimatedValue(rawValue) {
-  const text = String(rawValue ?? '');
-  const match = text.match(/^(-?\d+(?:\.\d+)?)(.*)$/);
-
-  if (!match) {
-    return {
-      numericValue: 0,
-      suffix: text,
-      hasNumber: false,
-    };
-  }
-
-  return {
-    numericValue: Number(match[1]) || 0,
-    suffix: match[2] || '',
-    hasNumber: true,
-  };
-}
-
-/* =========================
    숫자 카운트업 애니메이션 컴포넌트
-   - 카드 숫자 표시할 때 사용
+   - 0에서 목표 숫자까지 부드럽게 올라가는 효과
+   - 하단 통계 카드에서 사용
 ========================= */
 function AnimatedValue({
   value,
@@ -901,6 +286,7 @@ function AnimatedValue({
   useEffect(() => {
     if (!hasNumber) return undefined;
 
+    /* --- 마운트 시에만 애니메이션하고 이후엔 바로 표시 --- */
     if (animateOnlyOnMount && hasAnimatedRef.current) {
       setDisplayValue(numericValue);
       return undefined;
@@ -946,10 +332,8 @@ function AnimatedValue({
 }
 
 /* =========================
-   메인 컴포넌트 시작
-   - 날짜 선택
-   - 대화방 선택
-   - 요약 / 메모 / 대화 흐름 / 통계 카드 표시
+   메인 컴포넌트
+   - 날짜 선택(달력) → 대화방 선택 → 요약/메모/대화 흐름 → 통계 카드
 ========================= */
 function ChatHistoryTab({
   data,
@@ -966,7 +350,6 @@ function ChatHistoryTab({
   const sourceData =
     data ||
     reportData?.chatHistoryTab ||
-    historyOverview ||
     FALLBACK_CHAT_HISTORY_DATA;
 
   /* =========================
@@ -1007,8 +390,12 @@ function ChatHistoryTab({
   /* =========================
      달력 그리기용 데이터
   ========================= */
-  const calendarMatrix = useMemo(() => buildCalendarMatrix(anchorDate), [anchorDate]);
+  const calendarMatrix = useMemo(
+    () => buildCalendarMatrix(anchorDate),
+    [anchorDate]
+  );
 
+  /* --- 기록이 있는 날짜를 빠르게 찾기 위한 Map --- */
   const selectableDateMap = useMemo(() => {
     const map = new Map();
     dateOptions.forEach((item) => {
@@ -1027,15 +414,15 @@ function ChatHistoryTab({
 
   /* =========================
      봇 목록 합치기
+     - botOptions + reportData + sourceData + 기본값 순서로 합침
+     - 같은 key가 있으면 먼저 나온 것이 우선
   ========================= */
   const mergedBots = useMemo(
     () => [
       ...(Array.isArray(botOptions) ? botOptions : []),
       ...(Array.isArray(reportData?.heroBots) ? reportData.heroBots : []),
       ...(Array.isArray(sourceData?.heroBots) ? sourceData.heroBots : []),
-      ...(Array.isArray(FALLBACK_CHAT_HISTORY_DATA.heroBots)
-        ? FALLBACK_CHAT_HISTORY_DATA.heroBots
-        : []),
+      ...FALLBACK_HERO_BOTS,
     ],
     [botOptions, reportData, sourceData]
   );
@@ -1045,9 +432,7 @@ function ChatHistoryTab({
   ========================= */
   const chatRooms = useMemo(() => {
     const fallbackBotKey =
-      scopedData?.selectedBotKey ||
       scopedData?.botKey ||
-      scopedData?.bot?.key ||
       selectedBotKey ||
       'cat';
 
@@ -1056,6 +441,7 @@ function ChatHistoryTab({
 
   /* =========================
      현재 선택된 대화방 id
+     - 날짜가 바뀌면 첫 번째 대화방으로 초기화
   ========================= */
   const [selectedRoomId, setSelectedRoomId] = useState(chatRooms[0]?.id || '');
 
@@ -1080,88 +466,73 @@ function ChatHistoryTab({
 
   const roomBot = currentRoom?.botProfile || null;
 
+  /* --- 기본 하루치 대화방 (fallback용) --- */
+  const defaultRoom = FALLBACK_DAY_DATA.chatRooms[0];
+
   /* =========================
-     요약 / 메모 / 인사이트 / 봇 해석 / 통계 카드 정리
+     요약 / 대화 / 메모 / 인사이트 / 봇 해석 / 통계 카드 정리
+     - currentRoom에 있으면 사용, 없으면 scopedData, 없으면 기본값
   ========================= */
   const summary =
     currentRoom?.summary ||
     scopedData?.summary ||
-    sourceData?.summary ||
-    FALLBACK_CHAT_HISTORY_DATA.byDate['04-21'].chatRooms[0].summary;
+    defaultRoom.summary;
 
   const chatEntries = useMemo(() => {
     const raw =
       currentRoom?.chatEntries ||
       scopedData?.chatEntries ||
       scopedData?.chatLogs ||
-      scopedData?.messages ||
-      scopedData?.timeline ||
-      sourceData?.chatEntries ||
-      sourceData?.chatLogs ||
-      sourceData?.messages ||
-      sourceData?.timeline ||
-      FALLBACK_CHAT_HISTORY_DATA.byDate['04-21'].chatRooms[0].chatEntries;
+      defaultRoom.chatEntries;
 
     return normalizeChatEntries(raw);
-  }, [currentRoom, scopedData, sourceData]);
+  }, [currentRoom, scopedData]);
 
   const noteCards = useMemo(() => {
     const raw =
       currentRoom?.noteCards ||
       scopedData?.noteCards ||
       scopedData?.notes ||
-      scopedData?.memos ||
-      historyOverview?.notes ||
-      sourceData?.noteCards ||
-      sourceData?.notes ||
-      sourceData?.memos ||
-      FALLBACK_CHAT_HISTORY_DATA.byDate['04-21'].chatRooms[0].noteCards;
+      defaultRoom.noteCards;
 
     if (!Array.isArray(raw) || raw.length === 0) {
-      return FALLBACK_CHAT_HISTORY_DATA.byDate['04-21'].chatRooms[0].noteCards;
+      return defaultRoom.noteCards;
     }
 
     return raw.map((item, index) => ({
       id: item?.id ?? index,
-      title: resolveText(item?.title, item?.label, item?.name) || `메모 ${index + 1}`,
-      description: resolveText(
-        item?.description,
-        item?.text,
-        item?.content,
-        item?.summary
-      ),
+      title: resolveText(item?.title, item?.label) || `메모 ${index + 1}`,
+      description: resolveText(item?.description, item?.text, item?.content),
     }));
-  }, [currentRoom, scopedData, sourceData, historyOverview]);
+  }, [currentRoom, scopedData]);
 
   const insight =
     currentRoom?.insight ||
     scopedData?.insight ||
-    sourceData?.insight ||
-    FALLBACK_CHAT_HISTORY_DATA.byDate['04-21'].chatRooms[0].insight;
+    defaultRoom.insight;
 
   const botInterpretation =
     currentRoom?.botInterpretation ||
     scopedData?.botInterpretation ||
-    sourceData?.botInterpretation ||
-    FALLBACK_CHAT_HISTORY_DATA.byDate['04-21'].chatRooms[0].botInterpretation;
+    defaultRoom.botInterpretation;
 
   const overviewCards = useMemo(() => {
     const raw =
       currentRoom?.overviewCards ||
       scopedData?.overviewCards ||
-      sourceData?.overviewCards ||
       historyOverview?.overviewCards ||
-      FALLBACK_CHAT_HISTORY_DATA.byDate['04-21'].chatRooms[0].overviewCards;
+      defaultRoom.overviewCards;
 
     if (Array.isArray(raw) && raw.length > 0) {
       return raw.map((card, index) => ({
         id: card?.id ?? index,
-        label: resolveText(card?.label, card?.title, card?.name),
-        value: resolveText(card?.value, card?.count, card?.text),
-        caption: resolveText(card?.caption, card?.description, card?.summary),
+        label: resolveText(card?.label, card?.title),
+        value: resolveText(card?.value, card?.count),
+        caption: resolveText(card?.caption, card?.description),
       }));
     }
 
+    /* --- overviewCards가 없으면 현재 데이터로 자동 생성 --- */
     return [
       {
         id: 'conversation-count',
@@ -1188,16 +559,7 @@ function ChatHistoryTab({
         caption: '대화에서 많이 다뤄진 주제',
       },
     ];
-  }, [
-    currentRoom,
-    scopedData,
-    sourceData,
-    historyOverview,
-    chatEntries.length,
-    noteCards.length,
-    insight,
-    summary,
-  ]);
+  }, [currentRoom, scopedData, historyOverview, chatEntries.length, noteCards.length, insight, summary]);
 
   /* =========================
      화면에서 바로 쓰기 좋게 2차 가공
@@ -1207,13 +569,18 @@ function ChatHistoryTab({
   const insightTags = Array.isArray(insight?.tags) ? insight.tags : [];
   const monthTitle = `${anchorDate.getFullYear()}년 ${anchorDate.getMonth() + 1}월`;
 
+  /* --- 요약 칩 + 인사이트 태그를 합쳐서 중복 제거 (최대 5개) --- */
   const mergedTags = [...new Set([...summaryChips, ...insightTags])].slice(0, 5);
+
+  /* --- 통계 카드 3개까지만 표시 --- */
   const compactOverviewCards = overviewCards.slice(0, 3);
 
+  /* --- 봇 해석 포인트 3개까지만 --- */
   const interpretationBullets = Array.isArray(botInterpretation?.bullets)
     ? botInterpretation.bullets.slice(0, 3)
     : [];
 
+  /* --- 인사이트 헤드라인/설명 (없으면 요약에서 가져옴) --- */
   const insightHeadline =
     insight?.headline ||
     summary?.title ||
@@ -1227,8 +594,6 @@ function ChatHistoryTab({
 
   /* =========================
      이벤트 함수
-     - 날짜 선택
-     - 대화방 선택
   ========================= */
   const handleDateSelect = (nextKey) => {
     onDateChange?.(nextKey);
@@ -1240,21 +605,19 @@ function ChatHistoryTab({
 
   /* =========================
      실제 화면 렌더링
-     - 상단: 달력 + 대화방 목록
-     - 중단: 요약 / 메모 / 대화 흐름
-     - 하단: 숫자 카드
   ========================= */
   return (
     <section className={styles.chatHistoryTab}>
       {/* =========================
           상단 영역
-          - 왼쪽: 날짜 달력
+          - 왼쪽: 달력
           - 오른쪽: 대화방 목록
       ========================= */}
       <div
         className={`${styles.topBar} ${styles.panelEntrance}`}
         style={{ '--enter-delay': '40ms' }}
       >
+        {/* ===== 달력 패널 ===== */}
         <div className={styles.calendarPanel}>
           <div className={styles.calendarHeader}>
             <div>
@@ -1265,9 +628,12 @@ function ChatHistoryTab({
               </p>
             </div>
 
-            <div className={styles.calendarSelectedBadge}>{currentDateLabel}</div>
+            <div className={styles.calendarSelectedBadge}>
+              {currentDateLabel}
+            </div>
           </div>
 
+          {/* --- 요일 헤더 --- */}
           <div className={styles.weekdayRow}>
             {WEEKDAY_LABELS.map((day) => (
               <div key={day} className={styles.weekdayCell}>
@@ -1276,6 +642,7 @@ function ChatHistoryTab({
             ))}
           </div>
 
+          {/* --- 달력 날짜 42칸 --- */}
           <div className={styles.calendarGrid}>
             {calendarMatrix.map((date) => {
               const fullKey = formatFullDateKey(date);
@@ -1307,6 +674,7 @@ function ChatHistoryTab({
           </div>
         </div>
 
+        {/* ===== 대화방 목록 패널 ===== */}
         <div className={styles.roomListPanel}>
           <div className={styles.roomListHeader}>
             <div>
@@ -1329,6 +697,7 @@ function ChatHistoryTab({
                   onClick={() => handleRoomSelect(room.id)}
                   className={cx(styles.roomCard, active && styles.roomCardActive)}
                 >
+                  {/* --- 봇 아바타 --- */}
                   <div className={styles.roomAvatarWrap}>
                     {room.botProfile?.imageUrl ? (
                       <img
@@ -1347,6 +716,7 @@ function ChatHistoryTab({
                     )}
                   </div>
 
+                  {/* --- 대화방 정보 --- */}
                   <div className={styles.roomContent}>
                     <div className={styles.roomTopRow}>
                       <strong className={styles.roomName}>
@@ -1377,11 +747,13 @@ function ChatHistoryTab({
 
       {/* =========================
           중간 본문 영역
-          - 왼쪽: 요약 / 메모
+          - 왼쪽: 요약 + 메모
           - 오른쪽: 대화 흐름
       ========================= */}
       <div className={styles.contentGrid}>
+        {/* ===== 왼쪽 사이드 컬럼 ===== */}
         <div className={styles.sideColumn}>
+          {/* --- 오늘의 요약 / 대화 해석 --- */}
           <article
             className={`${styles.insightHero} ${styles.panelEntrance}`}
             style={{ '--enter-delay': '180ms' }}
@@ -1393,21 +765,30 @@ function ChatHistoryTab({
               </div>
             </div>
 
-            <strong className={styles.insightHeadline}>{insightHeadline}</strong>
-            <p className={styles.insightDescription}>{insightDescription}</p>
+            <strong className={styles.insightHeadline}>
+              {insightHeadline}
+            </strong>
+            <p className={styles.insightDescription}>
+              {insightDescription}
+            </p>
 
-            {insightMeta.length > 0 ? (
+            {/* --- 반복 패턴 / 회복 포인트 / 추천 포커스 --- */}
+            {insightMeta.length > 0 && (
               <div className={styles.insightRow}>
                 {insightMeta.slice(0, 3).map((item) => (
-                  <div key={`${item.label}-${item.value}`} className={styles.insightBox}>
+                  <div
+                    key={`${item.label}-${item.value}`}
+                    className={styles.insightBox}
+                  >
                     <span className={styles.insightLabel}>{item.label}</span>
                     <strong className={styles.insightValue}>{item.value}</strong>
                   </div>
                 ))}
               </div>
-            ) : null}
+            )}
 
-            {interpretationBullets.length > 0 ? (
+            {/* --- 봇 해석 포인트 --- */}
+            {interpretationBullets.length > 0 && (
               <div className={styles.compactBulletList}>
                 {interpretationBullets.map((item) => (
                   <div key={item} className={styles.compactBulletItem}>
@@ -1415,9 +796,10 @@ function ChatHistoryTab({
                   </div>
                 ))}
               </div>
-            ) : null}
+            )}
 
-            {mergedTags.length > 0 ? (
+            {/* --- 태그 --- */}
+            {mergedTags.length > 0 && (
               <div className={styles.tagRow}>
                 {mergedTags.map((tag) => (
                   <span key={tag} className={styles.tagChip}>
@@ -1425,9 +807,10 @@ function ChatHistoryTab({
                   </span>
                 ))}
               </div>
-            ) : null}
+            )}
           </article>
 
+          {/* --- 메모 패널 --- */}
           <article
             className={`${styles.memoPanel} ${styles.panelEntrance}`}
             style={{ '--enter-delay': '240ms' }}
@@ -1444,16 +827,21 @@ function ChatHistoryTab({
                 noteCards.map((item) => (
                   <div key={item.id} className={styles.memoCard}>
                     <strong className={styles.memoTitle}>{item.title}</strong>
-                    <p className={styles.memoDescription}>{item.description}</p>
+                    <p className={styles.memoDescription}>
+                      {item.description}
+                    </p>
                   </div>
                 ))
               ) : (
-                <div className={styles.emptyState}>남아 있는 메모가 없어요.</div>
+                <div className={styles.emptyState}>
+                  남아 있는 메모가 없어요.
+                </div>
               )}
             </div>
           </article>
         </div>
 
+        {/* ===== 오른쪽: 대화 흐름 타임라인 ===== */}
         <article
           className={`${styles.timelinePanel} ${styles.panelEntrance}`}
           style={{ '--enter-delay': '120ms' }}
@@ -1487,15 +875,19 @@ function ChatHistoryTab({
                       <span
                         className={cx(
                           styles.speakerBadge,
-                          isBot ? styles.speakerBadgeBot : styles.speakerBadgeMe
+                          isBot
+                            ? styles.speakerBadgeBot
+                            : styles.speakerBadgeMe
                         )}
                       >
                         {isBot ? 'BOT' : 'ME'}
                       </span>
 
-                      {entry.emotion ? (
-                        <span className={styles.emotionBadge}>{entry.emotion}</span>
-                      ) : null}
+                      {entry.emotion && (
+                        <span className={styles.emotionBadge}>
+                          {entry.emotion}
+                        </span>
+                      )}
 
                       <span className={styles.timeBadge}>{entry.time}</span>
                     </div>
@@ -1512,7 +904,9 @@ function ChatHistoryTab({
                 );
               })
             ) : (
-              <div className={styles.emptyState}>아직 정리된 대화 기록이 없어요.</div>
+              <div className={styles.emptyState}>
+                아직 정리된 대화 기록이 없어요.
+              </div>
             )}
           </div>
         </article>
