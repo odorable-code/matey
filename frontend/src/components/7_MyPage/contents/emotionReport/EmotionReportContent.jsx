@@ -29,43 +29,6 @@ import styles from './EmotionReportContent.module.css';
 import EmotionTab from './tabs/EmotionTab';
 import ChatHistoryTab from './tabs/ChatHistoryTab';
 import useEmotionReport from '../../hooks/emotionReport/useEmotionReport';
-
-function EmotionReportContentRequest() {
-  const {
-    selectedPeriod,      // 기간 (7d, 30d 등)
-    selectedBotKey,      // 동물 키 (cat, bear 등)
-    handlePeriodChange,
-    handleBotChange,     // 동물 변경 함수
-    // ... 기타 필요한 변수들
-  } = useEmotionReport();
-
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!selectedPeriod || !selectedBotKey) return;
-
-      try {
-        console.log(`서버 요청: 동물(${selectedBotKey}), 기간(${selectedPeriod})`);
-        
-        const response = await fetch(
-          `http://localhost:8000/api/report?period=${selectedPeriod}&bot=${selectedBotKey}`
-        );
-        
-        const result = await response.json();
-        console.log("서버 응답 데이터:", result);
-
-        // TODO: 여기서 받은 result를 상태에 저장하여 화면을 업데이트하세요.
-        
-      } catch (error) {
-        console.error("데이터 로드 실패:", error);
-      }
-    };
-
-    fetchData();
-  }, [selectedPeriod, selectedBotKey]); // [중요] 두 값 중 하나만 바뀌어도 다시 실행됩니다.
-
-  // ... 나머지 리턴 코드
-}
-
 /* =========================
    className 합칠 때 쓰는 간단 함수
 ========================= */
@@ -137,6 +100,38 @@ function EmotionReportContent() {
     handleBotChange,
     handleDateChange,
   } = useEmotionReport();
+
+  /* =========================
+      2. [추가] 서버 데이터 요청 로직 (useEffect)
+      - 사용자가 기간(Period)이나 동물(Bot)을 클릭해 상태가 변하면 실행됩니다.
+  ========================= */
+  useEffect(() => {
+    const fetchData = async (period, botSort) => {
+      // 초기 렌더링 시 값이 없을 경우를 대비한 가드 코드
+      if (!selectedPeriod || !selectedBotKey) return;
+
+      try {
+        console.log(`[서버 요청] 동물: ${selectedBotKey}, 기간: ${selectedPeriod}`);
+        
+        const response = await fetch(
+          `http://localhost:8000/api/report?period=${selectedPeriod}&bot=${selectedBotKey}`
+        );
+        
+        if (!response.ok) throw new Error('Network response was not ok');
+        
+        const result = await response.json();
+        console.log("서버 응답 데이터 수신 완료:", result);
+
+        // TODO: 여기서 받아온 result를 setReportData(result) 처럼 
+        // 훅 내부 상태에 업데이트하는 로직이 추가되어야 화면이 바뀝니다.
+        
+      } catch (error) {
+        console.error("감정 리포트 데이터 로드 실패:", error);
+      }
+    };
+
+    fetchData();
+  }, [selectedPeriod, selectedBotKey]); // [중요] 사용자가 클릭해서 값이 바뀔 때마다 자동 실행
 
   /* =========================
      탭 옵션 / 기간 옵션 기본값 보정
@@ -301,8 +296,11 @@ function EmotionReportContent() {
           <EmotionTab
             data={emotionTabData}
             reportData={reportData}
+            //선택한 봇 키
             selectedBotKey={selectedBotKey}
+            //기간선택에서 선택한 기간 종류로 7d, 30d, 90d가 들어감
             selectedPeriod={currentPeriodKey}
+            //봇 클릭했을 때 실행할 함수
             onBotChange={handleBotChange}
             botOptions={botOptions}
           />

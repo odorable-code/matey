@@ -583,27 +583,27 @@ function EmotionTab({
                   <h3 className={styles.reportTitle}>
                     {activeHero.name}가 작성한 감정 리포트
                   </h3>
-                  <p className={styles.reportSubtitle}>
+                  {/* <p className={styles.reportSubtitle}>
                     {selectedPeriodLabel} 동안 반복된 감정 흐름을 {activeHero.typeLabel} 톤으로
                     정리했어요.
-                  </p>
+                  </p> */}
                 </div>
               </div>
 
               <p className={styles.reportDescription}>{activeHero.summary}</p>
 
-              <div className={styles.reportChipRow}>
+              {/* <div className={styles.reportChipRow}>
                 {(activeHero.chips || []).slice(0, 3).map((chip) => (
                   <span key={chip} className={styles.reportChip}>
                     {chip}
                   </span>
                 ))}
-              </div>
+              </div> */}
             </div>
           </div>
 
           <div className={styles.reportSummaryList}>
-            {(activeHero.bullets || []).slice(0, 3).map((point) => (
+            {(activeHero.bullets || []).slice(0, 1).map((point) => (
               <div key={point} className={styles.reportSummaryItem}>
                 {point}
               </div>
@@ -749,7 +749,7 @@ function EmotionTab({
           <div className={styles.panelHeader}>
             <div>
               <span className={styles.panelEyebrow}>TOPICS & TIMELINE</span>
-              <h3 className={styles.panelTitle}>자주 나온 주제</h3>
+              <h3 className={styles.panelTitle}>자주 나온 주제 top3</h3>
             </div>
           </div>
 
