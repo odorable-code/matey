@@ -269,7 +269,7 @@
   display: grid;
   gap: 10px;
   height: 100%;
-  align-content: center;
+  /* align-content: center; */
 }
 
 .reportSummaryItem {
