@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { communityAPI } from '../../utils/api';
@@ -23,10 +23,22 @@ function excerpt(text, max = 120) {
   return t.length > max ? `${t.slice(0, max)}…` : t;
 }
 
+/** 게시글 목록 상단 칩에서 숨김: 공지(notification=0), 인기봇 랭킹 전용 카테고리 */
+function hideCategoryFromPostListChips(c) {
+  const notif = c?.notification;
+  if (notif === 0 || notif === '0') return true;
+  const raw = String(c?.name || '').trim();
+  if (!raw) return false;
+  const compact = raw.replace(/\s+/g, '');
+  if (/인기봇\s*랭킹|인기봇랭킹/i.test(raw)) return true;
+  if (compact.includes('인기봇') && compact.includes('랭킹')) return true;
+  return false;
+}
+
 function CommunityPostList() {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
-  const showWriteBtn = canWriteCommunityPosts(user);
+  const canWrite = canWriteCommunityPosts(user);
   const [categories, setCategories] = useState([]);
   const [categoryId, setCategoryId] = useState('');
   const [keywordInput, setKeywordInput] = useState('');
@@ -38,6 +50,17 @@ function CommunityPostList() {
   const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState('');
   const limit = 20;
+
+  const chipCategories = useMemo(
+    () => (Array.isArray(categories) ? categories.filter((c) => !hideCategoryFromPostListChips(c)) : []),
+    [categories]
+  );
+
+  useEffect(() => {
+    if (categoryId === '') return;
+    const ok = chipCategories.some((c) => String(c.categoryId) === categoryId);
+    if (!ok) setCategoryId('');
+  }, [chipCategories, categoryId]);
 
   const loadCategories = useCallback(async () => {
     const list = await communityAPI.getCategories();
@@ -160,11 +183,23 @@ function CommunityPostList() {
             메이티와 함께한 이야기를 나눠요. 카테고리와 검색으로 글을 모아 볼 수 있어요.
           </p>
         </div>
-        {showWriteBtn ? (
+        {canWrite ? (
           <Link to="/community/write" className={styles.writeBtn}>
-            새 글 작성
+            글쓰기
           </Link>
-        ) : null}
+        ) : !isAuthenticated ? (
+          <Link to="/login" state={{ from: '/community/write' }} className={styles.writeBtn}>
+            글쓰기
+          </Link>
+        ) : (
+          <span
+            className={`${styles.writeBtn} ${styles.writeBtnDisabled}`}
+            title="게시글 작성은 운영자(관리자·부관리자)만 할 수 있어요."
+            role="note"
+          >
+            글쓰기
+          </span>
+        )}
       </div>
 
       <form className={styles.searchRow} onSubmit={handleSearch}>
@@ -193,7 +228,7 @@ function CommunityPostList() {
         >
           전체
         </button>
-        {categories.map((c) => {
+        {chipCategories.map((c) => {
           const id = String(c.categoryId);
           const active = categoryId === id;
           return (

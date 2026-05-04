@@ -429,6 +429,18 @@
   box-shadow: 0 16px 30px rgba(120, 140, 255, 0.42);
 }
 
+.writeBtnDisabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  box-shadow: none;
+  background: linear-gradient(120deg, #b8c4e0 0%, #c4b8e0 55%, #e0c4e8 100%);
+}
+
+.writeBtnDisabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
 .searchRow {
   margin-bottom: 16px;
 }
