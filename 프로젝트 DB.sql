@@ -331,7 +331,6 @@ CREATE TABLE `COMMENT` (
 	`parent_comment_id`	BIGINT	NULL	DEFAULT NULL,
 	`content`	TEXT	NOT NULL,
 	`like_count`	INT	NOT NULL	DEFAULT 0,
-	`like_count`	INT	NOT NULL	DEFAULT 0,
 	`report_count`	INT	NOT NULL	DEFAULT 0,
 	`created_at`	TIMESTAMP	NOT NULL	DEFAULT CURRENT_TIMESTAMP,
     
