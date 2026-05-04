@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { communityAPI } from '../../utils/api';
 import { isCommunityStaffPublisher } from '../../utils/communityWriteAccess';
 import styles from './CommunityPage.module.css';

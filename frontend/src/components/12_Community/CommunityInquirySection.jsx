@@ -1,6 +1,6 @@
 import React, { useEffect, useId, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { supportPublicAPI, supportUserAPI } from '../../utils/api';
 import { filterInquiryReasons } from './communitySupportReasons';
 import styles from './CommunityPage.module.css';
