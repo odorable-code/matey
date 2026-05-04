@@ -180,13 +180,15 @@ CREATE TABLE `SUPPORT_ANSWER` (
 
 CREATE TABLE `EMOTION_SCORE` (
 	`score_id`	BIGINT	NOT NULL PRIMARY KEY AUTO_INCREMENT,
+	`user_id`	BIGINT	NOT NULL,
 	`emotion_id`	BIGINT	NOT NULL,
 	`confidence`	DECIMAL(6,4)	NOT NULL,
 	`date`	DATE	NULL,
 	`total_count`	INT	NOT NULL	DEFAULT 0,
 	`count`	INT	NOT NULL	DEFAULT 0,
     
-    FOREIGN KEY(`emotion_id`) REFERENCES `EMOTION_CATEGORY`(`emotion_id`)
+    FOREIGN KEY(`emotion_id`) REFERENCES `EMOTION_CATEGORY`(`emotion_id`),
+	FOREIGN KEY(`user_id`) REFERENCES `USER`(`user_id`)
 );
 
 CREATE TABLE `BOT_LETTER` (
@@ -403,5 +405,4 @@ INSERT INTO CATEGORY (name, notification)
 VALUES
 ('일상', 1),
 ('고민', 1),
-('인기봇 랭킹', 1),
 ('공지', 0);
