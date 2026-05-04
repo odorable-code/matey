@@ -405,5 +405,4 @@ INSERT INTO CATEGORY (name, notification)
 VALUES
 ('일상', 1),
 ('문의', 1),
-('인기봇 랭킹', 1),
 ('공지', 0);
