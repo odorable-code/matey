@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import styles from './DashboardContent.module.css';
 import useAnimatedNumber, { usePrefersReducedMotion } from '../hooks/useAnimatedNumber';
+import { myPageAPI } from '../../../utils/api';
 
 const STAGE_FADE_DURATION = 900;
 const DAILY_GREETING_STORAGE_KEY = 'matey-daily-greeting-last-seen-v2';
@@ -45,9 +46,6 @@ function getLocalDateKey(date = new Date()) {
 
 export default function DashboardContent({
   onInteractionSelect,
-  intimacyLevel = 4,
-  intimacyExp = 18,
-  intimacyMaxExp = 100,
 }) {
   const orbitAnchorRef = useRef(null);
   const fadeTimerRef = useRef(null);
@@ -59,8 +57,19 @@ export default function DashboardContent({
   const [fadeOutMode, setFadeOutMode] = useState(null);
   const [isOrbitOpen, setIsOrbitOpen] = useState(false);
   const [isGreetingVisible, setIsGreetingVisible] = useState(false);
+  const [botData, setBotData] = useState({ level: 4, remainPoint: 82, progressPercent: 68 });
+
+  useEffect(() => {
+    myPageAPI.getBotMenu().then(data => {
+      if (data) setBotData((prev) => ({ ...prev, ...data }));
+    }).catch(console.error);
+  }, []);
 
   const prefersReducedMotion = usePrefersReducedMotion();
+
+  const intimacyMaxExp = 100;
+  const intimacyLevel = botData.level || 4;
+  const intimacyExp = botData.progressPercent || 18;
 
   const animatedIntimacyLevel = useAnimatedNumber(intimacyLevel, 900, {
     reducedMotion: prefersReducedMotion,
@@ -275,6 +284,16 @@ export default function DashboardContent({
 
   const handleInteractionClick = (item) => {
     setIsGreetingVisible(false);
+
+    // Call the API to trigger interaction
+    myPageAPI.interactBot({ actionType: item.key })
+      .then(updatedData => {
+        if (updatedData) {
+          setBotData((prev) => ({ ...prev, ...updatedData }));
+        }
+      })
+      .catch(console.error);
+
     onInteractionSelect?.(item.key);
     setIsOrbitOpen(false);
   };

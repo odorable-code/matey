@@ -458,3 +458,13 @@ export const myPageAPI = {
   updateSettings: (data) => request('/api/mypage/settings', { method: 'PATCH', body: data }),
 };
 
+// ==========================================
+// Emotion Report API
+// ==========================================
+
+export const emotionReportAPI = {
+  getDashboard: () => request('/api/emotion-report/dashboard'),
+  getList: () => request('/api/emotion-report'),
+  getDetail: (analysisId) => request(`/api/emotion-report/${analysisId}`),
+};
+
