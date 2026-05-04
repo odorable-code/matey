@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { communityAPI } from '../../utils/api';
-import { canWriteCommunityPosts } from '../../utils/communityWriteAccess';
+import { isCommunityStaffPublisher } from '../../utils/communityWriteAccess';
 import styles from './CommunityPage.module.css';
 
 function resolveUserId(user) {
@@ -34,7 +34,7 @@ function CommunityPostForm() {
   const myId = useMemo(() => resolveUserId(user), [user]);
 
   const categoryOptions = useMemo(() => {
-    const staff = canWriteCommunityPosts(user);
+    const staff = isCommunityStaffPublisher(user);
     const allowed = (categories || []).filter((c) => staff || isWritableCategoryForUser(c));
     if (isEdit && categoryId) {
       const cur = (categories || []).find((c) => String(c.categoryId) === String(categoryId));
@@ -56,13 +56,6 @@ function CommunityPostForm() {
       navigate('/login', { state: { from: isEdit ? `/community/posts/${postId}/edit` : '/community/write' } });
     }
   }, [authLoading, isAuthenticated, isEdit, navigate, postId]);
-
-  useEffect(() => {
-    if (authLoading || !isAuthenticated || isEdit) return;
-    if (user == null) return;
-    if (canWriteCommunityPosts(user)) return;
-    navigate('/community', { replace: true });
-  }, [authLoading, isAuthenticated, isEdit, user, navigate]);
 
   useEffect(() => {
     let cancelled = false;

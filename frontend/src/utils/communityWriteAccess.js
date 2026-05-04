@@ -1,8 +1,7 @@
 /**
- * 커뮤니티 게시글 신규 작성은 운영자(ADMIN·SUBADMIN 등)만 허용.
- * 일반 회원은 기존 본인 글 수정·삭제 등은 별도 화면 로직으로 처리.
+ * 공지(notification=0) 등 운영 전용 카테고리 글 작성·해당 카테고리로 수정 허용 역할.
  */
-export function canWriteCommunityPosts(user) {
+export function isCommunityStaffPublisher(user) {
   const r = String(user?.role || user?.roleCode || user?.roles?.[0] || '').trim().toUpperCase();
   return (
     r === 'ADMIN' ||
@@ -13,3 +12,4 @@ export function canWriteCommunityPosts(user) {
     r === 'ROLE_SUPER_ADMIN'
   );
 }
+

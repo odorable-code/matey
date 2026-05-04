@@ -101,12 +101,6 @@ public class CommunityService {
 
     @Transactional
     public Long createPost(PostCreateRequestDTO dto, long userId, String roleCode) {
-        if (!isCommunityPostPublisherRole(roleCode)) {
-            throw new ResponseStatusException(
-                    HttpStatus.FORBIDDEN,
-                    "게시글 작성은 운영자(관리자·부관리자)만 할 수 있어요."
-            );
-        }
         assertCategoryWritableByUser(dto.getCategoryId(), roleCode);
         postDAO.insertPost(dto, userId);
         return dto.getPostId();

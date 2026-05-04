@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { communityAPI } from '../../utils/api';
-import { canWriteCommunityPosts } from '../../utils/communityWriteAccess';
 import styles from './CommunityPage.module.css';
 
 function formatDateTime(value) {
@@ -37,8 +36,8 @@ function hideCategoryFromPostListChips(c) {
 
 function CommunityPostList() {
   const navigate = useNavigate();
-  const { isAuthenticated, user } = useAuth();
-  const canWrite = canWriteCommunityPosts(user);
+  const { isAuthenticated } = useAuth();
+  const canWrite = isAuthenticated;
   const [categories, setCategories] = useState([]);
   const [categoryId, setCategoryId] = useState('');
   const [keywordInput, setKeywordInput] = useState('');
@@ -187,18 +186,10 @@ function CommunityPostList() {
           <Link to="/community/write" className={styles.writeBtn}>
             글쓰기
           </Link>
-        ) : !isAuthenticated ? (
+        ) : (
           <Link to="/login" state={{ from: '/community/write' }} className={styles.writeBtn}>
             글쓰기
           </Link>
-        ) : (
-          <span
-            className={`${styles.writeBtn} ${styles.writeBtnDisabled}`}
-            title="게시글 작성은 운영자(관리자·부관리자)만 할 수 있어요."
-            role="note"
-          >
-            글쓰기
-          </span>
         )}
       </div>
 
