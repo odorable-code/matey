@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { communityAPI } from '../../utils/api';
+import { canWriteCommunityPosts } from '../../utils/communityWriteAccess';
 import styles from './CommunityPage.module.css';
 
 function formatDateTime(value) {
@@ -22,27 +24,20 @@ function excerpt(text, max = 120) {
 }
 
 function CommunityPostList() {
+  const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuth();
+  const showWriteBtn = canWriteCommunityPosts(user);
   const [categories, setCategories] = useState([]);
   const [categoryId, setCategoryId] = useState('');
   const [keywordInput, setKeywordInput] = useState('');
   const [appliedKeyword, setAppliedKeyword] = useState('');
   const [posts, setPosts] = useState([]);
-  const [notices, setNotices] = useState([]);
   const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState('');
   const limit = 20;
-
-  const loadNotices = useCallback(async () => {
-    try {
-      const list = await communityAPI.getNotices();
-      setNotices(Array.isArray(list) ? list : []);
-    } catch {
-      setNotices([]);
-    }
-  }, []);
 
   const loadCategories = useCallback(async () => {
     const list = await communityAPI.getCategories();
@@ -79,7 +74,7 @@ function CommunityPostList() {
     let cancelled = false;
     (async () => {
       try {
-        await Promise.all([loadCategories(), loadNotices()]);
+        await loadCategories();
       } catch {
         /* ignore */
       }
@@ -88,7 +83,7 @@ function CommunityPostList() {
     return () => {
       cancelled = true;
     };
-  }, [loadCategories, loadNotices]);
+  }, [loadCategories]);
 
   useEffect(() => {
     let cancelled = false;
@@ -117,6 +112,26 @@ function CommunityPostList() {
     setAppliedKeyword(keywordInput.trim());
   };
 
+  const handlePostCardLike = async (event, p) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: `/community/posts/${p.postId}` } });
+      return;
+    }
+    setError('');
+    try {
+      const res = await communityAPI.togglePostLike(p.postId);
+      setPosts((prev) =>
+        prev.map((row) =>
+          row.postId === p.postId ? { ...row, likedByMe: res.liked, likeCount: res.likeCount } : row
+        )
+      );
+    } catch (e) {
+      setError(e?.message || '좋아요 처리에 실패했어요.');
+    }
+  };
+
   const handleLoadMore = async () => {
     setLoadingMore(true);
     setError('');
@@ -138,17 +153,6 @@ function CommunityPostList() {
 
   return (
     <div>
-      {notices.length > 0 && (
-        <div className={styles.noticeStrip}>
-          {notices.slice(0, 2).map((n) => (
-            <div key={n.noticeId || n.title}>
-              <strong>{n.title}</strong>
-              {n.content ? excerpt(n.content, 160) : null}
-            </div>
-          ))}
-        </div>
-      )}
-
       <div className={styles.pageHead}>
         <div className={styles.pageHeadMain}>
           <h1 className={styles.pageTitle}>커뮤니티</h1>
@@ -156,9 +160,11 @@ function CommunityPostList() {
             메이티와 함께한 이야기를 나눠요. 카테고리와 검색으로 글을 모아 볼 수 있어요.
           </p>
         </div>
-        <Link to="/community/write" className={styles.writeBtn}>
-          새 글 작성
-        </Link>
+        {showWriteBtn ? (
+          <Link to="/community/write" className={styles.writeBtn}>
+            새 글 작성
+          </Link>
+        ) : null}
       </div>
 
       <form className={styles.searchRow} onSubmit={handleSearch}>
@@ -212,23 +218,36 @@ function CommunityPostList() {
       ) : (
         <div className={styles.postList}>
           {posts.length === 0 ? (
-            <p className={styles.hint}>아직 글이 없어요. 첫 글을 남겨 보세요.</p>
+            <p className={styles.hint}>아직 글이 없어요.</p>
           ) : (
             posts.map((p) => (
-              <Link
-                key={p.postId}
-                to={`/community/posts/${p.postId}`}
-                className={styles.postCard}
-              >
-                <div className={styles.postMeta}>
-                  <span>{p.categoryName || '카테고리'}</span>
-                  <span>{p.userNickname || '익명'}</span>
-                  <span>조회 {p.viewCount ?? 0}</span>
-                  <span>{formatDateTime(p.createdAt)}</span>
+              <div key={p.postId} className={styles.postCard}>
+                <Link to={`/community/posts/${p.postId}`} className={styles.postCardLink}>
+                  <div className={styles.postMeta}>
+                    <span>{p.categoryName || '카테고리'}</span>
+                    <span>{p.userNickname || '익명'}</span>
+                    <span>조회 {p.viewCount ?? 0}</span>
+                    <span>{formatDateTime(p.createdAt)}</span>
+                  </div>
+                  <h2 className={styles.postTitle}>{p.title}</h2>
+                  <p className={styles.postExcerpt}>{excerpt(p.content)}</p>
+                </Link>
+                <div className={styles.postCardFooter}>
+                  <button
+                    type="button"
+                    className={`${styles.likeBtn} ${styles.likeBtnSm} ${
+                      p.likedByMe ? styles.likeBtnActive : ''
+                    }`}
+                    onClick={(e) => handlePostCardLike(e, p)}
+                    aria-pressed={!!p.likedByMe}
+                  >
+                    <span className={styles.likeIcon} aria-hidden>
+                      ♥
+                    </span>
+                    <span>좋아요 {p.likeCount ?? 0}</span>
+                  </button>
                 </div>
-                <h2 className={styles.postTitle}>{p.title}</h2>
-                <p className={styles.postExcerpt}>{excerpt(p.content)}</p>
-              </Link>
+              </div>
             ))
           )}
         </div>

@@ -23,6 +23,7 @@ import CommunityPostDetail from './components/12_Community/CommunityPostDetail';
 import CommunityPostForm from './components/12_Community/CommunityPostForm';
 import CommunityFaqView from './components/12_Community/CommunityFaqView';
 import CommunityInquiryPage from './components/12_Community/CommunityInquiryPage';
+import CommunityNoticesPage from './components/12_Community/CommunityNoticesPage';
 
 function AuthLoadingScreen() {
   return (
@@ -99,6 +100,7 @@ function AppRoutes() {
 
         <Route path="/community" element={<CommunityLayout />}>
           <Route index element={<CommunityPostList />} />
+          <Route path="notices" element={<CommunityNoticesPage />} />
           <Route path="faq" element={<CommunityFaqView />} />
           <Route path="inquiry" element={<CommunityInquiryPage />} />
           <Route path="write" element={<CommunityPostForm />} />

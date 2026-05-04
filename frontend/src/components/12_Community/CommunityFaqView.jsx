@@ -37,8 +37,8 @@ function CommunityFaqView() {
       </div>
       <h1 className={styles.pageTitle}>FAQ</h1>
       <p className={styles.pageSubtitle} style={{ marginBottom: 20 }}>
-        자주 묻는 질문은 운영팀이 관리해요. 일반 문의는 왼쪽 메뉴의 <strong>문의</strong>에서 접수해 주세요.
-        게시글·댓글 신고는 해당 글 상세 화면의 신고 버튼을 이용해 주세요.
+        일반 문의는 왼쪽 메뉴의 <strong>문의</strong>에서 접수해 주세요. 게시글·댓글 신고는 해당 글 상세 화면의
+        신고 버튼을 이용해 주세요.
       </p>
       {error ? <p className={styles.errorText}>{error}</p> : null}
       {loading ? (

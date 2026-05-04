@@ -421,6 +421,17 @@ export const communityAPI = {
     request(`/api/community/posts/${postId}/comments/${commentId}`, {
       method: 'DELETE',
     }),
+  togglePostLike: (postId) =>
+    request(`/api/community/posts/${postId}/like`, { method: 'POST' }),
+  toggleCommentLike: (postId, commentId) =>
+    request(`/api/community/posts/${postId}/comments/${commentId}/like`, {
+      method: 'POST',
+    }),
+  drawRandomWorryPost: () => request('/api/community/spotlight/worry-draw'),
+  getYearEndBotRanking: (year) =>
+    request(
+      `/api/community/spotlight/bot-ranking${year != null && year !== '' ? `?year=${encodeURIComponent(String(year))}` : ''}`
+    ),
 };
 
 // FAQ·문의 분류는 비로그인 조회 가능 (기획: FAQ는 관리자만 편집, 사용자는 읽기)

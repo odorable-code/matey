@@ -2,16 +2,12 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { communityAPI } from '../../utils/api';
+import { canWriteCommunityPosts } from '../../utils/communityWriteAccess';
 import styles from './CommunityPage.module.css';
 
 function resolveUserId(user) {
   if (!user) return null;
   return user.userId ?? user.id ?? user.user_id ?? null;
-}
-
-function isAdminUser(user) {
-  const r = String(user?.role || user?.roleCode || user?.roles?.[0] || '').trim().toUpperCase();
-  return r === 'ADMIN' || r === 'ROLE_ADMIN';
 }
 
 /** CATEGORY.notification — 0이면 일반 회원 작성 불가(공지) */
@@ -38,8 +34,8 @@ function CommunityPostForm() {
   const myId = useMemo(() => resolveUserId(user), [user]);
 
   const categoryOptions = useMemo(() => {
-    const admin = isAdminUser(user);
-    const allowed = (categories || []).filter((c) => admin || isWritableCategoryForUser(c));
+    const staff = canWriteCommunityPosts(user);
+    const allowed = (categories || []).filter((c) => staff || isWritableCategoryForUser(c));
     if (isEdit && categoryId) {
       const cur = (categories || []).find((c) => String(c.categoryId) === String(categoryId));
       if (cur && !allowed.some((c) => String(c.categoryId) === String(categoryId))) {
@@ -60,6 +56,13 @@ function CommunityPostForm() {
       navigate('/login', { state: { from: isEdit ? `/community/posts/${postId}/edit` : '/community/write' } });
     }
   }, [authLoading, isAuthenticated, isEdit, navigate, postId]);
+
+  useEffect(() => {
+    if (authLoading || !isAuthenticated || isEdit) return;
+    if (user == null) return;
+    if (canWriteCommunityPosts(user)) return;
+    navigate('/community', { replace: true });
+  }, [authLoading, isAuthenticated, isEdit, user, navigate]);
 
   useEffect(() => {
     let cancelled = false;
@@ -175,7 +178,7 @@ function CommunityPostForm() {
             {categoryOptions.map((c) => (
               <option key={c.categoryId} value={c.categoryId}>
                 {c.name}
-                {!isWritableCategoryForUser(c) ? ' (관리자 전용)' : ''}
+                {!isWritableCategoryForUser(c) ? ' (운영자 전용)' : ''}
               </option>
             ))}
           </select>

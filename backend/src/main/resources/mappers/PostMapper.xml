@@ -34,6 +34,17 @@
             c.name as categoryName,
             p.created_at as createdAt,
             p.updated_at as updatedAt
+            <choose>
+                <when test="viewerUserId != null">
+                    , EXISTS(
+                        SELECT 1 FROM user_post_like upl
+                        WHERE upl.post_id = p.post_id AND upl.user_id = #{viewerUserId}
+                    ) AS likedByMe
+                </when>
+                <otherwise>
+                    , FALSE AS likedByMe
+                </otherwise>
+            </choose>
         FROM POST p
         JOIN USER u ON p.user_id = u.user_id
         JOIN CATEGORY c ON p.category_id = c.category_id
@@ -67,6 +78,17 @@
             c.name as categoryName,
             p.created_at as createdAt,
             p.updated_at as updatedAt
+            <choose>
+                <when test="viewerUserId != null">
+                    , EXISTS(
+                        SELECT 1 FROM user_post_like upl
+                        WHERE upl.post_id = p.post_id AND upl.user_id = #{viewerUserId}
+                    ) AS likedByMe
+                </when>
+                <otherwise>
+                    , FALSE AS likedByMe
+                </otherwise>
+            </choose>
         FROM POST p
         JOIN USER u ON p.user_id = u.user_id
         JOIN CATEGORY c ON p.category_id = c.category_id
@@ -117,5 +139,21 @@
         WHERE post_id = #{postId}
           AND user_id = #{userId}
     </delete>
+
+    <insert id="insertPostLike">
+        INSERT INTO user_post_like (user_id, post_id)
+        VALUES (#{userId}, #{postId})
+    </insert>
+
+    <delete id="deletePostLike">
+        DELETE FROM user_post_like
+        WHERE user_id = #{userId} AND post_id = #{postId}
+    </delete>
+
+    <update id="adjustPostLikeCount">
+        UPDATE POST
+        SET like_count = GREATEST(0, like_count + #{delta})
+        WHERE post_id = #{postId}
+    </update>
 </mapper>
 

@@ -499,15 +499,6 @@ export default function AuthPage() {
                 <div className="matey-auth-socials">
                   <button
                     type="button"
-                    className="matey-auth-social matey-auth-social--google"
-                    onClick={() => handleSocialLogin('google')}
-                  >
-                    <span className="matey-auth-social__icon">G</span>
-                    <span>Google로 계속하기</span>
-                  </button>
-
-                  <button
-                    type="button"
                     className="matey-auth-social matey-auth-social--kakao"
                     onClick={() => handleSocialLogin('kakao')}
                   >

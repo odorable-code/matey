@@ -2,8 +2,8 @@ import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import sideStyles from '../7_MyPage/layout/SideMenu.module.css';
 
-const FAQ_PATH = '/community/faq';
 const INQUIRY_PATH = '/community/inquiry';
+const NOTICES_PATH = '/community/notices';
 
 function isPostsSection(pathname) {
   return (
@@ -22,10 +22,8 @@ function CommunitySideNav() {
         <li className={sideStyles.menuItem}>
           <NavLink
             to="/community"
-            className={({ isActive }) =>
-              `${sideStyles.menuButton} ${
-                isActive || isPostsSection(pathname) ? sideStyles.active : ''
-              }`
+            className={() =>
+              `${sideStyles.menuButton} ${isPostsSection(pathname) ? sideStyles.active : ''}`
             }
             style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
           >
@@ -37,15 +35,15 @@ function CommunitySideNav() {
         </li>
         <li className={sideStyles.menuItem}>
           <NavLink
-            to={FAQ_PATH}
+            to={NOTICES_PATH}
             className={({ isActive }) =>
               `${sideStyles.menuButton} ${isActive ? sideStyles.active : ''}`
             }
             style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
           >
             <span className={sideStyles.textGroup}>
-              <span className={sideStyles.label}>FAQ</span>
-              <span className={sideStyles.description}>운영팀이 관리하는 자주 묻는 질문</span>
+              <span className={sideStyles.label}>공지</span>
+              <span className={sideStyles.description}>공지사항</span>
             </span>
           </NavLink>
         </li>
@@ -59,7 +57,8 @@ function CommunitySideNav() {
           >
             <span className={sideStyles.textGroup}>
               <span className={sideStyles.label}>문의</span>
-              <span className={sideStyles.description}>일반 문의 접수·답변은 마이페이지에서</span>
+              <span className={sideStyles.description}>일반문의</span>
+              <span className={sideStyles.description}>접수 답변은 마이페이지에서</span>
             </span>
           </NavLink>
         </li>

@@ -68,6 +68,8 @@ function CommunityPostDetail() {
   const [reportOpen, setReportOpen] = useState(false);
   const [reportTarget, setReportTarget] = useState('POST');
   const [reportComment, setReportComment] = useState(null);
+  const [postLikeBusy, setPostLikeBusy] = useState(false);
+  const [commentLikeBusyId, setCommentLikeBusyId] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -114,6 +116,54 @@ function CommunityPostDetail() {
     setReportComment(comment);
     setReportTarget('COMMENT');
     setReportOpen(true);
+  };
+
+  const handleTogglePostLike = async () => {
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: `/community/posts/${postId}` } });
+      return;
+    }
+    setPostLikeBusy(true);
+    setError('');
+    try {
+      const res = await communityAPI.togglePostLike(postId);
+      setPost((prev) =>
+        prev
+          ? {
+              ...prev,
+              likedByMe: res.liked,
+              likeCount: res.likeCount,
+            }
+          : prev
+      );
+    } catch (e) {
+      setError(e?.message || '좋아요 처리에 실패했어요.');
+    } finally {
+      setPostLikeBusy(false);
+    }
+  };
+
+  const handleToggleCommentLike = async (commentId) => {
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: `/community/posts/${postId}` } });
+      return;
+    }
+    setCommentLikeBusyId(commentId);
+    setError('');
+    try {
+      const res = await communityAPI.toggleCommentLike(postId, commentId);
+      setComments((prev) =>
+        prev.map((c) =>
+          Number(c.commentId) === Number(commentId)
+            ? { ...c, likedByMe: res.liked, likeCount: res.likeCount }
+            : c
+        )
+      );
+    } catch (e) {
+      setError(e?.message || '좋아요 처리에 실패했어요.');
+    } finally {
+      setCommentLikeBusyId(null);
+    }
   };
 
   const handleCommentSubmit = async (event) => {
@@ -234,6 +284,21 @@ function CommunityPostDetail() {
       </div>
       <div className={styles.detailBody}>{post.content}</div>
 
+      <div className={styles.likeRow}>
+        <button
+          type="button"
+          className={`${styles.likeBtn} ${post.likedByMe ? styles.likeBtnActive : ''}`}
+          onClick={handleTogglePostLike}
+          disabled={postLikeBusy}
+          aria-pressed={!!post.likedByMe}
+        >
+          <span className={styles.likeIcon} aria-hidden>
+            ♥
+          </span>
+          <span>좋아요 {post.likeCount ?? 0}</span>
+        </button>
+      </div>
+
       <h2 className={styles.sectionTitle}>{interactionLabels.sectionWithCount(comments.length)}</h2>
       {comments.length === 0 ? (
         <p className={styles.hint}>{interactionLabels.emptyHint}</p>
@@ -264,6 +329,22 @@ function CommunityPostDetail() {
                 )}
               </div>
               <p className={styles.commentText}>{c.content}</p>
+              <div className={styles.commentLikeRow}>
+                <button
+                  type="button"
+                  className={`${styles.likeBtn} ${styles.likeBtnSm} ${
+                    c.likedByMe ? styles.likeBtnActive : ''
+                  }`}
+                  onClick={() => handleToggleCommentLike(c.commentId)}
+                  disabled={commentLikeBusyId === c.commentId}
+                  aria-pressed={!!c.likedByMe}
+                >
+                  <span className={styles.likeIcon} aria-hidden>
+                    ♥
+                  </span>
+                  <span>좋아요 {c.likeCount ?? 0}</span>
+                </button>
+              </div>
             </article>
           );
         })
