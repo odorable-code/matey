@@ -65,4 +65,11 @@ public class SupportController {
 
         return ResponseEntity.ok(response);
     }
+
+    // 4. 문의/신고 분류(Reason) 리스트 조회
+    @GetMapping("/reasons")
+    public ResponseEntity<Map<String, Object>> getSupportReasons() {
+        List<kr.hi.matey.dto.SupportReasonDTO> reasons = supportService.getSupportReasons();
+        return ResponseEntity.ok(Map.of("reasons", reasons));
+    }
 }

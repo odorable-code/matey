@@ -2,7 +2,11 @@ package kr.hi.matey.service;
 
 import java.util.Map;
 
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -41,17 +45,19 @@ public class NaverOAuthProvider implements OAuthProvider {
     public OAuthUserInfo getUserInfo(String code, String state) {
         OAuthProperties.Provider p = oAuthProperties.getProviders().get("naver");
 
-        OAuthTokenResponse token = webClient.get()
-                .uri(uriBuilder -> uriBuilder
-                        .scheme("https")
-                        .host("nid.naver.com")
-                        .path("/oauth2.0/token")
-                        .queryParam("grant_type", "authorization_code")
-                        .queryParam("client_id", p.getClientId())
-                        .queryParam("client_secret", p.getClientSecret())
-                        .queryParam("code", code)
-                        .queryParam("state", state)
-                        .build())
+        // 네이버 공식 예제는 토큰 요청에 redirect_uri(콜백 URL) 포함 — 인가 단계와 동일해야 함
+        MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
+        form.add("grant_type", "authorization_code");
+        form.add("client_id", p.getClientId());
+        form.add("client_secret", p.getClientSecret());
+        form.add("redirect_uri", p.getRedirectUri());
+        form.add("code", code);
+        form.add("state", state);
+
+        OAuthTokenResponse token = webClient.post()
+                .uri(p.getTokenUri())
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .body(BodyInserters.fromFormData(form))
                 .retrieve()
                 .bodyToMono(OAuthTokenResponse.class)
                 .block();

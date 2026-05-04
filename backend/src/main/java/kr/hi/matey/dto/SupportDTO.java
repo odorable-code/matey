@@ -6,13 +6,18 @@ import lombok.Data;
 
 @Data
 public class SupportDTO {
-    private long supportId;
-    private long userId;
+    private Long supportId;
+    private Long userId;
     private String title;
     private String content;
-    private String status;   // 접수됨, 검토중, 답변 완료, 해결됨 등
-    private String category; // 일반 문의, 결제 문의, 오류 신고 등
-    private String email;    // 답변 받을 이메일
-    private String createdAt;
-    private String updatedAt;
+    private String status;   // PENDING / DONE 등
+
+    // SUPPORT_REASON 분류
+    private Long supportReasonId;
+    private String reasonName; // JOIN용
+
+    // 사용자 조회 시 마지막 답변만 보여줄 용도
+    private String answerContent;
+
+    private java.time.LocalDateTime createdAt;
 }

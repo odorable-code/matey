@@ -27,8 +27,8 @@ public class CustomUser extends User {
         		// vo.getPassword() → Spring의 password으로 설정
                 vo.getPassword(),
                 // vo.getRole() → SimpleGrantedAuthority를 통해 Spring의 권한(authorities) 목록으로 변환
-                vo.getRole() != null && vo.getRole().getRole_code() != null 
-                ? Arrays.asList(new SimpleGrantedAuthority(vo.getRole().getRole_code()))
+                vo.getRoleCode() != null
+                ? Arrays.asList(new SimpleGrantedAuthority(vo.getRoleCode()))
                 : Arrays.asList(new SimpleGrantedAuthority("ROLE_USER")) // 권한 정보가 없으면 기본값 부여
         		);
         this.user = vo;

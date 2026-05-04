@@ -14,6 +14,8 @@ import DownloadPage from './pages/DownloadPage';
 import AdminAccessDeniedPage from './pages/AdminAccessDeniedPage';
 import ForgotIdPage from './components/5_Auth/ForgotIdPage';
 import ResetPasswordPage from './components/5_Auth/ResetPasswordPage';
+import SocialLoginSuccessPage from './pages/SocialLoginSuccessPage';
+import SocialSignupPage from './pages/SocialSignupPage';
 
 function AuthLoadingScreen() {
   return (
@@ -129,6 +131,17 @@ function AppRoutes() {
           element={
             <PublicOnlyRoute>
               <ResetPasswordPage />
+            </PublicOnlyRoute>
+          }
+        />
+
+        <Route path="/login/social-success" element={<SocialLoginSuccessPage />} />
+
+        <Route
+          path="/signup/social"
+          element={
+            <PublicOnlyRoute>
+              <SocialSignupPage />
             </PublicOnlyRoute>
           }
         />

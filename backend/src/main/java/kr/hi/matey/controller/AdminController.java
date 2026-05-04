@@ -1,10 +1,11 @@
 package kr.hi.matey.controller;
 
 import kr.hi.matey.dto.AdminBatchRequestDTO;
-import kr.hi.matey.dto.AdminLogDTO;
 import kr.hi.matey.dto.FeedbackDTO;
 import kr.hi.matey.dto.UserDTO2;
 import kr.hi.matey.service.AdminService;
+import kr.hi.matey.service.SupportService;
+import kr.hi.matey.service.NoticeService;
 import kr.hi.matey.util.CustomUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -20,11 +21,13 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AdminController {
     private final AdminService adminService;
+    private final SupportService supportService;
+    private final NoticeService noticeService;
 
     // ==========================================
     // 실시간 운영 통계 및 지표
-    // ==========================================
-    
+    //    // ==========================================
+
     @GetMapping("/dashboard/overview")
     public ResponseEntity<Map<String, Object>> getDashboardOverview() {
         return ResponseEntity.ok(adminService.getDashboardOverview());
@@ -67,6 +70,11 @@ public class AdminController {
             @PathVariable Long userId, 
             @RequestBody Map<String, String> body,
             @AuthenticationPrincipal CustomUser user) {
+        String actorRoleCode = user.getUser().getRoleCode();
+        if (!"SUPER_ADMIN".equals(actorRoleCode)) {
+            return ResponseEntity.status(403).body("forbidden");
+        }
+
         String adminID = user.getUsername();
         adminService.updateUserRole(userId, body.get("roleCode"), adminID);
         return ResponseEntity.ok("사용자 권한이 수정되었습니다.");
@@ -131,27 +139,95 @@ public class AdminController {
     }
 
     // ==========================================
-    // 관리자 활동 로그
+    // FAQ 관리 (ADMIN 전용)
     // ==========================================
 
-    @GetMapping("/logs")
-    public ResponseEntity<List<AdminLogDTO>> getLogs(
-            @RequestParam(defaultValue = "ALL") String period,
-            @RequestParam(required = false) String keyword,
-            @RequestParam(defaultValue = "ALL") String category,
-            @RequestParam(defaultValue = "ALL") String actor) {
-        return ResponseEntity.ok(adminService.findLogs(period, keyword, category, actor));
+    @GetMapping("/faqs")
+    public ResponseEntity<?> getFaqs() {
+        return ResponseEntity.ok(supportService.getFaqList());
     }
 
-    @PostMapping("/logs")
-    public ResponseEntity<String> createLog(
-            @RequestBody AdminLogDTO log,
+    @PostMapping("/faqs")
+    public ResponseEntity<String> createFaq(
+            @RequestBody kr.hi.matey.dto.FaqDTO faqDTO,
             @AuthenticationPrincipal CustomUser user
     ) {
-        // 클라이언트에서 직접 로그를 남기는 경우 (보통은 Service 레이어에서 AOP 등을 통해 처리)
-        String adminID = user.getUsername();
-        log.setActor(adminID);
-        adminService.createLog(log);
-        return ResponseEntity.ok("로그가 기록되었습니다.");
+        String roleCode = user.getUser().getRoleCode();
+        if (!"ADMIN".equals(roleCode) && !"SUPER_ADMIN".equals(roleCode)) {
+            return ResponseEntity.status(403).body("forbidden");
+        }
+
+        supportService.createFaq(faqDTO);
+        return ResponseEntity.ok("FAQ가 등록되었습니다.");
+    }
+
+    @PutMapping("/faqs/{faqId}")
+    public ResponseEntity<String> updateFaq(
+            @PathVariable Long faqId,
+            @RequestBody kr.hi.matey.dto.FaqDTO faqDTO,
+            @AuthenticationPrincipal CustomUser user
+    ) {
+        String roleCode = user.getUser().getRoleCode();
+        if (!"ADMIN".equals(roleCode) && !"SUPER_ADMIN".equals(roleCode)) {
+            return ResponseEntity.status(403).body("forbidden");
+        }
+
+        faqDTO.setFaqId(faqId);
+        supportService.updateFaq(faqDTO);
+        return ResponseEntity.ok("FAQ가 수정되었습니다.");
+    }
+
+    // ==========================================
+    // 문의 답변 작성 (ADMIN 전용)
+    // ==========================================
+
+    @PostMapping("/feedbacks/{supportId}/answer")
+    public ResponseEntity<String> answerFeedback(
+            @PathVariable Long supportId,
+            @RequestBody Map<String, String> body,
+            @AuthenticationPrincipal CustomUser user
+    ) {
+        String roleCode = user.getUser().getRoleCode();
+        if (!"ADMIN".equals(roleCode) && !"SUPER_ADMIN".equals(roleCode)) {
+            return ResponseEntity.status(403).body("forbidden");
+        }
+
+        String content = body.get("content");
+        adminService.answerSupportTicket(supportId, content);
+        return ResponseEntity.ok("답변이 등록되었습니다.");
+    }
+
+    // ==========================================
+    // 공지사항 관리 (ADMIN 전용)
+    // ==========================================
+
+    @PostMapping("/notices")
+    public ResponseEntity<String> createNotice(
+            @RequestBody kr.hi.matey.dto.AdminNoticeDTO dto,
+            @AuthenticationPrincipal CustomUser user
+    ) {
+        String roleCode = user.getUser().getRoleCode();
+        if (!"ADMIN".equals(roleCode) && !"SUPER_ADMIN".equals(roleCode)) {
+            return ResponseEntity.status(403).body("forbidden");
+        }
+
+        noticeService.createNotice(dto);
+        return ResponseEntity.ok("공지사항이 등록되었습니다.");
+    }
+
+    @PutMapping("/notices/{noticeId}")
+    public ResponseEntity<String> updateNotice(
+            @PathVariable Long noticeId,
+            @RequestBody kr.hi.matey.dto.AdminNoticeDTO dto,
+            @AuthenticationPrincipal CustomUser user
+    ) {
+        String roleCode = user.getUser().getRoleCode();
+        if (!"ADMIN".equals(roleCode) && !"SUPER_ADMIN".equals(roleCode)) {
+            return ResponseEntity.status(403).body("forbidden");
+        }
+
+        dto.setNoticeId(noticeId);
+        noticeService.updateNotice(dto);
+        return ResponseEntity.ok("공지사항이 수정되었습니다.");
     }
 }

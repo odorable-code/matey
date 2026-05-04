@@ -6,7 +6,10 @@ import lombok.Data;
 
 @Data
 public class FaqDTO {
-    private long userId;
+    private Long faqId;
     private String question;
     private String answer;
+
+    private java.time.LocalDateTime createdAt;
+    private java.time.LocalDateTime updatedAt;
 }

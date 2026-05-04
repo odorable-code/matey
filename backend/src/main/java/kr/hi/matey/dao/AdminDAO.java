@@ -1,6 +1,5 @@
 package kr.hi.matey.dao;
 
-import kr.hi.matey.dto.AdminLogDTO;
 import kr.hi.matey.dto.FeedbackDTO;
 import kr.hi.matey.dto.UserDTO2;
 import org.apache.ibatis.annotations.Mapper;
@@ -45,14 +44,6 @@ public interface AdminDAO {
     int updateFeedbackStatus(@Param("supportId") Long supportId, @Param("status") String status);
     int deleteFeedback(@Param("supportId") Long supportId);
 
-    // ==========================================
-    // 관리자 활동 로그
-    // ==========================================
-    List<AdminLogDTO> selectAdminLogs(
-            @Param("period") String period,
-            @Param("keyword") String keyword,
-            @Param("category") String category,
-            @Param("actor") String actor
-    );
-    int insertAdminLog(AdminLogDTO log);
+    int insertSupportAnswer(@Param("supportId") Long supportId, @Param("content") String content);
+
 }

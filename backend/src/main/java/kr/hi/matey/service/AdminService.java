@@ -1,7 +1,6 @@
 package kr.hi.matey.service;
 
 import kr.hi.matey.dao.AdminDAO;
-import kr.hi.matey.dto.AdminLogDTO;
 import kr.hi.matey.dto.FeedbackDTO;
 import kr.hi.matey.dto.UserDTO2;
 import lombok.RequiredArgsConstructor;
@@ -47,46 +46,16 @@ public class AdminService {
     @Transactional
     public void updateUser(Long userId, Map<String, Object> data, String adminActor) {
         adminDAO.updateUser(userId, data);
-        
-        // Log
-        AdminLogDTO log = new AdminLogDTO();
-        log.setActor(adminActor);
-        log.setActorRole("ADMIN");
-        log.setCategory("USER_MGMT");
-        log.setAction("UPDATE");
-        log.setTarget("User ID: " + userId);
-        log.setDetail("Updated fields: " + data.keySet().toString());
-        adminDAO.insertAdminLog(log);
     }
 
     @Transactional
     public void updateUserRole(Long userId, String roleCode, String adminActor) {
         adminDAO.updateUserRole(userId, roleCode);
-
-        // Log
-        AdminLogDTO log = new AdminLogDTO();
-        log.setActor(adminActor);
-        log.setActorRole("SUPER_ADMIN");
-        log.setCategory("ROLE_MGMT");
-        log.setAction("UPDATE");
-        log.setTarget("User ID: " + userId);
-        log.setDetail("Role changed to " + roleCode);
-        adminDAO.insertAdminLog(log);
     }
 
     @Transactional
     public void deleteUser(Long userId, String adminActor) {
         adminDAO.deleteUser(userId);
-
-        // Log
-        AdminLogDTO log = new AdminLogDTO();
-        log.setActor(adminActor);
-        log.setActorRole("ADMIN");
-        log.setCategory("USER_MGMT");
-        log.setAction("DELETE");
-        log.setTarget("User ID: " + userId);
-        log.setDetail("User soft deleted.");
-        adminDAO.insertAdminLog(log);
     }
 
     // ==========================================
@@ -95,16 +64,6 @@ public class AdminService {
     @Transactional
     public void bulkUpdateUserStatus(List<Long> userIds, String status, String adminActor) {
         adminDAO.bulkUpdateUserStatus(userIds, status);
-
-        // Log
-        AdminLogDTO log = new AdminLogDTO();
-        log.setActor(adminActor);
-        log.setActorRole("ADMIN");
-        log.setCategory("USER_MGMT");
-        log.setAction("BULK_UPDATE");
-        log.setTarget(userIds.size() + " Users");
-        log.setDetail("Batch updated status to " + status);
-        adminDAO.insertAdminLog(log);
     }
 
     // ==========================================
@@ -121,42 +80,21 @@ public class AdminService {
     @Transactional
     public void changeFeedbackStatus(Long supportId, String status, String adminActor) {
         adminDAO.updateFeedbackStatus(supportId, status);
-
-        // Log
-        AdminLogDTO log = new AdminLogDTO();
-        log.setActor(adminActor);
-        log.setActorRole("ADMIN");
-        log.setCategory("FEEDBACK_MGMT");
-        log.setAction("UPDATE");
-        log.setTarget("Support ID: " + supportId);
-        log.setDetail("Feedback status changed to " + status);
-        adminDAO.insertAdminLog(log);
     }
 
     @Transactional
     public void deleteFeedback(Long supportId, String adminActor) {
         adminDAO.deleteFeedback(supportId);
-
-        // Log
-        AdminLogDTO log = new AdminLogDTO();
-        log.setActor(adminActor);
-        log.setActorRole("ADMIN");
-        log.setCategory("FEEDBACK_MGMT");
-        log.setAction("DELETE");
-        log.setTarget("Support ID: " + supportId);
-        log.setDetail("Feedback deleted permanently.");
-        adminDAO.insertAdminLog(log);
     }
 
     // ==========================================
-    // 관리자 활동 로그
+    // 문의 답변 작성 (SUPPORT_ANSWER)
     // ==========================================
-    public List<AdminLogDTO> findLogs(String period, String keyword, String category, String actor) {
-        return adminDAO.selectAdminLogs(period, keyword, category, actor);
-    }
-
     @Transactional
-    public void createLog(AdminLogDTO log) {
-        adminDAO.insertAdminLog(log);
+    public void answerSupportTicket(Long supportId, String content) {
+        adminDAO.insertSupportAnswer(supportId, content);
+        // 답변 작성 완료 처리
+        adminDAO.updateFeedbackStatus(supportId, "DONE");
     }
+
 }

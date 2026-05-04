@@ -39,4 +39,7 @@ public interface MyPageDAO {
     // 스키마에 점수 저장 컬럼이 안보여서, 기존 필드를 활용하거나 추가가 필요해 보입니다.
     // 여기서는 'intimacy_ID'를 레벨로 보고 진행합니다.
     void updateIntimacyScore(@Param("userId") long userId, @Param("score") int score);
+
+    // 4. 경험치/친밀도 점수 절대값 업데이트 (MyPageService 호환용)
+    int updateBotExp(@Param("userId") long userId, @Param("exp") int exp);
 }

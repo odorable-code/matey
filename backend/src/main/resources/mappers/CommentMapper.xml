@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.hi.matey.dao.CommentDAO">
+
+    <select id="selectCommentsByPost" resultType="kr.hi.matey.dto.CommentDTO">
+        SELECT
+            cm.comment_id as commentId,
+            cm.content,
+            cm.parent_comment_id as parentCommentId,
+            cm.like_count as likeCount,
+            cm.report_count as reportCount,
+            cm.user_id as userId,
+            u.nickname as userNickname,
+            cm.post_id as postId,
+            cm.created_at as createdAt,
+            cm.updated_at as updatedAt
+        FROM COMMENT cm
+        JOIN USER u ON cm.user_id = u.user_id
+        WHERE cm.post_id = #{postId}
+        ORDER BY cm.created_at ASC
+    </select>
+
+    <insert id="insertComment" parameterType="map">
+        INSERT INTO COMMENT (
+            content,
+            user_id,
+            post_id,
+            parent_comment_id
+        ) VALUES (
+            #{dto.content},
+            #{userId},
+            #{postId},
+            #{dto.parentCommentId}
+        )
+    </insert>
+
+    <update id="updateComment">
+        UPDATE COMMENT
+        SET
+            content = #{dto.content},
+            parent_comment_id = #{dto.parentCommentId},
+            updated_at = NOW()
+        WHERE comment_id = #{commentId}
+          AND user_id = #{userId}
+    </update>
+
+    <delete id="deleteComment">
+        DELETE FROM COMMENT
+        WHERE comment_id = #{commentId}
+          AND user_id = #{userId}
+    </delete>
+
+</mapper>
+

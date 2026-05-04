@@ -285,10 +285,11 @@ export function getSocialLoginUrl(provider) {
     return customUrlMap[providerKey];
   }
 
+  // 백엔드는 Spring OAuth2 Client가 아니라 OAuthController: GET /oauth2/{provider} → 프로바이더로 리다이렉트
   const defaultUrlMap = {
     google: `${BACKEND_BASE_URL}/oauth2/authorization/google`,
-    kakao: `${BACKEND_BASE_URL}/oauth2/authorization/kakao`,
-    naver: `${BACKEND_BASE_URL}/oauth2/authorization/naver`,
+    kakao: `${BACKEND_BASE_URL}/oauth2/kakao`,
+    naver: `${BACKEND_BASE_URL}/oauth2/naver`,
   };
 
   return defaultUrlMap[providerKey] || '';

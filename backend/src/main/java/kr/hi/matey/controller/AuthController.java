@@ -238,7 +238,7 @@ public class AuthController {
 	                    "userId", customUser.getUser().getUserId(),
 	                    "userName", customUser.getUser().getUserName(),
 	                    "nickname", customUser.getUser().getNickname(),
-	                    "role", customUser.getUser().getRole()
+	                    "roleCode", customUser.getUser().getRoleCode()
 	                ));
 	            
 	            } catch (Exception e) {

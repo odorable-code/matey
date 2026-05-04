@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.hi.matey.dao.PostDAO">
+
+    <select id="selectCategories" resultType="kr.hi.matey.dto.CategoryDTO">
+        SELECT
+            category_id as categoryId,
+            name,
+            display_order as displayOrder
+        FROM CATEGORY
+        ORDER BY display_order ASC
+    </select>
+
+    <select id="selectPosts" resultType="kr.hi.matey.dto.PostDTO">
+        SELECT
+            p.post_id as postId,
+            p.title,
+            p.content,
+            p.like_count as likeCount,
+            p.dislike_count as dislikeCount,
+            p.report_count as reportCount,
+            p.view_count as viewCount,
+            p.user_id as userId,
+            u.nickname as userNickname,
+            p.category_id as categoryId,
+            c.name as categoryName,
+            p.created_at as createdAt,
+            p.updated_at as updatedAt
+        FROM POST p
+        JOIN USER u ON p.user_id = u.user_id
+        JOIN CATEGORY c ON p.category_id = c.category_id
+        <where>
+            <if test="categoryId != null">
+                p.category_id = #{categoryId}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (
+                    p.title LIKE CONCAT('%', #{keyword}, '%')
+                    OR p.content LIKE CONCAT('%', #{keyword}, '%')
+                )
+            </if>
+        </where>
+        ORDER BY p.created_at DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="selectPostById" resultType="kr.hi.matey.dto.PostDTO">
+        SELECT
+            p.post_id as postId,
+            p.title,
+            p.content,
+            p.like_count as likeCount,
+            p.dislike_count as dislikeCount,
+            p.report_count as reportCount,
+            p.view_count as viewCount,
+            p.user_id as userId,
+            u.nickname as userNickname,
+            p.category_id as categoryId,
+            c.name as categoryName,
+            p.created_at as createdAt,
+            p.updated_at as updatedAt
+        FROM POST p
+        JOIN USER u ON p.user_id = u.user_id
+        JOIN CATEGORY c ON p.category_id = c.category_id
+        WHERE p.post_id = #{postId}
+    </select>
+
+    <update id="incrementPostViewCount">
+        UPDATE POST
+        SET view_count = view_count + 1
+        WHERE post_id = #{postId}
+    </update>
+
+    <insert id="insertPost" parameterType="map">
+        <selectKey resultType="long" keyProperty="dto.postId" order="AFTER">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+        INSERT INTO POST (
+            title,
+            content,
+            like_count,
+            dislike_count,
+            report_count,
+            view_count,
+            user_id,
+            category_id
+        ) VALUES (
+            #{dto.title},
+            #{dto.content},
+            0,
+            0,
+            0,
+            0,
+            #{userId},
+            #{dto.categoryId}
+        )
+    </insert>
+
+    <update id="updatePost">
+        UPDATE POST
+        SET
+            title = #{dto.title},
+            content = #{dto.content},
+            category_id = #{dto.categoryId},
+            updated_at = NOW()
+        WHERE post_id = #{postId}
+          AND user_id = #{userId}
+    </update>
+
+    <delete id="deletePost">
+        DELETE FROM POST
+        WHERE post_id = #{postId}
+          AND user_id = #{userId}
+    </delete>
+</mapper>
+

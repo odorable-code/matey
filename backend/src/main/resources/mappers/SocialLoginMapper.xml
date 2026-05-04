@@ -5,103 +5,77 @@
 
 <mapper namespace="kr.hi.matey.dao.SocialLoginDAO">
 
+    <!-- DB 초안.sql SOCIAL_LOGIN: social_id, user_id, provider, provider_user_id, connected_at -->
     <select id="findByProviderAndProviderUserId" resultType="kr.hi.matey.dto.SocialLoginDTO">
         SELECT
-            social_id,
+            social_id AS socialId,
             provider,
-            provider_user_id,
-            social_access_token,
-            social_refresh_token,
-            connected_at,
-            user_id
-        FROM social_login
+            provider_user_id AS providerUserId,
+            connected_at AS connectedAt,
+            user_id AS userId
+        FROM SOCIAL_LOGIN
         WHERE provider = #{provider}
           AND provider_user_id = #{providerUserId}
         LIMIT 1
     </select>
 
+    <!-- JWT·OAuth 후속 처리용 — USER_ROLE 조인으로 roleCode 로딩 -->
     <select id="findUserByUserId" resultType="kr.hi.matey.vo.UserVO">
         SELECT
-            user_id,
-            email,
-            password,
-            nickname,
-            user_name,
-            user_birth,
-            gender,
-            profile_image,
-            role AS "role.role_code",
-            login_type,
-            status,
-            point,
-            subscription_grade,
-            is_adult,
-            is_noti_agree,
-            is_terms_agreed,
-            is_privacy_agreed,
-            is_marketing_agreed,
-            last_login_at,
-            created_at,
-            updated_at
-        FROM user
-        WHERE user_id = #{userId}
+            u.user_id,
+            u.email,
+            u.password,
+            u.nickname,
+            u.user_name,
+            r.role_code AS roleCode
+        FROM USER u
+        LEFT JOIN USER_ROLE ur ON u.user_id = ur.user_id
+        LEFT JOIN ROLE r ON ur.role_id = r.role_id
+        WHERE u.user_id = #{userId}
     </select>
 
+    <!-- DB 초안.sql USER 테이블 컬럼에 맞춤 -->
     <insert id="insertUser" parameterType="kr.hi.matey.vo.UserVO" useGeneratedKeys="true" keyProperty="userId">
-        INSERT INTO user (
+        INSERT INTO USER (
             email,
             password,
             nickname,
             user_name,
+            birth_date,
+            gender,
             profile_image,
-            role,
             login_type,
             status,
-            point,
-            subscription_grade,
-            is_adult,
-            is_noti_agree,
             is_terms_agreed,
             is_privacy_agreed,
-            is_marketing_agreed,
-            created_at,
-            updated_at
+            is_marketing_agreed
         ) VALUES (
             #{email},
             #{password},
             #{nickname},
             #{userName},
-            #{profileImage},
-            #{role.role_code},
-            #{loginType},
+            #{birthDateSql,jdbcType=DATE},
+            #{gender},
+            #{profile_image},
+            #{login_type},
             #{status},
-            #{point},
-            #{subscriptionGrade},
-            #{isAdult},
-            #{isNotiAgree},
-            #{isTermsAgreed},
-            #{isPrivacyAgreed},
-            #{isMarketingAgreed},
-            NOW(),
-            NOW()
+            #{termsAgreed},
+            #{privacyAgreed},
+            #{marketingAgreed}
         )
     </insert>
 
     <insert id="insertSocialLogin" parameterType="kr.hi.matey.dto.SocialLoginDTO" useGeneratedKeys="true" keyProperty="socialId">
-        INSERT INTO social_login (
+        INSERT INTO SOCIAL_LOGIN (
+            user_id,
             provider,
             provider_user_id,
-            social_access_token,
-            social_refresh_token,
-            connected_at,
-            user_id
+            connected_at
         ) VALUES (
+            #{userId},
             #{provider},
             #{providerUserId},
-            #{socialAccessToken},
-            #{socialRefreshToken},
-            NOW(),
-            #{userId}
+            NOW()
         )
     </insert>
 

@@ -1,17 +1,21 @@
 package kr.hi.matey.service;
 
+import java.sql.Date;
+import java.util.Objects;
 import java.util.UUID;
 
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.servlet.http.HttpSession;
+import kr.hi.matey.dao.AuthDAO;
 import kr.hi.matey.dao.SocialLoginDAO;
 import kr.hi.matey.dto.PendingSocialUser;
 import kr.hi.matey.dto.SocialLoginDTO;
 import kr.hi.matey.dto.SocialSignupRequestDTO;
 import kr.hi.matey.security.jwt.JwtTokenProvider;
 import kr.hi.matey.util.CustomUser;
-import kr.hi.matey.vo.RoleVO;
 import kr.hi.matey.vo.UserVO;
 import lombok.RequiredArgsConstructor;
 
@@ -20,8 +24,11 @@ import lombok.RequiredArgsConstructor;
 public class SocialSignupService {
 
     private final SocialLoginDAO socialLoginDAO;
+    private final AuthDAO authDAO;
     private final JwtTokenProvider jwtTokenProvider;
+    private final BCryptPasswordEncoder passwordEncoder;
 
+    @Transactional
     public String signup(SocialSignupRequestDTO request, HttpSession session) {
         PendingSocialUser pendingUser =
                 (PendingSocialUser) session.getAttribute("PENDING_SOCIAL_USER");
@@ -32,35 +39,45 @@ public class SocialSignupService {
 
         UserVO user = new UserVO();
         user.setEmail(pendingUser.getEmail());
-        user.setPassword(UUID.randomUUID().toString());
+        user.setPassword(passwordEncoder.encode("SOCIAL_" + UUID.randomUUID()));
         user.setNickname(pendingUser.getNickname());
         user.setUserName(request.getUserName());
-        user.setBirthDate(request.getUserBirth());
-        user.setGender(request.getGender());
+        if (request.getUserBirth() != null) {
+            user.setBirthDateSql(new Date(request.getUserBirth()));
+        }
+        user.setGender(mapGenderToDb(request.getGender()));
         user.setProfile_image(pendingUser.getProfileImage());
-        RoleVO roleVO = new RoleVO();
-        roleVO.setRole_id(1L); // DB 스키마에서 일반 유저의 role_id가 1이라고 가정할 때
-        user.setRole(roleVO);
-        user.setLogin_type(pendingUser.getProvider());
+        user.setLogin_type(Objects.requireNonNullElse(pendingUser.getProvider(), "LOCAL").toUpperCase());
         user.setStatus("ACTIVE");
         user.setTermsAgreed(request.getIsTermsAgreed());
         user.setPrivacyAgreed(request.getIsPrivacyAgreed());
         user.setMarketingAgreed(request.getIsMarketingAgreed());
 
         socialLoginDAO.insertUser(user);
+        authDAO.insertUserRole(user.getUserId(), 1);
 
         SocialLoginDTO socialLogin = new SocialLoginDTO();
         socialLogin.setProvider(pendingUser.getProvider());
         socialLogin.setProviderUserId(pendingUser.getProviderUserId());
-        socialLogin.setSocialAccessToken(null);
-        socialLogin.setSocialRefreshToken(null);
         socialLogin.setUserId(user.getUserId());
 
         socialLoginDAO.insertSocialLogin(socialLogin);
 
         session.removeAttribute("PENDING_SOCIAL_USER");
 
-        CustomUser customUser = new CustomUser(user);
+        UserVO loaded = socialLoginDAO.findUserByUserId(user.getUserId());
+        CustomUser customUser = new CustomUser(loaded);
         return jwtTokenProvider.createAccessToken(customUser);
+    }
+
+    /** DB USER.gender VARCHAR — 프론트 숫자 코드를 문자열로 매핑 */
+    private static String mapGenderToDb(Long genderCode) {
+        if (genderCode == null) {
+            return null;
+        }
+        if (genderCode == 2L) {
+            return "FEMALE";
+        }
+        return "MALE";
     }
 }

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.hi.matey.dao.NoticeDAO">
+
+    <select id="selectPublishedNotices" resultType="kr.hi.matey.dto.AdminNoticeDTO">
+        SELECT
+            notice_id as noticeId,
+            title,
+            content,
+            is_published as isPublished,
+            published_at as publishedAt,
+            created_at as createdAt
+        FROM ADMIN_NOTICE
+        WHERE is_published = TRUE
+        ORDER BY created_at DESC
+    </select>
+
+    <insert id="insertNotice" parameterType="kr.hi.matey.dto.AdminNoticeDTO">
+        INSERT INTO ADMIN_NOTICE (
+            title,
+            content,
+            is_published,
+            published_at,
+            created_at
+        ) VALUES (
+            #{title},
+            #{content},
+            #{isPublished},
+            CASE WHEN #{isPublished} = TRUE THEN NOW() ELSE NULL END,
+            NOW()
+        )
+    </insert>
+
+    <update id="updateNotice" parameterType="kr.hi.matey.dto.AdminNoticeDTO">
+        UPDATE ADMIN_NOTICE
+        SET
+            title = #{title},
+            content = #{content},
+            is_published = #{isPublished},
+            published_at = CASE WHEN #{isPublished} = TRUE THEN COALESCE(#{publishedAt}, NOW()) ELSE NULL END
+        WHERE notice_id = #{noticeId}
+    </update>
+
+</mapper>
+
