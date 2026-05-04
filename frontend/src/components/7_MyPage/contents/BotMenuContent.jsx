@@ -1,6 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import styles from './BotMenuContent.module.css';
 import useAnimatedNumber, { usePrefersReducedMotion } from '../hooks/useAnimatedNumber';
+import { myPageAPI } from '../../../utils/api';
 
 const defaultBotData = {
   level: 4,
@@ -81,8 +82,19 @@ function AnimatedSummaryCard({ item, prefersReducedMotion }) {
   );
 }
 
-function BotMenuContent({ botData = defaultBotData }) {
+function BotMenuContent() {
   const prefersReducedMotion = usePrefersReducedMotion();
+  const [botData, setBotData] = useState(defaultBotData);
+
+  useEffect(() => {
+    myPageAPI.getBotMenu()
+      .then(data => {
+        if (data) {
+          setBotData((prev) => ({ ...prev, ...data }));
+        }
+      })
+      .catch(console.error);
+  }, []);
 
   const animatedLevel = useAnimatedNumber(botData.level ?? 0, 900, {
     reducedMotion: prefersReducedMotion,
@@ -164,13 +176,12 @@ function BotMenuContent({ botData = defaultBotData }) {
                 <div className={styles.collectionMeta}>
                   <strong className={styles.collectionName}>{item.name}</strong>
                   <span
-                    className={`${styles.stateBadge} ${
-                      item.state === '사용 중'
+                    className={`${styles.stateBadge} ${item.state === '사용 중'
                         ? styles.stateActive
                         : item.state === '잠금'
-                        ? styles.stateLocked
-                        : styles.stateOwned
-                    }`}
+                          ? styles.stateLocked
+                          : styles.stateOwned
+                      }`}
                   >
                     {item.state}
                   </span>
