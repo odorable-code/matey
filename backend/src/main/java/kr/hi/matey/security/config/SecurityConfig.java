@@ -58,10 +58,13 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/api/v1/check-email", "/api/v1/users/**").permitAll()
                         .requestMatchers("/ws-stomp/**").permitAll()
+                        
+                        // 마이페이지 API는 인증된 사용자만 허용
+                        .requestMatchers("/api/mypage/**").authenticated()
 
 //                        .requestMatchers("/api/v1/reviews/*/likes").authenticated()
 
-//                        .anyRequest().permitAll()
+                        .anyRequest().authenticated()
                 )
                 .userDetailsService(userDetailsService)
                 // JWT 인증 필터를 우선순위에 배치합니다. 아이디/비밀번호 인증 필터(UsernamePasswordAuthenticationFilter)가 실행되기 전에, 들어온 요청의 JWT 토큰을 먼저 검사하여 인증 처리.
