@@ -68,13 +68,13 @@ function AdminRoute({ children }) {
 }
 
 function PublicOnlyRoute({ children }) {
-  const { isAuthenticated, authLoading } = useAuth();
+  const { isAuthenticated, authLoading, user } = useAuth();
 
   if (authLoading) {
     return <AuthLoadingScreen />;
   }
 
-  if (isAuthenticated) {
+  if (isAuthenticated && user) {
     return <Navigate to="/mypage" replace />;
   }
 
