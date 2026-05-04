@@ -20,7 +20,7 @@
     <select id="selectBotRelationInfo" resultType="kr.hi.matey.dto.BotMenuDTO">
         SELECT
         ubr.intimacy_id as level,
-        ubr.intimacy_id as remainPoint
+        ubr.current_exp as remainPoint
         FROM USER_BOT_RELATION ubr
         JOIN EXCLUSIVE e ON ubr.exclusive_id = e.exclusive_id
         WHERE e.user_id = #{userId}
@@ -146,8 +146,7 @@
     <update id="updateBotIntimacy">
         UPDATE USER_BOT_RELATION ubr
         JOIN EXCLUSIVE e ON ubr.exclusive_id = e.exclusive_id
-        SET ubr.intimacy_id = ubr.intimacy_id + #{expGain},
-            ubr.updated_at = NOW()
+        SET ubr.current_exp = ubr.current_exp + #{expGain}
         WHERE e.user_id = #{userId}
     </update>
 
@@ -155,15 +154,14 @@
     <update id="updateBotExp">
         UPDATE USER_BOT_RELATION ubr
         JOIN EXCLUSIVE e ON ubr.exclusive_id = e.exclusive_id
-        SET ubr.intimacy_id = #{exp},
-            ubr.updated_at = NOW()
+        SET ubr.current_exp = #{exp}
         WHERE e.user_id = #{userId}
     </update>
 
     <select id="getBotStatus" resultType="kr.hi.matey.dto.BotStatusDTO">
         SELECT
         ubr.intimacy_id as level,
-        ubr.intimacy_id as exp
+        ubr.current_exp as exp
         FROM USER_BOT_RELATION ubr
         JOIN EXCLUSIVE e ON ubr.exclusive_id = e.exclusive_id
         WHERE e.user_id = #{userId}
@@ -179,8 +177,7 @@
     <update id="updateLastInteractedAt">
         UPDATE USER_BOT_RELATION ubr
         JOIN EXCLUSIVE e ON ubr.exclusive_id = e.exclusive_id
-        SET ubr.last_interacted_at = NOW(),
-        ubr.updated_at = NOW()
+        SET ubr.last_fed_at = NOW()
         WHERE e.user_id = #{userId}
     </update>
 

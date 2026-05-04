@@ -7,41 +7,38 @@
     <!-- 대시보드 통계 (기존 유지) -->
     <select id="selectDailyEmotionStats" resultType="map">
         SELECT 
-            DATE_FORMAT(m.created_at, '%Y-%m-%d') as dateKey,
-            DATE_FORMAT(m.created_at, '%c월 %d일') as displayDate,
+            DATE_FORMAT(m.date, '%Y-%m-%d') as dateKey,
+            DATE_FORMAT(m.date, '%c월 %d일') as displayDate,
             COUNT(m.message_id) as conversationCount,
             MAX(ec.emotion_name) as dominantEmotion,
-            DATE_FORMAT(MIN(m.created_at), '%H:%i') as minTime,
-            DATE_FORMAT(MAX(m.created_at), '%H:%i') as maxTime,
-            MAX(rs.name) as recommendedAction
+            '00:00' as minTime,
+            '23:59' as maxTime,
+            MAX(rl.action) as recommendedAction
         FROM MESSAGE m
         JOIN CHAT_ROOM cr ON m.chat_room_id = cr.chat_room_id
         JOIN EXCLUSIVE e ON cr.exclusive_id = e.exclusive_id
-        LEFT JOIN CHAT_ANALYSIS_SESSION cas ON cas.chat_room_id = cr.chat_room_id
-           AND m.message_id BETWEEN cas.start_message_id AND cas.end_message_id
-        LEFT JOIN MESSAGE_ANALYSIS ma ON ma.session_id = cas.session_id
-        LEFT JOIN EMOTION_CATEGORY ec ON ma.emotion_id = ec.emotion_id
-        LEFT JOIN RESPONSE_STRATEGY rs ON ma.risk_level = rs.risk_level
+        LEFT JOIN EMOTION_CATEGORY ec ON m.emotion_id = ec.emotion_id
+        LEFT JOIN RISK_LEVEL rl ON m.risk_level = rl.risk_level
         WHERE e.user_id = #{userId}
-        GROUP BY DATE_FORMAT(m.created_at, '%Y-%m-%d'), DATE_FORMAT(m.created_at, '%c월 %d일')
+        GROUP BY DATE_FORMAT(m.date, '%Y-%m-%d'), DATE_FORMAT(m.date, '%c월 %d일')
         ORDER BY dateKey DESC
     </select>
 
     <select id="selectChatPreviews" resultType="map">
         SELECT 
             m.message_id as id,
-            LOWER(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(m.content, '$.senderType')), 'USER')) as role,
+            LOWER(COALESCE(m.sender_type, 'USER')) as role,
             CASE 
-                WHEN UPPER(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(m.content, '$.senderType')), 'USER')) = 'USER' THEN '나'
+                WHEN UPPER(COALESCE(m.sender_type, 'USER')) = 'USER' THEN '나'
                 ELSE '메이티'
             END as name,
-            DATE_FORMAT(m.created_at, '%p %h:%i') as time
+            '' as time
         FROM MESSAGE m
         JOIN CHAT_ROOM cr ON m.chat_room_id = cr.chat_room_id
         JOIN EXCLUSIVE e ON cr.exclusive_id = e.exclusive_id
         WHERE e.user_id = #{userId}
-          AND DATE_FORMAT(m.created_at, '%Y-%m-%d') = #{dateKey}
-        ORDER BY m.created_at ASC
+          AND DATE_FORMAT(m.date, '%Y-%m-%d') = #{dateKey}
+        ORDER BY m.message_id ASC
         LIMIT 3
     </select>
 

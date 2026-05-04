@@ -24,7 +24,7 @@
  */
 
 import React, { useEffect, useMemo } from 'react';
-import ReportApi from '../../api/reportApi';
+import { emotionReportAPI } from '../../../../utils/api';
 import styles from './EmotionReportContent.module.css';
 import EmotionTab from './tabs/EmotionTab';
 import ChatHistoryTab from './tabs/ChatHistoryTab';
@@ -106,25 +106,21 @@ function EmotionReportContent() {
       - 사용자가 기간(Period)이나 동물(Bot)을 클릭해 상태가 변하면 실행됩니다.
   ========================= */
   useEffect(() => {
-    const fetchData = async (period, botSort) => {
+    const fetchData = async () => {
       // 초기 렌더링 시 값이 없을 경우를 대비한 가드 코드
       if (!selectedPeriod || !selectedBotKey) return;
 
       try {
         console.log(`[서버 요청] 동물: ${selectedBotKey}, 기간: ${selectedPeriod}`);
-        
-        const response = await fetch(
-          `http://localhost:8000/api/report?period=${selectedPeriod}&bot=${selectedBotKey}`
-        );
-        
-        if (!response.ok) throw new Error('Network response was not ok');
-        
-        const result = await response.json();
+
+        // 올바른 백엔드 API (api.js 경유)
+        const result = await emotionReportAPI.getDashboard();
+
         console.log("서버 응답 데이터 수신 완료:", result);
 
         // TODO: 여기서 받아온 result를 setReportData(result) 처럼 
         // 훅 내부 상태에 업데이트하는 로직이 추가되어야 화면이 바뀝니다.
-        
+
       } catch (error) {
         console.error("감정 리포트 데이터 로드 실패:", error);
       }
@@ -184,17 +180,17 @@ function EmotionReportContent() {
   ========================= */
   const headingCopy = historyMode
     ? {
-        eyebrow: 'CONVERSATION HISTORY',
-        title: '메이티 대화 히스토리',
-        description:
-          '선택한 날짜의 메모와 대화 흐름, 봇 해석을 한 눈에 정리해서 볼 수 있어요.',
-      }
+      eyebrow: 'CONVERSATION HISTORY',
+      title: '메이티 대화 히스토리',
+      description:
+        '선택한 날짜의 메모와 대화 흐름, 봇 해석을 한 눈에 정리해서 볼 수 있어요.',
+    }
     : {
-        eyebrow: 'EMOTION REPORT',
-        title: '메이티 감정 리포트',
-        description:
-          '선택한 동물이 작성한 것처럼 핵심 감정과 흐름을 한 장의 리포트로 확인할 수 있어요.',
-      };
+      eyebrow: 'EMOTION REPORT',
+      title: '메이티 감정 리포트',
+      description:
+        '선택한 동물이 작성한 것처럼 핵심 감정과 흐름을 한 장의 리포트로 확인할 수 있어요.',
+    };
 
   /* =========================
      실제 화면 렌더링
