@@ -1,7 +1,7 @@
 /* src/components/8_AdminPage/AdminPage.jsx */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { adminAPI } from '../../utils/api';
 import './AdminPage.css';
 

@@ -1,161 +1,322 @@
-/* src/components/4_Home/FAQ.css */
+/**
+ * =========================================================
+ * 파일명 : src/components/4_Home/FAQ.css
+ * 역할   : 메인 홈 FAQ 섹션 스타일
+ * 위치   : FAQ.jsx 전용 스타일
+ * =========================================================
+ *
+ * [이번 수정 핵심]
+ * - 섹션 자체 배경 제거 (페이지 통합 배경 사용)
+ * - 글로우만 유지하여 분위기 표현
+ */
+
 @import '../../styles/variables.css';
 
+/* =========================================================
+   1. 섹션 컨테이너 (배경 투명)
+========================================================= */
 .matey-faq {
   position: relative;
-  overflow: hidden;
   padding:
     var(--matey-section-py-desktop)
-    var(--matey-page-gutter-desktop)
-    calc(var(--matey-section-py-desktop) + 56px);
-  background:
-    radial-gradient(circle at 14% 16%, rgba(108, 158, 255, 0.08), transparent 24%),
-    radial-gradient(circle at 84% 20%, rgba(255, 149, 187, 0.1), transparent 24%),
-    linear-gradient(180deg, #fffafd 0%, #ffffff 40%, #f8fbff 100%);
+    var(--matey-page-gutter-desktop);
+  background: transparent;
+  overflow: hidden;
+}
+
+.matey-faq__background {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.matey-faq__glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(110px);
+  opacity: 0.4;
+}
+
+.matey-faq__glow--top {
+  width: 420px;
+  height: 420px;
+  top: -140px;
+  left: -80px;
+  background: radial-gradient(circle, rgba(255, 188, 120, 0.16) 0%, transparent 70%);
+}
+
+.matey-faq__glow--bottom {
+  width: 380px;
+  height: 380px;
+  bottom: -120px;
+  right: -60px;
+  background: radial-gradient(circle, rgba(141, 121, 255, 0.16) 0%, transparent 70%);
 }
 
 .matey-faq__inner {
   position: relative;
   z-index: 1;
-  max-width: var(--matey-max-width);
+  width: min(var(--matey-max-width), 100%);
   margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.2fr);
+  gap: 56px;
+  align-items: start;
 }
 
-.matey-faq__header {
-  max-width: 760px;
-  margin: 0 auto 34px;
-  text-align: center;
+/* =========================================================
+   2. 좌측 인트로 영역
+========================================================= */
+.matey-faq__intro {
+  position: sticky;
+  top: calc(var(--matey-header-height) + 24px);
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding: 32px 28px;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(123, 139, 176, 0.14);
+  box-shadow: 0 18px 44px rgba(130, 145, 178, 0.1);
+  backdrop-filter: blur(10px);
 }
 
-.matey-faq__badge {
+.matey-faq__eyebrow {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  min-height: 38px;
-  padding: 0 14px;
-  border-radius: var(--matey-radius-pill);
-  border: 1px solid var(--matey-color-border-soft);
-  background: rgba(255, 255, 255, 0.86);
-  color: var(--matey-color-text-soft);
-  font-size: 0.76rem;
+  gap: 8px;
+  align-self: flex-start;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 154, 118, 0.22);
+  background: rgba(255, 250, 244, 0.86);
+  color: #a25c2a;
+  font-size: 0.82rem;
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  box-shadow: var(--matey-shadow-soft);
+}
+
+.matey-faq__eyebrow-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ffd58a 0%, #ff9a76 100%);
+  box-shadow: 0 0 0 4px rgba(255, 154, 118, 0.16);
 }
 
 .matey-faq__title {
-  margin: 18px 0 14px;
-  color: var(--matey-color-text-strong);
-  font-size: clamp(2.05rem, 5vw, 3.25rem);
+  margin: 0;
+  font-size: clamp(1.85rem, 3vw, 2.4rem);
+  line-height: 1.25;
+  letter-spacing: -0.035em;
   font-weight: 900;
-  line-height: 1.14;
-  letter-spacing: -0.045em;
+  color: var(--matey-color-text-strong);
+  word-break: keep-all;
 }
 
-.matey-faq__title span {
-  background: linear-gradient(135deg, #6c9eff 0%, #8d79ff 48%, #ff95bb 100%);
+.matey-faq__title-line {
+  display: block;
+}
+
+.matey-faq__title-line--accent {
+  background: linear-gradient(135deg, #6c9eff 0%, #8d79ff 52%, #ff93b7 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  color: transparent;
 }
 
-.matey-faq__subtitle {
+.matey-faq__description {
   margin: 0;
-  color: var(--matey-color-text-muted);
-  font-size: 1rem;
-  line-height: 1.8;
+  color: var(--matey-color-text-body);
+  font-size: 0.96rem;
+  font-weight: 500;
+  line-height: 1.75;
+  word-break: keep-all;
+}
+
+/* =========================================================
+   3. 좌측 가이드 캐릭터 + 말풍선
+========================================================= */
+.matey-faq__guide {
+  position: relative;
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.matey-faq__guide-bubble {
+  position: relative;
+  max-width: 320px;
+  padding: 14px 18px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(123, 139, 176, 0.14);
+  box-shadow: 0 14px 28px rgba(130, 145, 178, 0.12);
+  color: var(--matey-color-text-strong);
+  font-size: 0.92rem;
+  font-weight: 800;
+  line-height: 1.55;
+  text-align: center;
+  letter-spacing: -0.01em;
+  word-break: keep-all;
+}
+
+.matey-faq__guide-bubble-tail {
+  position: absolute;
+  bottom: -7px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 14px;
+  height: 14px;
+  background: rgba(255, 255, 255, 0.96);
+  border-right: 1px solid rgba(123, 139, 176, 0.14);
+  border-bottom: 1px solid rgba(123, 139, 176, 0.14);
+}
+
+.matey-faq__guide-mate {
+  position: relative;
+  width: clamp(160px, 18vw, 220px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.matey-faq__guide-mate-glow {
+  position: absolute;
+  width: 110%;
+  height: 90%;
+  bottom: -8%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 188, 120, 0.22) 0%,
+    transparent 70%
+  );
+  filter: blur(20px);
+  z-index: 0;
+}
+
+.matey-faq__guide-mate-image {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 18px 22px rgba(141, 121, 255, 0.16));
+  animation: matey-faq-float 5.2s ease-in-out infinite;
+}
+
+@keyframes matey-faq-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+
+/* =========================================================
+   4. 우측 콘텐츠 - 카테고리 탭
+========================================================= */
+.matey-faq__content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
 }
 
 .matey-faq__tabs {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px;
-  margin-bottom: 24px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(123, 139, 176, 0.14);
+  backdrop-filter: blur(8px);
+  width: fit-content;
 }
 
 .matey-faq__tab {
-  min-height: 44px;
-  padding: 0 16px;
-  border-radius: var(--matey-radius-pill);
-  border: 1px solid rgba(132, 146, 181, 0.1);
-  background: rgba(255, 255, 255, 0.82);
+  min-height: 40px;
+  padding: 0 18px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
   color: #5f6d87;
   font-size: 0.92rem;
   font-weight: 800;
+  letter-spacing: -0.01em;
   cursor: pointer;
   transition:
     transform var(--matey-transition-fast),
     background var(--matey-transition-fast),
+    color var(--matey-transition-fast),
     border-color var(--matey-transition-fast),
-    box-shadow var(--matey-transition-fast),
-    color var(--matey-transition-fast);
+    box-shadow var(--matey-transition-fast);
 }
 
-.matey-faq__tab:hover,
-.matey-faq__tab:focus-visible {
-  transform: translateY(-2px);
-  background: rgba(255, 255, 255, 0.95);
-  color: var(--matey-color-text-strong);
-  outline: none;
+.matey-faq__tab:hover {
+  color: #314f84;
+  background: rgba(108, 158, 255, 0.06);
 }
 
 .matey-faq__tab.is-active {
-  background: linear-gradient(
-    135deg,
-    rgba(108, 158, 255, 0.12),
-    rgba(141, 121, 255, 0.1)
-  );
-  border-color: rgba(108, 158, 255, 0.18);
-  color: #35588f;
-  box-shadow: 0 14px 28px rgba(130, 145, 178, 0.12);
+  color: #ffffff;
+  background: linear-gradient(135deg, #79b7ff 0%, #8d79ff 48%, #ff93b7 100%);
+  border-color: transparent;
+  box-shadow: 0 12px 22px rgba(141, 121, 255, 0.22);
+  transform: translateY(-1px);
 }
 
-.matey-faq__accordion {
-  display: grid;
-  gap: 14px;
-  max-width: 980px;
-  margin: 0 auto;
+/* =========================================================
+   5. 우측 콘텐츠 - 아코디언 리스트
+========================================================= */
+.matey-faq__list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 .matey-faq__item {
   position: relative;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(123, 139, 176, 0.12);
+  box-shadow: 0 10px 22px rgba(130, 145, 178, 0.06);
   overflow: hidden;
-  border-radius: 24px;
-  border: 1px solid rgba(132, 146, 181, 0.12);
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 16px 30px rgba(136, 148, 182, 0.08);
   transition:
-    transform var(--matey-transition-fast),
-    box-shadow var(--matey-transition-fast),
-    border-color var(--matey-transition-fast),
-    background var(--matey-transition-fast);
-  animation: faqFadeUp 0.5s ease both;
-  animation-delay: var(--faq-delay, 0s);
+    transform var(--matey-transition-base),
+    background var(--matey-transition-base),
+    border-color var(--matey-transition-base),
+    box-shadow var(--matey-transition-base);
 }
 
 .matey-faq__item::before {
   content: '';
   position: absolute;
-  inset: 0 auto 0 0;
-  width: 4px;
-  background: linear-gradient(180deg, #6c9eff 0%, #8d79ff 55%, #ff95bb 100%);
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(135deg, #79b7ff 0%, #8d79ff 48%, #ff93b7 100%);
   opacity: 0;
   transition: opacity var(--matey-transition-base);
+  border-radius: 22px 22px 0 0;
 }
 
 .matey-faq__item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 20px 38px rgba(130, 145, 178, 0.11);
+  border-color: rgba(108, 158, 255, 0.22);
+  box-shadow: 0 16px 30px rgba(130, 145, 178, 0.1);
 }
 
 .matey-faq__item.is-open {
-  border-color: rgba(108, 158, 255, 0.18);
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow:
-    0 22px 40px rgba(130, 145, 178, 0.12),
-    0 10px 20px rgba(108, 158, 255, 0.05);
+  background: rgba(255, 255, 255, 1);
+  border-color: rgba(108, 158, 255, 0.3);
+  box-shadow: 0 22px 40px rgba(141, 121, 255, 0.12);
 }
 
 .matey-faq__item.is-open::before {
@@ -164,205 +325,231 @@
 
 .matey-faq__question {
   width: 100%;
-  padding: 22px 22px;
-  border: none;
-  background: transparent;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 18px;
+  padding: 22px 24px;
+  border: none;
+  background: transparent;
   text-align: left;
   cursor: pointer;
+  transition: padding var(--matey-transition-base);
 }
 
-.matey-faq__question:hover,
-.matey-faq__question:focus-visible {
-  outline: none;
+.matey-faq__item.is-open .matey-faq__question {
+  padding-bottom: 14px;
 }
 
 .matey-faq__question-text {
-  color: #27344e;
+  flex: 1;
+  color: var(--matey-color-text-strong);
   font-size: 1rem;
-  line-height: 1.55;
-  font-weight: 900;
+  font-weight: 800;
   letter-spacing: -0.02em;
+  line-height: 1.5;
+  word-break: keep-all;
 }
 
-.matey-faq__icon {
+.matey-faq__question-icon {
   position: relative;
-  width: 24px;
-  height: 24px;
-  border-radius: 999px;
+  width: 28px;
+  height: 28px;
   flex-shrink: 0;
-  background: rgba(108, 158, 255, 0.08);
+  border-radius: 999px;
+  background: rgba(108, 158, 255, 0.1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   transition:
     background var(--matey-transition-base),
     transform var(--matey-transition-base);
 }
 
-.matey-faq__icon::before,
-.matey-faq__icon::after {
-  content: '';
+.matey-faq__item.is-open .matey-faq__question-icon {
+  background: linear-gradient(135deg, #79b7ff 0%, #8d79ff 48%, #ff93b7 100%);
+}
+
+.matey-faq__question-icon-bar {
   position: absolute;
-  top: 50%;
-  left: 50%;
   width: 12px;
   height: 2px;
   border-radius: 999px;
-  background: #6d7b97;
-  transform: translate(-50%, -50%);
+  background: #4d7dfa;
   transition:
     transform var(--matey-transition-base),
-    opacity var(--matey-transition-base),
-    background var(--matey-transition-base);
+    background var(--matey-transition-base),
+    opacity var(--matey-transition-base);
 }
 
-.matey-faq__icon::after {
-  transform: translate(-50%, -50%) rotate(90deg);
+.matey-faq__item.is-open .matey-faq__question-icon-bar {
+  background: #ffffff;
 }
 
-.matey-faq__item.is-open .matey-faq__icon {
-  background: rgba(108, 158, 255, 0.14);
-  transform: rotate(180deg);
+.matey-faq__question-icon-bar--vertical {
+  transform: rotate(90deg);
 }
 
-.matey-faq__item.is-open .matey-faq__icon::before,
-.matey-faq__item.is-open .matey-faq__icon::after {
-  background: #4f72b0;
-}
-
-.matey-faq__item.is-open .matey-faq__icon::after {
-  transform: translate(-50%, -50%) rotate(90deg) scaleX(0);
+.matey-faq__item.is-open .matey-faq__question-icon-bar--vertical {
+  transform: rotate(0);
   opacity: 0;
 }
 
+/* =========================================================
+   6. 답변 영역 (펼침/닫힘)
+========================================================= */
 .matey-faq__answer-wrap {
   display: grid;
   grid-template-rows: 0fr;
-  transition:
-    grid-template-rows 0.36s ease,
-    opacity 0.36s ease;
+  transition: grid-template-rows var(--matey-transition-slow);
 }
 
-.matey-faq__answer-wrap.is-open {
+.matey-faq__item.is-open .matey-faq__answer-wrap {
   grid-template-rows: 1fr;
 }
 
 .matey-faq__answer {
-  overflow: hidden;
-  padding: 0 22px;
-}
-
-.matey-faq__answer p {
   margin: 0;
-  padding: 0 0 22px;
-  color: #67728c;
-  font-size: 0.97rem;
-  line-height: 1.85;
-  letter-spacing: -0.02em;
-  opacity: 0;
-  transform: translateY(-6px);
-  transition:
-    opacity 0.28s ease,
-    transform 0.28s ease;
+  overflow: hidden;
+  padding: 0 24px 0;
+  color: var(--matey-color-text-body);
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.8;
+  word-break: keep-all;
+  transition: padding var(--matey-transition-slow);
 }
 
-.matey-faq__answer-wrap.is-open .matey-faq__answer p {
-  opacity: 1;
-  transform: translateY(0);
-  transition-delay: 0.08s;
+.matey-faq__item.is-open .matey-faq__answer {
+  padding: 0 24px 22px;
 }
 
-@keyframes faqFadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@media (max-width: 1100px) {
+/* =========================================================
+   7. 반응형 - 노트북
+========================================================= */
+@media (max-width: 1180px) {
   .matey-faq {
     padding:
       var(--matey-section-py-tablet)
-      var(--matey-page-gutter-tablet)
-      calc(var(--matey-section-py-tablet) + 44px);
+      var(--matey-page-gutter-tablet);
   }
 
-  .matey-faq__accordion {
-    max-width: none;
+  .matey-faq__inner {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.25fr);
+    gap: 40px;
+  }
+
+  .matey-faq__intro {
+    padding: 28px 24px;
   }
 }
 
+/* =========================================================
+   8. 반응형 - 태블릿
+========================================================= */
+@media (max-width: 880px) {
+  .matey-faq__inner {
+    grid-template-columns: 1fr;
+    gap: 36px;
+  }
+
+  .matey-faq__intro {
+    position: static;
+    text-align: center;
+    align-items: center;
+  }
+
+  .matey-faq__eyebrow {
+    align-self: center;
+  }
+
+  .matey-faq__guide {
+    flex-direction: column;
+  }
+
+  .matey-faq__tabs {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .matey-faq__tab {
+    flex: 1;
+    padding: 0 12px;
+    font-size: 0.88rem;
+  }
+}
+
+/* =========================================================
+   9. 반응형 - 모바일
+========================================================= */
 @media (max-width: 640px) {
   .matey-faq {
     padding:
       var(--matey-section-py-mobile)
-      var(--matey-page-gutter-mobile)
-      calc(var(--matey-section-py-mobile) + 30px);
+      var(--matey-page-gutter-mobile);
   }
 
-  .matey-faq__header {
-    margin-bottom: 28px;
+  .matey-faq__intro {
+    padding: 24px 20px;
+    gap: 18px;
   }
 
-  .matey-faq__title br {
-    display: none;
+  .matey-faq__title {
+    font-size: clamp(1.6rem, 6.5vw, 2rem);
   }
 
-  .matey-faq__subtitle {
-    font-size: 0.95rem;
-    line-height: 1.75;
+  .matey-faq__guide-bubble {
+    max-width: 260px;
+    font-size: 0.88rem;
+    padding: 12px 16px;
+  }
+
+  .matey-faq__guide-mate {
+    width: clamp(140px, 44vw, 200px);
   }
 
   .matey-faq__tabs {
-    justify-content: flex-start;
-    gap: 8px;
-    margin-bottom: 20px;
+    padding: 4px;
   }
 
   .matey-faq__tab {
-    min-height: 42px;
-    padding: 0 14px;
-    font-size: 0.88rem;
-  }
-
-  .matey-faq__item {
-    border-radius: 22px;
+    min-height: 38px;
+    padding: 0 10px;
+    font-size: 0.86rem;
   }
 
   .matey-faq__question {
-    padding: 18px 16px;
+    padding: 18px 18px;
     gap: 12px;
   }
 
   .matey-faq__question-text {
-    font-size: 0.96rem;
+    font-size: 0.95rem;
+  }
+
+  .matey-faq__item.is-open .matey-faq__answer {
+    padding: 0 18px 18px;
   }
 
   .matey-faq__answer {
-    padding: 0 16px;
-  }
-
-  .matey-faq__answer p {
-    padding: 0 0 18px;
-    font-size: 0.93rem;
-    line-height: 1.78;
+    padding: 0 18px 0;
+    font-size: 0.92rem;
+    line-height: 1.7;
   }
 }
 
+/* =========================================================
+   10. 모션 줄이기 옵션
+========================================================= */
 @media (prefers-reduced-motion: reduce) {
-  .matey-faq__tab,
+  .matey-faq__guide-mate-image,
   .matey-faq__item,
-  .matey-faq__icon,
-  .matey-faq__icon::before,
-  .matey-faq__icon::after,
+  .matey-faq__question,
+  .matey-faq__question-icon,
+  .matey-faq__question-icon-bar,
   .matey-faq__answer-wrap,
-  .matey-faq__answer p {
-    transition: none !important;
+  .matey-faq__answer {
     animation: none !important;
+    transition: none !important;
   }
 }
