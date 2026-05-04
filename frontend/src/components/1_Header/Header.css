@@ -249,6 +249,12 @@
   box-shadow: 0 16px 28px rgba(141, 121, 255, 0.12);
 }
 
+.matey-header__ghost.is-active {
+  border-color: rgba(108, 158, 255, 0.38);
+  background: rgba(108, 158, 255, 0.16);
+  color: #284a7a;
+}
+
 .matey-header__text-button {
   border: 1px solid transparent;
   background: transparent;
@@ -639,6 +645,24 @@
   height: 1px;
   margin: 16px 0;
   background: rgba(132, 146, 181, 0.12);
+}
+
+.matey-header__mobile-download-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.matey-header__mobile-download-row .matey-header__mobile-soft {
+  flex: 1 1 calc(50% - 5px);
+  min-width: 0;
+}
+
+.matey-header__mobile-soft.is-active {
+  border-color: rgba(108, 158, 255, 0.42);
+  background: rgba(108, 158, 255, 0.2);
+  color: #243d66;
 }
 
 .matey-header__mobile-actions,

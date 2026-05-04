@@ -17,6 +17,12 @@ import ResetPasswordPage from './components/5_Auth/ResetPasswordPage';
 import SocialLoginSuccessPage from './pages/SocialLoginSuccessPage';
 import SocialSignupPage from './pages/SocialSignupPage';
 
+import CommunityLayout from './components/12_Community/CommunityLayout';
+import CommunityPostList from './components/12_Community/CommunityPostList';
+import CommunityPostDetail from './components/12_Community/CommunityPostDetail';
+import CommunityPostForm from './components/12_Community/CommunityPostForm';
+import CommunityFaqView from './components/12_Community/CommunityFaqView';
+
 function AuthLoadingScreen() {
   return (
     <div
@@ -89,6 +95,15 @@ function AppRoutes() {
       <Route element={<MainLayout />}>
         <Route path="/" element={<MainPage />} />
         <Route path="/download" element={<DownloadPage />} />
+
+        <Route path="/community" element={<CommunityLayout />}>
+          <Route index element={<CommunityPostList />} />
+          <Route path="faq" element={<CommunityFaqView />} />
+          <Route path="inquiry" element={<Navigate to="/community/faq" replace />} />
+          <Route path="write" element={<CommunityPostForm />} />
+          <Route path="posts/:postId/edit" element={<CommunityPostForm />} />
+          <Route path="posts/:postId" element={<CommunityPostDetail />} />
+        </Route>
 
         <Route
           path="/login"

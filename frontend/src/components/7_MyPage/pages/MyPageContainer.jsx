@@ -17,6 +17,7 @@
  */
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import layoutStyles from '../layout/MyPageLayout.module.css';
 
 import ProfileCard from '../layout/ProfileCard';
@@ -28,8 +29,11 @@ import EmotionReportContent from '../contents/emotionReport/EmotionReportContent
 import BotMenuContent from '../contents/BotMenuContent';
 import LetterBoxContent from '../contents/letterBox/LetterBoxContent';
 import SettingsContent from '../contents/settings/SettingsContent';
+import SupportHistoryContent from '../contents/SupportHistoryContent';
 
 function MyPageContainer() {
+  const location = useLocation();
+  const navigate = useNavigate();
   /* =========================
      현재 선택된 메뉴 상태
      - 기본값: dashboard
@@ -86,9 +90,22 @@ function MyPageContainer() {
         label: '설정',
         description: '알림과 서비스 옵션을 관리해요',
       },
+      {
+        key: 'support',
+        label: '문의 내역',
+        description: '문의·신고 접수와 관리자 답변을 확인해요',
+      },
     ],
     []
   );
+
+  useEffect(() => {
+    if (location.state?.highlight === 'support') {
+      setActiveMenu('support');
+      setTransitionKey((k) => k + 1);
+      navigate('.', { replace: true, state: {} });
+    }
+  }, [location.state, navigate]);
 
   /* =========================
      왼쪽 메뉴 클릭하는 코드
@@ -133,6 +150,9 @@ function MyPageContainer() {
 
       case 'settings':
         return <SettingsContent />;
+
+      case 'support':
+        return <SupportHistoryContent />;
 
       // activeMenu가 'dashboard'일 때와 그 외의 정의되지 않은 모든 값일 때 해당 내용을 실행
       case 'dashboard':

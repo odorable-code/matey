@@ -181,7 +181,6 @@ function Header() {
     }
   };
 
-  console.log(logout);
   const handleLogout = async () => {
     try {
       await logout();
@@ -244,6 +243,14 @@ function Header() {
               >
                 다운로드
               </button>
+              <Link
+                to="/community"
+                className={`matey-header__ghost ${
+                  location.pathname.startsWith('/community') ? 'is-active' : ''
+                }`}
+              >
+                커뮤니티
+              </Link>
 
               {isAuthenticated ? (
                 <>
@@ -380,13 +387,24 @@ function Header() {
           <div className="matey-header__mobile-divider" />
 
           <div className="matey-header__mobile-actions">
-            <button
-              type="button"
-              className="matey-header__mobile-soft"
-              onClick={handleGoDownload}
-            >
-              다운로드
-            </button>
+            <div className="matey-header__mobile-download-row">
+              <button
+                type="button"
+                className="matey-header__mobile-soft"
+                onClick={handleGoDownload}
+              >
+                다운로드
+              </button>
+              <Link
+                to="/community"
+                className={`matey-header__mobile-soft ${
+                  location.pathname.startsWith('/community') ? 'is-active' : ''
+                }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                커뮤니티
+              </Link>
+            </div>
 
             {isAuthenticated ? (
               <div className="matey-header__mobile-auth">

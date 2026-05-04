@@ -33,10 +33,10 @@ public class CommunityController {
     // 2) 게시글 목록
     @GetMapping("/posts")
     public ResponseEntity<List<PostDTO>> getPosts(
-            @RequestParam(required = false) Long categoryId,
-            @RequestParam(required = false, defaultValue = "") String keyword,
-            @RequestParam(defaultValue = "20") int limit,
-            @RequestParam(defaultValue = "0") int offset
+            @RequestParam(name = "categoryId", required = false) Long categoryId,
+            @RequestParam(name = "keyword", required = false, defaultValue = "") String keyword,
+            @RequestParam(name = "limit", defaultValue = "20") int limit,
+            @RequestParam(name = "offset", defaultValue = "0") int offset
     ) {
         return ResponseEntity.ok(communityService.getPosts(categoryId, keyword, limit, offset));
     }
@@ -56,7 +56,7 @@ public class CommunityController {
     // 3-1) 게시글 수정(작성자만)
     @PutMapping("/posts/{postId}")
     public ResponseEntity<String> updatePost(
-            @PathVariable Long postId,
+            @PathVariable("postId") Long postId,
             @RequestBody PostCreateRequestDTO dto,
             @AuthenticationPrincipal CustomUser user
     ) {
@@ -68,7 +68,7 @@ public class CommunityController {
     // 3-2) 게시글 삭제(작성자만)
     @DeleteMapping("/posts/{postId}")
     public ResponseEntity<String> deletePost(
-            @PathVariable Long postId,
+            @PathVariable("postId") Long postId,
             @AuthenticationPrincipal CustomUser user
     ) {
         long userId = user.getUser().getUserId();
@@ -78,7 +78,7 @@ public class CommunityController {
 
     // 4) 게시글 상세 + 댓글 목록
     @GetMapping("/posts/{postId}")
-    public ResponseEntity<Map<String, Object>> getPostDetailWithComments(@PathVariable Long postId) {
+    public ResponseEntity<Map<String, Object>> getPostDetailWithComments(@PathVariable("postId") Long postId) {
         return ResponseEntity.ok(communityService.getPostDetailWithComments(postId));
     }
 
@@ -91,7 +91,7 @@ public class CommunityController {
     // 5) 댓글 작성
     @PostMapping("/posts/{postId}/comments")
     public ResponseEntity<Void> createComment(
-            @PathVariable Long postId,
+            @PathVariable("postId") Long postId,
             @RequestBody CommentCreateRequestDTO dto,
             @AuthenticationPrincipal CustomUser user
     ) {
@@ -103,8 +103,8 @@ public class CommunityController {
     // 댓글 수정(작성자만)
     @PutMapping("/posts/{postId}/comments/{commentId}")
     public ResponseEntity<String> updateComment(
-            @PathVariable Long postId,
-            @PathVariable Long commentId,
+            @PathVariable("postId") Long postId,
+            @PathVariable("commentId") Long commentId,
             @RequestBody CommentCreateRequestDTO dto,
             @AuthenticationPrincipal CustomUser user
     ) {
@@ -117,8 +117,8 @@ public class CommunityController {
     // 댓글 삭제(작성자만)
     @DeleteMapping("/posts/{postId}/comments/{commentId}")
     public ResponseEntity<String> deleteComment(
-            @PathVariable Long postId,
-            @PathVariable Long commentId,
+            @PathVariable("postId") Long postId,
+            @PathVariable("commentId") Long commentId,
             @AuthenticationPrincipal CustomUser user
     ) {
         long userId = user.getUser().getUserId();
@@ -128,7 +128,7 @@ public class CommunityController {
 
     // 댓글만 별도로 가져오기(프론트 구성에 따라 사용)
     @GetMapping("/posts/{postId}/comments")
-    public ResponseEntity<List<kr.hi.matey.dto.CommentDTO>> getComments(@PathVariable Long postId) {
+    public ResponseEntity<List<kr.hi.matey.dto.CommentDTO>> getComments(@PathVariable("postId") Long postId) {
         return ResponseEntity.ok(communityService.getComments(postId));
     }
 }

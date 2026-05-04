@@ -1,0 +1,197 @@
+import React, { useEffect, useId, useState } from 'react';
+import { supportPublicAPI, supportUserAPI } from '../../utils/api';
+import { filterReportReasons } from './communitySupportReasons';
+import styles from './CommunityPage.module.css';
+
+function excerpt(text, max = 80) {
+  if (!text) return '';
+  const t = String(text).replace(/\s+/g, ' ').trim();
+  return t.length > max ? `${t.slice(0, max)}…` : t;
+}
+
+/**
+ * 게시글 또는 댓글 신고 — SUPPORT 테이블 문의 티켓으로 접수 (관리자 답변은 마이페이지 동일)
+ */
+function CommunityReportModal({
+  open,
+  onClose,
+  target,
+  postId,
+  postTitle,
+  comment,
+  onSubmitted,
+}) {
+  const uid = useId();
+  const [reasons, setReasons] = useState([]);
+  const [supportReasonId, setSupportReasonId] = useState('');
+  const [detail, setDetail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!open) return undefined;
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      setError('');
+      setSupportReasonId('');
+      setDetail('');
+      try {
+        const res = await supportPublicAPI.getReasons();
+        const list = res?.reasons ?? [];
+        const want = target === 'COMMENT' ? 'COMMENT' : 'POST';
+        setReasons(filterReportReasons(Array.isArray(list) ? list : [], want));
+      } catch (e) {
+        if (!cancelled) setError(e?.message || '사유 목록을 불러오지 못했어요.');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, target]);
+
+  if (!open) return null;
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setError('');
+    if (!supportReasonId) {
+      setError('신고 사유를 선택해 주세요.');
+      return;
+    }
+    const body = detail.trim();
+    if (!body) {
+      setError('신고 내용을 입력해 주세요.');
+      return;
+    }
+
+    const rid = Number(supportReasonId);
+    const picked = reasons.find((r) => Number(r.supportReasonId) === rid);
+    const reasonLabel = picked?.reasonName || '';
+
+    let ticketTitle;
+    let ticketContent;
+    if (target === 'COMMENT' && comment) {
+      ticketTitle = `[댓글 신고] 게시글 #${postId} 댓글 #${comment.commentId}`;
+      ticketContent = [
+        `신고 유형: 댓글`,
+        `게시글 ID: ${postId}`,
+        `댓글 ID: ${comment.commentId}`,
+        `선택 사유: ${reasonLabel}`,
+        '',
+        '상세:',
+        body,
+        '',
+        `댓글 미리보기: ${excerpt(comment.content, 200)}`,
+      ].join('\n');
+    } else {
+      ticketTitle = `[게시글 신고] #${postId}`;
+      ticketContent = [
+        `신고 유형: 게시글`,
+        `게시글 ID: ${postId}`,
+        `선택 사유: ${reasonLabel}`,
+        '',
+        '상세:',
+        body,
+        '',
+        `글 제목: ${postTitle || ''}`,
+      ].join('\n');
+    }
+
+    setSaving(true);
+    try {
+      await supportUserAPI.createTicket({
+        title: ticketTitle.slice(0, 200),
+        content: ticketContent,
+        supportReasonId: rid,
+      });
+      onSubmitted?.();
+      onClose();
+    } catch (e) {
+      setError(e?.message || '신고 접수에 실패했어요.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div
+      className={styles.modalBackdrop}
+      role="presentation"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        className={styles.modalCard}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={`${uid}-report-title`}
+      >
+        <h2 id={`${uid}-report-title`} className={styles.modalTitle}>
+          {target === 'COMMENT' ? '댓글 신고' : '게시글 신고'}
+        </h2>
+        <p className={styles.hint} style={{ marginBottom: 14 }}>
+          허위 신고는 제재될 수 있어요. 접수 후 처리 결과는 마이페이지의 문의 내역에서 확인할 수 있어요.
+        </p>
+
+        {loading ? <p className={styles.hint}>불러오는 중…</p> : null}
+        {error ? <p className={styles.errorText}>{error}</p> : null}
+
+        {!loading && reasons.length === 0 ? (
+          <p className={styles.hint}>등록된 신고 사유가 없어요. 관리자에게 문의해 주세요.</p>
+        ) : null}
+
+        {reasons.length > 0 ? (
+          <form onSubmit={handleSubmit}>
+            <div className={styles.fieldBlock}>
+              <label className={styles.fieldLabel} htmlFor={`${uid}-reason`}>
+                사유
+              </label>
+              <select
+                id={`${uid}-reason`}
+                className={styles.select}
+                style={{ width: '100%' }}
+                value={supportReasonId}
+                onChange={(e) => setSupportReasonId(e.target.value)}
+              >
+                <option value="">선택</option>
+                {reasons.map((r) => (
+                  <option key={r.supportReasonId} value={r.supportReasonId}>
+                    {r.reasonName}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className={styles.fieldBlock}>
+              <label className={styles.fieldLabel} htmlFor={`${uid}-detail`}>
+                상세 내용
+              </label>
+              <textarea
+                id={`${uid}-detail`}
+                className={styles.textarea}
+                style={{ minHeight: 120 }}
+                value={detail}
+                onChange={(e) => setDetail(e.target.value)}
+                placeholder="어떤 점이 문제인지 구체적으로 적어 주세요."
+              />
+            </div>
+            <div className={styles.rowActions}>
+              <button type="button" className={styles.ghostBtn} onClick={onClose} disabled={saving}>
+                취소
+              </button>
+              <button type="submit" className={styles.primaryBtn} disabled={saving || loading}>
+                {saving ? '접수 중…' : '신고 접수'}
+              </button>
+            </div>
+          </form>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+export default CommunityReportModal;
