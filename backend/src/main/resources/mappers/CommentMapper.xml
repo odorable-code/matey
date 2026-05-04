@@ -15,11 +15,56 @@
             u.nickname as userNickname,
             cm.post_id as postId,
             cm.created_at as createdAt,
-            cm.updated_at as updatedAt
+            cm.created_at as updatedAt
+            <choose>
+                <when test="viewerUserId != null">
+                    , EXISTS(
+                        SELECT 1 FROM user_comment_like ucl
+                        WHERE ucl.comment_id = cm.comment_id AND ucl.user_id = #{viewerUserId}
+                    ) AS likedByMe
+                </when>
+                <otherwise>
+                    , FALSE AS likedByMe
+                </otherwise>
+            </choose>
         FROM COMMENT cm
         JOIN USER u ON cm.user_id = u.user_id
         WHERE cm.post_id = #{postId}
         ORDER BY cm.created_at ASC
+    </select>
+
+    <select id="countCommentOnPost" resultType="int">
+        SELECT COUNT(*)
+        FROM COMMENT
+        WHERE comment_id = #{commentId} AND post_id = #{postId}
+    </select>
+
+    <select id="selectCommentById" resultType="kr.hi.matey.dto.CommentDTO">
+        SELECT
+            cm.comment_id as commentId,
+            cm.content,
+            cm.parent_comment_id as parentCommentId,
+            cm.like_count as likeCount,
+            cm.report_count as reportCount,
+            cm.user_id as userId,
+            u.nickname as userNickname,
+            cm.post_id as postId,
+            cm.created_at as createdAt,
+            cm.created_at as updatedAt
+            <choose>
+                <when test="viewerUserId != null">
+                    , EXISTS(
+                        SELECT 1 FROM user_comment_like ucl
+                        WHERE ucl.comment_id = cm.comment_id AND ucl.user_id = #{viewerUserId}
+                    ) AS likedByMe
+                </when>
+                <otherwise>
+                    , FALSE AS likedByMe
+                </otherwise>
+            </choose>
+        FROM COMMENT cm
+        JOIN USER u ON cm.user_id = u.user_id
+        WHERE cm.comment_id = #{commentId}
     </select>
 
     <insert id="insertComment" parameterType="map">
@@ -40,8 +85,7 @@
         UPDATE COMMENT
         SET
             content = #{dto.content},
-            parent_comment_id = #{dto.parentCommentId},
-            updated_at = NOW()
+            parent_comment_id = #{dto.parentCommentId}
         WHERE comment_id = #{commentId}
           AND user_id = #{userId}
     </update>
@@ -51,6 +95,22 @@
         WHERE comment_id = #{commentId}
           AND user_id = #{userId}
     </delete>
+
+    <insert id="insertCommentLike">
+        INSERT INTO user_comment_like (user_id, comment_id)
+        VALUES (#{userId}, #{commentId})
+    </insert>
+
+    <delete id="deleteCommentLike">
+        DELETE FROM user_comment_like
+        WHERE user_id = #{userId} AND comment_id = #{commentId}
+    </delete>
+
+    <update id="adjustCommentLikeCount">
+        UPDATE COMMENT
+        SET like_count = GREATEST(0, like_count + #{delta})
+        WHERE comment_id = #{commentId}
+    </update>
 
 </mapper>
 

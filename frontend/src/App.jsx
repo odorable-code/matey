@@ -62,6 +62,14 @@ import ChatModal from './components/15_ChatModal/ChatModal';
 /* =========================================================
    로그인 상태 확인 중일 때 보여주는 화면
 ========================================================= */
+import CommunityLayout from './components/12_Community/CommunityLayout';
+import CommunityPostList from './components/12_Community/CommunityPostList';
+import CommunityPostDetail from './components/12_Community/CommunityPostDetail';
+import CommunityPostForm from './components/12_Community/CommunityPostForm';
+import CommunityFaqView from './components/12_Community/CommunityFaqView';
+import CommunityInquiryPage from './components/12_Community/CommunityInquiryPage';
+import CommunityNoticesPage from './components/12_Community/CommunityNoticesPage';
+
 function AuthLoadingScreen() {
   return (
     <div
@@ -419,13 +427,13 @@ function AdminRoute({ children }) {
    비회원만 접근 가능한 라우트
 ========================================================= */
 function PublicOnlyRoute({ children }) {
-  const { isAuthenticated, authLoading } = useAuth();
+  const { isAuthenticated, authLoading, user } = useAuth();
 
   if (authLoading) {
     return <AuthLoadingScreen />;
   }
 
-  if (isAuthenticated) {
+  if (isAuthenticated && user) {
     return <Navigate to="/mypage" replace />;
   }
 
@@ -443,6 +451,16 @@ function AppRoutes() {
             메인 / 공개 페이지
         ===================================================== */}
         <Route path="/" element={<MainPage />} />
+
+        <Route path="/community" element={<CommunityLayout />}>
+          <Route index element={<CommunityPostList />} />
+          <Route path="notices" element={<CommunityNoticesPage />} />
+          <Route path="faq" element={<CommunityFaqView />} />
+          <Route path="inquiry" element={<CommunityInquiryPage />} />
+          <Route path="write" element={<CommunityPostForm />} />
+          <Route path="posts/:postId/edit" element={<CommunityPostForm />} />
+          <Route path="posts/:postId" element={<CommunityPostDetail />} />
+        </Route>
 
         <Route
           path="/features"

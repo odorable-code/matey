@@ -2,6 +2,7 @@ package kr.hi.matey.security.config;
 
 import java.util.List;
 
+import org.springframework.http.HttpMethod;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -19,7 +20,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import kr.hi.matey.security.filter.JwtAuthenticationFilter;
 import kr.hi.matey.service.MemberDetailService;
-import kr.hi.matey.util.UserRole;
 import lombok.AllArgsConstructor;
 
 @Configuration
@@ -58,10 +58,16 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/api/v1/check-email", "/api/v1/users/**").permitAll()
                         .requestMatchers("/ws-stomp/**").permitAll()
+                        .requestMatchers("/error").permitAll() // 에러 페이지 허용 (500 에러가 403으로 가려지는 현상 방지)
+                        
+                        // 마이페이지 API는 인증된 사용자만 허용
+                        .requestMatchers("/api/mypage/**").authenticated()
 
-//                        .requestMatchers("/api/v1/reviews/*/likes").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/community/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/mypage/support/faq").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/mypage/support/reasons").permitAll()
 
-//                        .anyRequest().permitAll()
+                        .anyRequest().authenticated()
                 )
                 .userDetailsService(userDetailsService)
                 // JWT 인증 필터를 우선순위에 배치합니다. 아이디/비밀번호 인증 필터(UsernamePasswordAuthenticationFilter)가 실행되기 전에, 들어온 요청의 JWT 토큰을 먼저 검사하여 인증 처리.

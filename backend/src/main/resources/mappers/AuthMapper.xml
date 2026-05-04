@@ -99,7 +99,7 @@
 	<select id="findUserVOByToken" resultType="kr.hi.matey.dto.PasswordResetDTO">
     	SELECT 
         u.email AS email,
-       	t.expires_at AS expiresAt,   t.token_hash AS tokenHash, t.used_at,
+       	t.expires_at AS expiresAt,   t.token_hash AS tokenHash, t.used_at AS usedAt,
         t.created_at   FROM USER u
 	    JOIN PASSWORD_RESET_TOKEN t ON u.user_id = t.user_id
 	    WHERE t.token_hash = #{token}
@@ -126,7 +126,7 @@
 	        token_hash = NULL,
 	        expires_at = NULL
 	    WHERE 
-	    email = #{email}
+	    user_id = (SELECT user_id FROM USER WHERE email = #{email})
 	</update>
 	
 	<insert id="saveAutoLoginInfo">

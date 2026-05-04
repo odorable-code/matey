@@ -13,6 +13,7 @@ public class CommentDTO {
 
     private Integer likeCount;
     private Integer reportCount;
+    private Boolean likedByMe;
 
     private Long userId;
     private String userNickname;

@@ -44,6 +44,10 @@ public interface AdminDAO {
     int updateFeedbackStatus(@Param("supportId") Long supportId, @Param("status") String status);
     int deleteFeedback(@Param("supportId") Long supportId);
 
-    int insertSupportAnswer(@Param("supportId") Long supportId, @Param("content") String content);
+    int insertSupportAnswer(
+            @Param("supportId") Long supportId,
+            @Param("content") String content,
+            @Param("adminUserId") Long adminUserId
+    );
 
 }

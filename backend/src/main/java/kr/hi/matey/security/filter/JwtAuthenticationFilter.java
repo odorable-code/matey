@@ -6,6 +6,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -28,13 +29,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getServletPath();
+        if ("GET".equalsIgnoreCase(request.getMethod())) {
+            if ("/api/mypage/support/faq".equals(path) || "/api/mypage/support/reasons".equals(path)) {
+                return true;
+            }
+        }
         return path.equals("/api/v1/auth/login")
                 || path.equals("/api/v1/auth/signup")
                 || path.equals("/api/v1/auth/refresh")
                 || path.equals("/api/v1/auth/logout")
                 || path.equals("/api/v1/auth/admin/signup")
-                || path.equals("/api/v1/auth/admin/login")   // ✅ 이게 없었음! 추가
-                || path.startsWith("/ws-chat");               // ✅ 웹소켓도 skip
+                || path.equals("/api/v1/auth/admin/login")
+                || path.startsWith("/ws-chat");
     }
 
     @Override
@@ -71,17 +77,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        // 7. 사용자 아이디로 UserDetails 로드
         String username = claims.getSubject();
-        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+        try {
+            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+            Authentication auth = new UsernamePasswordAuthenticationToken(
+                    userDetails, null, userDetails.getAuthorities()
+            );
+            SecurityContextHolder.getContext().setAuthentication(auth);
+        } catch (UsernameNotFoundException ex) {
+            SecurityContextHolder.clearContext();
+        }
 
-        // 8. 인증 객체 생성 후 SecurityContext에 저장
-        Authentication auth = new UsernamePasswordAuthenticationToken(
-                userDetails, null, userDetails.getAuthorities()
-        );
-        SecurityContextHolder.getContext().setAuthentication(auth);
-
-        // 9. 다음 필터로 진행
         filterChain.doFilter(request, response);
     }
 }

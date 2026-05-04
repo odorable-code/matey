@@ -5,59 +5,59 @@
 
 <mapper namespace="kr.hi.matey.dao.ReportDAO">
 
+    <!-- SUPPORT: support_reason_id, user_id, title, content, status, created_at -->
     <insert id="insertReport"
             parameterType="kr.hi.matey.dto.ReportDTO"
             useGeneratedKeys="true"
             keyProperty="supportId">
-        INSERT INTO support (
-            type,
-            target_type,
-            target_id,
-            reason,
+        INSERT INTO SUPPORT (
+            support_reason_id,
+            user_id,
+            title,
             content,
             status,
-            created_at,
-            user_id
+            created_at
         )
         VALUES (
-            #{type},
-            #{targetType},
-            #{targetId},
-            #{reason},
+            COALESCE(
+                #{reason},
+                (SELECT MIN(sr.support_reason_id) FROM SUPPORT_REASON sr WHERE sr.is_active = 1)
+            ),
+            #{userId},
+            CONCAT(
+                IFNULL(#{type}, 'REPORT'),
+                ' / ',
+                IFNULL(#{targetType}, ''),
+                ' / ',
+                IFNULL(#{targetId}, '')
+            ),
             #{content},
             'PENDING',
-            NOW(),
-            #{userId}
+            NOW()
         )
     </insert>
 
-    <insert id="insertReportImage">
-        INSERT INTO support_image (
-            image_url,
-            created_at,
-            support_id
-        )
-        VALUES (
-            #{imageUrl},
-            NOW(),
-            #{supportId}
-        )
-    </insert>
+    <!-- DB에 첨부 테이블 없음: 파일은 디스크에만 저장, 매퍼는 no-op -->
+    <update id="insertReportImage">
+        UPDATE SUPPORT
+        SET support_id = support_id
+        WHERE support_id = #{supportId}
+    </update>
 
     <select id="existsReason" resultType="int">
         SELECT COUNT(*)
-        FROM support_reason
-        WHERE reason_id = #{reason}
-        AND is_active = 1
+        FROM SUPPORT_REASON
+        WHERE support_reason_id = #{reason}
+          AND is_active = 1
     </select>
 
     <select id="selectReasonList" resultType="kr.hi.matey.dto.ReportReasonDTO">
         SELECT
-            reason_id AS reasonId,
+            support_reason_id AS reasonId,
             reason_name AS reasonName
-        FROM support_reason
+        FROM SUPPORT_REASON
         WHERE is_active = 1
-        ORDER BY reason_id
+        ORDER BY support_reason_id
     </select>
 
 </mapper>

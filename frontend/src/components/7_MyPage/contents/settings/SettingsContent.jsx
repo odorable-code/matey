@@ -71,7 +71,7 @@ function SettingsContent() {
         if (data) {
           setSettings((prev) => ({
             ...prev,
-            pushNotice: data.pushNotice ?? prev.pushNotice,
+            ...data
           }));
         }
       })
@@ -90,11 +90,9 @@ function SettingsContent() {
     setSettings((prev) => {
       const updated = { ...prev, [key]: !prev[key] };
 
-      if (key === 'pushNotice') {
-        myPageAPI
-          .updateSettings({ pushNotice: updated.pushNotice })
-          .catch(console.error);
-      }
+      myPageAPI
+        .updateSettings({ [key]: updated[key] })
+        .catch(console.error);
 
       return updated;
     });

@@ -6,11 +6,17 @@
 
     <select id="selectCategories" resultType="kr.hi.matey.dto.CategoryDTO">
         SELECT
-            category_id as categoryId,
+            category_id AS categoryId,
             name,
-            display_order as displayOrder
+            notification AS notification
         FROM CATEGORY
-        ORDER BY display_order ASC
+        ORDER BY category_id ASC
+    </select>
+
+    <select id="selectCategoryNotification" resultType="java.lang.Integer">
+        SELECT notification
+        FROM CATEGORY
+        WHERE category_id = #{categoryId}
     </select>
 
     <select id="selectPosts" resultType="kr.hi.matey.dto.PostDTO">
@@ -28,6 +34,17 @@
             c.name as categoryName,
             p.created_at as createdAt,
             p.updated_at as updatedAt
+            <choose>
+                <when test="viewerUserId != null">
+                    , EXISTS(
+                        SELECT 1 FROM user_post_like upl
+                        WHERE upl.post_id = p.post_id AND upl.user_id = #{viewerUserId}
+                    ) AS likedByMe
+                </when>
+                <otherwise>
+                    , FALSE AS likedByMe
+                </otherwise>
+            </choose>
         FROM POST p
         JOIN USER u ON p.user_id = u.user_id
         JOIN CATEGORY c ON p.category_id = c.category_id
@@ -61,6 +78,17 @@
             c.name as categoryName,
             p.created_at as createdAt,
             p.updated_at as updatedAt
+            <choose>
+                <when test="viewerUserId != null">
+                    , EXISTS(
+                        SELECT 1 FROM user_post_like upl
+                        WHERE upl.post_id = p.post_id AND upl.user_id = #{viewerUserId}
+                    ) AS likedByMe
+                </when>
+                <otherwise>
+                    , FALSE AS likedByMe
+                </otherwise>
+            </choose>
         FROM POST p
         JOIN USER u ON p.user_id = u.user_id
         JOIN CATEGORY c ON p.category_id = c.category_id
@@ -73,10 +101,7 @@
         WHERE post_id = #{postId}
     </update>
 
-    <insert id="insertPost" parameterType="map">
-        <selectKey resultType="long" keyProperty="dto.postId" order="AFTER">
-            SELECT LAST_INSERT_ID()
-        </selectKey>
+    <insert id="insertPost" useGeneratedKeys="true" keyColumn="post_id" keyProperty="dto.postId">
         INSERT INTO POST (
             title,
             content,
@@ -114,5 +139,21 @@
         WHERE post_id = #{postId}
           AND user_id = #{userId}
     </delete>
+
+    <insert id="insertPostLike">
+        INSERT INTO user_post_like (user_id, post_id)
+        VALUES (#{userId}, #{postId})
+    </insert>
+
+    <delete id="deletePostLike">
+        DELETE FROM user_post_like
+        WHERE user_id = #{userId} AND post_id = #{postId}
+    </delete>
+
+    <update id="adjustPostLikeCount">
+        UPDATE POST
+        SET like_count = GREATEST(0, like_count + #{delta})
+        WHERE post_id = #{postId}
+    </update>
 </mapper>
 

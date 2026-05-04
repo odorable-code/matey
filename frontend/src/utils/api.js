@@ -72,6 +72,7 @@ async function request(
   if (!response.ok) {
     const message =
       data?.message ||
+      data?.detail ||
       data?.error ||
       (typeof data === 'string' ? data : null) ||
       '요청 처리 중 오류가 발생했어요.';
@@ -379,6 +380,72 @@ export const adminAPI = {
 // MyPage API
 // ==========================================
 
+// ==========================================
+// 커뮤니티 (고민글·공지)
+// ==========================================
+
+export const communityAPI = {
+  getCategories: () => request('/api/community/categories'),
+  getNotices: () => request('/api/community/notices'),
+  getPosts: ({ categoryId, keyword, limit = 20, offset = 0 } = {}) => {
+    const usp = new URLSearchParams();
+    if (categoryId != null && categoryId !== '') {
+      usp.set('categoryId', String(categoryId));
+    }
+    if (keyword) {
+      usp.set('keyword', keyword);
+    }
+    usp.set('limit', String(limit));
+    usp.set('offset', String(offset));
+    const q = usp.toString();
+    return request(`/api/community/posts${q ? `?${q}` : ''}`);
+  },
+  getPostDetail: (postId) => request(`/api/community/posts/${postId}`),
+  createPost: (body) =>
+    request('/api/community/posts', { method: 'POST', body }),
+  updatePost: (postId, body) =>
+    request(`/api/community/posts/${postId}`, { method: 'PUT', body }),
+  deletePost: (postId) =>
+    request(`/api/community/posts/${postId}`, { method: 'DELETE' }),
+  createComment: (postId, body) =>
+    request(`/api/community/posts/${postId}/comments`, {
+      method: 'POST',
+      body,
+    }),
+  updateComment: (postId, commentId, body) =>
+    request(`/api/community/posts/${postId}/comments/${commentId}`, {
+      method: 'PUT',
+      body,
+    }),
+  deleteComment: (postId, commentId) =>
+    request(`/api/community/posts/${postId}/comments/${commentId}`, {
+      method: 'DELETE',
+    }),
+  togglePostLike: (postId) =>
+    request(`/api/community/posts/${postId}/like`, { method: 'POST' }),
+  toggleCommentLike: (postId, commentId) =>
+    request(`/api/community/posts/${postId}/comments/${commentId}/like`, {
+      method: 'POST',
+    }),
+  drawRandomWorryPost: () => request('/api/community/spotlight/worry-draw'),
+  getYearEndBotRanking: (year) =>
+    request(
+      `/api/community/spotlight/bot-ranking${year != null && year !== '' ? `?year=${encodeURIComponent(String(year))}` : ''}`
+    ),
+};
+
+// FAQ·문의 분류는 비로그인 조회 가능 (기획: FAQ는 관리자만 편집, 사용자는 읽기)
+export const supportPublicAPI = {
+  getFaqList: () => request('/api/mypage/support/faq'),
+  getReasons: () => request('/api/mypage/support/reasons'),
+};
+
+export const supportUserAPI = {
+  createTicket: (body) =>
+    request('/api/mypage/support', { method: 'POST', body }),
+  listTickets: () => request('/api/mypage/support'),
+};
+
 export const myPageAPI = {
   getProfile: () => request('/api/mypage/profile'),
   updateProfile: (data) => request('/api/mypage/profile', { method: 'PUT', body: data }),
@@ -389,5 +456,15 @@ export const myPageAPI = {
   deleteLetter: (letterId) => request(`/api/mypage/letters/${letterId}`, { method: 'DELETE' }),
   getSettings: () => request('/api/mypage/settings'),
   updateSettings: (data) => request('/api/mypage/settings', { method: 'PATCH', body: data }),
+};
+
+// ==========================================
+// Emotion Report API
+// ==========================================
+
+export const emotionReportAPI = {
+  getDashboard: () => request('/api/emotion-report/dashboard'),
+  getList: () => request('/api/emotion-report'),
+  getDetail: (analysisId) => request(`/api/emotion-report/${analysisId}`),
 };
 
