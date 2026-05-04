@@ -12,6 +12,8 @@ import java.util.List;
 public interface PostDAO {
     List<CategoryDTO> selectCategories();
 
+    Integer selectCategoryNotification(@Param("categoryId") Long categoryId);
+
     List<PostDTO> selectPosts(
             @Param("categoryId") Long categoryId,
             @Param("keyword") String keyword,

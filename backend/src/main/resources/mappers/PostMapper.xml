@@ -6,11 +6,17 @@
 
     <select id="selectCategories" resultType="kr.hi.matey.dto.CategoryDTO">
         SELECT
-            category_id as categoryId,
+            category_id AS categoryId,
             name,
-            display_order as displayOrder
+            notification AS notification
         FROM CATEGORY
-        ORDER BY display_order ASC
+        ORDER BY category_id ASC
+    </select>
+
+    <select id="selectCategoryNotification" resultType="java.lang.Integer">
+        SELECT notification
+        FROM CATEGORY
+        WHERE category_id = #{categoryId}
     </select>
 
     <select id="selectPosts" resultType="kr.hi.matey.dto.PostDTO">
@@ -73,10 +79,7 @@
         WHERE post_id = #{postId}
     </update>
 
-    <insert id="insertPost" parameterType="map">
-        <selectKey resultType="long" keyProperty="dto.postId" order="AFTER">
-            SELECT LAST_INSERT_ID()
-        </selectKey>
+    <insert id="insertPost" useGeneratedKeys="true" keyColumn="post_id" keyProperty="dto.postId">
         INSERT INTO POST (
             title,
             content,

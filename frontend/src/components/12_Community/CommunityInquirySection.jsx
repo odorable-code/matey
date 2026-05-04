@@ -6,9 +6,14 @@ import { filterInquiryReasons } from './communitySupportReasons';
 import styles from './CommunityPage.module.css';
 
 /**
- * FAQ 페이지 하단에 붙는 일반 문의 폼 (게시글/댓글 신고와 분리)
+ * 일반 문의 폼 (게시글/댓글 신고와 분리)
+ * @param {boolean} showIntro — FAQ 하단에 붙일 때 제목·안내 문구 표시
+ * @param {string} loginReturnTo — 로그인 후 돌아올 경로
  */
-function CommunityInquirySection() {
+function CommunityInquirySection({
+  showIntro = true,
+  loginReturnTo = '/community/faq',
+}) {
   const id = useId();
   const navigate = useNavigate();
   const { isAuthenticated, authLoading } = useAuth();
@@ -73,22 +78,29 @@ function CommunityInquirySection() {
   };
 
   return (
-    <section className={styles.faqInquirySection} aria-labelledby={`${id}-inq-heading`}>
-      <h2 id={`${id}-inq-heading`} className={styles.sectionTitle}>
-        문의하기
-      </h2>
-      <p className={styles.hint} style={{ marginBottom: 16 }}>
-        서비스 이용·계정·오류 등 문의를 남기면 관리자가 확인 후 답변해요. 접수 내역과 답변은{' '}
-        <strong>마이페이지 → 문의 내역</strong>에서 확인할 수 있어요. 게시글·댓글 신고는 글 상세 화면의
-        신고 버튼을 이용해 주세요.
-      </p>
+    <section
+      className={showIntro ? styles.faqInquirySection : styles.inquiryFormBlock}
+      aria-labelledby={showIntro ? `${id}-inq-heading` : undefined}
+    >
+      {showIntro ? (
+        <>
+          <h2 id={`${id}-inq-heading`} className={styles.sectionTitle}>
+            문의하기
+          </h2>
+          <p className={styles.hint} style={{ marginBottom: 16 }}>
+            서비스 이용·계정·오류 등 문의를 남기면 관리자가 확인 후 답변해요. 접수 내역과 답변은{' '}
+            <strong>마이페이지 → 문의 내역</strong>에서 확인할 수 있어요. 게시글·댓글 신고는 글 상세 화면의
+            신고 버튼을 이용해 주세요.
+          </p>
+        </>
+      ) : null}
 
       {authLoading ? (
         <p className={styles.hint}>로그인 상태를 확인하고 있어요…</p>
       ) : !isAuthenticated ? (
         <p className={styles.hint}>
           문의를 남기려면 로그인이 필요해요.{' '}
-          <Link to="/login" state={{ from: '/community/faq' }}>
+          <Link to="/login" state={{ from: loginReturnTo }}>
             로그인하기
           </Link>
         </p>

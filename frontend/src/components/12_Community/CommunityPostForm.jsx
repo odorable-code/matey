@@ -9,6 +9,18 @@ function resolveUserId(user) {
   return user.userId ?? user.id ?? user.user_id ?? null;
 }
 
+function isAdminUser(user) {
+  const r = String(user?.role || user?.roleCode || user?.roles?.[0] || '').trim().toUpperCase();
+  return r === 'ADMIN' || r === 'ROLE_ADMIN';
+}
+
+/** CATEGORY.notification — 0이면 일반 회원 작성 불가(공지) */
+function isWritableCategoryForUser(c) {
+  const n = c?.notification;
+  if (n === 0 || n === '0') return false;
+  return true;
+}
+
 function CommunityPostForm() {
   const { postId } = useParams();
   const navigate = useNavigate();
@@ -24,6 +36,18 @@ function CommunityPostForm() {
   const [error, setError] = useState('');
 
   const myId = useMemo(() => resolveUserId(user), [user]);
+
+  const categoryOptions = useMemo(() => {
+    const admin = isAdminUser(user);
+    const allowed = (categories || []).filter((c) => admin || isWritableCategoryForUser(c));
+    if (isEdit && categoryId) {
+      const cur = (categories || []).find((c) => String(c.categoryId) === String(categoryId));
+      if (cur && !allowed.some((c) => String(c.categoryId) === String(categoryId))) {
+        return [...allowed, cur];
+      }
+    }
+    return allowed;
+  }, [categories, user, isEdit, categoryId]);
 
   const loadCategories = useCallback(async () => {
     const list = await communityAPI.getCategories();
@@ -148,9 +172,10 @@ function CommunityPostForm() {
             onChange={(e) => setCategoryId(e.target.value)}
           >
             <option value="">선택</option>
-            {categories.map((c) => (
+            {categoryOptions.map((c) => (
               <option key={c.categoryId} value={c.categoryId}>
                 {c.name}
+                {!isWritableCategoryForUser(c) ? ' (관리자 전용)' : ''}
               </option>
             ))}
           </select>

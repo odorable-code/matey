@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supportPublicAPI } from '../../utils/api';
-import CommunityInquirySection from './CommunityInquirySection';
 import styles from './CommunityPage.module.css';
 
 function CommunityFaqView() {
@@ -38,8 +37,8 @@ function CommunityFaqView() {
       </div>
       <h1 className={styles.pageTitle}>FAQ</h1>
       <p className={styles.pageSubtitle} style={{ marginBottom: 20 }}>
-        자주 묻는 질문은 운영팀이 관리해요. 아래에서 일반 문의를 남길 수 있어요. 게시글·댓글 신고는 해당 글
-        상세 화면의 신고 버튼을 이용해 주세요.
+        자주 묻는 질문은 운영팀이 관리해요. 일반 문의는 왼쪽 메뉴의 <strong>문의</strong>에서 접수해 주세요.
+        게시글·댓글 신고는 해당 글 상세 화면의 신고 버튼을 이용해 주세요.
       </p>
       {error ? <p className={styles.errorText}>{error}</p> : null}
       {loading ? (
@@ -54,8 +53,6 @@ function CommunityFaqView() {
           </details>
         ))
       )}
-
-      <CommunityInquirySection />
     </div>
   );
 }

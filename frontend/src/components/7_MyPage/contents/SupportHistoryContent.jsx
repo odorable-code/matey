@@ -39,7 +39,7 @@ function SupportHistoryContent() {
     <article className="mypage-support-history" data-reveal-skip="true">
       <h1 className={styles.pageTitle}>문의 내역</h1>
       <p className={styles.lead}>
-        FAQ·문의로 남긴 일반 문의와 게시글·댓글 신고 접수가 여기 모여요. 관리자 답변이 등록되면 같은 카드에
+        커뮤니티 문의 메뉴로 남긴 일반 문의와 게시글·댓글 신고 접수가 여기 모여요. 관리자 답변이 등록되면 같은 카드에
         표시돼요.
       </p>
 

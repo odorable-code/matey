@@ -398,3 +398,9 @@ INSERT INTO ROLE (role_code, role_name, description) VALUES
 ('USER', '일반 사용자', '기본 사용자 권한'),
 ('SUBADMIN', '서브 관리자', '부분 관리자 권한'),
 ('ADMIN', '관리자', '전체 관리자 권한');
+
+INSERT INTO CATEGORY (name, notification)
+VALUES
+('일상', 1),
+('문의', 1),
+('공지', 0);

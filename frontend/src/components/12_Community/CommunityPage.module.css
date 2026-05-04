@@ -467,6 +467,12 @@
   border-top: 1px solid rgba(112, 91, 150, 0.14);
 }
 
+/* 문의 전용 페이지: FAQ 하단 구분선 없음 */
+.inquiryFormBlock {
+  margin-top: 0;
+  padding-top: 0;
+}
+
 .reportLinkBtn {
   margin-left: 10px;
   padding: 4px 10px;

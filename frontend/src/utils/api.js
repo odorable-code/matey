@@ -72,6 +72,7 @@ async function request(
   if (!response.ok) {
     const message =
       data?.message ||
+      data?.detail ||
       data?.error ||
       (typeof data === 'string' ? data : null) ||
       '요청 처리 중 오류가 발생했어요.';

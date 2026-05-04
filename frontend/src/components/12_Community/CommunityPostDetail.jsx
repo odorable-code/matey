@@ -22,6 +22,37 @@ function resolveUserId(user) {
   return user.userId ?? user.id ?? user.user_id ?? null;
 }
 
+/** 고민 카테고리는 '답변', 일상 등 그 외는 '댓글' UI */
+function getInteractionLabels(categoryName) {
+  const n = (categoryName || '').trim();
+  if (n === '고민') {
+    return {
+      deletePostConfirm: '이 고민글을 삭제할까요?',
+      sectionWithCount: (count) => `답변 (${count})`,
+      emptyHint: '아직 답변이 없어요. 먼저 공감과 경험을 나눠 주세요.',
+      composeTitle: '답변 남기기',
+      loginHint: '로그인 후 답변을 남길 수 있어요.',
+      placeholder: '공감과 경험을 바탕으로 조심스럽게 답변해 주세요.',
+      submitIdle: '답변 등록',
+      deleteConfirm: '이 답변을 삭제할까요?',
+      submitFail: '답변 등록에 실패했어요.',
+      deleteFail: '답변 삭제에 실패했어요.',
+    };
+  }
+  return {
+    deletePostConfirm: '이 글을 삭제할까요?',
+    sectionWithCount: (count) => `댓글 (${count})`,
+    emptyHint: '아직 댓글이 없어요. 먼저 공감과 경험을 나눠 주세요.',
+    composeTitle: '댓글 남기기',
+    loginHint: '로그인 후 댓글을 남길 수 있어요.',
+    placeholder: '공감과 경험을 바탕으로 조심스럽게 댓글을 남겨 주세요.',
+    submitIdle: '댓글 등록',
+    deleteConfirm: '이 댓글을 삭제할까요?',
+    submitFail: '댓글 등록에 실패했어요.',
+    deleteFail: '댓글 삭제에 실패했어요.',
+  };
+}
+
 function CommunityPostDetail() {
   const { postId } = useParams();
   const navigate = useNavigate();
@@ -60,6 +91,11 @@ function CommunityPostDetail() {
 
   const isAuthor = post && myId != null && Number(post.userId) === Number(myId);
 
+  const interactionLabels = useMemo(
+    () => (post ? getInteractionLabels(post.categoryName) : getInteractionLabels('')),
+    [post]
+  );
+
   const openPostReport = () => {
     if (!isAuthenticated) {
       navigate('/login', { state: { from: `/community/posts/${postId}` } });
@@ -95,14 +131,14 @@ function CommunityPostDetail() {
       setCommentText('');
       await load();
     } catch (e) {
-      setError(e?.message || '댓글 등록에 실패했어요.');
+      setError(e?.message || interactionLabels.submitFail);
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleDeletePost = async () => {
-    if (!window.confirm('이 고민글을 삭제할까요?')) return;
+    if (!window.confirm(interactionLabels.deletePostConfirm)) return;
     setError('');
     try {
       await communityAPI.deletePost(postId);
@@ -113,13 +149,13 @@ function CommunityPostDetail() {
   };
 
   const handleDeleteComment = async (comment) => {
-    if (!window.confirm('이 답변을 삭제할까요?')) return;
+    if (!window.confirm(interactionLabels.deleteConfirm)) return;
     setError('');
     try {
       await communityAPI.deleteComment(postId, comment.commentId);
       await load();
     } catch (e) {
-      setError(e?.message || '댓글 삭제에 실패했어요.');
+      setError(e?.message || interactionLabels.deleteFail);
     }
   };
 
@@ -148,7 +184,7 @@ function CommunityPostDetail() {
         postTitle={post?.title}
         comment={reportComment}
         onSubmitted={() => {
-          /* no-op: 답변은 마이페이지 문의 내역 */
+          /* no-op: 신고 접수 확인은 마이페이지 문의 내역 */
         }}
       />
 
@@ -198,9 +234,9 @@ function CommunityPostDetail() {
       </div>
       <div className={styles.detailBody}>{post.content}</div>
 
-      <h2 className={styles.sectionTitle}>답변 ({comments.length})</h2>
+      <h2 className={styles.sectionTitle}>{interactionLabels.sectionWithCount(comments.length)}</h2>
       {comments.length === 0 ? (
-        <p className={styles.hint}>아직 답변이 없어요. 먼저 공감과 경험을 나눠 주세요.</p>
+        <p className={styles.hint}>{interactionLabels.emptyHint}</p>
       ) : (
         comments.map((c) => {
           const mine = myId != null && Number(c.userId) === Number(myId);
@@ -233,10 +269,10 @@ function CommunityPostDetail() {
         })
       )}
 
-      <h2 className={styles.sectionTitle}>답변 남기기</h2>
+      <h2 className={styles.sectionTitle}>{interactionLabels.composeTitle}</h2>
       {!isAuthenticated ? (
         <p className={styles.hint}>
-          로그인 후 답변을 남길 수 있어요.{' '}
+          {interactionLabels.loginHint}{' '}
           <Link to="/login" state={{ from: `/community/posts/${postId}` }}>
             로그인하기
           </Link>
@@ -245,13 +281,13 @@ function CommunityPostDetail() {
         <form onSubmit={handleCommentSubmit}>
           <textarea
             className={styles.textarea}
-            placeholder="공감과 경험을 바탕으로 조심스럽게 답변해 주세요."
+            placeholder={interactionLabels.placeholder}
             value={commentText}
             onChange={(e) => setCommentText(e.target.value)}
           />
           <div className={styles.rowActions}>
             <button type="submit" className={styles.primaryBtn} disabled={submitting}>
-              {submitting ? '등록 중…' : '답변 등록'}
+              {submitting ? '등록 중…' : interactionLabels.submitIdle}
             </button>
           </div>
         </form>

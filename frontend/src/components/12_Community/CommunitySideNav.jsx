@@ -3,6 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import sideStyles from '../7_MyPage/layout/SideMenu.module.css';
 
 const FAQ_PATH = '/community/faq';
+const INQUIRY_PATH = '/community/inquiry';
 
 function isPostsSection(pathname) {
   return (
@@ -43,8 +44,22 @@ function CommunitySideNav() {
             style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
           >
             <span className={sideStyles.textGroup}>
-              <span className={sideStyles.label}>FAQ · 문의</span>
-              <span className={sideStyles.description}>자주 묻는 질문과 일반 문의 접수</span>
+              <span className={sideStyles.label}>FAQ</span>
+              <span className={sideStyles.description}>운영팀이 관리하는 자주 묻는 질문</span>
+            </span>
+          </NavLink>
+        </li>
+        <li className={sideStyles.menuItem}>
+          <NavLink
+            to={INQUIRY_PATH}
+            className={({ isActive }) =>
+              `${sideStyles.menuButton} ${isActive ? sideStyles.active : ''}`
+            }
+            style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
+          >
+            <span className={sideStyles.textGroup}>
+              <span className={sideStyles.label}>문의</span>
+              <span className={sideStyles.description}>일반 문의 접수·답변은 마이페이지에서</span>
             </span>
           </NavLink>
         </li>

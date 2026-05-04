@@ -48,7 +48,8 @@ public class CommunityController {
             @AuthenticationPrincipal CustomUser user
     ) {
         long userId = user.getUser().getUserId();
-        Long postId = communityService.createPost(dto, userId);
+        String roleCode = user.getUser().getRoleCode();
+        Long postId = communityService.createPost(dto, userId, roleCode);
 
         return ResponseEntity.ok(Map.of("postId", postId));
     }
@@ -61,7 +62,8 @@ public class CommunityController {
             @AuthenticationPrincipal CustomUser user
     ) {
         long userId = user.getUser().getUserId();
-        communityService.updatePost(postId, dto, userId);
+        String roleCode = user.getUser().getRoleCode();
+        communityService.updatePost(postId, dto, userId, roleCode);
         return ResponseEntity.ok("updated");
     }
 
