@@ -29,7 +29,7 @@ import EmotionReportContent from '../contents/emotionReport/EmotionReportContent
 import BotMenuContent from '../contents/BotMenuContent';
 import LetterBoxContent from '../contents/letterBox/LetterBoxContent';
 import SettingsContent from '../contents/settings/SettingsContent';
-import SupportHistoryContent from './SupportHistoryContent';
+import SupportHistoryContent from '../contents/SupportHistoryContent.jsx';
 
 function MyPageContainer() {
   const location = useLocation();
