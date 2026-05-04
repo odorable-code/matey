@@ -161,10 +161,10 @@ const FALLBACK_REPORT_DATA = {
     heroBots: FALLBACK_HERO_BOTS,
     selectedHero: FALLBACK_HERO_BOTS[0],
     statCards: [
-      { id: 'conversation-count', label: '대화량', value: '12회', caption: '선택 기간 동안 기록된 대화 횟수' },
-      { id: 'stability', label: '안정도', value: '77%', caption: '감정이 급격히 무너지지 않은 흐름' },
-      { id: 'recovery', label: '회복도', value: '74%', caption: '감정이 다시 정리되는 힘' },
-      { id: 'acceptance', label: '자기수용', value: '73%', caption: '자책보다 수용으로 이동한 흐름' },
+      { id: 'conversation-count', label: '대화량', value: '12회', caption: '선택 기간 동안 기록된 대화 횟수' }
+      // { id: 'stability', label: '안정도', value: '77%', caption: '감정이 급격히 무너지지 않은 흐름' },
+      // { id: 'recovery', label: '회복도', value: '74%', caption: '감정이 다시 정리되는 힘' },
+      // { id: 'acceptance', label: '자기수용', value: '73%', caption: '자책보다 수용으로 이동한 흐름' },
     ],
     coreEmotion: {
       title: '복잡한 감정이 생활 리듬과 연결되어 나타나는 패턴이 보여요.',

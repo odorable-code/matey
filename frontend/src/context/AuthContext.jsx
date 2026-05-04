@@ -165,7 +165,9 @@ export function AuthProvider({ children }) {
       setStoredUser(profile);
       return profile;
     } catch (error) {
-      clearAuth();
+      if (error.response?.status === 401) {
+        clearAuth();
+      }
       return null;
     }
   }, [clearAuth]);
@@ -183,26 +185,42 @@ export function AuthProvider({ children }) {
         }
 
         const currentToken = urlToken || getStoredToken();
-        const storedUser = getStoredUser();
+    //     const storedUser = getStoredUser();
 
-        if (!currentToken) {
-          if (mounted) {
-            setAuthLoading(false);
-          }
-          return;
+    //     if (!currentToken) {
+    //       if (mounted) {
+    //         setAuthLoading(false);
+    //       }
+    //       return;
+    //     }
+
+    //     if (isMockToken(currentToken)) {
+    //       if (mounted) {
+    //         setToken(currentToken);
+    //         setUser(storedUser);
+    //         setAuthLoading(false);
+    //       }
+    //       return;
+    //     }
+
+    //     await syncProfile();
+    //   } catch (error) {
+    //     console.error("인증 확인 중 오류:", error);
+    //   } finally {
+    //     if (mounted) {
+    //       setAuthLoading(false); // 모든 확인이 끝난 "최후의 순간"에 로딩 해제
+    //     }
+    //   }
+    // }
+
+    if (currentToken) {
+          // 토큰이 있다면 프로필을 새로 고침해서 최신 유저 정보를 가져옵니다.
+          await syncProfile();
         }
-
-        if (isMockToken(currentToken)) {
-          if (mounted) {
-            setToken(currentToken);
-            setUser(storedUser);
-            setAuthLoading(false);
-          }
-          return;
-        }
-
-        await syncProfile();
+      } catch (err) {
+        console.error("Bootstrap error:", err);
       } finally {
+        // ⭐️ 어떤 경우에도 (성공하든 실패하든) 확인이 끝났으므로 로딩을 끕니다.
         if (mounted) {
           setAuthLoading(false);
         }

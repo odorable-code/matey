@@ -23,12 +23,12 @@
  * - 이 파일은 "화면 분기 + 상단 UI" 담당이라고 생각하면 쉬움
  */
 
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
+import ReportApi from '../../api/reportApi';
 import styles from './EmotionReportContent.module.css';
 import EmotionTab from './tabs/EmotionTab';
 import ChatHistoryTab from './tabs/ChatHistoryTab';
 import useEmotionReport from '../../hooks/emotionReport/useEmotionReport';
-
 /* =========================
    className 합칠 때 쓰는 간단 함수
 ========================= */
@@ -100,6 +100,38 @@ function EmotionReportContent() {
     handleBotChange,
     handleDateChange,
   } = useEmotionReport();
+
+  /* =========================
+      2. [추가] 서버 데이터 요청 로직 (useEffect)
+      - 사용자가 기간(Period)이나 동물(Bot)을 클릭해 상태가 변하면 실행됩니다.
+  ========================= */
+  useEffect(() => {
+    const fetchData = async (period, botSort) => {
+      // 초기 렌더링 시 값이 없을 경우를 대비한 가드 코드
+      if (!selectedPeriod || !selectedBotKey) return;
+
+      try {
+        console.log(`[서버 요청] 동물: ${selectedBotKey}, 기간: ${selectedPeriod}`);
+        
+        const response = await fetch(
+          `http://localhost:8000/api/report?period=${selectedPeriod}&bot=${selectedBotKey}`
+        );
+        
+        if (!response.ok) throw new Error('Network response was not ok');
+        
+        const result = await response.json();
+        console.log("서버 응답 데이터 수신 완료:", result);
+
+        // TODO: 여기서 받아온 result를 setReportData(result) 처럼 
+        // 훅 내부 상태에 업데이트하는 로직이 추가되어야 화면이 바뀝니다.
+        
+      } catch (error) {
+        console.error("감정 리포트 데이터 로드 실패:", error);
+      }
+    };
+
+    fetchData();
+  }, [selectedPeriod, selectedBotKey]); // [중요] 사용자가 클릭해서 값이 바뀔 때마다 자동 실행
 
   /* =========================
      탭 옵션 / 기간 옵션 기본값 보정
@@ -264,8 +296,11 @@ function EmotionReportContent() {
           <EmotionTab
             data={emotionTabData}
             reportData={reportData}
+            //선택한 봇 키
             selectedBotKey={selectedBotKey}
+            //기간선택에서 선택한 기간 종류로 7d, 30d, 90d가 들어감
             selectedPeriod={currentPeriodKey}
+            //봇 클릭했을 때 실행할 함수
             onBotChange={handleBotChange}
             botOptions={botOptions}
           />
