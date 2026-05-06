@@ -61,12 +61,14 @@ public class SecurityConfig {
                         .requestMatchers("/ws-stomp/**").permitAll()
                         .requestMatchers("/error").permitAll() // 에러 페이지 허용 (500 에러가 403으로 가려지는 현상 방지)
                         
+                        // FAQ/문의 사유는 비로그인 조회 허용 (Support 모달/FAQ에서 사용)
+                        .requestMatchers(HttpMethod.GET, "/api/mypage/support/faq").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/mypage/support/reasons").permitAll()
+
                         // 마이페이지 API는 인증된 사용자만 허용
                         .requestMatchers("/api/mypage/**").authenticated()
 
                         .requestMatchers(HttpMethod.GET, "/api/community/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/mypage/support/faq").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/mypage/support/reasons").permitAll()
 
                         .anyRequest().authenticated()
                 )

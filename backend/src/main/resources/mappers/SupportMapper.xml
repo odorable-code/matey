@@ -13,6 +13,7 @@
             s.status,
             s.support_reason_id as supportReasonId,
             sr.reason_name as reasonName,
+            sr.target_type as targetType,
             (
                 SELECT sa.content
                 FROM SUPPORT_ANSWER sa
@@ -48,12 +49,31 @@
     <select id="selectSupportReasons" resultType="kr.hi.matey.dto.SupportReasonDTO">
         SELECT
             support_reason_id as supportReasonId,
-            reason_code as targetType,
+            target_type as targetType,
             reason_name as reasonName,
             is_active as isActive
         FROM SUPPORT_REASON
         WHERE is_active = 1
         ORDER BY support_reason_id ASC
+    </select>
+
+    <select id="selectSupportReasonById" resultType="kr.hi.matey.dto.SupportReasonDTO">
+        SELECT
+            support_reason_id as supportReasonId,
+            target_type as targetType,
+            reason_name as reasonName,
+            is_active as isActive
+        FROM SUPPORT_REASON
+        WHERE support_reason_id = #{supportReasonId}
+        LIMIT 1
+    </select>
+
+    <!-- 중복 신고 방지: title에 들어간 메타 태그로 같은 대상 신고 여부 확인 -->
+    <select id="countExistingReportForTarget" resultType="int">
+        SELECT COUNT(*)
+        FROM SUPPORT s
+        WHERE s.user_id = #{userId}
+          AND s.title LIKE CONCAT('[REPORT ', #{targetType}, ' ', #{targetId}, ']%')
     </select>
 
     <select id="selectFaqList" resultType="kr.hi.matey.dto.FaqDTO">

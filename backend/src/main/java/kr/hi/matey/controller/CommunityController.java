@@ -4,7 +4,7 @@ import kr.hi.matey.dto.CommentCreateRequestDTO;
 import kr.hi.matey.dto.PostCreateRequestDTO;
 import kr.hi.matey.dto.PostDTO;
 import kr.hi.matey.dto.CategoryDTO;
-import kr.hi.matey.dto.AdminNoticeDTO;
+import kr.hi.matey.dto.NoticeFeedItemDTO;
 import kr.hi.matey.service.CommunityService;
 import kr.hi.matey.service.NoticeService;
 import kr.hi.matey.util.CustomUser;
@@ -46,10 +46,11 @@ public class CommunityController {
             @RequestParam(name = "keyword", required = false, defaultValue = "") String keyword,
             @RequestParam(name = "limit", defaultValue = "20") int limit,
             @RequestParam(name = "offset", defaultValue = "0") int offset,
+            @RequestParam(name = "includeNotice", required = false, defaultValue = "false") boolean includeNotice,
             @AuthenticationPrincipal CustomUser user
     ) {
         return ResponseEntity.ok(
-                communityService.getPosts(categoryId, keyword, limit, offset, resolveViewerId(user))
+                communityService.getPosts(categoryId, keyword, limit, offset, resolveViewerId(user), includeNotice)
         );
     }
 
@@ -126,8 +127,8 @@ public class CommunityController {
 
     // 6) 공지사항 목록
     @GetMapping("/notices")
-    public ResponseEntity<List<AdminNoticeDTO>> getNotices() {
-        return ResponseEntity.ok(noticeService.getPublishedNotices());
+    public ResponseEntity<List<NoticeFeedItemDTO>> getNotices() {
+        return ResponseEntity.ok(noticeService.getNoticeFeed());
     }
 
     // 5) 댓글 작성

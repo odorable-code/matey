@@ -22,6 +22,8 @@ public class PostDTO {
 
     private Long categoryId;
     private String categoryName;
+    /** CATEGORY.notification — 0이면 공지·이벤트 등 운영 카테고리 */
+    private Integer categoryNotification;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

@@ -1,6 +1,7 @@
 package kr.hi.matey.controller;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
 
@@ -137,7 +138,10 @@ public class AuthController {
             // User 정보를 담은 객체 (비밀번호 제외)
             Map<String, Object> userData = new HashMap<>();
             userData.put("email", user.getEmail());
+            userData.put("userId", customUser.getUser().getUserId());
             userData.put("nickname", user.getNickname());
+            userData.put("userName", customUser.getUser().getUserName());
+            userData.put("roleCode", customUser.getUser().getRoleCode());
             responseBody.put("user", userData);
             
             responseBody.put("accessToken", accessToken);
@@ -178,9 +182,13 @@ public class AuthController {
             Map<String, Object> responseBody = new HashMap<>();
             responseBody.put("accessToken", accessToken);
             responseBody.put("message", "로그인에 성공했습니다.");
-            responseBody.put("user", Map.of(
-                "email", customUser.getUser().getEmail()
-            ));
+            Map<String, Object> userPayload = new HashMap<>();
+            userPayload.put("email", customUser.getUser().getEmail());
+            userPayload.put("userId", customUser.getUser().getUserId());
+            userPayload.put("nickname", customUser.getUser().getNickname());
+            userPayload.put("userName", customUser.getUser().getUserName());
+            userPayload.put("roleCode", customUser.getUser().getRoleCode());
+            responseBody.put("user", userPayload);
             return ResponseEntity.ok(responseBody);
 			
 		}catch(Exception e) {
@@ -234,12 +242,13 @@ public class AuthController {
 	            	return ResponseEntity.status(401).body(Map.of("message", "UNAUTHORIZED"));
 	            }
 
-	            return ResponseEntity.ok(Map.of(
-	                    "userId", customUser.getUser().getUserId(),
-	                    "userName", customUser.getUser().getUserName(),
-	                    "nickname", customUser.getUser().getNickname(),
-	                    "roleCode", customUser.getUser().getRoleCode()
-	                ));
+	            Map<String, Object> me = new LinkedHashMap<>();
+	            me.put("userId", customUser.getUser().getUserId());
+	            me.put("email", customUser.getUser().getEmail());
+	            me.put("userName", customUser.getUser().getUserName());
+	            me.put("nickname", customUser.getUser().getNickname());
+	            me.put("roleCode", customUser.getUser().getRoleCode());
+	            return ResponseEntity.ok(me);
 	            
 	            } catch (Exception e) {
 	            // 서버 내부 에러 등 예상치 못한 오류 시 500을 보냄

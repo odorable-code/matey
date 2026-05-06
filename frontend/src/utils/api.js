@@ -76,7 +76,11 @@ async function request(
       data?.error ||
       (typeof data === 'string' ? data : null) ||
       '요청 처리 중 오류가 발생했어요.';
-    throw new Error(message);
+    const err = new Error(message);
+    // 호출부에서 401/403 등을 구분할 수 있게 상태/원문을 붙입니다.
+    err.status = response.status;
+    err.data = data;
+    throw err;
   }
 
   return data;
@@ -94,7 +98,22 @@ function normalizeToken(payload) {
 }
 
 function normalizeUser(payload) {
-  return payload?.user || payload?.data?.user || payload?.data || null;
+  if (!payload || typeof payload !== 'object') return null;
+  // /api/v1/auth/me 는 user 래핑 없이 userId·roleCode 등을 최상위에 둠
+  let u = null;
+  if (payload.userId != null || payload.roleCode != null || payload.email != null) {
+    u = { ...payload };
+  } else {
+    const inner = payload.user || payload.data?.user || payload.data || null;
+    u = inner ? { ...inner } : null;
+  }
+  if (u && u.roleCode != null && u.role == null) {
+    u.role = u.roleCode;
+  }
+  if (u && u.role != null && u.roleCode == null) {
+    u.roleCode = u.role;
+  }
+  return u;
 }
 
 export async function login({ email, password, rememberMe }) {
@@ -374,6 +393,13 @@ export const adminAPI = {
       method: 'GET',
     });
   },
+
+  /** 공지(ADMIN_NOTICE) — 백엔드에서 ADMIN·SUPER_ADMIN만 허용 */
+  createNotice: (body) =>
+    request('/api/admin/notices', {
+      method: 'POST',
+      body,
+    }),
 };
 
 // ==========================================
@@ -381,19 +407,22 @@ export const adminAPI = {
 // ==========================================
 
 // ==========================================
-// 커뮤니티 (고민글·공지)
+// 커뮤니티 (게시글·공지)
 // ==========================================
 
 export const communityAPI = {
   getCategories: () => request('/api/community/categories'),
   getNotices: () => request('/api/community/notices'),
-  getPosts: ({ categoryId, keyword, limit = 20, offset = 0 } = {}) => {
+  getPosts: ({ categoryId, keyword, limit = 20, offset = 0, includeNotice = false } = {}) => {
     const usp = new URLSearchParams();
     if (categoryId != null && categoryId !== '') {
       usp.set('categoryId', String(categoryId));
     }
     if (keyword) {
       usp.set('keyword', keyword);
+    }
+    if (includeNotice) {
+      usp.set('includeNotice', 'true');
     }
     usp.set('limit', String(limit));
     usp.set('offset', String(offset));

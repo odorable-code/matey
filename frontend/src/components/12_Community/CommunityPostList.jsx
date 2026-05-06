@@ -18,7 +18,17 @@ function formatDateTime(value) {
 
 function excerpt(text, max = 120) {
   if (!text) return '';
-  const t = String(text).replace(/\s+/g, ' ').trim();
+  const plain = String(text)
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
+  const t = plain;
   return t.length > max ? `${t.slice(0, max)}…` : t;
 }
 
@@ -246,35 +256,41 @@ function CommunityPostList() {
           {posts.length === 0 ? (
             <p className={styles.hint}>아직 글이 없어요.</p>
           ) : (
-            posts.map((p) => (
-              <div key={p.postId} className={styles.postCard}>
-                <Link to={`/community/posts/${p.postId}`} className={styles.postCardLink}>
-                  <div className={styles.postMeta}>
-                    <span>{p.categoryName || '카테고리'}</span>
-                    <span>{p.userNickname || '익명'}</span>
-                    <span>조회 {p.viewCount ?? 0}</span>
-                    <span>{formatDateTime(p.createdAt)}</span>
-                  </div>
-                  <h2 className={styles.postTitle}>{p.title}</h2>
-                  <p className={styles.postExcerpt}>{excerpt(p.content)}</p>
-                </Link>
-                <div className={styles.postCardFooter}>
-                  <button
-                    type="button"
-                    className={`${styles.likeBtn} ${styles.likeBtnSm} ${
-                      p.likedByMe ? styles.likeBtnActive : ''
-                    }`}
-                    onClick={(e) => handlePostCardLike(e, p)}
-                    aria-pressed={!!p.likedByMe}
-                  >
-                    <span className={styles.likeIcon} aria-hidden>
-                      ♥
-                    </span>
-                    <span>좋아요 {p.likeCount ?? 0}</span>
-                  </button>
+            posts.map((p) => {
+              const hideEngagement =
+                p.categoryNotification === 0 || p.categoryNotification === '0';
+              return (
+                <div key={p.postId} className={styles.postCard}>
+                  <Link to={`/community/posts/${p.postId}`} className={styles.postCardLink}>
+                    <div className={styles.postMeta}>
+                      <span>{p.categoryName || '카테고리'}</span>
+                      <span>{p.userNickname || '익명'}</span>
+                      <span>조회 {p.viewCount ?? 0}</span>
+                      <span>{formatDateTime(p.createdAt)}</span>
+                    </div>
+                    <h2 className={styles.postTitle}>{p.title}</h2>
+                    <p className={styles.postExcerpt}>{excerpt(p.content)}</p>
+                  </Link>
+                  {!hideEngagement ? (
+                    <div className={styles.postCardFooter}>
+                      <button
+                        type="button"
+                        className={`${styles.likeBtn} ${styles.likeBtnSm} ${
+                          p.likedByMe ? styles.likeBtnActive : ''
+                        }`}
+                        onClick={(e) => handlePostCardLike(e, p)}
+                        aria-pressed={!!p.likedByMe}
+                      >
+                        <span className={styles.likeIcon} aria-hidden>
+                          ♥
+                        </span>
+                        <span>좋아요 {p.likeCount ?? 0}</span>
+                      </button>
+                    </div>
+                  ) : null}
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       )}

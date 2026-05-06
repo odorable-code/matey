@@ -197,6 +197,12 @@ function normalizeText(value) {
   return String(value || '').trim().toLowerCase();
 }
 
+function displaySupportTitle(raw) {
+  const t = String(raw || '');
+  // 신고 메타 태그는 UI에서 숨김: [REPORT POST 123] ...
+  return t.replace(/^\[REPORT\s+(POST|COMMENT)\s+\d+\]\s*/i, '');
+}
+
 function isAdminUser(targetUser) {
   const role = String(targetUser?.role || targetUser?.roles?.[0] || '').toUpperCase();
   return role === 'ADMIN' || role === 'SUPER_ADMIN' || role.includes('ADMIN');
@@ -1520,7 +1526,7 @@ export default function AdminPage() {
                   >
                     <div className="matey-admin-v2__feedback-card-head">
                       <div>
-                        <h3>{item.title}</h3>
+                        <h3>{displaySupportTitle(item.title)}</h3>
                         <p>{item.userNickname}</p>
                       </div>
                       <span
@@ -1530,7 +1536,7 @@ export default function AdminPage() {
                       </span>
                     </div>
 
-                    <p>{item.content.slice(0, 88)}...</p>
+                    <p>{String(item.content || '').slice(0, 88)}...</p>
 
                     <div className="matey-admin-v2__feedback-meta">
                       <span
@@ -1555,7 +1561,7 @@ export default function AdminPage() {
                   <>
                     <div className="matey-admin-v2__feedback-detail-head">
                       <div>
-                        <h3>{selectedFeedback.title}</h3>
+                        <h3>{displaySupportTitle(selectedFeedback.title)}</h3>
                         <div className="matey-admin-v2__feedback-detail-info">
                           <span className="matey-admin-v2__pill is-user">
                             {selectedFeedback.userNickname}

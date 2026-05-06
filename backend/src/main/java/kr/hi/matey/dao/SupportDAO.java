@@ -17,6 +17,10 @@ public interface SupportDAO {
     // 사용자 문의 분류(문의/신고 유형 선택용)
     List<SupportReasonDTO> selectSupportReasons();
 
+    SupportReasonDTO selectSupportReasonById(Long supportReasonId);
+
+    int countExistingReportForTarget(Long userId, String targetType, Long targetId);
+
     List<FaqDTO> selectFaqList();
 
     // 관리자 FAQ 관리

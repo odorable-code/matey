@@ -15,6 +15,8 @@ public class SupportDTO {
     // SUPPORT_REASON 분류
     private Long supportReasonId;
     private String reasonName; // JOIN용
+    /** SUPPORT_REASON.target_type (POST/COMMENT이면 신고, NULL이면 일반문의) */
+    private String targetType;
 
     // 사용자 조회 시 마지막 답변만 보여줄 용도
     private String answerContent;

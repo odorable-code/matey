@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import DOMPurify from 'dompurify';
 import { useAuth } from '../../contexts/AuthContext';
 import { communityAPI } from '../../utils/api';
 import CommunityReportModal from './CommunityReportModal';
@@ -27,7 +28,7 @@ function getInteractionLabels(categoryName) {
   const n = (categoryName || '').trim();
   if (n === '고민') {
     return {
-      deletePostConfirm: '이 고민글을 삭제할까요?',
+      deletePostConfirm: '이 글을 삭제할까요?',
       sectionWithCount: (count) => `답변 (${count})`,
       emptyHint: '아직 답변이 없어요. 먼저 공감과 경험을 나눠 주세요.',
       composeTitle: '답변 남기기',
@@ -97,6 +98,12 @@ function CommunityPostDetail() {
     () => (post ? getInteractionLabels(post.categoryName) : getInteractionLabels('')),
     [post]
   );
+
+  const isNoticeCategoryPost = useMemo(() => {
+    if (!post) return false;
+    const n = post.categoryNotification;
+    return n === 0 || n === '0';
+  }, [post]);
 
   const openPostReport = () => {
     if (!isAuthenticated) {
@@ -232,6 +239,7 @@ function CommunityPostDetail() {
         target={reportTarget}
         postId={postId}
         postTitle={post?.title}
+        postAuthorNickname={post?.userNickname}
         comment={reportComment}
         onSubmitted={() => {
           /* no-op: 신고 접수 확인은 마이페이지 문의 내역 */
@@ -276,28 +284,54 @@ function CommunityPostDetail() {
         <h1 className={styles.detailTitle} style={{ flex: '1 1 200px', marginBottom: 0 }}>
           {post.title}
         </h1>
-        {!isAuthor ? (
+        {!isAuthor && !isNoticeCategoryPost ? (
           <button type="button" className={styles.reportLinkBtn} onClick={openPostReport}>
             신고
           </button>
         ) : null}
       </div>
-      <div className={styles.detailBody}>{post.content}</div>
+      <div
+        className={styles.detailBody}
+        dangerouslySetInnerHTML={{
+          __html: DOMPurify.sanitize(String(post.content || ''), {
+            ALLOWED_TAGS: [
+              'p',
+              'br',
+              'strong',
+              'em',
+              'u',
+              's',
+              'span',
+              'a',
+              'h1',
+              'h2',
+              'h3',
+              'ol',
+              'ul',
+              'li',
+              'blockquote',
+            ],
+            ALLOWED_ATTR: ['href', 'target', 'rel', 'class', 'style'],
+          }),
+        }}
+      />
 
-      <div className={styles.likeRow}>
-        <button
-          type="button"
-          className={`${styles.likeBtn} ${post.likedByMe ? styles.likeBtnActive : ''}`}
-          onClick={handleTogglePostLike}
-          disabled={postLikeBusy}
-          aria-pressed={!!post.likedByMe}
-        >
-          <span className={styles.likeIcon} aria-hidden>
-            ♥
-          </span>
-          <span>좋아요 {post.likeCount ?? 0}</span>
-        </button>
-      </div>
+      {!isNoticeCategoryPost ? (
+        <div className={styles.likeRow}>
+          <button
+            type="button"
+            className={`${styles.likeBtn} ${post.likedByMe ? styles.likeBtnActive : ''}`}
+            onClick={handleTogglePostLike}
+            disabled={postLikeBusy}
+            aria-pressed={!!post.likedByMe}
+          >
+            <span className={styles.likeIcon} aria-hidden>
+              ♥
+            </span>
+            <span>좋아요 {post.likeCount ?? 0}</span>
+          </button>
+        </div>
+      ) : null}
 
       <h2 className={styles.sectionTitle}>{interactionLabels.sectionWithCount(comments.length)}</h2>
       {comments.length === 0 ? (
@@ -318,7 +352,7 @@ function CommunityPostDetail() {
                   >
                     삭제
                   </button>
-                ) : (
+                ) : !isNoticeCategoryPost ? (
                   <button
                     type="button"
                     className={styles.reportLinkBtn}
@@ -326,25 +360,27 @@ function CommunityPostDetail() {
                   >
                     신고
                   </button>
-                )}
+                ) : null}
               </div>
               <p className={styles.commentText}>{c.content}</p>
-              <div className={styles.commentLikeRow}>
-                <button
-                  type="button"
-                  className={`${styles.likeBtn} ${styles.likeBtnSm} ${
-                    c.likedByMe ? styles.likeBtnActive : ''
-                  }`}
-                  onClick={() => handleToggleCommentLike(c.commentId)}
-                  disabled={commentLikeBusyId === c.commentId}
-                  aria-pressed={!!c.likedByMe}
-                >
-                  <span className={styles.likeIcon} aria-hidden>
-                    ♥
-                  </span>
-                  <span>좋아요 {c.likeCount ?? 0}</span>
-                </button>
-              </div>
+              {!isNoticeCategoryPost ? (
+                <div className={styles.commentLikeRow}>
+                  <button
+                    type="button"
+                    className={`${styles.likeBtn} ${styles.likeBtnSm} ${
+                      c.likedByMe ? styles.likeBtnActive : ''
+                    }`}
+                    onClick={() => handleToggleCommentLike(c.commentId)}
+                    disabled={commentLikeBusyId === c.commentId}
+                    aria-pressed={!!c.likedByMe}
+                  >
+                    <span className={styles.likeIcon} aria-hidden>
+                      ♥
+                    </span>
+                    <span>좋아요 {c.likeCount ?? 0}</span>
+                  </button>
+                </div>
+              ) : null}
             </article>
           );
         })
