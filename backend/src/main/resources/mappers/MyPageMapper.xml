@@ -9,6 +9,7 @@
         nickname,
         user_name as name,
         email,
+        phone,
         DATE_FORMAT(birth_date, '%Y-%m-%d') as birthDate,
         gender,
         DATE_FORMAT(created_at, '%Y-%m-%d') as joinedAt,
@@ -89,6 +90,9 @@
     <select id="selectUserSettings" resultType="kr.hi.matey.dto.UserSettingsDTO">
         SELECT
         us.bot_letter_enabled as pushNotice,
+        us.email_notice_enabled as emailNotice,
+        us.gentle_tone_enabled as gentleTone,
+        us.quick_reply_enabled as quickReply,
         us.satisfaction_popup_enabled as satisfactionPopup,
         u.is_marketing_agreed as marketingNotice
         FROM USER_SETTING us
@@ -119,6 +123,9 @@
                 <set>
                     <choose>
                         <when test="key == 'pushNotice'">bot_letter_enabled = #{value},</when>
+                        <when test="key == 'emailNotice'">email_notice_enabled = #{value},</when>
+                        <when test="key == 'gentleTone'">gentle_tone_enabled = #{value},</when>
+                        <when test="key == 'quickReply'">quick_reply_enabled = #{value},</when>
                         <when test="key == 'satisfactionPopup'">satisfaction_popup_enabled = #{value},</when>
                     </choose>
                     updated_at = NOW()

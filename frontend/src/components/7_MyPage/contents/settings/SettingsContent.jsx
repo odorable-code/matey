@@ -53,18 +53,20 @@ function SettingsContent() {
   const [settings, setSettings] = useState(initialSettings);
 
   /* =========================
+     계정 정보 저장
+  ========================= */
+  const [userInfo, setUserInfo] = useState({
+    email: '-',
+    phone: '등록된 정보 없음', // DB에 없으므로 기본값 처리
+    linkedDate: '-',
+  });
+
+  /* =========================
      설정 화면 처음 열릴 때
-     서버에서 설정값 불러오는 코드
-     *
-     * [지금 연결된 것]
-     * - pushNotice만 반영
-     *
-     * [나중에 추가 가능]
-     * - emailNotice
-     * - gentleTone
-     * - quickReply
+     서버에서 설정값 및 계정 정보 불러오는 코드
   ========================= */
   useEffect(() => {
+    // 설정값 불러오기
     myPageAPI
       .getSettings()
       .then((data) => {
@@ -76,22 +78,37 @@ function SettingsContent() {
         }
       })
       .catch(console.error);
+
+    // 계정 정보 불러오기
+    myPageAPI
+      .getProfile()
+      .then((data) => {
+        if (data) {
+          setUserInfo({
+            email: data.email || '-',
+            phone: data.phone || '등록된 정보 없음',
+            linkedDate: data.joinedAt || '-',
+          });
+        }
+      })
+      .catch(console.error);
   }, []);
 
   /* =========================
      토글 버튼 클릭하는 코드
      - 화면 상태를 먼저 바꾸고
-     - 필요한 항목만 서버에도 저장
-     *
-     * [현재 서버 저장되는 것]
-     * - pushNotice
+     - 서버에도 저장
   ========================= */
   const toggleSetting = (key) => {
     setSettings((prev) => {
-      const updated = { ...prev, [key]: !prev[key] };
+      const newValue = !prev[key];
+      const updated = { ...prev, [key]: newValue };
 
       myPageAPI
-        .updateSettings({ [key]: updated[key] })
+        .updateSettings({ 
+          settingKey: key, 
+          settingValue: newValue 
+        })
         .catch(console.error);
 
       return updated;
@@ -198,15 +215,15 @@ function SettingsContent() {
             <div className={styles.infoList}>
               <div className={styles.infoRow}>
                 <span className={styles.infoLabel}>이메일</span>
-                <strong className={styles.infoValue}>{accountInfo.email}</strong>
+                <strong className={styles.infoValue}>{userInfo.email}</strong>
               </div>
               <div className={styles.infoRow}>
                 <span className={styles.infoLabel}>휴대폰 번호</span>
-                <strong className={styles.infoValue}>{accountInfo.phone}</strong>
+                <strong className={styles.infoValue}>{userInfo.phone}</strong>
               </div>
               <div className={styles.infoRow}>
                 <span className={styles.infoLabel}>가입일</span>
-                <strong className={styles.infoValue}>{accountInfo.linkedDate}</strong>
+                <strong className={styles.infoValue}>{userInfo.linkedDate}</strong>
               </div>
             </div>
           </article>
