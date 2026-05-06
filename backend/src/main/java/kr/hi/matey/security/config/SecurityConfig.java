@@ -6,7 +6,8 @@ import org.springframework.http.HttpMethod;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -79,13 +80,12 @@ public class SecurityConfig {
         return http.build();
     }
 
+    /** AuthController 로그인용: UserDetailsService와 BCrypt PasswordEncoder를 한 Provider에 묶습니다. */
     @Bean
-    
-    // AuthenticationManagerrk Bean으로 등록이 안돼있기 때문에 @Bean 어노테이션을 붙여줌
-    public AuthenticationManager authenticationManager(
-            AuthenticationConfiguration config
-    ) throws Exception {
-        return config.getAuthenticationManager();
+    public AuthenticationManager authenticationManager(PasswordEncoder passwordEncoder) {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(passwordEncoder);
+        provider.setUserDetailsService(userDetailsService);
+        return new ProviderManager(provider);
     }
 
     @Bean
