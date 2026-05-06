@@ -105,7 +105,8 @@ CREATE TABLE `EXCLUSIVE` (
 
 CREATE TABLE `SUPPORT_REASON` (
 	`support_reason_id`	BIGINT	NOT NULL PRIMARY KEY AUTO_INCREMENT,
-	`target_type`	ENUM('POST', 'COMMENT', 'NULL')	NULL	DEFAULT NULL,
+	`reason_type` ENUM('REPORT', 'INQUIRY') NOT NULL,
+	`target_type` ENUM('POST', 'COMMENT') NULL DEFAULT NULL,
 	`reason_code`	VARCHAR(10)	NULL,
 	`reason_name`	ENUM('욕설/비방', '성적/음란 콘텐츠', '광고/스팸', '혐오 표현', '사기/허위 정보', '개인정보 노출', '불법 콘텐츠', '도배/반복 게시', '결제문의', '계정문의', '버그/오류문의', '서비스 이용 문의', '콘텐츠 관련 문의', '기타')	NOT NULL,
 	`is_active`	TINYINT	NOT NULL	DEFAULT 1
@@ -157,6 +158,7 @@ CREATE TABLE `MESSAGE` (
 
 CREATE TABLE `NOTIFICATION` (
 	`notification_id`	BIGINT	NOT NULL PRIMARY KEY AUTO_INCREMENT,
+	`user_id` BIGINT NOT NULL,
 	`type_code`	VARCHAR(50)	NOT NULL,
 	`content`	VARCHAR(255)	NULL,
 	`is_read`	TINYINT	NOT NULL	DEFAULT 0,
@@ -164,6 +166,7 @@ CREATE TABLE `NOTIFICATION` (
 	`target_type`	VARCHAR(50)	NULL,
 	`target_id`	BIGINT	NULL,
     
+    FOREIGN KEY (user_id) REFERENCES USER(user_id),
     FOREIGN KEY(`type_code`) REFERENCES `NOTIFICATION_TYPE`(`type_code`)
 );
 
@@ -240,7 +243,6 @@ CREATE TABLE `PASSWORD_RESET_TOKEN` (
 );
 
 CREATE TABLE `USER_ROLE` (
-	`user_role_id`	BIGINT	NOT NULL PRIMARY KEY AUTO_INCREMENT,
 	`user_id`	BIGINT	NOT NULL,
 	`role_id`	BIGINT	NOT NULL	DEFAULT 1,
     
@@ -395,14 +397,58 @@ CREATE TABLE `SOCIAL_LOGIN` (
     FOREIGN KEY(`user_id`) REFERENCES `USER`(`user_id`)
 );
 
-
 INSERT INTO ROLE (role_code, role_name, description) VALUES
 ('USER', '일반 사용자', '기본 사용자 권한'),
 ('SUBADMIN', '서브 관리자', '부분 관리자 권한'),
 ('ADMIN', '관리자', '전체 관리자 권한');
 
-INSERT INTO CATEGORY (name, notification)
+INSERT INTO NOTIFICATION_TYPE (type_code, type_name, description) VALUES
+('SUPPORT_ANSWER', '신고/문의 답변', '신고 또는 문의글에 답변이 등록되었을 때'),
+('POST_COMMENT', '게시글 댓글', '내 게시글에 댓글이 작성되었을 때'),
+('COMMENT_REPLY', '대댓글', '내 댓글에 답글이 작성되었을 때'),
+('BOT_MESSAGE', '봇 쪽지', '상담봇이 사용자에게 메시지를 보냈을 때'),
+('SYSTEM_NOTICE', '시스템 공지', '운영 공지 및 시스템 알림'),
+('POINT_REWARD', '포인트 지급', '포인트가 지급되었을 때'),
+('COMMUNITY_HOT', '인기 게시글', '내 게시글이 인기글로 선정되었을 때'),
+('REPORT_RESULT', '신고 처리 결과', '신고 처리 결과가 등록되었을 때'),
+('CHAT_REMINDER', '상담 리마인드', '일정 시간 미접속 후 상담 유도 알림'),
+('EVENT_NOTICE', '이벤트 알림', '이벤트 및 출석 보상 관련 알림');
+
+INSERT INTO EMOTION_CATEGORY (emotion_code, emotion_name) VALUES
+('HAPPY', '행복'), ('SAD', '슬픔'), ('ANGRY', '분노'), ('ANXIOUS', '불안'),
+('LONELY', '외로움'), ('TIRED', '지침'), ('STRESSED', '스트레스'), ('DEPRESSED', '우울'),
+('CONFUSED', '혼란'), ('CALM', '평온'), ('EXCITED', '설렘'), ('FEAR', '두려움'),
+('HURT', '상처'), ('EMPTY', '공허함'), ('GRATEFUL', '감사'), ('NEUTRAL', '중립');
+
+INSERT INTO CATEGORY (name, notification) VALUES
+('공지', 0), ('일상', 1), ('고민상담', 1), ('연애', 1),
+('우울/불안', 1), ('자유게시판', 1), ('질문', 1),
+('후기', 1), ('정보공유', 1), ('이벤트', 1);
+
+INSERT INTO SUPPORT_REASON (reason_type, target_type, reason_code, reason_name, is_active) VALUES
+('REPORT', 'POST', 'ABUSE', '욕설/비방', 1), ('REPORT', 'POST', 'SEXUAL', '성적/음란 콘텐츠', 1),
+('REPORT', 'POST', 'SPAM', '광고/스팸', 1), ('REPORT', 'POST', 'HATE', '혐오 표현', 1),
+('REPORT', 'POST', 'SCAM', '사기/허위 정보', 1), ('REPORT', 'POST', 'PRIVACY', '개인정보 노출', 1),
+('REPORT', 'POST', 'ILLEGAL', '불법 콘텐츠', 1), ('REPORT', 'POST', 'FLOOD', '도배/반복 게시', 1),
+
+('REPORT', 'COMMENT', 'ABUSE', '욕설/비방', 1), ('REPORT', 'COMMENT', 'SEXUAL', '성적/음란 콘텐츠', 1),
+('REPORT', 'COMMENT', 'SPAM', '광고/스팸', 1), ('REPORT', 'COMMENT', 'HATE', '혐오 표현', 1),
+('REPORT', 'COMMENT', 'SCAM', '사기/허위 정보', 1), ('REPORT', 'COMMENT', 'PRIVACY', '개인정보 노출', 1),
+('REPORT', 'COMMENT', 'ILLEGAL', '불법 콘텐츠', 1), ('REPORT', 'COMMENT', 'FLOOD', '도배/반복 게시', 1);
+
+INSERT INTO SUPPORT_REASON (reason_type, target_type, reason_code, reason_name, is_active) VALUES
+('INQUIRY', NULL, 'PAYMENT', '결제문의', 1), ('INQUIRY', NULL, 'ACCOUNT', '계정문의', 1), ('INQUIRY', NULL, 'BUG', '버그/오류문의', 1),
+('INQUIRY', NULL, 'SERVICE', '서비스 이용 문의', 1), ('INQUIRY', NULL, 'CONTENT', '콘텐츠 관련 문의', 1), ('INQUIRY', NULL, 'ETC', '기타', 1);
+
+INSERT INTO USER (email, password, nickname, user_name, birth_date, gender, profile_image, login_type, status,
+    is_terms_agreed, is_privacy_agreed, is_marketing_agreed, last_login_at)
 VALUES
-('일상', 1),
-('고민', 1),
-('공지', 0);
+('user1@test.com', '$2a$10$WuFXSHPrxLS4NzmQ2O18/ONxOvvh9yhmtWmVdmXDhZPAllz0ACm.2', '일반유저', '홍길동', '2000-01-01', 'MALE', NULL, 'LOCAL', 'ACTIVE', 
+		TRUE, TRUE, FALSE, NOW()),
+('subadmin1@test.com', '$2a$10$Mtw0DQKqQ4MyyGSRqSKApewy1vTm1GOZD8Z5BV317H6fIKa2iMUZu', '서브관리자', '김관리', '1995-05-05', 'FEMALE', NULL, 'LOCAL', 'ACTIVE', 
+		TRUE, TRUE, FALSE, NOW()),
+('admin1@test.com', '$2a$10$VZNiB5ikzDaBMaylOAJEuuipYqCCPWi3YI0hEGe0DgwG6ysGq8mAi', '총관리자', '이관리', '1990-10-10', 'MALE', NULL, 'LOCAL', 'ACTIVE', 
+		TRUE, TRUE, FALSE, NOW());
+
+INSERT INTO USER_ROLE (user_id, role_id)
+VALUES (1, 1), (2, 2), (3, 3);

@@ -395,14 +395,48 @@ CREATE TABLE `SOCIAL_LOGIN` (
     FOREIGN KEY(`user_id`) REFERENCES `USER`(`user_id`)
 );
 
-
 INSERT INTO ROLE (role_code, role_name, description) VALUES
 ('USER', '일반 사용자', '기본 사용자 권한'),
 ('SUBADMIN', '서브 관리자', '부분 관리자 권한'),
 ('ADMIN', '관리자', '전체 관리자 권한');
 
-INSERT INTO CATEGORY (name, notification)
-VALUES
-('일상', 1),
-('문의', 1),
-('공지', 0);
+INSERT INTO CATEGORY (name, notification) VALUES
+('일상', 1), ('문의', 1), ('공지', 0);
+
+INSERT INTO NOTIFICATION_TYPE (type_code, type_name, description) VALUES
+('SUPPORT_ANSWER', '신고/문의 답변', '신고 또는 문의글에 답변이 등록되었을 때'),
+('POST_COMMENT', '게시글 댓글', '내 게시글에 댓글이 작성되었을 때'),
+('COMMENT_REPLY', '대댓글', '내 댓글에 답글이 작성되었을 때'),
+('BOT_MESSAGE', '봇 쪽지', '상담봇이 사용자에게 메시지를 보냈을 때'),
+('SYSTEM_NOTICE', '시스템 공지', '운영 공지 및 시스템 알림'),
+('POINT_REWARD', '포인트 지급', '포인트가 지급되었을 때'),
+('COMMUNITY_HOT', '인기 게시글', '내 게시글이 인기글로 선정되었을 때'),
+('REPORT_RESULT', '신고 처리 결과', '신고 처리 결과가 등록되었을 때'),
+('CHAT_REMINDER', '상담 리마인드', '일정 시간 미접속 후 상담 유도 알림'),
+('EVENT_NOTICE', '이벤트 알림', '이벤트 및 출석 보상 관련 알림');
+
+INSERT INTO EMOTION_CATEGORY (emotion_code, emotion_name) VALUES
+('HAPPY', '행복'), ('SAD', '슬픔'), ('ANGRY', '분노'), ('ANXIOUS', '불안'),
+('LONELY', '외로움'), ('TIRED', '지침'), ('STRESSED', '스트레스'), ('DEPRESSED', '우울'),
+('CONFUSED', '혼란'), ('CALM', '평온'), ('EXCITED', '설렘'), ('FEAR', '두려움'),
+('HURT', '상처'), ('EMPTY', '공허함'), ('GRATEFUL', '감사'), ('NEUTRAL', '중립');
+
+INSERT INTO CATEGORY (name, notification) VALUES
+('공지', 0), ('일상', 1), ('고민상담', 1), ('연애', 1),
+('우울/불안', 1), ('자유게시판', 1), ('질문', 1),
+('후기', 1), ('정보공유', 1), ('이벤트', 1);
+
+INSERT INTO SUPPORT_REASON (target_type, reason_code, reason_name, is_active) VALUES
+('POST', 'ABUSE', '욕설/비방', 1), ('POST', 'SEXUAL', '성적/음란 콘텐츠', 1),
+('POST', 'SPAM', '광고/스팸', 1), ('POST', 'HATE', '혐오 표현', 1),
+('POST', 'SCAM', '사기/허위 정보', 1), ('POST', 'PRIVACY', '개인정보 노출', 1),
+('POST', 'ILLEGAL', '불법 콘텐츠', 1), ('POST', 'FLOOD', '도배/반복 게시', 1),
+
+('COMMENT', 'ABUSE', '욕설/비방', 1), ('COMMENT', 'SEXUAL', '성적/음란 콘텐츠', 1),
+('COMMENT', 'SPAM', '광고/스팸', 1), ('COMMENT', 'HATE', '혐오 표현', 1),
+('COMMENT', 'SCAM', '사기/허위 정보', 1), ('COMMENT', 'PRIVACY', '개인정보 노출', 1),
+('COMMENT', 'ILLEGAL', '불법 콘텐츠', 1), ('COMMENT', 'FLOOD', '도배/반복 게시', 1);
+
+INSERT INTO SUPPORT_REASON (target_type, reason_code, reason_name, is_active) VALUES
+(NULL, 'PAYMENT', '결제문의', 1), (NULL, 'ACCOUNT', '계정문의', 1), (NULL, 'BUG', '버그/오류문의', 1),
+(NULL, 'SERVICE', '서비스 이용 문의', 1), (NULL, 'CONTENT', '콘텐츠 관련 문의', 1), (NULL, 'ETC', '기타', 1);

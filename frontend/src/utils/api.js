@@ -179,7 +179,7 @@ export async function checkEmailDuplicate(email) {
 }
 
 export async function getMyProfile() {
-  const payload = await request('api/v1/auth/me', {
+  const payload = await request('/api/v1/auth/me', {
     method: 'GET',
   });
 
