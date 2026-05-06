@@ -51,6 +51,8 @@ import AdminAccessDeniedPage from './pages/AdminAccessDeniedPage';
 import SocialLoginSuccessPage from './pages/SocialLoginSuccessPage';
 import SocialSignupPage from './pages/SocialSignupPage';
 
+import { NotificationProvider } from './contexts/NotificationContext';
+
 /* =========================================================
    ✅ 전역 채팅 모달 관련 import
    - ChatModalProvider : 전역 모달 컨트롤러
@@ -640,12 +642,15 @@ export default function App() {
   return (
     <AuthProvider>
       <ChatModalProvider>
-        {/* 라우트 트리 */}
-        <AppRoutes />
+        <NotificationProvider>
+          <AppRoutes />
 
-        {/* 전역 채팅 모달 — 어떤 페이지에서든 openChat() 으로 호출 */}
-        <ChatModal />
+          {/* 채팅 모달만 전역 마운트 */}
+          <ChatModal />
+        </NotificationProvider>
       </ChatModalProvider>
     </AuthProvider>
   );
 }
+
+

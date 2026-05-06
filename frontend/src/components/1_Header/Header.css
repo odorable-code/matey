@@ -830,3 +830,114 @@
     transition: none !important;
   }
 }
+/* =========================================================
+   ✅ 알람 버튼 (프로필 왼쪽)
+   - 종 아이콘 + 빨간 점 뱃지
+========================================================= */
+.matey-header__noti-wrap {
+  position: relative;
+}
+
+.matey-header__noti {
+  position: relative;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 1px solid rgba(123, 139, 176, 0.1);
+  background: rgba(255, 255, 255, 0.58);
+  color: #4d5a74;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    transform var(--matey-transition-fast),
+    background var(--matey-transition-fast),
+    border-color var(--matey-transition-fast),
+    box-shadow var(--matey-transition-fast),
+    color var(--matey-transition-fast);
+}
+
+.matey-header.is-scrolled .matey-header__noti {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: rgba(123, 139, 176, 0.14);
+  box-shadow: 0 12px 24px rgba(139, 150, 177, 0.08);
+}
+
+.matey-header__noti:hover,
+.matey-header__noti:focus-visible,
+.matey-header__noti.is-open {
+  transform: translateY(-2px);
+  border-color: rgba(108, 158, 255, 0.2);
+  background: rgba(255, 255, 255, 0.96);
+  color: #2d4f84;
+  box-shadow: 0 16px 28px rgba(139, 150, 177, 0.12);
+  outline: none;
+}
+
+.matey-header__noti-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #ff6e7f 0%, #ff4d6d 100%);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #ffffff;
+  box-shadow: 0 6px 14px rgba(255, 77, 109, 0.32);
+  animation: matey-noti-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes matey-noti-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.08); }
+}
+
+.matey-header__mobile-soft.has-unread { position: relative; }
+
+.matey-header__mobile-badge {
+  margin-left: 8px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #ff6e7f 0%, #ff4d6d 100%);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 900;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 14px rgba(255, 77, 109, 0.28);
+}
+
+@media (max-width: 1024px) {
+  .matey-header__noti-wrap {
+    display: none; /* 모바일에선 햄버거 메뉴 안 "알림" 사용 */
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .matey-header__noti-dot {
+    animation: none !important;
+  }
+}
+
+/* =========================================================
+   ✅ 채팅 모달 열렸을 때 헤더 자체를 가리기
+   - 헤더가 모달 위에 비치는 어색함 해소
+   - body 에 .matey-chat-modal-open 이 붙음 (Context에서 처리)
+========================================================= */
+body.matey-chat-modal-open .matey-header {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease;
+}
