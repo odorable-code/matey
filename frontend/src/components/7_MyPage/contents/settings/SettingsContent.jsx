@@ -36,16 +36,6 @@ const initialSettings = {
   quickReply: true,
 };
 
-/* =========================
-   계정 정보 표시용 더미 데이터
-   - 나중에 서버 연동하면 이 부분을 교체하면 됨
-========================= */
-const accountInfo = {
-  email: 'sungho@example.com',
-  phone: '010-1234-5678',
-  linkedDate: '2026-01-05',
-};
-
 function SettingsContent() {
   /* =========================
      현재 토글 상태 저장
@@ -57,7 +47,6 @@ function SettingsContent() {
   ========================= */
   const [userInfo, setUserInfo] = useState({
     email: '-',
-    phone: '등록된 정보 없음', // DB에 없으므로 기본값 처리
     linkedDate: '-',
   });
 
@@ -86,7 +75,6 @@ function SettingsContent() {
         if (data) {
           setUserInfo({
             email: data.email || '-',
-            phone: data.phone || '등록된 정보 없음',
             linkedDate: data.joinedAt || '-',
           });
         }
@@ -97,19 +85,22 @@ function SettingsContent() {
   /* =========================
      토글 버튼 클릭하는 코드
      - 화면 상태를 먼저 바꾸고
-     - 서버에도 저장
+     - pushNotice인 경우에만 서버에도 저장
   ========================= */
   const toggleSetting = (key) => {
     setSettings((prev) => {
       const newValue = !prev[key];
       const updated = { ...prev, [key]: newValue };
 
-      myPageAPI
-        .updateSettings({ 
-          settingKey: key, 
-          settingValue: newValue 
-        })
-        .catch(console.error);
+      // pushNotice만 백엔드와 연동 (나머지는 UI만 변경)
+      if (key === 'pushNotice') {
+        myPageAPI
+          .updateSettings({ 
+            settingKey: key, 
+            settingValue: newValue 
+          })
+          .catch(console.error);
+      }
 
       return updated;
     });
@@ -216,10 +207,6 @@ function SettingsContent() {
               <div className={styles.infoRow}>
                 <span className={styles.infoLabel}>이메일</span>
                 <strong className={styles.infoValue}>{userInfo.email}</strong>
-              </div>
-              <div className={styles.infoRow}>
-                <span className={styles.infoLabel}>휴대폰 번호</span>
-                <strong className={styles.infoValue}>{userInfo.phone}</strong>
               </div>
               <div className={styles.infoRow}>
                 <span className={styles.infoLabel}>가입일</span>
