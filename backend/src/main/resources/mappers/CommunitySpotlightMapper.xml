@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.hi.matey.dao.CommunitySpotlightDAO">
+
+    <!-- 카테고리 이름에 '고민'이 포함된 게시글 중 무작위 1건 -->
+    <select id="selectRandomWorryPostId" resultType="java.lang.Long">
+        SELECT p.post_id
+        FROM POST p
+        JOIN CATEGORY c ON p.category_id = c.category_id
+        WHERE c.name LIKE CONCAT('%', '고민', '%')
+        ORDER BY RAND()
+        LIMIT 1
+    </select>
+
+    <select id="selectBotRankingForYear" resultType="kr.hi.matey.dto.BotYearRankingDTO">
+        SELECT
+            s.ranking AS ranking,
+            b.bot_id AS botId,
+            b.name AS name,
+            b.avatar_image AS avatarImage,
+            s.popularity_score AS popularityScore,
+            s.stat_year AS statYear
+        FROM BOT_POPULARITY_STAT s
+        JOIN BOT b ON b.bot_id = s.bot_id
+        WHERE s.stat_year = #{year}
+          AND s.stat_month = 0
+        ORDER BY (s.ranking IS NULL), s.ranking ASC, s.popularity_score DESC
+        LIMIT 20
+    </select>
+
+    <select id="selectMaxStatYear" resultType="java.lang.Integer">
+        SELECT MAX(stat_year) FROM BOT_POPULARITY_STAT
+    </select>
+
+    <!-- BOT_POPULARITY_STAT 비어 있을 때: BOT.like_count 기준 임시 순위 -->
+    <select id="selectBotsByLikeCount" resultType="kr.hi.matey.dto.BotYearRankingDTO">
+        SELECT
+            NULL AS ranking,
+            b.bot_id AS botId,
+            b.name AS name,
+            b.avatar_image AS avatarImage,
+            CAST(b.like_count AS DECIMAL(10, 2)) AS popularityScore,
+            #{year} AS statYear
+        FROM BOT b
+        ORDER BY b.like_count DESC, b.bot_id ASC
+        LIMIT 15
+    </select>
+</mapper>

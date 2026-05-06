@@ -12,6 +12,8 @@ public class PostDTO {
 
     private Integer likeCount;
     private Integer dislikeCount;
+    /** 로그인 사용자 기준, 해당 게시글에 좋아요를 눌렀는지 */
+    private Boolean likedByMe;
     private Integer reportCount;
     private Integer viewCount;
 

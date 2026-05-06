@@ -5,22 +5,20 @@
  *   현재 선택 상태에 따라 EmotionTab 또는 ChatHistoryTab을 렌더링함
  *
  * [여기서 찾을 것]
- * - 탭 기본값: DEFAULT_TAB_OPTIONS
- * - 기간 기본값: DEFAULT_PERIOD_OPTIONS
- * - 현재 탭이 히스토리인지 판별: isHistoryTab
+ * - 현재 탭이 히스토리인지 판별: isHistoryTab (utils에서 import)
  * - 상단 제목/설명 문구: headingCopy
  * - 감정 리포트 탭 렌더링: <EmotionTab />
  * - 대화 히스토리 탭 렌더링: <ChatHistoryTab />
  *
  * [수정 포인트]
- * - 탭 이름 바꾸기: DEFAULT_TAB_OPTIONS
- * - 기간 버튼 문구 바꾸기: DEFAULT_PERIOD_OPTIONS
  * - 상단 제목/설명 바꾸기: headingCopy
  * - 어떤 탭에서 어떤 컴포넌트를 보여줄지 바꾸기: return 아래 contentArea 부분
  *
- * [주의]
- * - 실제 상태값은 useEmotionReport 훅에서 관리함
- * - 이 파일은 "화면 분기 + 상단 UI" 담당이라고 생각하면 쉬움
+ * [이전 대비 달라진 점]
+ * - DEFAULT_TAB_OPTIONS, DEFAULT_PERIOD_OPTIONS → constants.js에서 import
+ * - getOptionKey, getOptionLabel, cx, isHistoryTab → utils.js에서 import
+ * - 이 파일에서 중복 선언하던 상수/함수가 전부 사라짐
+ * - "화면 분기 + 상단 UI" 역할만 남음
  */
 
 import React, { useEffect, useMemo } from 'react';
@@ -30,60 +28,29 @@ import EmotionTab from './tabs/EmotionTab';
 import ChatHistoryTab from './tabs/ChatHistoryTab';
 import useEmotionReport from '../../hooks/emotionReport/useEmotionReport';
 /* =========================
-   className 합칠 때 쓰는 간단 함수
+   상수와 유틸 함수를 공용 파일에서 가져옴
+   - 이전에는 이 파일 안에 따로 선언했지만,
+     이제는 한 곳에서 관리해서 중복이 없음
 ========================= */
-const cx = (...items) => items.filter(Boolean).join(' ');
+import {
+  DEFAULT_TAB_OPTIONS,
+  DEFAULT_PERIOD_OPTIONS,
+} from '../../hooks/emotionReport/emotionReport.constants';
 
-/* =========================
-   탭 기본 목록
-   - useEmotionReport 쪽 데이터가 없을 때 사용
-========================= */
-const DEFAULT_TAB_OPTIONS = [
-  { key: 'emotion', label: '감정 리포트' },
-  { key: 'history', label: '대화 히스토리' },
-];
-
-/* =========================
-   기간 기본 목록
-   - useEmotionReport 쪽 데이터가 없을 때 사용
-========================= */
-const DEFAULT_PERIOD_OPTIONS = [
-  { key: '7d', label: '최근 7일' },
-  { key: '30d', label: '최근 30일' },
-  { key: '90d', label: '최근 90일' },
-];
-
-/* =========================
-   option 데이터에서 key / label 안전하게 꺼내는 함수
-========================= */
-const getOptionKey = (item) =>
-  item?.key ?? item?.value ?? item?.id ?? item?.tabKey ?? item?.periodKey ?? '';
-
-const getOptionLabel = (item) =>
-  item?.label ?? item?.name ?? item?.title ?? item?.text ?? '';
-
-/* =========================
-   현재 탭이 "대화 히스토리" 탭인지 판별하는 함수
-   - key 또는 label에 history / 대화 / 히스토리 등이 들어있으면 히스토리로 판단
-========================= */
-const isHistoryTab = (tabKey, label) => {
-  const raw = `${tabKey || ''} ${label || ''}`.toLowerCase();
-
-  return (
-    raw.includes('history') ||
-    raw.includes('conversation') ||
-    raw.includes('대화') ||
-    raw.includes('히스토리')
-  );
-};
+import {
+  cx,
+  getOptionKey,
+  getOptionLabel,
+  isHistoryTab,
+} from '../../hooks/emotionReport/emotionReport.utils';
 
 function EmotionReportContent() {
   /* =========================
-     감정 리포트 전체 상태 가져오는 코드
-     - 탭, 기간, 날짜, 봇 선택 상태 전부 여기서 받아옴
+     감정 리포트 전체 상태 가져오기
+     - 탭, 기간, 날짜, 봇 선택 상태를 전부 여기서 받아옴
+     - useEmotionReport 훅 하나로 모든 상태가 관리됨
   ========================= */
   const {
-    isLoading,
     activeTab,
     selectedPeriod,
     selectedBotKey,
@@ -131,7 +98,7 @@ function EmotionReportContent() {
 
   /* =========================
      탭 옵션 / 기간 옵션 기본값 보정
-     - 데이터가 비어 있으면 DEFAULT 값 사용
+     - 훅에서 받은 데이터가 비어 있으면 기본값(DEFAULT_) 사용
   ========================= */
   const resolvedTabOptions = useMemo(
     () =>
@@ -151,6 +118,8 @@ function EmotionReportContent() {
 
   /* =========================
      현재 선택된 탭 계산
+     - activeTab 값으로 탭 목록에서 찾음
+     - 못 찾으면 첫 번째 탭을 기본으로 사용
   ========================= */
   const currentTab =
     resolvedTabOptions.find((item) => getOptionKey(item) === activeTab) ||
@@ -159,11 +128,13 @@ function EmotionReportContent() {
 
   const currentTabKey = getOptionKey(currentTab) || 'emotion';
   const currentTabLabel = getOptionLabel(currentTab) || '감정 리포트';
+
+  /* --- 현재 탭이 대화 히스토리인지 여부 --- */
   const historyMode = isHistoryTab(currentTabKey, currentTabLabel);
 
   /* =========================
      현재 선택된 기간 계산
-     - 값이 없으면 최근 30일 우선
+     - 값이 없으면 두 번째 옵션(최근 30일)을 기본으로 사용
   ========================= */
   const currentPeriodKey =
     selectedPeriod ||
@@ -173,10 +144,10 @@ function EmotionReportContent() {
 
   /* =========================
      상단 제목 / 설명 문구
-     - 감정 리포트 모드인지 대화 히스토리 모드인지에 따라 달라짐
+     - 감정 리포트 모드와 대화 히스토리 모드에서 다르게 표시
      *
      * [문구 수정 포인트]
-     * - 여기만 바꾸면 상단 타이틀/설명 일괄 수정 가능
+     * - 상단 타이틀/설명을 바꾸려면 여기만 수정하면 됨
   ========================= */
   const headingCopy = historyMode
     ? {
@@ -194,10 +165,9 @@ function EmotionReportContent() {
 
   /* =========================
      실제 화면 렌더링
-     - 상단 헤더
-     - 탭 버튼
-     - 기간 선택 버튼
-     - 아래 컨텐츠 영역
+     - 상단: 제목 + 탭 버튼
+     - 중단: 기간 선택 (감정 리포트 탭에서만)
+     - 하단: 탭에 따라 EmotionTab 또는 ChatHistoryTab
   ========================= */
   return (
     <section
@@ -210,12 +180,14 @@ function EmotionReportContent() {
           상단 제목 / 탭 버튼 영역
       ========================= */}
       <div className={styles.header}>
+        {/* --- 제목 + 설명 --- */}
         <div className={styles.titleGroup}>
           <span className={styles.eyebrow}>{headingCopy.eyebrow}</span>
           <h2 className={styles.title}>{headingCopy.title}</h2>
           <p className={styles.description}>{headingCopy.description}</p>
         </div>
 
+        {/* --- 탭 전환 버튼 --- */}
         <div className={styles.headerTabs}>
           {resolvedTabOptions.map((option) => {
             const optionKey = getOptionKey(option);
@@ -242,10 +214,11 @@ function EmotionReportContent() {
       </div>
 
       {/* =========================
-          감정 리포트 탭에서만 보이는 기간 선택 바
-          - historyMode일 때는 숨김
+          기간 선택 바
+          - 감정 리포트 탭에서만 보임
+          - 히스토리 탭에서는 숨김
       ========================= */}
-      {!historyMode ? (
+      {!historyMode && (
         <div className={styles.filterBar}>
           <span className={styles.filterLabel}>기간 선택</span>
 
@@ -270,12 +243,12 @@ function EmotionReportContent() {
             })}
           </div>
         </div>
-      ) : null}
+      )}
 
       {/* =========================
-          실제 탭 내용 렌더링
-          - 히스토리 탭이면 ChatHistoryTab
-          - 감정 리포트 탭이면 EmotionTab
+          탭 내용 렌더링
+          - historyMode === true → ChatHistoryTab
+          - historyMode === false → EmotionTab
       ========================= */}
       <div className={styles.contentArea}>
         {historyMode ? (

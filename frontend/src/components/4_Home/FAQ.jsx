@@ -1,186 +1,293 @@
+/**
+ * =========================================================
+ * 파일명 : src/components/4_Home/FAQ.jsx
+ * 역할   : 메인 홈 화면의 FAQ(자주 묻는 질문) 섹션
+ * 위치   : HomePage 내 Features 섹션 다음
+ * =========================================================
+ *
+ * [이 파일에서 하는 일]
+ * - 좌측 인트로(헤드라인 + 고양이 캐릭터 + 말풍선) 표시
+ * - 우측 콘텐츠 영역에 카테고리 탭(이용 방법 / 계정 / 채팅)과 아코디언 표시
+ * - 카테고리 변경 시 해당 카테고리의 첫 질문이 자동으로 펼쳐짐
+ * - 질문 클릭 시 펼침/닫힘 상태 토글
+ *
+ * [이번 수정 핵심]
+ * - 캐릭터 데이터(이미지/이름)를 src/constants/mates.js 에서 가져와 사용
+ *   → 이름/이미지 바뀌면 자동 반영
+ * - 좌측 인트로와 우측 아코디언의 디자인 톤 통일
+ * - 질문 카드 안의 이중 박스 제거, 카드 자체가 펼쳐지는 구조
+ * - 카테고리 탭은 우측 상단 알약형 그룹으로 정리
+ * - 활성 탭 / 펼친 질문 상태가 한눈에 보이도록 시각 강조
+ *
+ * [여기서 주로 수정하면 되는 곳]
+ * 1) FAQ_COPY
+ *    - 인트로 헤드라인 / 서브 카피 / 말풍선 멘트 변경
+ *
+ * 2) FAQ_CATEGORIES
+ *    - 카테고리 탭 (key, label) 변경
+ *
+ * 3) FAQ_ITEMS
+ *    - 질문/답변 데이터 변경 (category 값은 FAQ_CATEGORIES.key 와 매칭)
+ *
+ * 4) 캐릭터 정보(이미지/이름)는
+ *    src/constants/mates.js 에서 수정
+ */
+
 import React, { useMemo, useState } from 'react';
+import { MATE_IMAGES, MATE_NAMES } from '../../constants/mates';
 import './FAQ.css';
 
+/* =========================================================
+   섹션 카피 코드
+========================================================= */
+const FAQ_COPY = {
+  eyebrow: 'FAQ',
+  titleTop: '궁금한 건 복잡하지 않게,',
+  titleBottom: '바로 이해되게 정리해둘게요',
+  description:
+    '처음 시작 방법부터 계정, 대화 흐름까지 자주 헷갈리는 질문을 보기 쉽게 모아두었어요. 길게 찾지 않아도 핵심부터 바로 확인할 수 있어요.',
+  bubble: '헷갈리는 게 생기면 내가 핵심부터 빠르게 짚어줄게.',
+};
+
+/* =========================================================
+   카테고리 탭 코드
+========================================================= */
 const FAQ_CATEGORIES = [
+  { key: 'guide', label: '이용 방법' },
+  { key: 'account', label: '계정' },
+  { key: 'chat', label: '채팅' },
+];
+
+/* =========================================================
+   질문/답변 데이터 코드
+========================================================= */
+const FAQ_ITEMS = [
   {
-    id: 'general',
-    label: '기본 이용',
-    items: [
-      {
-        id: 'general-1',
-        question: '메이티는 어떤 서비스인가요?',
-        answer:
-          '메이티는 감정 공감, 대화 정리, 화면 기반 도움을 자연스럽게 연결해주는 AI 메이트예요. 일상에서 마음이 복잡할 때, 해야 할 일이 막막할 때, 또는 누군가 먼저 말을 걸어주면 좋겠는 순간에 부담 없이 대화를 시작할 수 있도록 설계되어 있어요.',
-      },
-      {
-        id: 'general-2',
-        question: '처음 시작할 때 어렵지 않나요?',
-        answer:
-          '어렵지 않아요. 계정을 만들고 메이트를 고르면 바로 시작할 수 있어요. 복잡한 설정이나 긴 학습 과정 없이, 바로 대화하고 필요한 기능을 체험할 수 있도록 구성했어요.',
-      },
-      {
-        id: 'general-3',
-        question: '웹에서도 사용할 수 있나요?',
-        answer:
-          '네. 현재 Web 환경에서 바로 시작할 수 있고, 모바일 환경은 준비 중이에요. 사용 흐름이 어렵지 않도록 어느 화면에서도 부드럽게 이어지는 경험을 목표로 하고 있어요.',
-      },
-    ],
+    id: 1,
+    category: 'guide',
+    question: '메이티는 어떻게 시작하면 되나요?',
+    answer:
+      '처음이라면 무료체험이나 회원가입부터 가볍게 시작하면 돼요. 메이트를 먼저 둘러보고, 마음에 맞는 분위기를 찾은 뒤 대화를 시작하면 훨씬 편하게 느껴질 수 있어요.',
   },
   {
-    id: 'conversation',
-    label: '대화 경험',
-    items: [
-      {
-        id: 'conversation-1',
-        question: '캐릭터마다 차이가 있나요?',
-        answer:
-          '있어요. 하루는 조금 더 차분하게 정리해주는 타입이고, 루미는 조금 더 다정하고 부드럽게 다가오는 타입이에요. 같은 상황이라도 캐릭터에 따라 말투와 반응 분위기가 달라져서 더 편한 쪽을 선택할 수 있어요.',
-      },
-      {
-        id: 'conversation-2',
-        question: '선택지로만 대화해야 하나요?',
-        answer:
-          '아니요. 선택지는 대화를 더 쉽게 시작할 수 있도록 돕는 장치일 뿐이고, 직접 입력도 언제든 가능해요. 말문이 막힐 때는 선택지로 시작하고, 익숙해지면 자유롭게 입력하는 방식으로 사용할 수 있어요.',
-      },
-      {
-        id: 'conversation-3',
-        question: '감정 분석은 어떻게 활용되나요?',
-        answer:
-          '대화 중에 드러나는 감정 흐름과 맥락을 바탕으로 더 자연스럽고 맞춤형인 반응을 제공하는 데 활용돼요. 단순히 키워드만 읽는 것이 아니라, 사용자의 현재 상태를 더 부드럽게 이해하려는 방향으로 작동해요.',
-      },
-    ],
+    id: 2,
+    category: 'guide',
+    question: '이용 방법 섹션에서는 무엇을 보면 되나요?',
+    answer:
+      '메이티가 어떤 흐름으로 도와주는지, 처음에는 어디서 시작하면 되는지, 어떤 경험을 기대할 수 있는지를 빠르게 이해할 수 있도록 핵심만 정리해 두었어요.',
   },
   {
-    id: 'plans',
-    label: '요금제',
-    items: [
-      {
-        id: 'plans-1',
-        question: '무료 플랜으로도 충분히 써볼 수 있나요?',
-        answer:
-          '네. 무료 플랜에서도 메이티의 핵심 대화 경험을 가볍게 체험할 수 있어요. 처음 서비스가 나와 맞는지 확인해보고, 더 많은 대화나 확장 기능이 필요할 때 상위 플랜으로 넘어갈 수 있어요.',
-      },
-      {
-        id: 'plans-2',
-        question: 'Pro와 Care+의 차이는 무엇인가요?',
-        answer:
-          'Pro는 본격적으로 메이티를 자주 사용하는 분들을 위한 플랜이고, Care+는 더 깊은 감정 리포트와 우선 지원까지 포함된 확장형 플랜이에요. 사용 빈도와 원하는 기능 깊이에 따라 선택하면 돼요.',
-      },
-      {
-        id: 'plans-3',
-        question: '나중에 플랜을 바꿀 수 있나요?',
-        answer:
-          '네. 처음에는 가볍게 시작하고, 필요에 따라 상위 플랜으로 확장하는 흐름을 염두에 두고 설계했어요. 서비스에 익숙해진 뒤 내 사용 패턴에 맞게 조정하면 돼요.',
-      },
-    ],
+    id: 3,
+    category: 'guide',
+    question: '처음 써보는 사람도 어렵지 않나요?',
+    answer:
+      '네. 긴 설명 없이도 부담 없이 시작할 수 있도록 무료체험 → 로그인 → 채팅 시작 흐름이 자연스럽게 이어지도록 구성했어요.',
   },
   {
-    id: 'privacy',
-    label: '기록 & 안심',
-    items: [
-      {
-        id: 'privacy-1',
-        question: '대화 기록은 다시 볼 수 있나요?',
-        answer:
-          '플랜에 따라 보관 기간과 범위는 다르지만, 메이티는 사용자가 필요할 때 이전 대화를 다시 확인하고 감정 흐름을 돌아볼 수 있도록 기록 기능을 제공해요.',
-      },
-      {
-        id: 'privacy-2',
-        question: '화면 인식 기능은 어떤 상황에서 쓰나요?',
-        answer:
-          '에러 화면, 문서 화면, 과제 화면처럼 말로 설명하기 번거로운 장면에서 유용해요. 텍스트로 길게 설명하지 않아도 맥락을 더 빠르게 이해할 수 있도록 돕는 기능이에요.',
-      },
-      {
-        id: 'privacy-3',
-        question: '메이티는 왜 이렇게 인터페이스가 부드럽게 느껴지나요?',
-        answer:
-          '사용자가 긴장하거나 부담을 느끼지 않도록, 강한 경고성 인터페이스보다 부드러운 색감과 카드 구조, 작은 선택지 중심의 흐름으로 설계했기 때문이에요. 말 걸기 쉬운 분위기 자체를 중요한 경험으로 보고 있어요.',
-      },
-    ],
+    id: 4,
+    category: 'account',
+    question: '회원가입은 어디서 하나요?',
+    answer:
+      '헤더의 무료체험 버튼 또는 회원가입 페이지로 이동해서 가입할 수 있어요. 가입 후 로그인하면 채팅과 마이페이지를 더 자연스럽게 이용할 수 있어요.',
+  },
+  {
+    id: 5,
+    category: 'account',
+    question: '로그인이 안 되면 어떻게 해야 하나요?',
+    answer:
+      '입력한 이메일과 비밀번호를 먼저 다시 확인해 주세요. 그래도 되지 않으면 비밀번호 재설정 흐름을 통해 다시 로그인할 수 있어요.',
+  },
+  {
+    id: 6,
+    category: 'account',
+    question: '로그아웃은 어디서 하나요?',
+    answer:
+      '헤더 오른쪽 프로필 드롭다운 메뉴에서 로그아웃을 선택할 수 있어요.',
+  },
+  {
+    id: 7,
+    category: 'chat',
+    question: '채팅은 어디서 시작하나요?',
+    answer:
+      '로그인한 회원이라면 헤더의 채팅하기 버튼이나 메인 Hero, 이용 방법 섹션의 CTA를 통해 채팅 화면으로 이동할 수 있어요.',
+  },
+  {
+    id: 8,
+    category: 'chat',
+    question: '비회원도 바로 채팅할 수 있나요?',
+    answer:
+      '현재 메인 흐름에서는 비회원에게 무료체험 또는 회원가입을 먼저 보여주고, 로그인 후 채팅으로 이어지는 구성이 가장 자연스러워요.',
+  },
+  {
+    id: 9,
+    category: 'chat',
+    question: '대화 기록은 나중에 다시 볼 수 있나요?',
+    answer:
+      '서비스 구조에 따라 기록 기능을 연결하면 도움이 되었던 대화 흐름이나 기억해 두고 싶은 내용을 나중에 다시 확인할 수 있어요.',
   },
 ];
 
 function FAQ() {
-  const [activeCategory, setActiveCategory] = useState(FAQ_CATEGORIES[0].id);
-  const [openItemId, setOpenItemId] = useState(FAQ_CATEGORIES[0].items[0].id);
+  /* =========================================================
+     상태 관리 코드
+     - activeCategory : 현재 활성 카테고리 키
+     - openItemId     : 현재 펼쳐진 질문 ID (null = 모두 닫힘)
+  ========================================================= */
+  const [activeCategory, setActiveCategory] = useState('guide');
+  const [openItemId, setOpenItemId] = useState(1);
 
-  const currentCategory = useMemo(
-    () =>
-      FAQ_CATEGORIES.find((category) => category.id === activeCategory) ||
-      FAQ_CATEGORIES[0],
+  /* =========================================================
+     활성 카테고리에 해당하는 질문만 필터링
+  ========================================================= */
+  const filteredItems = useMemo(
+    () => FAQ_ITEMS.filter((item) => item.category === activeCategory),
     [activeCategory]
   );
 
-  const handleCategoryChange = (categoryId) => {
-    setActiveCategory(categoryId);
-    const nextCategory =
-      FAQ_CATEGORIES.find((category) => category.id === categoryId) || FAQ_CATEGORIES[0];
-    setOpenItemId(nextCategory.items[0].id);
+  /* =========================================================
+     카테고리 변경 처리
+     - 카테고리 변경 시 해당 카테고리의 첫 질문 자동 펼침
+  ========================================================= */
+  const handleCategoryChange = (categoryKey) => {
+    setActiveCategory(categoryKey);
+    const firstItem = FAQ_ITEMS.find((item) => item.category === categoryKey);
+    setOpenItemId(firstItem?.id ?? null);
   };
 
-  const handleToggle = (itemId) => {
-    setOpenItemId((prev) => (prev === itemId ? '' : itemId));
+  /* =========================================================
+     질문 펼침/닫힘 토글
+  ========================================================= */
+  const handleToggleItem = (itemId) => {
+    setOpenItemId((prev) => (prev === itemId ? null : itemId));
   };
+
+  /* =========================================================
+     가이드 캐릭터(고양이 = cat) 데이터 가져오기
+     - src/constants/mates.js 의 MATE_IMAGES / MATE_NAMES 사용
+  ========================================================= */
+  const guideImage = MATE_IMAGES.cat;
+  const guideName = MATE_NAMES.cat;
 
   return (
-    <section className="matey-faq" id="faq">
+    <section id="faq" className="matey-faq" aria-label="자주 묻는 질문">
+      {/* =========================================================
+         배경 글로우 레이어
+      ========================================================= */}
+      <div className="matey-faq__background" aria-hidden="true">
+        <span className="matey-faq__glow matey-faq__glow--top" />
+        <span className="matey-faq__glow matey-faq__glow--bottom" />
+      </div>
+
       <div className="matey-faq__inner">
-        <div className="matey-faq__header">
-          <span className="matey-faq__badge">FAQ</span>
+        {/* =========================================================
+           좌측 - 인트로 영역
+        ========================================================= */}
+        <aside className="matey-faq__intro">
+          <span className="matey-faq__eyebrow">
+            <span className="matey-faq__eyebrow-dot" />
+            {FAQ_COPY.eyebrow}
+          </span>
+
           <h2 className="matey-faq__title">
-            자주 묻는 질문을
-            <br />
-            <span>읽기 편하게 정리했어요</span>
+            <span className="matey-faq__title-line">{FAQ_COPY.titleTop}</span>
+            <span className="matey-faq__title-line matey-faq__title-line--accent">
+              {FAQ_COPY.titleBottom}
+            </span>
           </h2>
-          <p className="matey-faq__subtitle">
-            처음 시작하는 분들이 가장 자주 궁금해하는 내용을
-            복잡하지 않게, 한눈에 확인할 수 있도록 정리했어요.
-          </p>
-        </div>
 
-        <div className="matey-faq__tabs" role="tablist" aria-label="FAQ 카테고리">
-          {FAQ_CATEGORIES.map((category) => (
-            <button
-              key={category.id}
-              type="button"
-              role="tab"
-              aria-selected={activeCategory === category.id}
-              className={`matey-faq__tab ${activeCategory === category.id ? 'is-active' : ''}`}
-              onClick={() => handleCategoryChange(category.id)}
-            >
-              {category.label}
-            </button>
-          ))}
-        </div>
+          <p className="matey-faq__description">{FAQ_COPY.description}</p>
 
-        <div className="matey-faq__accordion">
-          {currentCategory.items.map((item, index) => {
-            const isOpen = openItemId === item.id;
+          <div className="matey-faq__guide">
+            <div className="matey-faq__guide-bubble">
+              {FAQ_COPY.bubble}
+              <span
+                className="matey-faq__guide-bubble-tail"
+                aria-hidden="true"
+              />
+            </div>
 
-            return (
-              <article
-                key={item.id}
-                className={`matey-faq__item ${isOpen ? 'is-open' : ''}`}
-                style={{ '--faq-delay': `${index * 0.04}s` }}
-              >
+            <div className="matey-faq__guide-mate">
+              <span
+                className="matey-faq__guide-mate-glow"
+                aria-hidden="true"
+              />
+              <img
+                src={guideImage}
+                alt={`${guideName} 캐릭터`}
+                className="matey-faq__guide-mate-image"
+                draggable={false}
+              />
+            </div>
+          </div>
+        </aside>
+
+        {/* =========================================================
+           우측 - 콘텐츠 영역(탭 + 아코디언)
+        ========================================================= */}
+        <div className="matey-faq__content">
+          {/* 카테고리 탭 */}
+          <div
+            className="matey-faq__tabs"
+            role="tablist"
+            aria-label="FAQ 카테고리"
+          >
+            {FAQ_CATEGORIES.map((category) => {
+              const isActive = category.key === activeCategory;
+              return (
                 <button
+                  key={category.key}
                   type="button"
-                  className="matey-faq__question"
-                  onClick={() => handleToggle(item.id)}
-                  aria-expanded={isOpen}
+                  role="tab"
+                  aria-selected={isActive}
+                  className={`matey-faq__tab ${isActive ? 'is-active' : ''}`}
+                  onClick={() => handleCategoryChange(category.key)}
                 >
-                  <span className="matey-faq__question-text">{item.question}</span>
-                  <span className="matey-faq__icon" aria-hidden="true" />
+                  {category.label}
                 </button>
+              );
+            })}
+          </div>
 
-                <div className={`matey-faq__answer-wrap ${isOpen ? 'is-open' : ''}`}>
-                  <div className="matey-faq__answer">
-                    <p>{item.answer}</p>
+          {/* 아코디언 리스트 */}
+          <ul className="matey-faq__list" role="list">
+            {filteredItems.map((item) => {
+              const isOpen = item.id === openItemId;
+              return (
+                <li
+                  key={item.id}
+                  className={`matey-faq__item ${isOpen ? 'is-open' : ''}`}
+                >
+                  <button
+                    type="button"
+                    className="matey-faq__question"
+                    onClick={() => handleToggleItem(item.id)}
+                    aria-expanded={isOpen}
+                    aria-controls={`faq-answer-${item.id}`}
+                  >
+                    <span className="matey-faq__question-text">
+                      {item.question}
+                    </span>
+                    <span
+                      className="matey-faq__question-icon"
+                      aria-hidden="true"
+                    >
+                      <span className="matey-faq__question-icon-bar matey-faq__question-icon-bar--horizontal" />
+                      <span className="matey-faq__question-icon-bar matey-faq__question-icon-bar--vertical" />
+                    </span>
+                  </button>
+
+                  <div
+                    id={`faq-answer-${item.id}`}
+                    className="matey-faq__answer-wrap"
+                    role="region"
+                    aria-hidden={!isOpen}
+                  >
+                    <p className="matey-faq__answer">{item.answer}</p>
                   </div>
-                </div>
-              </article>
-            );
-          })}
+                </li>
+              );
+            })}
+          </ul>
         </div>
       </div>
     </section>

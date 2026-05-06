@@ -2,10 +2,12 @@ package kr.hi.matey.security.config;
 
 import java.util.List;
 
+import org.springframework.http.HttpMethod;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -19,7 +21,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import kr.hi.matey.security.filter.JwtAuthenticationFilter;
 import kr.hi.matey.service.MemberDetailService;
-import kr.hi.matey.util.UserRole;
 import lombok.AllArgsConstructor;
 
 @Configuration
@@ -63,7 +64,9 @@ public class SecurityConfig {
                         // 마이페이지 API는 인증된 사용자만 허용
                         .requestMatchers("/api/mypage/**").authenticated()
 
-//                        .requestMatchers("/api/v1/reviews/*/likes").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/community/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/mypage/support/faq").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/mypage/support/reasons").permitAll()
 
                         .anyRequest().authenticated()
                 )
@@ -77,13 +80,12 @@ public class SecurityConfig {
         return http.build();
     }
 
+    /** AuthController 로그인용: UserDetailsService와 BCrypt PasswordEncoder를 한 Provider에 묶습니다. */
     @Bean
-    
-    // AuthenticationManagerrk Bean으로 등록이 안돼있기 때문에 @Bean 어노테이션을 붙여줌
-    public AuthenticationManager authenticationManager(
-            AuthenticationConfiguration config
-    ) throws Exception {
-        return config.getAuthenticationManager();
+    public AuthenticationManager authenticationManager(PasswordEncoder passwordEncoder) {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(passwordEncoder);
+        provider.setUserDetailsService(userDetailsService);
+        return new ProviderManager(provider);
     }
 
     @Bean

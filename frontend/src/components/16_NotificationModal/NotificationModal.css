@@ -1,0 +1,350 @@
+/* =========================================================
+   파일명 : src/components/16_NotificationModal/NotificationModal.css
+   역할   : 헤더 알람 popover 스타일 (드롭다운 형태)
+   =========================================================
+   [이번 수정 핵심]
+   - 풀스크린 dim 모달 → 헤더 직속 popover 로 전환
+   - 종 아이콘 기준 right-aligned, 위쪽에 화살표 꼬리
+   - 외부 dim 배경 없음 (채팅 모달과 2중 dim 문제 해결)
+   ========================================================= */
+
+@import '../../styles/variables.css';
+
+/* ============================================================
+   1. Popover 컨테이너
+============================================================ */
+.matey-noti-pop {
+  position: absolute;
+  top: calc(100% + 14px);
+  right: 0;
+  width: 380px;
+  max-height: 520px;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border-radius: 22px;
+  border: 1px solid rgba(123, 139, 176, 0.14);
+  box-shadow:
+    0 24px 60px rgba(80, 70, 180, 0.18),
+    0 6px 18px rgba(80, 70, 180, 0.08);
+  overflow: hidden;
+  z-index: 1300;                     /* 헤더(1200)보다 약간 위, 채팅모달(9999)보다는 아래 */
+  animation: matey-noti-pop-in 200ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform-origin: top right;
+}
+
+@keyframes matey-noti-pop-in {
+  from { opacity: 0; transform: translateY(-8px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+/* 화살표 꼬리 */
+.matey-noti-pop__arrow {
+  position: absolute;
+  top: -7px;
+  right: 18px;
+  width: 14px;
+  height: 14px;
+  background: #ffffff;
+  border-top: 1px solid rgba(123, 139, 176, 0.14);
+  border-left: 1px solid rgba(123, 139, 176, 0.14);
+  transform: rotate(45deg);
+  border-radius: 3px 0 0 0;
+}
+
+/* ============================================================
+   2. 헤더
+============================================================ */
+.matey-noti-pop__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  border-bottom: 1px solid #efeaf8;
+  background: #ffffff;
+  position: relative;
+  z-index: 1;
+}
+
+.matey-noti-pop__header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.matey-noti-pop__header-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  color: #ffffff;
+  background: linear-gradient(135deg, #79b7ff 0%, #8d79ff 48%, #ff93b7 100%);
+  box-shadow: 0 8px 18px rgba(141, 121, 255, 0.22);
+  flex-shrink: 0;
+}
+
+.matey-noti-pop__title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+  color: #2b2640;
+  line-height: 1.3;
+}
+
+.matey-noti-pop__subtitle {
+  margin: 2px 0 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #8a85a0;
+}
+
+.matey-noti-pop__header-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.matey-noti-pop__read-all {
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(108, 158, 255, 0.18);
+  background: rgba(108, 158, 255, 0.08);
+  color: #35588f;
+  font-size: 11.5px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 160ms ease, transform 160ms ease;
+}
+.matey-noti-pop__read-all:hover {
+  background: rgba(108, 158, 255, 0.16);
+  transform: translateY(-1px);
+}
+
+.matey-noti-pop__close {
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  border: 1px solid #ece6f8;
+  background: #ffffff;
+  color: #6e6886;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: background 160ms ease, color 160ms ease;
+}
+.matey-noti-pop__close:hover {
+  background: #f4f0ff;
+  color: #2b2640;
+}
+
+/* ============================================================
+   3. 리스트 / 아이템
+============================================================ */
+.matey-noti-pop__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 12px 14px;
+  background:
+    radial-gradient(60% 60% at 0% 0%, rgba(143, 121, 255, 0.04) 0%, transparent 70%),
+    #fdfcff;
+}
+
+.matey-noti-pop__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.matey-noti-pop__item {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 12px 12px 14px;
+  border: 1px solid #ece6f8;
+  background: #ffffff;
+  border-radius: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.matey-noti-pop__item:hover {
+  transform: translateY(-1px);
+  border-color: rgba(108, 158, 255, 0.22);
+  box-shadow: 0 8px 18px rgba(141, 121, 255, 0.08);
+}
+
+.matey-noti-pop__item.is-read {
+  background: #faf9ff;
+  border-color: #efeaf8;
+}
+.matey-noti-pop__item.is-read .matey-noti-pop__item-title {
+  color: #6c6786;
+  font-weight: 700;
+}
+
+.matey-noti-pop__item-dot {
+  width: 7px;
+  height: 7px;
+  margin-top: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #8f79ff, #6ebeff);
+  box-shadow: 0 0 0 4px rgba(143, 121, 255, 0.14);
+}
+.matey-noti-pop__item.is-read .matey-noti-pop__item-dot {
+  background: #d6cfeb;
+  box-shadow: none;
+}
+
+.matey-noti-pop__item-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.matey-noti-pop__item-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.matey-noti-pop__item-tag {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #f1eaff;
+  color: #6f5ed1;
+}
+.matey-noti-pop__item.is-mate .matey-noti-pop__item-tag {
+  background: #ffe9f1;
+  color: #c14b80;
+}
+.matey-noti-pop__item.is-update .matey-noti-pop__item-tag {
+  background: #e8f1ff;
+  color: #3a6cd1;
+}
+
+.matey-noti-pop__item-time {
+  margin-left: auto;
+  font-size: 10.5px;
+  color: #a8a3bd;
+  font-weight: 600;
+}
+
+.matey-noti-pop__item-title {
+  margin: 0 0 2px;
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #2b2640;
+  line-height: 1.4;
+  word-break: keep-all;
+  padding-right: 18px;
+}
+
+.matey-noti-pop__item-message {
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #6e6886;
+  line-height: 1.55;
+  word-break: keep-all;
+}
+
+.matey-noti-pop__item-remove {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  color: #b6b0ce;
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease;
+}
+.matey-noti-pop__item-remove:hover {
+  background: #f4f0ff;
+  color: #2b2640;
+}
+
+/* ============================================================
+   4. 빈 상태
+============================================================ */
+.matey-noti-pop__empty {
+  padding: 36px 16px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.matey-noti-pop__empty-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  background: #f4f0ff;
+  color: #b6a8ec;
+  margin-bottom: 4px;
+}
+
+.matey-noti-pop__empty-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+  color: #2b2640;
+}
+
+.matey-noti-pop__empty-desc {
+  margin: 0;
+  max-width: 260px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #8a85a0;
+  line-height: 1.55;
+  word-break: keep-all;
+}
+
+/* ============================================================
+   5. 반응형 (모바일에선 좀 더 풀와이드 시트 느낌)
+============================================================ */
+@media (max-width: 640px) {
+  .matey-noti-pop {
+    position: fixed;
+    top: auto;
+    bottom: 12px;
+    left: 12px;
+    right: 12px;
+    width: auto;
+    max-height: 70vh;
+    border-radius: 22px;
+  }
+  .matey-noti-pop__arrow { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .matey-noti-pop,
+  .matey-noti-pop__item {
+    animation: none !important;
+    transition: none !important;
+  }
+}

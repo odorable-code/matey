@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { validateEmail, checkEmailDuplicate, checkNickNameDuplicate } from '../../utils/api';
 import './AuthPage.css';
 
@@ -497,15 +497,6 @@ export default function AuthPage() {
                 </div>
 
                 <div className="matey-auth-socials">
-                  <button
-                    type="button"
-                    className="matey-auth-social matey-auth-social--google"
-                    onClick={() => handleSocialLogin('google')}
-                  >
-                    <span className="matey-auth-social__icon">G</span>
-                    <span>Google로 계속하기</span>
-                  </button>
-
                   <button
                     type="button"
                     className="matey-auth-social matey-auth-social--kakao"

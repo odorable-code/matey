@@ -1,0 +1,1088 @@
+/* =========================================================
+   파일명 : src/components/15_ChatModal/ChatModal.css
+   역할   : 채팅 모달 (좌측 사이드바 + 우측 동적 영역)
+   =========================================================
+   [이번 수정 핵심]
+   1. "이 친구로 시작" 버튼 짜부 현상 수정
+      - hero 컨테이너에 min-height: 0 + overflow-y: auto
+      - CTA 버튼에 flex-shrink: 0 + height 고정 + margin-top: auto
+   2. 한마디 말풍선을 캐릭터 머리 위로 이동
+      - 이름/역할 아래 → 캐릭터 위에 꼬리 달린 말풍선
+   =========================================================
+   [구역]
+   1. 오버레이 / 패널 / 닫기
+   2. 좌측 사이드바
+   3. 우측 빈 상태
+   4. 우측 봇 고르기
+      4-1. 헤더
+      4-2. 좌측 큰 캐릭터 + 레이더
+      4-3. 우측 카드 그리드
+      4-4. 능력치 막대
+   5. 우측 채팅방
+   6. 반응형
+   ========================================================= */
+
+@import '../../styles/variables.css';
+
+/* ============================================================
+   1. 오버레이 / 패널 / 닫기
+============================================================ */
+.matey-chat-modal {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 9999;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  background: rgba(20, 18, 40, 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: matey-chat-fade 220ms ease-out both;
+  box-sizing: border-box;
+}
+.matey-chat-modal *,
+.matey-chat-modal *::before,
+.matey-chat-modal *::after {
+  box-sizing: border-box;
+}
+
+@keyframes matey-chat-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.matey-chat-modal__panel {
+  position: relative;
+  width: min(1100px, 100%);
+  height: min(720px, calc(100vh - 64px));
+  display: grid !important;
+  grid-template-columns: 320px minmax(0, 1fr) !important;
+  grid-template-rows: 1fr !important;
+  background: #ffffff;
+  border-radius: 28px;
+  overflow: hidden;
+  box-shadow:
+    0 30px 80px rgba(80, 70, 180, 0.25),
+    0 8px 24px rgba(80, 70, 180, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  animation: matey-chat-pop 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes matey-chat-pop {
+  from { opacity: 0; transform: translateY(20px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+.matey-chat-modal__close-floating {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 10;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  border: 1px solid #ece6f8;
+  background: rgba(255, 255, 255, 0.92);
+  color: #6e6886;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  backdrop-filter: blur(8px);
+  transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+}
+.matey-chat-modal__close-floating:hover {
+  background: #f4f0ff;
+  color: #2b2640;
+  transform: translateY(-1px);
+}
+
+.matey-chat-modal__main {
+  display: flex !important;
+  flex-direction: column !important;
+  min-width: 0;
+  min-height: 0;
+  background: #fdfcff;
+  overflow: hidden;
+  grid-column: 2 / 3;
+  grid-row: 1 / 2;
+}
+
+/* ============================================================
+   2. 좌측 사이드바
+============================================================ */
+.matey-chat-side {
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) auto !important;
+  background: linear-gradient(180deg, #f8f5ff 0%, #fdfcff 100%);
+  border-right: 1px solid #efeaf8;
+  min-width: 0;
+  min-height: 0;
+  width: 320px;
+  grid-column: 1 / 2;
+  grid-row: 1 / 2;
+  overflow: hidden;
+}
+
+.matey-chat-side__header {
+  padding: 22px 22px 14px;
+  border-bottom: 1px solid #efeaf8;
+}
+.matey-chat-side__title {
+  margin: 0 0 2px;
+  font-size: 17px;
+  font-weight: 900;
+  color: #2b2640;
+  letter-spacing: -0.02em;
+}
+.matey-chat-side__count {
+  margin: 0;
+  font-size: 11.5px;
+  color: #8a85a0;
+  font-weight: 600;
+}
+
+.matey-chat-side__scroll {
+  overflow-y: auto;
+  padding: 10px 12px;
+  min-height: 0;
+}
+.matey-chat-side__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.matey-chat-side__room {
+  position: relative;
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+.matey-chat-side__room:hover {
+  background: #ffffff;
+  border-color: #ece6f8;
+}
+.matey-chat-side__room.is-active {
+  background: #ffffff;
+  border-color: rgba(143, 121, 255, 0.3);
+  box-shadow: 0 8px 18px rgba(143, 121, 255, 0.1);
+}
+
+.matey-chat-side__avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.matey-chat-side__room.is-dog     .matey-chat-side__avatar { background: #e8f1ff; }
+.matey-chat-side__room.is-bear    .matey-chat-side__avatar { background: #fff1e6; }
+.matey-chat-side__room.is-cat     .matey-chat-side__avatar { background: #fff8d9; }
+.matey-chat-side__room.is-hamster .matey-chat-side__avatar { background: #f1eaff; }
+.matey-chat-side__avatar img {
+  width: 96%;
+  height: 96%;
+  object-fit: contain;
+  transform: translateY(-2px) scale(1.08);
+}
+
+.matey-chat-side__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.matey-chat-side__top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.matey-chat-side__name {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #2b2640;
+  white-space: nowrap;
+}
+.matey-chat-side__time {
+  font-size: 11px;
+  font-weight: 600;
+  color: #a8a3bd;
+  flex-shrink: 0;
+}
+.matey-chat-side__preview {
+  font-size: 12px;
+  color: #6e6886;
+  font-weight: 500;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.matey-chat-side__unread {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #ff6e7f 0%, #ff4d6d 100%);
+  color: #ffffff;
+  font-size: 10.5px;
+  font-weight: 900;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(255, 77, 109, 0.28);
+}
+
+.matey-chat-side__delete {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  color: #cfc8e3;
+  cursor: pointer;
+  opacity: 0;
+  transition: background 160ms ease, color 160ms ease, opacity 160ms ease;
+}
+.matey-chat-side__room:hover .matey-chat-side__delete { opacity: 1; }
+.matey-chat-side__delete:hover {
+  background: #f4f0ff;
+  color: #2b2640;
+}
+
+.matey-chat-side__empty {
+  padding: 28px 12px;
+  text-align: center;
+  color: #8a85a0;
+}
+.matey-chat-side__empty p {
+  margin: 0 0 4px;
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #2b2640;
+}
+.matey-chat-side__empty span {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.matey-chat-side__cta-wrap {
+  padding: 12px 14px 16px;
+  border-top: 1px solid #efeaf8;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(6px);
+}
+.matey-chat-side__cta {
+  width: 100%;
+  height: 44px;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #8f79ff 0%, #6ebeff 100%);
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 800;
+  cursor: pointer;
+  letter-spacing: -0.01em;
+  box-shadow: 0 10px 22px rgba(143, 121, 255, 0.3);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+.matey-chat-side__cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 26px rgba(143, 121, 255, 0.4);
+}
+
+/* ============================================================
+   3. 우측 빈 상태
+============================================================ */
+.matey-chat-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 32px;
+  text-align: center;
+  background:
+    radial-gradient(60% 50% at 50% 0%, rgba(143, 121, 255, 0.08) 0%, transparent 70%),
+    radial-gradient(60% 60% at 100% 100%, rgba(110, 190, 255, 0.06) 0%, transparent 60%),
+    #fdfcff;
+}
+
+.matey-chat-empty__mascots {
+  display: flex;
+  margin-bottom: 18px;
+}
+.matey-chat-empty__mascot {
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  margin-left: -10px;
+  border: 3px solid #ffffff;
+  box-shadow: 0 10px 22px rgba(80, 70, 180, 0.12);
+  animation: matey-empty-float 3s ease-in-out infinite;
+}
+.matey-chat-empty__mascot:first-child { margin-left: 0; }
+.matey-chat-empty__mascot.is-dog     { background: #e8f1ff; }
+.matey-chat-empty__mascot.is-bear    { background: #fff1e6; }
+.matey-chat-empty__mascot.is-cat     { background: #fff8d9; }
+.matey-chat-empty__mascot.is-hamster { background: #f1eaff; }
+.matey-chat-empty__mascot img {
+  width: 92%;
+  height: 92%;
+  object-fit: contain;
+}
+
+@keyframes matey-empty-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-4px); }
+}
+
+.matey-chat-empty__title {
+  margin: 0 0 6px;
+  font-size: 18px;
+  font-weight: 900;
+  color: #2b2640;
+  letter-spacing: -0.02em;
+}
+.matey-chat-empty__desc {
+  margin: 0 0 18px;
+  max-width: 380px;
+  font-size: 13.5px;
+  color: #6e6886;
+  font-weight: 500;
+  line-height: 1.6;
+  word-break: keep-all;
+}
+.matey-chat-empty__cta {
+  height: 46px;
+  padding: 0 20px;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #8f79ff 0%, #6ebeff 100%);
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 12px 24px rgba(143, 121, 255, 0.32);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+.matey-chat-empty__cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 28px rgba(143, 121, 255, 0.4);
+}
+
+/* ============================================================
+   4. 우측 봇 고르기 (게임 캐릭터 픽 톤)
+============================================================ */
+.matey-chat-pick {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 28px 22px;
+  overflow: hidden;
+  min-height: 0;
+  background:
+    radial-gradient(50% 50% at 0% 0%, rgba(143, 121, 255, 0.08) 0%, transparent 70%),
+    radial-gradient(50% 50% at 100% 100%, rgba(110, 190, 255, 0.06) 0%, transparent 70%),
+    linear-gradient(180deg, #fdfcff 0%, #ffffff 100%);
+}
+
+/* 4-1. 헤더 */
+.matey-chat-pick__header {
+  position: relative;
+  text-align: center;
+  margin-bottom: 16px;
+  padding-right: 64px;
+  padding-left: 0;
+}
+.matey-chat-pick__eyebrow {
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: #8f79ff;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #f1eaff;
+  margin-bottom: 8px;
+}
+.matey-chat-pick__title {
+  margin: 0 0 4px;
+  font-size: 20px;
+  font-weight: 900;
+  color: #2b2640;
+  letter-spacing: -0.02em;
+}
+.matey-chat-pick__desc {
+  margin: 0;
+  font-size: 12.5px;
+  color: #6e6886;
+  font-weight: 500;
+  line-height: 1.55;
+}
+
+.matey-chat-pick__skip {
+  position: absolute;
+  top: 0;
+  right: 56px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid #ece6f8;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #8a85a0;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  z-index: 5;
+}
+.matey-chat-pick__skip:hover {
+  background: #f4f0ff;
+  color: #2b2640;
+}
+
+/* 4-2. 레이아웃 */
+.matey-chat-pick__layout {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 20px;
+  min-height: 0;
+}
+
+/* ============================================================
+   ✅ 좌측 큰 캐릭터 영역 (수정)
+============================================================ */
+.matey-chat-pick__hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 16px;
+  border: 1px solid #ece6f8;
+  border-radius: 22px;
+  background:
+    radial-gradient(60% 50% at 50% 0%, rgba(143, 121, 255, 0.1) 0%, transparent 70%),
+    #ffffff;
+  transition: border-color 240ms ease;
+
+  /* ✅ 짜부 방지: 영역이 부족하면 내부 스크롤 */
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.matey-chat-pick__hero.is-dog     { border-color: rgba(110, 190, 255, 0.4); }
+.matey-chat-pick__hero.is-bear    { border-color: rgba(255, 168, 119, 0.4); }
+.matey-chat-pick__hero.is-cat     { border-color: rgba(255, 213, 89, 0.4); }
+.matey-chat-pick__hero.is-hamster { border-color: rgba(180, 145, 255, 0.4); }
+
+/* 이름/역할 (캐릭터 위쪽) */
+.matey-chat-pick__hero-meta {
+  text-align: center;
+  margin-bottom: 4px;
+  z-index: 3;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.matey-chat-pick__hero-name {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 900;
+  color: #2b2640;
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 1px solid #ece6f8;
+  box-shadow: 0 6px 14px rgba(80, 70, 180, 0.08);
+}
+.matey-chat-pick__hero-role {
+  margin: 0;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #8a85a0;
+  letter-spacing: -0.01em;
+}
+
+/* ============================================================
+   ✅ 한마디 말풍선 — 캐릭터 머리 위 (꼬리 달린 풍선)
+============================================================ */
+.matey-chat-pick__hero-bubble {
+  position: relative;
+  margin: 0;
+  max-width: 90%;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #2b2640;
+  padding: 9px 14px;
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid #ece6f8;
+  box-shadow: 0 6px 14px rgba(80, 70, 180, 0.08);
+  text-align: center;
+  z-index: 3;
+  flex-shrink: 0;
+  animation: matey-bubble-pop 280ms ease-out both;
+}
+/* 말풍선 꼬리 (아래쪽으로 향함 — 캐릭터를 가리킴) */
+.matey-chat-pick__hero-bubble::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -7px;
+  transform: translateX(-50%) rotate(45deg);
+  width: 12px;
+  height: 12px;
+  background: #ffffff;
+  border-right: 1px solid #ece6f8;
+  border-bottom: 1px solid #ece6f8;
+}
+@keyframes matey-bubble-pop {
+  from { opacity: 0; transform: translateY(4px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+/* 캐릭터 무대 */
+.matey-chat-pick__hero-stage {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.matey-chat-pick__hero-halo {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(143, 121, 255, 0.22) 0%, transparent 70%);
+  animation: matey-halo 3s ease-in-out infinite;
+  z-index: 1;
+}
+.matey-chat-pick__hero.is-dog     .matey-chat-pick__hero-halo { background: radial-gradient(circle, rgba(110, 190, 255, 0.32) 0%, transparent 70%); }
+.matey-chat-pick__hero.is-bear    .matey-chat-pick__hero-halo { background: radial-gradient(circle, rgba(255, 168, 119, 0.32) 0%, transparent 70%); }
+.matey-chat-pick__hero.is-cat     .matey-chat-pick__hero-halo { background: radial-gradient(circle, rgba(255, 213, 89, 0.32)  0%, transparent 70%); }
+.matey-chat-pick__hero.is-hamster .matey-chat-pick__hero-halo { background: radial-gradient(circle, rgba(180, 145, 255, 0.32) 0%, transparent 70%); }
+
+@keyframes matey-halo {
+  0%, 100% { transform: scale(1);    opacity: 0.7; }
+  50%      { transform: scale(1.08); opacity: 1; }
+}
+
+.matey-chat-pick__hero-image {
+  position: relative;
+  width: 92%;
+  height: 92%;
+  object-fit: contain;
+  filter: drop-shadow(0 16px 24px rgba(80, 70, 180, 0.22));
+  animation: matey-hero-bob 3.6s ease-in-out infinite;
+  z-index: 2;
+}
+@keyframes matey-hero-bob {
+  0%, 100% { transform: translateY(0)    rotate(0); }
+  50%      { transform: translateY(-6px) rotate(-2deg); }
+}
+
+/* 레이더 차트 영역 */
+.matey-radar {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  flex-shrink: 0;
+}
+.matey-radar svg { display: block; }
+
+/* ============================================================
+   ✅ "이 친구로 시작" 버튼 — 짜부 방지
+============================================================ */
+.matey-chat-pick__hero-cta {
+  margin-top: auto;        /* 항상 hero 박스 맨 아래로 밀어냄 */
+  flex-shrink: 0;          /* 짜부되지 않게 */
+  width: 100%;
+  min-height: 46px;        /* 최소 높이 보장 */
+  height: 46px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #8f79ff 0%, #6ebeff 100%);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  letter-spacing: -0.01em;
+  box-shadow: 0 12px 24px rgba(143, 121, 255, 0.32);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.matey-chat-pick__hero-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 28px rgba(143, 121, 255, 0.4);
+}
+
+/* 4-3. 우측 4명 카드 그리드 */
+.matey-chat-pick__grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: 1fr 1fr;
+  gap: 12px;
+  min-height: 0;
+  overflow: auto;
+}
+
+.matey-chat-pick__card {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border: 1.5px solid #ece6f8;
+  border-radius: 18px;
+  background: #ffffff;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 200ms ease,
+    box-shadow 200ms ease,
+    background 200ms ease;
+}
+.matey-chat-pick__card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 28px rgba(143, 121, 255, 0.1);
+}
+.matey-chat-pick__card.is-active { border-width: 2px; }
+.matey-chat-pick__card.is-active.is-dog     { border-color: #6ebeff; background: linear-gradient(135deg, #f0f7ff 0%, #ffffff 100%); }
+.matey-chat-pick__card.is-active.is-bear    { border-color: #ffa37a; background: linear-gradient(135deg, #fff5ec 0%, #ffffff 100%); }
+.matey-chat-pick__card.is-active.is-cat     { border-color: #ffd559; background: linear-gradient(135deg, #fffbe5 0%, #ffffff 100%); }
+.matey-chat-pick__card.is-active.is-hamster { border-color: #b491ff; background: linear-gradient(135deg, #f5efff 0%, #ffffff 100%); }
+
+.matey-chat-pick__badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #8f79ff, #6ebeff);
+  color: #ffffff;
+  box-shadow: 0 4px 10px rgba(143, 121, 255, 0.32);
+  z-index: 2;
+}
+
+.matey-chat-pick__card-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.matey-chat-pick__card-stage {
+  width: 70px;
+  height: 70px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.matey-chat-pick__card.is-dog     .matey-chat-pick__card-stage { background: #e8f1ff; }
+.matey-chat-pick__card.is-bear    .matey-chat-pick__card-stage { background: #fff1e6; }
+.matey-chat-pick__card.is-cat     .matey-chat-pick__card-stage { background: #fff8d9; }
+.matey-chat-pick__card.is-hamster .matey-chat-pick__card-stage { background: #f1eaff; }
+.matey-chat-pick__card-stage img {
+  width: 96%;
+  height: 96%;
+  object-fit: contain;
+  transition: transform 240ms ease;
+}
+.matey-chat-pick__card:hover .matey-chat-pick__card-stage img {
+  transform: translateY(-3px) rotate(-3deg);
+}
+
+.matey-chat-pick__card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.matey-chat-pick__card-name {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 900;
+  color: #2b2640;
+}
+.matey-chat-pick__card-role {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: #8a85a0;
+}
+
+/* 4-4. 능력치 막대 */
+.matey-ability-bars {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  width: 100%;
+}
+.matey-ability-bars.is-compact { gap: 6px; }
+
+.matey-ability-bars__item { width: 100%; }
+
+.matey-ability-bars__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 4px;
+}
+.matey-ability-bars__label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #6e6886;
+}
+.matey-ability-bars__value {
+  font-size: 11.5px;
+  font-weight: 900;
+  color: #2b2640;
+}
+
+.matey-ability-bars__track {
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  background: #f1eef9;
+  overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(80, 70, 180, 0.08);
+}
+.matey-ability-bars__fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 600ms cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: 0 1px 2px rgba(255, 255, 255, 0.6) inset;
+}
+.matey-ability-bars.is-compact .matey-ability-bars__track { height: 8px; }
+
+/* ============================================================
+   5. 우측 채팅방
+============================================================ */
+.matey-chat-room {
+  flex: 1;
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) auto auto !important;
+  background: #fdfcff;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.matey-chat-room__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 56px 14px 22px;
+  border-bottom: 1px solid #efeaf8;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(6px);
+}
+.matey-chat-room__header-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.matey-chat-room__avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 13px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.matey-chat-room.is-dog     .matey-chat-room__avatar { background: #e8f1ff; }
+.matey-chat-room.is-bear    .matey-chat-room__avatar { background: #fff1e6; }
+.matey-chat-room.is-cat     .matey-chat-room__avatar { background: #fff8d9; }
+.matey-chat-room.is-hamster .matey-chat-room__avatar { background: #f1eaff; }
+.matey-chat-room__avatar img {
+  width: 92%;
+  height: 92%;
+  object-fit: contain;
+}
+.matey-chat-room__name {
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 800;
+  color: #2b2640;
+}
+.matey-chat-room__status {
+  margin: 2px 0 0;
+  font-size: 11.5px;
+  color: #8a85a0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.matey-chat-room__status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #36d399;
+  box-shadow: 0 0 0 3px rgba(54, 211, 153, 0.18);
+}
+
+.matey-chat-room__messages {
+  padding: 22px 24px 6px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  background:
+    radial-gradient(60% 60% at 20% 0%, rgba(143, 121, 255, 0.06) 0%, transparent 70%),
+    radial-gradient(60% 60% at 80% 100%, rgba(110, 190, 255, 0.06) 0%, transparent 70%),
+    #fdfcff;
+}
+
+.matey-chat-room__row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+.matey-chat-room__row.is-user { justify-content: flex-end; }
+
+.matey-chat-room__row-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.matey-chat-room.is-dog     .matey-chat-room__row-avatar { background: #e8f1ff; }
+.matey-chat-room.is-bear    .matey-chat-room__row-avatar { background: #fff1e6; }
+.matey-chat-room.is-cat     .matey-chat-room__row-avatar { background: #fff8d9; }
+.matey-chat-room.is-hamster .matey-chat-room__row-avatar { background: #f1eaff; }
+.matey-chat-room__row-avatar img {
+  width: 92%;
+  height: 92%;
+  object-fit: contain;
+}
+
+.matey-chat-room__bubble-wrap {
+  display: flex;
+  flex-direction: column;
+  max-width: 70%;
+}
+.matey-chat-room__row.is-user .matey-chat-room__bubble-wrap {
+  align-items: flex-end;
+}
+.matey-chat-room__bubble {
+  padding: 10px 14px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.55;
+  word-break: break-word;
+  animation: matey-bubble-in 220ms ease-out both;
+}
+@keyframes matey-bubble-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.matey-chat-room__bubble.is-mate {
+  background: #ffffff;
+  border: 1px solid #ece6f8;
+  color: #2b2640;
+  border-bottom-left-radius: 6px;
+  box-shadow: 0 4px 14px rgba(80, 70, 180, 0.06);
+}
+.matey-chat-room__bubble.is-user {
+  background: linear-gradient(135deg, #8f79ff 0%, #6ebeff 100%);
+  color: #ffffff;
+  border-bottom-right-radius: 6px;
+  box-shadow: 0 8px 20px rgba(143, 121, 255, 0.28);
+}
+.matey-chat-room__bubble.is-typing {
+  display: inline-flex;
+  gap: 4px;
+  padding: 12px 14px;
+}
+.matey-chat-room__bubble.is-typing span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #c4bfe0;
+  animation: matey-dot 1s infinite ease-in-out;
+}
+.matey-chat-room__bubble.is-typing span:nth-child(2) { animation-delay: 0.15s; }
+.matey-chat-room__bubble.is-typing span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes matey-dot {
+  0%, 60%, 100% { transform: translateY(0);    opacity: 0.45; }
+  30%           { transform: translateY(-4px); opacity: 1; }
+}
+.matey-chat-room__time {
+  margin-top: 4px;
+  font-size: 10.5px;
+  color: #b6b0ce;
+  font-weight: 600;
+}
+
+.matey-chat-room__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 6px 22px 0;
+}
+.matey-chat-room__chip {
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid #ece6f8;
+  background: #ffffff;
+  color: #4d5a74;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+.matey-chat-room__chip:hover {
+  border-color: rgba(143, 121, 255, 0.28);
+  background: #f7f5ff;
+  transform: translateY(-1px);
+}
+
+.matey-chat-room__input-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 22px 18px;
+  border-top: 1px solid #efeaf8;
+  background: #ffffff;
+}
+.matey-chat-room__input {
+  flex: 1;
+  height: 46px;
+  border-radius: 999px;
+  border: 1px solid #e6e0f5;
+  background: #f8f6ff;
+  padding: 0 18px;
+  font-size: 14px;
+  color: #2b2640;
+  outline: none;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+.matey-chat-room__input::placeholder { color: #a8a3bd; }
+.matey-chat-room__input:focus {
+  border-color: #8f79ff;
+  background: #ffffff;
+}
+.matey-chat-room__send {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  color: #ffffff;
+  background: linear-gradient(135deg, #8f79ff 0%, #6ebeff 100%);
+  box-shadow: 0 8px 18px rgba(143, 121, 255, 0.32);
+  transition: transform 160ms ease, opacity 160ms ease;
+}
+.matey-chat-room__send:hover { transform: translateY(-1px); }
+.matey-chat-room__send:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ============================================================
+   6. 반응형
+============================================================ */
+@media (max-width: 1024px) {
+  .matey-chat-modal__panel { grid-template-columns: 280px minmax(0, 1fr) !important; }
+  .matey-chat-side { width: 280px; }
+  .matey-chat-pick__layout { grid-template-columns: 280px minmax(0, 1fr); }
+  .matey-chat-pick__hero-stage { width: 130px; height: 130px; }
+}
+
+@media (max-width: 860px) {
+  .matey-chat-modal { padding: 0; align-items: flex-end; }
+  .matey-chat-modal__panel {
+    width: 100%;
+    height: 96vh;
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: auto minmax(0, 1fr) !important;
+    border-radius: 24px 24px 0 0;
+  }
+  .matey-chat-side {
+    width: 100%;
+    grid-template-rows: auto auto auto !important;
+    border-right: none;
+    border-bottom: 1px solid #efeaf8;
+  }
+  .matey-chat-side__scroll { max-height: 200px; }
+
+  .matey-chat-modal__main { grid-column: 1 / 2 !important; grid-row: 2 / 3 !important; }
+
+  .matey-chat-pick { padding: 18px 16px; }
+  .matey-chat-pick__layout { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .matey-chat-pick__hero { padding: 14px; }
+  .matey-chat-pick__hero-stage { width: 110px; height: 110px; }
+  .matey-chat-pick__grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: repeat(4, auto);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .matey-chat-modal,
+  .matey-chat-modal__panel,
+  .matey-chat-pick__hero-image,
+  .matey-chat-pick__hero-halo,
+  .matey-chat-empty__mascot,
+  .matey-ability-bars__fill,
+  .matey-chat-pick__hero-bubble {
+    animation: none !important;
+    transition: none !important;
+  }
+}

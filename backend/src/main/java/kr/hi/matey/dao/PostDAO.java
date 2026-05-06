@@ -12,14 +12,20 @@ import java.util.List;
 public interface PostDAO {
     List<CategoryDTO> selectCategories();
 
+    Integer selectCategoryNotification(@Param("categoryId") Long categoryId);
+
     List<PostDTO> selectPosts(
             @Param("categoryId") Long categoryId,
             @Param("keyword") String keyword,
             @Param("limit") int limit,
-            @Param("offset") int offset
+            @Param("offset") int offset,
+            @Param("viewerUserId") Long viewerUserId
     );
 
-    PostDTO selectPostById(@Param("postId") Long postId);
+    PostDTO selectPostById(
+            @Param("postId") Long postId,
+            @Param("viewerUserId") Long viewerUserId
+    );
 
     int incrementPostViewCount(@Param("postId") Long postId);
 
@@ -32,5 +38,11 @@ public interface PostDAO {
     );
 
     int deletePost(@Param("postId") Long postId, @Param("userId") Long userId);
+
+    int insertPostLike(@Param("userId") long userId, @Param("postId") long postId);
+
+    int deletePostLike(@Param("userId") long userId, @Param("postId") long postId);
+
+    int adjustPostLikeCount(@Param("postId") long postId, @Param("delta") int delta);
 }
 
