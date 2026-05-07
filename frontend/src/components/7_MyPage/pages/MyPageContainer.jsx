@@ -92,8 +92,8 @@ function MyPageContainer() {
       },
       {
         key: 'support',
-        label: '문의 내역',
-        description: '문의·신고 접수와 관리자 답변을 확인해요',
+        label: '문의·신고 내역',
+        description: '문의·신고 접수와 답변을 확인해요',
       },
     ],
     []

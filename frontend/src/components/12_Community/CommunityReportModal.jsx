@@ -86,11 +86,17 @@ function CommunityReportModal({
 
     const rid = Number(supportReasonId);
 
+    const metaLines =
+      target === 'COMMENT' && comment
+        ? [`__MATEY_POST_ID__=${postId}`, `__MATEY_COMMENT_ID__=${comment.commentId}`]
+        : [`__MATEY_POST_ID__=${postId}`];
+
     let ticketTitle;
     let ticketContent;
     if (target === 'COMMENT' && comment) {
       ticketTitle = `[REPORT COMMENT ${comment.commentId}] ${t}`;
       ticketContent = [
+        ...metaLines,
         `신고 대상 댓글: ${excerpt(comment.content, 200)}`,
         `작성자: ${comment.userNickname || '익명'}`,
         `대상 글: ${postTitle || ''}`,
@@ -100,6 +106,7 @@ function CommunityReportModal({
     } else {
       ticketTitle = `[REPORT POST ${postId}] ${t}`;
       ticketContent = [
+        ...metaLines,
         `신고 대상 글: ${postTitle || ''}`,
         `작성자: ${postAuthorNickname || '익명'}`,
         '',
@@ -173,7 +180,7 @@ function CommunityReportModal({
             </div>
             <div className={styles.fieldBlock}>
               <label className={styles.fieldLabel} htmlFor={`${uid}-reason`}>
-                사유
+                신고 사유
               </label>
               <select
                 id={`${uid}-reason`}
@@ -192,7 +199,7 @@ function CommunityReportModal({
             </div>
             <div className={styles.fieldBlock}>
               <label className={styles.fieldLabel} htmlFor={`${uid}-detail`}>
-                상세 내용
+                신고 내용
               </label>
               <textarea
                 id={`${uid}-detail`}

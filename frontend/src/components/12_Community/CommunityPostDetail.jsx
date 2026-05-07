@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import DOMPurify from 'dompurify';
 import { useAuth } from '../../contexts/AuthContext';
 import { communityAPI } from '../../utils/api';
@@ -56,6 +56,7 @@ function getInteractionLabels(categoryName) {
 
 function CommunityPostDetail() {
   const { postId } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
   const myId = useMemo(() => resolveUserId(user), [user]);
@@ -91,6 +92,29 @@ function CommunityPostDetail() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    if (loading) return;
+    const raw = (location.hash || '').replace(/^#/, '');
+    if (!raw || !raw.startsWith('matey-comment-')) return;
+    const tryScroll = () => {
+      const el = document.getElementById(raw);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return true;
+      }
+      return false;
+    };
+    if (tryScroll()) return undefined;
+    const id = window.requestAnimationFrame(() => {
+      tryScroll();
+    });
+    const t = window.setTimeout(() => tryScroll(), 400);
+    return () => {
+      window.cancelAnimationFrame(id);
+      window.clearTimeout(t);
+    };
+  }, [loading, location.hash, comments]);
 
   const isAuthor = post && myId != null && Number(post.userId) === Number(myId);
 
@@ -340,7 +364,11 @@ function CommunityPostDetail() {
         comments.map((c) => {
           const mine = myId != null && Number(c.userId) === Number(myId);
           return (
-            <article key={c.commentId} className={styles.commentBox}>
+            <article
+              key={c.commentId}
+              id={`matey-comment-${c.commentId}`}
+              className={styles.commentBox}
+            >
               <div className={styles.commentMeta}>
                 {c.userNickname || '익명'} · {formatDateTime(c.createdAt)}
                 {mine ? (
