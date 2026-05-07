@@ -396,6 +396,19 @@ export const adminAPI = {
       method: 'POST',
       body,
     }),
+
+  // FAQ (ADMIN 전용)
+  getFaqs: () => request('/api/admin/faqs', { method: 'GET' }),
+  createFaq: (body) =>
+    request('/api/admin/faqs', {
+      method: 'POST',
+      body,
+    }),
+  updateFaq: (faqId, body) =>
+    request(`/api/admin/faqs/${faqId}`, {
+      method: 'PUT',
+      body,
+    }),
 };
 
 // ==========================================
@@ -459,6 +472,10 @@ export const communityAPI = {
     request(
       `/api/community/spotlight/bot-ranking${year != null && year !== '' ? `?year=${encodeURIComponent(String(year))}` : ''}`
     ),
+  toggleBotRecommend: (botId) =>
+    request(`/api/community/spotlight/bots/${encodeURIComponent(String(botId))}/recommend`, {
+      method: 'POST',
+    }),
 };
 
 // FAQ·문의 분류는 비로그인 조회 가능 (기획: FAQ는 관리자만 편집, 사용자는 읽기)

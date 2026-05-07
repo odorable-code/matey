@@ -47,6 +47,9 @@ import MyPage from './components/7_MyPage/pages/MyPage';
 import AdminPage from './components/8_AdminPage/AdminPage';
 
 import MainPage from './pages/HomePage';
+import HowToUsePage from './pages/HowToUsePage';
+import FaqPage from './pages/FaqPage';
+import BotRankingPage from './pages/BotRankingPage';
 import AdminAccessDeniedPage from './pages/AdminAccessDeniedPage';
 import SocialLoginSuccessPage from './pages/SocialLoginSuccessPage';
 import SocialSignupPage from './pages/SocialSignupPage';
@@ -466,13 +469,7 @@ function AppRoutes() {
 
         <Route
           path="/features"
-          element={
-            <TempInfoPage
-              eyebrow="HOW IT WORKS"
-              title="이용방법 페이지는 지금 정리 중이에요"
-              description="메이티를 처음 사용하는 사용자가 빠르게 이해할 수 있도록 이용 흐름, 핵심 기능, 대화 시작 방식, 추천 사용 시나리오를 이 페이지에 구성할 예정이에요."
-            />
-          }
+          element={<HowToUsePage />}
         />
 
         <Route
@@ -499,24 +496,12 @@ function AppRoutes() {
 
         <Route
           path="/bot-ranking"
-          element={
-            <TempInfoPage
-              eyebrow="BOT RANKING"
-              title="봇랭킹 페이지를 곧 연결할게요"
-              description="인기 봇 순위, 호감도, 활동 지표, 추천 봇 카드 등을 보여주는 랭킹형 메인 화면으로 확장할 예정이에요."
-            />
-          }
+          element={<BotRankingPage />}
         />
 
         <Route
           path="/faq"
-          element={
-            <TempInfoPage
-              eyebrow="FAQ"
-              title="FAQ 페이지를 별도 라우트로 연결해두었어요"
-              description="자주 묻는 질문, 계정/로그인/상담 이용/결제/알림 관련 안내를 정리하는 전용 페이지로 이어질 예정이에요."
-            />
-          }
+          element={<FaqPage />}
         />
 
         {/* =====================================================
@@ -525,9 +510,7 @@ function AppRoutes() {
         <Route
           path="/login"
           element={
-            <PublicOnlyRoute>
-              <AuthPage />
-            </PublicOnlyRoute>
+            <AuthPage />
           }
         />
 
