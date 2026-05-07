@@ -1,0 +1,419 @@
+.page {
+  min-height: calc(100vh - 120px);
+  padding: 118px 18px 56px;
+  background: linear-gradient(180deg, #fdfaff 0%, #f7f9ff 48%, #fff8fc 100%);
+}
+
+.hero {
+  max-width: 980px;
+  margin: 0 auto 26px;
+  padding: 34px 28px;
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(123, 139, 176, 0.12);
+  box-shadow: 0 20px 40px rgba(120, 130, 170, 0.12);
+  position: relative;
+  overflow: hidden;
+}
+
+.heroGrid {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 18px;
+  align-items: center;
+}
+
+.heroCopy {
+  min-width: 0;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: #7a7391;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.title {
+  margin: 0 0 10px;
+  font-size: 34px;
+  line-height: 1.2;
+  font-weight: 900;
+  color: #2f3550;
+  word-break: keep-all;
+}
+
+.subtitle {
+  margin: 0;
+  max-width: 720px;
+  color: #626d86;
+  font-size: 16px;
+  line-height: 1.7;
+  font-weight: 700;
+  word-break: keep-all;
+}
+
+.shortcuts {
+  margin-top: 16px;
+}
+
+.shortcutsLabel {
+  margin: 0 0 8px;
+  color: #7a7391;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.shortcutsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-start;
+}
+
+.shortcutChip {
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 900;
+  color: #314f84;
+  background: rgba(108, 158, 255, 0.12);
+  border: 1px solid rgba(108, 158, 255, 0.14);
+  box-shadow: 0 10px 18px rgba(120, 130, 170, 0.08);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.shortcutChip:hover {
+  background: rgba(108, 158, 255, 0.16);
+}
+
+.shortcutPrimary {
+  position: relative;
+  z-index: 2;
+  color: #ffffff;
+  border: none;
+  background: linear-gradient(135deg, #79b7ff 0%, #8d79ff 48%, #ff93b7 100%);
+  box-shadow: 0 16px 28px rgba(128, 117, 241, 0.22);
+  transform: translateY(-1px);
+}
+
+.shortcutPrimary:hover,
+.shortcutPrimary:focus-visible {
+  box-shadow: 0 20px 34px rgba(128, 117, 241, 0.26);
+  transform: translateY(-2px);
+}
+
+.hint {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: rgba(30, 28, 54, 0.65);
+}
+
+.heroArt {
+  position: relative;
+  min-height: 220px;
+  border-radius: 26px;
+  background: radial-gradient(140px 140px at 25% 35%, rgba(121, 183, 255, 0.25), transparent 70%),
+    radial-gradient(160px 160px at 70% 25%, rgba(141, 121, 255, 0.2), transparent 72%),
+    radial-gradient(170px 170px at 70% 80%, rgba(255, 147, 183, 0.16), transparent 72%);
+  border: 1px solid rgba(123, 139, 176, 0.12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.heroBlob {
+  position: absolute;
+  inset: -40px -60px -40px -60px;
+  background:
+    radial-gradient(circle at 25% 30%, rgba(255, 147, 183, 0.2), transparent 55%),
+    radial-gradient(circle at 65% 35%, rgba(141, 121, 255, 0.22), transparent 60%),
+    radial-gradient(circle at 55% 80%, rgba(121, 183, 255, 0.2), transparent 60%);
+  filter: blur(10px);
+  opacity: 0.95;
+  z-index: 0;
+}
+
+.heroMascots {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.mascot {
+  width: 92px;
+  height: 92px;
+  object-fit: contain;
+  filter: drop-shadow(0 14px 22px rgba(106, 110, 140, 0.22));
+}
+
+.mascotA {
+  transform: translate(-6px, 8px) rotate(-6deg);
+}
+
+.mascotB {
+  transform: translate(-2px, -2px) rotate(6deg);
+}
+
+.mascotC {
+  transform: translate(2px, 10px) rotate(4deg);
+}
+
+.mascotD {
+  transform: translate(6px, 0px) rotate(-5deg);
+}
+
+.heroLines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.55;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.content {
+  margin: 0 auto;
+  max-width: 980px;
+}
+
+.sourceHint {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(120, 110, 255, 0.16);
+  background: rgba(255, 255, 255, 0.8);
+  color: rgba(30, 28, 54, 0.7);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.errorText {
+  margin: 0 0 14px;
+  color: #d12b2b;
+  font-weight: 800;
+}
+
+.loading {
+  margin: 22px 0 0;
+  color: rgba(30, 28, 54, 0.65);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.card {
+  border-radius: 18px;
+  border: 1px solid rgba(120, 110, 255, 0.14);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 16px 40px rgba(20, 18, 60, 0.06);
+  overflow: hidden;
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 14px 0;
+}
+
+.rankPill {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(120, 110, 255, 0.2);
+  background: linear-gradient(180deg, rgba(141, 121, 255, 0.16), rgba(121, 183, 255, 0.1));
+}
+
+.rankNum {
+  font-size: 18px;
+  font-weight: 900;
+  color: rgba(30, 28, 54, 0.88);
+  letter-spacing: -0.02em;
+}
+
+.rankSuffix {
+  font-size: 12px;
+  font-weight: 900;
+  color: rgba(30, 28, 54, 0.65);
+}
+
+.avatarBtn {
+  position: relative;
+  border: none;
+  padding: 0;
+  width: 84px;
+  height: 84px;
+  border-radius: 18px;
+  background: transparent;
+  cursor: pointer;
+  outline: none;
+}
+
+.avatarImg {
+  width: 100%;
+  height: 100%;
+  border-radius: 18px;
+  object-fit: cover;
+  border: 1px solid rgba(120, 110, 255, 0.18);
+  background: rgba(250, 250, 255, 0.85);
+}
+
+.recoOverlay {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  font-size: 12px;
+  font-weight: 900;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(120, 110, 255, 0.24);
+  background: rgba(255, 255, 255, 0.92);
+  color: rgba(30, 28, 54, 0.78);
+}
+
+.cardBody {
+  padding: 12px 14px 14px;
+}
+
+.botName {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 900;
+  color: rgba(30, 28, 54, 0.9);
+}
+
+.botDesc {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: rgba(30, 28, 54, 0.72);
+  min-height: 42px;
+}
+
+.metaRow {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.metaItem {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(120, 110, 255, 0.14);
+  background: rgba(250, 250, 255, 0.72);
+}
+
+.metaLabel {
+  display: block;
+  font-size: 12px;
+  font-weight: 900;
+  color: rgba(30, 28, 54, 0.58);
+}
+
+.metaValue {
+  display: block;
+  margin-top: 6px;
+  font-size: 14px;
+  font-weight: 900;
+  color: rgba(30, 28, 54, 0.86);
+}
+
+.actionsRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.chatLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(120, 110, 255, 0.18);
+  background: rgba(255, 255, 255, 0.85);
+  color: rgba(30, 28, 54, 0.82);
+  text-decoration: none;
+  font-weight: 900;
+  font-size: 13px;
+}
+
+.recoBtn {
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(120, 110, 255, 0.22);
+  background: linear-gradient(180deg, rgba(141, 121, 255, 0.18), rgba(121, 183, 255, 0.12));
+  color: rgba(30, 28, 54, 0.86);
+  font-weight: 900;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.recoBtnOn {
+  border-color: rgba(255, 147, 183, 0.45);
+  background: linear-gradient(180deg, rgba(255, 147, 183, 0.18), rgba(141, 121, 255, 0.12));
+}
+
+@media (max-width: 940px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 860px) {
+  .hero {
+    padding: 30px 20px;
+  }
+
+  .heroGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .heroCopy {
+    text-align: center;
+  }
+
+  .shortcutsRow {
+    justify-content: flex-start;
+  }
+
+  .title {
+    font-size: 30px;
+  }
+}
+
+@media (max-width: 560px) {
+  .title {
+    font-size: 28px;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
