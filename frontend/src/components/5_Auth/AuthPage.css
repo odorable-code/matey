@@ -465,11 +465,6 @@
   font-weight: 900;
 }
 
-.matey-auth-social--google .matey-auth-social__icon {
-  background: #eff4ff;
-  color: #5875db;
-}
-
 .matey-auth-social--kakao {
   background: #fff9d8;
   border-color: rgba(240, 216, 97, 0.34);

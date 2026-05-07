@@ -17,7 +17,7 @@ CREATE TABLE `USER` (
 	`birth_date`	DATE	NULL,
 	`gender`	VARCHAR(10)	NULL,
 	`profile_image`	VARCHAR(500)	NULL,
-	`login_type` ENUM('LOCAL', 'KAKAO', 'GOOGLE', 'NAVER')	NOT NULL DEFAULT 'LOCAL',
+	`login_type` ENUM('LOCAL', 'KAKAO', 'NAVER')	NOT NULL DEFAULT 'LOCAL',
     `status` ENUM('ACTIVE', 'BANNED', 'DELETED')	NOT NULL DEFAULT 'ACTIVE',
 	`is_terms_agreed`	BOOLEAN	NOT NULL	DEFAULT FALSE,
 	`is_privacy_agreed`	BOOLEAN	NOT NULL	DEFAULT FALSE,
