@@ -24,12 +24,12 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import kr.hi.matey.security.filter.JwtAuthenticationFilter;
 import kr.hi.matey.service.MemberDetailService;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 
 @Configuration
 // 이 클래스가 Spring Security 설정을 담당하는 클래스임을 선언하며, 웹 보안 기능을 활성화
 @EnableWebSecurity
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
