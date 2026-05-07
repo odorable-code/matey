@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import styles from './BotRankingPage.module.css';
 import { communityAPI } from '../utils/api';
 import { useAuth } from '../contexts/AuthContext';
+import { canAccessAdminPage } from '../utils/adminAccess';
 
 function normalizeEntries(raw) {
   const rows = Array.isArray(raw) ? raw : [];
@@ -34,6 +35,7 @@ function fallbackAvatarForRank(rank) {
 export default function BotRankingPage() {
   const navigate = useNavigate();
   const { user, isAuthenticated, authLoading } = useAuth();
+  const isAdminLike = useMemo(() => canAccessAdminPage(user), [user]);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -131,8 +133,8 @@ export default function BotRankingPage() {
               </div>
             </div>
 
-            {!authLoading && isAuthenticated && user?.nickname ? (
-              <p className={styles.hint}>{user.nickname}님, 마음에 드는 봇을 추천해 보세요.</p>
+            {!authLoading && isAuthenticated ? (
+              <p className={styles.hint}>마음에 드는 봇을 추천해 보세요.</p>
             ) : (
               <p className={styles.hint}>봇 사진을 눌러 추천할 수 있어요. (로그인 필요)</p>
             )}
@@ -168,7 +170,9 @@ export default function BotRankingPage() {
       </section>
 
       <section className={styles.content}>
-        {sourceDescription ? <p className={styles.sourceHint}>{sourceDescription}</p> : null}
+        {!isAdminLike && sourceDescription ? (
+          <p className={styles.sourceHint}>{sourceDescription}</p>
+        ) : null}
         {error ? <p className={styles.errorText}>{error}</p> : null}
 
         {loading ? (

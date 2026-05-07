@@ -152,7 +152,7 @@ public class AdminController {
             @RequestBody kr.hi.matey.dto.FaqDTO faqDTO,
             @AuthenticationPrincipal CustomUser user
     ) {
-        if (!RoleCodeHelper.isAdminOrSuperAdmin(user.getUser().getRoleCode())) {
+        if (!RoleCodeHelper.isCommunityStaffPublisher(user.getUser().getRoleCode())) {
             return ResponseEntity.status(403).body("forbidden");
         }
 
@@ -166,7 +166,7 @@ public class AdminController {
             @RequestBody kr.hi.matey.dto.FaqDTO faqDTO,
             @AuthenticationPrincipal CustomUser user
     ) {
-        if (!RoleCodeHelper.isAdminOrSuperAdmin(user.getUser().getRoleCode())) {
+        if (!RoleCodeHelper.isCommunityStaffPublisher(user.getUser().getRoleCode())) {
             return ResponseEntity.status(403).body("forbidden");
         }
 
