@@ -372,20 +372,14 @@ export const adminAPI = {
   },
 
   // 통계/대시보드
-  getStats: () => {
-    return request('/api/admin/stats', {
+  getDashboardOverview: () => {
+    return request('/api/admin/dashboard/overview', {
       method: 'GET',
     });
   },
-  
-  getEmotionStats: () => {
-    return request('/api/admin/stats/emotions', {
-      method: 'GET',
-    });
-  },
-  
-  getConcernStats: () => {
-    return request('/api/admin/stats/concerns', {
+
+  getLiveMetrics: () => {
+    return request('/api/admin/dashboard/live', {
       method: 'GET',
     });
   },
@@ -516,5 +510,19 @@ export const emotionReportAPI = {
   getDashboard: () => request('/api/emotion-report/dashboard'),
   getList: () => request('/api/emotion-report'),
   getDetail: (analysisId) => request(`/api/emotion-report/${analysisId}`),
+};
+
+// ==========================================
+// Notifications API
+// ==========================================
+
+export const notificationAPI = {
+  getNotifications: () => request('/api/notifications'),
+  markAsRead: (notificationId) =>
+    request(`/api/notifications/${notificationId}/read`, { method: 'PATCH' }),
+  markAllAsRead: () =>
+    request('/api/notifications/read-all', { method: 'PATCH' }),
+  deleteNotification: (notificationId) =>
+    request(`/api/notifications/${notificationId}`, { method: 'DELETE' }),
 };
 

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.hi.matey.dao.NotificationDAO">
+
+    <select id="selectNotifications" resultType="kr.hi.matey.dto.NotificationDTO">
+        SELECT
+            notification_id AS notificationId,
+            user_id AS userId,
+            type_code AS typeCode,
+            content AS content,
+            is_read AS isRead,
+            created_at AS createdAt,
+            target_type AS targetType,
+            target_id AS targetId,
+            CASE
+                WHEN type_code = 'SYSTEM_NOTICE' THEN 'system'
+                WHEN type_code IN ('BOT_MESSAGE', 'CHAT_REMINDER') THEN 'mate'
+                ELSE 'update'
+            END AS type,
+            CASE
+                WHEN type_code = 'SUPPORT_ANSWER' THEN '신고/문의 답변이 등록되었습니다'
+                WHEN type_code = 'POST_COMMENT' THEN '새 댓글이 달렸습니다'
+                WHEN type_code = 'COMMENT_REPLY' THEN '대댓글이 달렸습니다'
+                WHEN type_code = 'BOT_MESSAGE' THEN '메이티의 새 쪽지가 도착했습니다'
+                WHEN type_code = 'SYSTEM_NOTICE' THEN '공지사항이 있습니다'
+                WHEN type_code = 'POINT_REWARD' THEN '포인트가 지급되었습니다'
+                WHEN type_code = 'COMMUNITY_HOT' THEN '내 글이 인기글이 되었습니다'
+                WHEN type_code = 'REPORT_RESULT' THEN '신고 처리 결과가 나왔습니다'
+                WHEN type_code = 'CHAT_REMINDER' THEN '메이트가 기다리고 있어요'
+                WHEN type_code = 'EVENT_NOTICE' THEN '새로운 이벤트가 시작되었습니다'
+                ELSE '새로운 알림이 있습니다'
+            END AS title,
+            content AS message
+        FROM NOTIFICATION
+        WHERE user_id = #{userId}
+        ORDER BY created_at DESC
+    </select>
+
+    <update id="updateReadStatus">
+        UPDATE NOTIFICATION
+        SET is_read = 1
+        WHERE notification_id = #{notificationId} AND user_id = #{userId}
+    </update>
+
+    <update id="updateAllReadStatus">
+        UPDATE NOTIFICATION
+        SET is_read = 1
+        WHERE user_id = #{userId} AND is_read = 0
+    </update>
+
+    <delete id="deleteNotification">
+        DELETE FROM NOTIFICATION
+        WHERE notification_id = #{notificationId} AND user_id = #{userId}
+    </delete>
+
+</mapper>

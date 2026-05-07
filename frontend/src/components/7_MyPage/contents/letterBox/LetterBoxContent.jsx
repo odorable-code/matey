@@ -69,7 +69,7 @@ function AnimatedStatCard({ item, index, prefersReducedMotion }) {
   );
 }
 
-function LetterBoxContent({ letterData = defaultLetters }) {
+function LetterBoxContent({ letterData = defaultLetters, onRead }) {
   const prefersReducedMotion = usePrefersReducedMotion();
 
   return (
@@ -85,7 +85,15 @@ function LetterBoxContent({ letterData = defaultLetters }) {
       </header>
 
       <div className={styles.heroGrid}>
-        <article className={styles.featuredCard}>
+        <article
+          className={styles.featuredCard}
+          onClick={() => {
+            if (letterData.featured.id && onRead && letterData.featured.unread) {
+              onRead(letterData.featured.id);
+            }
+          }}
+          style={{ cursor: onRead && letterData.featured.unread ? 'pointer' : 'default' }}
+        >
           <div className={styles.featuredTop}>
             <span className={styles.featuredBadge}>{letterData.featured.status}</span>
             <span className={styles.featuredDate}>{letterData.featured.date}</span>
@@ -115,6 +123,12 @@ function LetterBoxContent({ letterData = defaultLetters }) {
           <article
             key={item.id}
             className={`${styles.letterCard} ${item.unread ? styles.unreadCard : ''}`}
+            onClick={() => {
+              if (onRead && item.unread) {
+                onRead(item.id);
+              }
+            }}
+            style={{ cursor: onRead && item.unread ? 'pointer' : 'default' }}
           >
             <div className={styles.letterTop}>
               <span className={styles.letterSender}>{item.sender}</span>
