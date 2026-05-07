@@ -473,6 +473,8 @@ export const supportUserAPI = {
   createTicket: (body) =>
     request('/api/mypage/support', { method: 'POST', body }),
   listTickets: () => request('/api/mypage/support'),
+  deleteTicket: (supportId) =>
+    request(`/api/mypage/support/${supportId}`, { method: 'DELETE' }),
 };
 
 export const myPageAPI = {

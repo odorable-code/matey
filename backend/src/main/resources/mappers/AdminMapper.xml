@@ -182,9 +182,10 @@
     </update>
 
     <insert id="insertSupportAnswer">
-        INSERT INTO SUPPORT_ANSWER (content, support_id, admin_user_id)
+        INSERT INTO SUPPORT_ANSWER (content, handling_method, support_id, admin_user_id)
         VALUES (
             #{content},
+            #{handlingMethod},
             #{supportId},
             #{adminUserId}
         )

@@ -42,7 +42,7 @@ function CommunityReportModal({
       setLoading(true);
       setError('');
       setSupportReasonId('');
-      setTitle(postTitle ? String(postTitle).slice(0, 200) : '');
+      setTitle('');
       setDetail('');
       try {
         const res = await supportPublicAPI.getReasons();
@@ -58,7 +58,7 @@ function CommunityReportModal({
     return () => {
       cancelled = true;
     };
-  }, [open, target, postTitle]);
+  }, [open, target]);
 
   if (!open) return null;
 

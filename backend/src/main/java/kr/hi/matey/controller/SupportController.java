@@ -55,6 +55,16 @@ public class SupportController {
         return ResponseEntity.ok(response);
     }
 
+    @DeleteMapping("/{supportId}")
+    public ResponseEntity<Void> deleteSupportTicket(
+            @PathVariable Long supportId,
+            @AuthenticationPrincipal CustomUser user
+    ) {
+        long userId = user.getUser().getUserId();
+        supportService.deleteOwnSupportTicket(userId, supportId);
+        return ResponseEntity.noContent().build();
+    }
+
     // 3. 자주 묻는 질문(FAQ) 리스트 조회
     @GetMapping("/faq")
     public ResponseEntity<Map<String, Object>> getFaqList() {

@@ -207,3 +207,63 @@
 .gotoBtn:hover {
   filter: brightness(1.05);
 }
+
+.adminAnswer {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed rgba(112, 91, 150, 0.22);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.adminAnswerHeading {
+  font-size: 13px;
+  font-weight: 900;
+  color: #352b4a;
+  letter-spacing: -0.02em;
+}
+
+.authorActionRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.authorNick {
+  font-size: 14px;
+  font-weight: 700;
+  color: #352b4a;
+  word-break: break-word;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.detailActions {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px dashed rgba(112, 91, 150, 0.18);
+}
+
+.deleteBtn {
+  border-radius: 12px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  color: #b33;
+  background: rgba(255, 240, 240, 0.9);
+  border: 1px solid rgba(200, 80, 80, 0.35);
+}
+
+.deleteBtn:hover:not(:disabled) {
+  background: rgba(255, 220, 220, 0.95);
+}
+
+.deleteBtn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}

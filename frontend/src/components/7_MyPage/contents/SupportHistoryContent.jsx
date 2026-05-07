@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { supportUserAPI } from '../../../utils/api';
 import {
   displaySupportTicketTitle,
+  getReportCardTitle,
   parseSupportReportForDisplay,
 } from '../../../utils/supportReportDisplay';
 import styles from './SupportHistoryContent.module.css';
@@ -16,12 +17,12 @@ function formatWhen(value) {
 }
 
 function isReportRow(row) {
-  // 1) 백엔드가 내려주는 targetType 우선
   const tt = String(row?.targetType || '').trim().toUpperCase();
   if (tt === 'POST' || tt === 'COMMENT') return true;
-  // 2) 혹시 targetType이 비어있는 구버전 응답이면 title 메타로 판별
   const title = String(row?.title || '');
-  return /^\[REPORT\s+(POST|COMMENT)\s+\d+\]/i.test(title);
+  if (/^\[REPORT\s+(POST|COMMENT)\s+\d+\]/i.test(title)) return true;
+  if (/^\[\s*(게시글|댓글)\s*신고\s*\]/i.test(title)) return true;
+  return false;
 }
 
 function SupportHistoryContent() {
@@ -30,6 +31,7 @@ function SupportHistoryContent() {
   const [error, setError] = useState('');
   const [tab, setTab] = useState('INQUIRY'); // INQUIRY | REPORT
   const [openId, setOpenId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -39,7 +41,7 @@ function SupportHistoryContent() {
       try {
         const res = await supportUserAPI.listTickets();
         const list = res?.items ?? res?.supportList ?? [];
-        setItems(Array.isArray(list) ? list : []);
+        if (!cancelled) setItems(Array.isArray(list) ? list : []);
       } catch (e) {
         if (!cancelled) setError(e?.message || '목록을 불러오지 못했어요.');
       } finally {
@@ -50,6 +52,22 @@ function SupportHistoryContent() {
       cancelled = true;
     };
   }, []);
+
+  const handleDelete = async (event, supportId) => {
+    event.stopPropagation();
+    if (!window.confirm('이 내역을 삭제할까요? 삭제하면 복구할 수 없어요.')) return;
+    setDeletingId(supportId);
+    setError('');
+    try {
+      await supportUserAPI.deleteTicket(supportId);
+      setItems((prev) => prev.filter((r) => Number(r.supportId) !== Number(supportId)));
+      setOpenId((prev) => (prev === supportId ? null : prev));
+    } catch (e) {
+      setError(e?.message || '삭제에 실패했어요.');
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const filtered = (items || []).filter((row) => (tab === 'REPORT' ? isReportRow(row) : !isReportRow(row)));
 
@@ -91,7 +109,7 @@ function SupportHistoryContent() {
             const isReport = isReportRow(row);
             const reportView = isReport ? parseSupportReportForDisplay(row) : null;
             const cardTitle = isReport
-              ? reportView.userTitle
+              ? getReportCardTitle(row)
               : displaySupportTicketTitle(row.title);
 
             return (
@@ -133,57 +151,69 @@ function SupportHistoryContent() {
                             <span className={styles.v}>{reportView.reasonName}</span>
                           </div>
                         ) : null}
-                        {reportView.targetType === 'POST' ? (
-                          <>
-                            {reportView.postTitle ? (
-                              <div className={styles.kv}>
-                                <span className={styles.k}>게시글 제목</span>
-                                <span className={styles.v}>{reportView.postTitle}</span>
-                              </div>
-                            ) : null}
-                            {reportView.postAuthor ? (
-                              <div className={styles.kv}>
-                                <span className={styles.k}>게시글 작성자</span>
-                                <span className={styles.v}>{reportView.postAuthor}</span>
-                              </div>
-                            ) : null}
-                          </>
-                        ) : null}
-                        {reportView.targetType === 'COMMENT' && reportView.commentAuthor ? (
-                          <div className={styles.kv}>
-                            <span className={styles.k}>댓글 작성자</span>
-                            <span className={styles.v}>{reportView.commentAuthor}</span>
-                          </div>
-                        ) : null}
                         {reportView.reportBody ? (
                           <div className={styles.kv}>
                             <span className={styles.k}>신고 내용</span>
                             <p className={styles.reportBody}>{reportView.reportBody}</p>
                           </div>
                         ) : null}
-                        {reportView.linkPostId != null ? (
-                          <Link
-                            className={styles.gotoBtn}
-                            to={`/community/posts/${reportView.linkPostId}${
-                              reportView.linkHash ? `#${reportView.linkHash}` : ''
-                            }`}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {reportView.targetType === 'COMMENT'
-                              ? '신고한 댓글로 이동'
-                              : '해당 게시글로 이동'}
-                          </Link>
-                        ) : null}
+                        <div className={styles.authorActionRow}>
+                          {reportView.authorName ? (
+                            <span className={styles.authorNick} title={reportView.authorLabel}>
+                              {reportView.authorName}
+                            </span>
+                          ) : null}
+                          {reportView.linkPostId != null ? (
+                            <Link
+                              className={styles.gotoBtn}
+                              to={`/community/posts/${reportView.linkPostId}${
+                                reportView.linkHash ? `#${reportView.linkHash}` : ''
+                              }`}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              원본 보기
+                            </Link>
+                          ) : null}
+                        </div>
                       </div>
                     ) : row.content ? (
                       <p className={styles.body}>{row.content}</p>
                     ) : null}
-                    {row.answerContent ? (
-                      <div className={styles.answerBlock}>
-                        <div className={styles.answerLabel}>관리자 답변</div>
-                        <p className={styles.answerBody}>{row.answerContent}</p>
+                    {row.answerContent ||
+                    row.answerAdminNickname ||
+                    row.answerHandlingMethod ? (
+                      <div className={styles.adminAnswer}>
+                        <div className={styles.adminAnswerHeading}>관리자 처리</div>
+                        {row.answerAdminNickname ? (
+                          <div className={styles.kv}>
+                            <span className={styles.k}>처리 관리자</span>
+                            <span className={styles.v}>{row.answerAdminNickname}</span>
+                          </div>
+                        ) : null}
+                        {row.answerContent ? (
+                          <div className={styles.kv}>
+                            <span className={styles.k}>답변</span>
+                            <p className={styles.reportBody}>{row.answerContent}</p>
+                          </div>
+                        ) : null}
+                        {row.answerHandlingMethod ? (
+                          <div className={styles.kv}>
+                            <span className={styles.k}>처리 방법</span>
+                            <span className={styles.v}>{row.answerHandlingMethod}</span>
+                          </div>
+                        ) : null}
                       </div>
                     ) : null}
+                    <div className={styles.detailActions}>
+                      <button
+                        type="button"
+                        className={styles.deleteBtn}
+                        disabled={deletingId === row.supportId}
+                        onClick={(e) => handleDelete(e, row.supportId)}
+                      >
+                        {deletingId === row.supportId ? '삭제 중…' : '삭제'}
+                      </button>
+                    </div>
                   </div>
                 ) : null}
               </div>

@@ -1,21 +1,60 @@
 /**
  * 커뮤니티 신고 티켓(CommunityReportModal)에서 만든 SUPPORT.content / title 파싱.
- * 구버전 티켓(메타 없음)은 일부 필드가 비거나 링크가 제한될 수 있음.
  */
 
-const TITLE_META = /^\[REPORT\s+(POST|COMMENT)\s+(\d+)\]\s*/i;
 const LINE_POST_ID = /^__MATEY_POST_ID__=(\d+)\s*$/;
 const LINE_COMMENT_ID = /^__MATEY_COMMENT_ID__=(\d+)\s*$/;
 
-export function stripReportMetaFromTitle(rawTitle) {
-  return String(rawTitle || '').replace(TITLE_META, '').trim();
+/**
+ * DB에 들어간 자동 접두어([REPORT…], [댓글 신고], 게시글#n 등)를 제거한 뒤 사용자 제목만 남김.
+ */
+export function aggressiveStripTitle(raw) {
+  let t = String(raw ?? '')
+    .replace(/^\uFEFF/, '')
+    .normalize('NFKC')
+    .trim();
+
+  for (let i = 0; i < 12; i++) {
+    const before = t;
+    const bracket = t.match(/^\[([^\]]+)\]\s*/);
+    if (bracket && /신고|REPORT/i.test(bracket[1])) {
+      t = t.slice(bracket[0].length).trim();
+      continue;
+    }
+    t = t.replace(/^\[REPORT\s+(POST|COMMENT)\s+\d+\]\s*/i, '').trim();
+    t = t
+      .replace(/^게시글\s*#\s*\d+(\s+댓글\s*#\s*\d+)?\s*/i, '')
+      .replace(/^게시글\s*#\s*\d+\s*/i, '')
+      .replace(/^댓글\s*#\s*\d+\s*/i, '')
+      .trim();
+    t = t.replace(/^(게시글 신고:|댓글 신고:)\s*/i, '').trim();
+    if (t === before) break;
+  }
+  return t;
 }
 
-/** 목록·상세 카드에 쓰는 사용자 작성 제목 */
+function isOnlyAutoIdTail(s) {
+  const x = String(s || '').trim();
+  if (!x) return true;
+  return /^(게시글\s*#\s*\d+)(\s+댓글\s*#\s*\d+)?$/i.test(x);
+}
+
+/** 신고 카드 제목: 자동 메타만 있으면 신고 본문 일부를 제목으로 사용 */
+export function getReportCardTitle(row) {
+  let t = aggressiveStripTitle(row?.title);
+  if (!t || isOnlyAutoIdTail(t)) {
+    const rawContent = String(row?.content || '');
+    const body = extractUserReportBody(stripInternalMetaLines(rawContent));
+    const one = body.replace(/\s+/g, ' ').trim();
+    if (one) return one.length > 72 ? `${one.slice(0, 72)}…` : one;
+  }
+  return t || '제목 없음';
+}
+
+/** 일반 문의 등 제목 표시 */
 export function displaySupportTicketTitle(rawTitle) {
-  const t = stripReportMetaFromTitle(String(rawTitle || ''));
-  const cleaned = t.replace(/^(게시글 신고:|댓글 신고:)\s*/i, '').trim();
-  return cleaned || '제목 없음';
+  const t = aggressiveStripTitle(rawTitle);
+  return t || '제목 없음';
 }
 
 function stripInternalMetaLines(rawContent) {
@@ -42,26 +81,44 @@ function lineValue(text, prefix) {
   return '';
 }
 
-function extractUserReportBody(strippedContent) {
+/** 사용자가 신고 폼에 적은 내용만 (템플릿·미리보기 라인 제외) */
+export function extractUserReportBody(strippedContent) {
   const c = String(strippedContent || '');
   const marker = '신고 내용:';
   const idx = c.indexOf(marker);
-  if (idx === -1) return c.trim();
+  if (idx === -1) {
+    const stripped = c
+      .split(/\r?\n/)
+      .filter((line) => {
+        const L = line.trimStart();
+        if (L.startsWith('신고 대상')) return false;
+        if (L.startsWith('작성자:')) return false;
+        if (L.startsWith('대상 글:')) return false;
+        return true;
+      })
+      .join('\n')
+      .trim();
+    return stripped;
+  }
   return c.slice(idx + marker.length).trim();
 }
 
+const TITLE_META_EN = /^\[REPORT\s+(POST|COMMENT)\s+(\d+)\]\s*/i;
+
 /**
- * @param {object} row — support list 항목 (title, content, targetType, …)
+ * @param {object} row — support list 항목
  */
 export function parseSupportReportForDisplay(row) {
   const title = String(row?.title || '');
-  const meta = title.match(TITLE_META);
+  const meta = title.match(TITLE_META_EN);
   const targetFromTitle = meta ? meta[1].toUpperCase() : '';
   const idFromTitle = meta ? Number(meta[2]) : null;
 
-  const targetType = String(row?.targetType || targetFromTitle || '')
+  let targetType = String(row?.targetType || targetFromTitle || '')
     .trim()
     .toUpperCase();
+  if (!targetType && /^\[\s*댓글\s*신고\s*\]/i.test(title)) targetType = 'COMMENT';
+  if (!targetType && /^\[\s*게시글\s*신고\s*\]/i.test(title)) targetType = 'POST';
 
   let postId = null;
   let commentId = null;
@@ -83,11 +140,12 @@ export function parseSupportReportForDisplay(row) {
 
   const content = stripInternalMetaLines(rawContent);
 
-  const postTitle = lineValue(content, '신고 대상 글:');
   const postAuthor = lineValue(content, '작성자:');
-  const commentAuthor =
-    targetType === 'COMMENT' ? lineValue(content, '작성자:') : '';
+  const commentAuthor = targetType === 'COMMENT' ? postAuthor : '';
   const reportBody = extractUserReportBody(content);
+
+  const authorLabel = targetType === 'POST' ? '게시글 작성자' : '댓글 작성자';
+  const authorName = targetType === 'POST' ? postAuthor : commentAuthor;
 
   const linkPostId = postId;
   const linkHash =
@@ -96,12 +154,10 @@ export function parseSupportReportForDisplay(row) {
       : '';
 
   return {
-    userTitle: displaySupportTicketTitle(title),
     targetType,
     reasonName: String(row?.reasonName || '').trim(),
-    postTitle: postTitle || '',
-    postAuthor: postAuthor || '',
-    commentAuthor: commentAuthor || '',
+    authorLabel,
+    authorName: authorName || '',
     reportBody: reportBody || '',
     linkPostId,
     linkHash,

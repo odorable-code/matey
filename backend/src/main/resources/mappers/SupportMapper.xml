@@ -21,6 +21,21 @@
                 ORDER BY sa.created_at DESC
                 LIMIT 1
             ) as answerContent,
+            (
+                SELECT u.nickname
+                FROM SUPPORT_ANSWER sa
+                JOIN USER u ON u.user_id = sa.admin_user_id
+                WHERE sa.support_id = s.support_id
+                ORDER BY sa.created_at DESC
+                LIMIT 1
+            ) as answerAdminNickname,
+            (
+                SELECT sa.handling_method
+                FROM SUPPORT_ANSWER sa
+                WHERE sa.support_id = s.support_id
+                ORDER BY sa.created_at DESC
+                LIMIT 1
+            ) as answerHandlingMethod,
             s.created_at as createdAt
         FROM SUPPORT s
         JOIN SUPPORT_REASON sr ON s.support_reason_id = sr.support_reason_id
@@ -75,6 +90,20 @@
         WHERE s.user_id = #{userId}
           AND s.title LIKE CONCAT('[REPORT ', #{targetType}, ' ', #{targetId}, ']%')
     </select>
+
+    <!-- 문의·신고 삭제: FK 때문에 본인 티켓의 답변 먼저 삭제 -->
+    <delete id="deleteAnswersForOwnedSupport">
+        DELETE sa FROM SUPPORT_ANSWER sa
+        INNER JOIN SUPPORT s ON s.support_id = sa.support_id
+        WHERE sa.support_id = #{supportId}
+          AND s.user_id = #{userId}
+    </delete>
+
+    <delete id="deleteSupportIfOwner">
+        DELETE FROM SUPPORT
+        WHERE support_id = #{supportId}
+          AND user_id = #{userId}
+    </delete>
 
     <select id="selectFaqList" resultType="kr.hi.matey.dto.FaqDTO">
         SELECT

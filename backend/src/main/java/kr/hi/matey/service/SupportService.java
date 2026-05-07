@@ -29,6 +29,15 @@ public class SupportService {
     }
 
     @Transactional
+    public void deleteOwnSupportTicket(long userId, long supportId) {
+        supportDAO.deleteAnswersForOwnedSupport(supportId, userId);
+        int deleted = supportDAO.deleteSupportIfOwner(supportId, userId);
+        if (deleted == 0) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "문의를 찾을 수 없어요.");
+        }
+    }
+
+    @Transactional
     public void createSupportTicket(SupportDTO supportDTO) {
         // 새 문의 등록 시 초기 상태를 DB 기준 'PENDING'으로 고정
         supportDTO.setStatus("PENDING");

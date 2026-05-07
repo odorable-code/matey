@@ -5,6 +5,7 @@ import kr.hi.matey.dto.FaqDTO;
 import kr.hi.matey.dto.SupportReasonDTO;
 import kr.hi.matey.dto.SupportDTO;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
@@ -20,6 +21,10 @@ public interface SupportDAO {
     SupportReasonDTO selectSupportReasonById(Long supportReasonId);
 
     int countExistingReportForTarget(Long userId, String targetType, Long targetId);
+
+    int deleteAnswersForOwnedSupport(@Param("supportId") Long supportId, @Param("userId") Long userId);
+
+    int deleteSupportIfOwner(@Param("supportId") Long supportId, @Param("userId") Long userId);
 
     List<FaqDTO> selectFaqList();
 
