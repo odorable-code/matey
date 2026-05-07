@@ -56,45 +56,58 @@ function MyPageContainer() {
 
   const [letterData, setLetterData] = useState(null);
 
+  const fetchLetters = () => {
+    myPageAPI.getLetters()
+      .then(data => {
+        if (data) {
+          const transformed = {
+            featured: data.items?.[0] ? {
+              id: data.items[0].id,
+              unread: data.items[0].unread,
+              title: data.items[0].title,
+              sender: data.items[0].sender || '메이티',
+              preview: data.items[0].preview,
+              date: data.items[0].date,
+              status: data.items[0].unread ? '새 편지' : '읽은 편지',
+            } : {
+              id: null,
+              unread: false,
+              title: '도착한 편지가 없어요',
+              sender: '메이티',
+              preview: '메이티가 편지를 보내면 여기에 표시돼요.',
+              date: '-',
+              status: '',
+            },
+            stats: [
+              { label: '읽지 않은 편지', value: String(data.unreadCount || 0) },
+              { label: '이번 주 도착', value: String(data.weeklyCount || 0) },
+            ],
+            items: (data.items || []).map(item => ({
+              id: item.id,
+              sender: item.sender || '메이티',
+              title: item.title,
+              preview: item.preview,
+              date: item.date,
+              unread: item.unread,
+            })),
+          };
+          setLetterData(transformed);
+        }
+      })
+      .catch(console.error);
+  };
+
   useEffect(() => {
     if (activeMenu === 'letterBox') {
-      myPageAPI.getLetters()
-        .then(data => {
-          if (data) {
-            // LetterBoxContent에서 기대하는 구조로 변환
-            const transformed = {
-              featured: data.items?.[0] ? {
-                title: data.items[0].title,
-                sender: '메이티',
-                preview: data.items[0].content,
-                date: new Date(data.items[0].createdAt).toLocaleDateString(),
-                status: data.items[0].unread ? '새 편지' : '읽은 편지',
-              } : {
-                title: '도착한 편지가 없어요',
-                sender: '메이티',
-                preview: '메이티가 편지를 보내면 여기에 표시돼요.',
-                date: '-',
-                status: '',
-              },
-              stats: [
-                { label: '읽지 않은 편지', value: String(data.unreadCount || 0) },
-                { label: '이번 주 도착', value: String(data.weeklyCount || 0) },
-              ],
-              items: (data.items || []).map(item => ({
-                id: item.letterId,
-                sender: '메이티',
-                title: item.title,
-                preview: item.content,
-                date: new Date(item.createdAt).toLocaleDateString(),
-                unread: item.unread,
-              })),
-            };
-            setLetterData(transformed);
-          }
-        })
-        .catch(console.error);
+      fetchLetters();
     }
   }, [activeMenu]);
+
+  const handleReadLetter = (letterId) => {
+    myPageAPI.readLetter(letterId)
+      .then(() => fetchLetters())
+      .catch(console.error);
+  };
 
   /* =========================
      왼쪽 사이드 메뉴 목록
@@ -189,7 +202,7 @@ function MyPageContainer() {
         return <BotMenuContent />;
 
       case 'letterBox':
-        return <LetterBoxContent />;
+        return <LetterBoxContent letterData={letterData || undefined} onRead={handleReadLetter} />;
 
       case 'settings':
         return <SettingsContent />;
