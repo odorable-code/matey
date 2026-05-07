@@ -372,20 +372,14 @@ export const adminAPI = {
   },
 
   // 통계/대시보드
-  getStats: () => {
-    return request('/api/admin/stats', {
+  getDashboardOverview: () => {
+    return request('/api/admin/dashboard/overview', {
       method: 'GET',
     });
   },
-  
-  getEmotionStats: () => {
-    return request('/api/admin/stats/emotions', {
-      method: 'GET',
-    });
-  },
-  
-  getConcernStats: () => {
-    return request('/api/admin/stats/concerns', {
+
+  getLiveMetrics: () => {
+    return request('/api/admin/dashboard/live', {
       method: 'GET',
     });
   },

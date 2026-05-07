@@ -30,6 +30,7 @@ import BotMenuContent from '../contents/BotMenuContent';
 import LetterBoxContent from '../contents/letterBox/LetterBoxContent';
 import SettingsContent from '../contents/settings/SettingsContent';
 import SupportHistoryContent from '../contents/SupportHistoryContent.jsx';
+import { myPageAPI } from '../../../utils/api';
 
 function MyPageContainer() {
   const location = useLocation();
@@ -52,6 +53,48 @@ function MyPageContainer() {
      - 카드들에 reveal 효과 적용할 때 사용
   ========================= */
   const contentPanelRef = useRef(null);
+
+  const [letterData, setLetterData] = useState(null);
+
+  useEffect(() => {
+    if (activeMenu === 'letterBox') {
+      myPageAPI.getLetters()
+        .then(data => {
+          if (data) {
+            // LetterBoxContent에서 기대하는 구조로 변환
+            const transformed = {
+              featured: data.items?.[0] ? {
+                title: data.items[0].title,
+                sender: '메이티',
+                preview: data.items[0].content,
+                date: new Date(data.items[0].createdAt).toLocaleDateString(),
+                status: data.items[0].unread ? '새 편지' : '읽은 편지',
+              } : {
+                title: '도착한 편지가 없어요',
+                sender: '메이티',
+                preview: '메이티가 편지를 보내면 여기에 표시돼요.',
+                date: '-',
+                status: '',
+              },
+              stats: [
+                { label: '읽지 않은 편지', value: String(data.unreadCount || 0) },
+                { label: '이번 주 도착', value: String(data.weeklyCount || 0) },
+              ],
+              items: (data.items || []).map(item => ({
+                id: item.letterId,
+                sender: '메이티',
+                title: item.title,
+                preview: item.content,
+                date: new Date(item.createdAt).toLocaleDateString(),
+                unread: item.unread,
+              })),
+            };
+            setLetterData(transformed);
+          }
+        })
+        .catch(console.error);
+    }
+  }, [activeMenu]);
 
   /* =========================
      왼쪽 사이드 메뉴 목록

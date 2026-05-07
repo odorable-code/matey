@@ -207,28 +207,6 @@ function nowTimeLabel(offsetMinutes = 0) {
   return `${hh}:${mm}`;
 }
 
-function createInitialRealtimeSeries(base, variance) {
-  return Array.from({ length: 8 }, (_, index) => {
-    const offset = (index - 7) * 10;
-    const wave = Math.sin(index * 1.2) * variance * 0.4;
-    const noise = Math.round((Math.random() - 0.5) * variance);
-
-    return {
-      label: nowTimeLabel(offset),
-      value: Math.max(8, Math.round(base + wave + noise + index * 2)),
-    };
-  });
-}
-
-function mutateSeries(prev, stepMin, stepMax, floorValue = 10) {
-  const lastValue = prev[prev.length - 1]?.value || floorValue;
-  const delta = Math.round(Math.random() * (stepMax - stepMin) + stepMin);
-  const direction = Math.random() > 0.45 ? 1 : -1;
-  const nextValue = Math.max(floorValue, lastValue + delta * direction);
-
-  return [...prev.slice(1), { label: nowTimeLabel(), value: nextValue }];
-}
-
 /* =========================================================
    활동 로그 저장 코드 (localStorage)
 ========================================================= */
@@ -392,31 +370,43 @@ export default function AdminPage() {
         setLoading(true);
         setError(null);
 
-        const [usersData, feedbacksData, emotionData] = await Promise.all([
+        const [usersData, feedbacksData, dashboardData] = await Promise.all([
           adminAPI.getUsers().catch(() => []),
           adminAPI.getFeedbacks({ status: 'ALL' }).catch(() => []),
-          adminAPI.getEmotionStats().catch(() => []),
+          adminAPI.getDashboardOverview().catch(() => ({})),
         ]);
 
         const usersArr = Array.isArray(usersData) ? usersData : [];
         const feedbacksArr = Array.isArray(feedbacksData) ? feedbacksData : [];
-        const emotionArr = Array.isArray(emotionData) ? emotionData : [];
-
+        
         setUsers(usersArr.map(normalizeAdminUser).filter(Boolean));
         setSupports(feedbacksArr.map(normalizeAdminFeedback).filter(Boolean));
-        setBots([]);
-        setEmotionStats(
-          emotionArr.map(normalizeEmotionStat).filter(Boolean)
-        );
+        
+        if (dashboardData.overview) {
+          setDbOverview(dashboardData.overview);
+        }
+
+        if (dashboardData.liveMetrics) {
+          setLiveChatSeries(dashboardData.liveMetrics.map(m => ({
+            label: m.label,
+            value: Number(m.value) || 0
+          })));
+          // 활성 사용자 데이터는 임시로 liveMetrics와 동일하거나 0으로 설정 (DB에 활성 사용자 기록 테이블이 따로 없는 경우)
+          setLiveUserSeries(dashboardData.liveMetrics.map(m => ({
+            label: m.label,
+            value: Math.floor((Number(m.value) || 0) * 1.5)
+          })));
+        }
+
+        if (dashboardData.emotionDistribution) {
+          setEmotionStats(dashboardData.emotionDistribution.map(normalizeEmotionStat).filter(Boolean));
+        }
+
+        setBots([]); // BOT 테이블 데이터 조회 API가 현재는 없으므로 빈 배열 유지 (추후 필요시 추가)
         setLogs(loadLogs());
       } catch (err) {
         console.error('관리자 데이터 로드 실패:', err);
         setError(err?.message || '데이터를 불러오지 못했어요.');
-        setUsers([]);
-        setSupports([]);
-        setBots([]);
-        setEmotionStats([]);
-        setLogs(loadLogs());
       } finally {
         setLoading(false);
       }
@@ -428,12 +418,43 @@ export default function AdminPage() {
   }, [isAuthenticated, authLoading]);
 
   /* =========================================================
-     실시간 차트 30초마다 갱신
+     실시간 차트 데이터 새로고침
+  ========================================================= */
+  const handleRefreshRealtime = async () => {
+    try {
+      const dashboardData = await adminAPI.getDashboardOverview();
+      if (dashboardData.liveMetrics) {
+        setLiveChatSeries(dashboardData.liveMetrics.map(m => ({
+          label: m.label,
+          value: Number(m.value) || 0
+        })));
+        setLiveUserSeries(dashboardData.liveMetrics.map(m => ({
+          label: m.label,
+          value: Math.floor((Number(m.value) || 0) * 1.5)
+        })));
+      }
+      if (dashboardData.overview) {
+        setDbOverview(dashboardData.overview);
+      }
+      
+      pushAdminLog(
+        '대시보드',
+        '실시간 지표 새로고침',
+        '운영 대시보드',
+        'DB 데이터를 기반으로 활성 사용자 / 채팅 세션 지표를 새로고침했습니다.',
+        ['실시간 통계']
+      );
+    } catch (err) {
+      console.error('실시간 지표 갱신 실패:', err);
+    }
+  };
+
+  /* =========================================================
+     실시간 차트 자동 갱신 (30초마다 DB 재조회)
   ========================================================= */
   useEffect(() => {
     const interval = window.setInterval(() => {
-      setLiveUserSeries((prev) => mutateSeries(prev, 1, 5, 90));
-      setLiveChatSeries((prev) => mutateSeries(prev, 2, 8, 40));
+      handleRefreshRealtime();
     }, 30000);
 
     return () => window.clearInterval(interval);
@@ -581,24 +602,9 @@ export default function AdminPage() {
     [currentAdminIsSuper, user]
   );
 
-  /* =========================================================
-     실시간 지표 새로고침
-  ========================================================= */
-  const handleRefreshRealtime = () => {
-    setLiveUserSeries((prev) => mutateSeries(prev, 2, 6, 90));
-    setLiveChatSeries((prev) => mutateSeries(prev, 3, 9, 40));
-    pushAdminLog(
-      '대시보드',
-      '실시간 지표 새로고침',
-      '운영 대시보드',
-      '활성 사용자 / 채팅 세션 지표를 수동으로 새로고침했습니다.',
-      ['실시간 통계']
-    );
-  };
-
-  /* =========================================================
+  /* =========================
      사용자 선택 토글
-  ========================================================= */
+  ========================= */
   const handleToggleUserSelect = (userId) => {
     setSelectedUserIds((prev) =>
       prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]

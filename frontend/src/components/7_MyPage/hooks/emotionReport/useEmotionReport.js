@@ -44,7 +44,6 @@ const DEFAULT_TAB_OPTIONS = [
 const DEFAULT_PERIOD_OPTIONS = [
   { key: '7d', label: '최근 7일' },
   { key: '30d', label: '최근 30일' },
-  { key: '90d', label: '최근 90일' },
 ];
 
 /* =========================

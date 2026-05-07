@@ -469,11 +469,9 @@ function EmotionTab({
      선택 기간 문구 변환
   ========================= */
   const selectedPeriodLabel =
-    selectedPeriod === '90d'
-      ? '최근 90일'
-      : selectedPeriod === '30d'
-        ? '최근 30일'
-        : '최근 7일';
+    selectedPeriod === '30d'
+      ? '최근 30일'
+      : '최근 7일';
 
   /* =========================
      주제 태그 요약 문구
