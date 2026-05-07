@@ -49,7 +49,7 @@ import AdminPage from './components/8_AdminPage/AdminPage';
 import MainPage from './pages/HomePage';
 import HowToUsePage from './pages/HowToUsePage';
 import FaqPage from './pages/FaqPage';
-import BotRankingPage from './pages/BotRankingPage';
+import BotRankingPage from './pages/BotRankingPage.jsx';
 import AdminAccessDeniedPage from './pages/AdminAccessDeniedPage';
 import SocialLoginSuccessPage from './pages/SocialLoginSuccessPage';
 import SocialSignupPage from './pages/SocialSignupPage';

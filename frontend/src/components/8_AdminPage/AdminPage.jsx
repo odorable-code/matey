@@ -264,6 +264,25 @@ function buildLineGeometry(series, width = 620, height = 220, paddingX = 18, pad
   return { linePath, areaPath, points };
 }
 
+function createInitialRealtimeSeries(baseValue, count) {
+  const total = Number.isFinite(Number(count)) ? Math.max(1, Number(count)) : 12;
+  const base = Number.isFinite(Number(baseValue)) ? Number(baseValue) : 0;
+
+  const now = new Date();
+  const pad2 = (n) => String(n).padStart(2, '0');
+
+  const labels = Array.from({ length: total }, (_, idx) => {
+    const d = new Date(now.getTime() - (total - 1 - idx) * 5 * 60 * 1000);
+    return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+  });
+
+  return labels.map((label, idx) => {
+    const wave = Math.sin((idx / Math.max(1, total - 1)) * Math.PI * 2);
+    const value = Math.max(0, Math.round(base + wave * Math.max(1, base * 0.08)));
+    return { label, value };
+  });
+}
+
 /* =========================================================
    메인 컴포넌트
 ========================================================= */
@@ -283,6 +302,7 @@ export default function AdminPage() {
   const [bots, setBots] = useState([]);
   const [emotionStats, setEmotionStats] = useState([]);
   const [logs, setLogs] = useState([]);
+  const [dbOverview, setDbOverview] = useState(null);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
