@@ -3,6 +3,7 @@ package kr.hi.matey.service;
 import kr.hi.matey.dao.CommentDAO;
 import kr.hi.matey.dao.CommunitySpotlightDAO;
 import kr.hi.matey.dao.PostDAO;
+import kr.hi.matey.dao.BotRecommendDAO;
 import kr.hi.matey.dto.BotYearRankingDTO;
 import kr.hi.matey.dto.CategoryDTO;
 import kr.hi.matey.dto.CommentCreateRequestDTO;
@@ -34,6 +35,7 @@ public class CommunityService {
     private final CommentDAO commentDAO;
     private final PostViewIncrementService postViewIncrementService;
     private final CommunitySpotlightDAO communitySpotlightDAO;
+    private final BotRecommendDAO botRecommendDAO;
 
     public List<CategoryDTO> getCategories() {
         try {
@@ -264,6 +266,27 @@ public class CommunityService {
         body.put("disliked", Boolean.TRUE.equals(refreshed.getDislikedByMe()));
         body.put("dislikeCount", refreshed.getDislikeCount());
         return body;
+    }
+
+    @Transactional
+    public Map<String, Object> toggleBotRecommend(long botId, long userId) {
+        int exists = botRecommendDAO.exists(userId, botId);
+        boolean recommended;
+        if (exists > 0) {
+            botRecommendDAO.delete(userId, botId);
+            botRecommendDAO.decrementBotLike(botId);
+            recommended = false;
+        } else {
+            botRecommendDAO.insert(userId, botId);
+            botRecommendDAO.incrementBotLike(botId);
+            recommended = true;
+        }
+        Integer likeCount = botRecommendDAO.selectBotLikeCount(botId);
+        Map<String, Object> res = new HashMap<>();
+        res.put("botId", botId);
+        res.put("recommended", recommended);
+        res.put("likeCount", likeCount != null ? likeCount : 0);
+        return res;
     }
 
     @Transactional

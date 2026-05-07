@@ -214,5 +214,27 @@ public class CommunityController {
                 )
         );
     }
+
+    /** 봇 추천(좋아요) 토글: 로그인 필요 */
+    @PostMapping("/spotlight/bots/{botId}/recommend")
+    public ResponseEntity<Map<String, Object>> toggleBotRecommend(
+            @PathVariable("botId") Long botId,
+            @AuthenticationPrincipal CustomUser user
+    ) {
+        if (user == null || user.getUser() == null) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "로그인이 필요해요."
+            );
+        }
+        if (botId == null) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "봇을 선택해 주세요."
+            );
+        }
+        long userId = user.getUser().getUserId();
+        return ResponseEntity.ok(communityService.toggleBotRecommend(botId, userId));
+    }
 }
 
