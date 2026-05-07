@@ -1,198 +1,174 @@
-/* src/components/8_AdminPage/AdminPage.css */
+/**
+ * =========================================================
+ * 파일명 : src/components/8_AdminPage/AdminPage.css
+ * 역할   : 메이티 관리자 페이지 전용 전체 스타일
+ * =========================================================
+ *
+ * [이번 수정 핵심]
+ * - 기존 독립 탭바(tabbar) 제거
+ * - 탭 버튼을 히어로 hero-copy 내부 hero-tabs로 통합
+ * - hero-actions 제거 (중복 버튼 삭제)
+ * - 실시간 지표 새로고침 버튼은 개요 탭 패널 헤더로 이동
+ *
+ * [여기서 주로 수정하면 되는 곳]
+ * 1) :root                         : 전체 색상 / 반경 / 그림자 토큰
+ * 2) .matey-admin-v3__hero         : 히어로 레이아웃
+ * 3) .matey-admin-v3__hero-tabs    : 히어로 내부 탭 버튼
+ * 4) .matey-admin-v3__summary-grid : 요약 카드 배치
+ * 5) .matey-admin-v3__table        : 사용자 관리 표 스타일
+ * =========================================================
+ */
+
 @import '../../styles/variables.css';
 
+/* =========================================================
+   1. 디자인 토큰 / 공통 변수
+========================================================= */
 :root {
-  --admin-bg: #f4f7fc;
-  --admin-bg-deep: #eef3fb;
-  --admin-surface: rgba(255, 255, 255, 0.68);
-  --admin-surface-strong: rgba(255, 255, 255, 0.82);
-  --admin-surface-soft: rgba(255, 255, 255, 0.56);
-  --admin-border: rgba(105, 116, 153, 0.14);
-  --admin-border-strong: rgba(105, 116, 153, 0.22);
-  --admin-text: #202738;
-  --admin-text-soft: #6d7690;
-  --admin-title: #11182a;
-  --admin-shadow: 0 24px 60px rgba(31, 43, 73, 0.10);
-  --admin-shadow-soft: 0 14px 32px rgba(31, 43, 73, 0.08);
-  --admin-shadow-tiny: 0 8px 18px rgba(31, 43, 73, 0.05);
-  --admin-radius-2xl: 32px;
-  --admin-radius-xl: 28px;
-  --admin-radius-lg: 22px;
-  --admin-radius-md: 16px;
-  --admin-radius-sm: 12px;
+  --admin-v3-bg: #f5f7fc;
+  --admin-v3-surface: rgba(255, 255, 255, 0.76);
+  --admin-v3-surface-strong: rgba(255, 255, 255, 0.92);
+  --admin-v3-surface-soft: rgba(255, 255, 255, 0.62);
 
-  --admin-violet: #7b7cff;
-  --admin-violet-deep: #6668f2;
-  --admin-blue: #58abff;
-  --admin-sky: #69d5ff;
-  --admin-pink: #ff83bd;
-  --admin-orange: #ffb866;
-  --admin-mint: #49d0b1;
-  --admin-green: #2ab887;
-  --admin-red: #ef6767;
-  --admin-yellow: #f0b44d;
-  --admin-slate: #8d95aa;
+  --admin-v3-border: rgba(120, 130, 170, 0.14);
+  --admin-v3-border-strong: rgba(120, 130, 170, 0.22);
 
-  --admin-blur: blur(18px);
-  --admin-grid-max: 1440px;
-  --admin-transition: 0.2s ease;
+  --admin-v3-text: #232a3d;
+  --admin-v3-text-soft: #6f7893;
+  --admin-v3-title: #14192a;
+
+  --admin-v3-shadow: 0 24px 60px rgba(28, 38, 70, 0.08);
+  --admin-v3-shadow-soft: 0 14px 30px rgba(28, 38, 70, 0.06);
+  --admin-v3-shadow-tiny: 0 8px 18px rgba(28, 38, 70, 0.05);
+
+  --admin-v3-radius-2xl: 32px;
+  --admin-v3-radius-xl: 26px;
+  --admin-v3-radius-lg: 20px;
+  --admin-v3-radius-md: 14px;
+  --admin-v3-radius-sm: 12px;
+
+  --admin-v3-violet: #8d79ff;
+  --admin-v3-violet-deep: #6b64eb;
+  --admin-v3-blue: #79b7ff;
+  --admin-v3-blue-deep: #4f97f3;
+  --admin-v3-pink: #ff93b7;
+  --admin-v3-orange: #ffb066;
+  --admin-v3-mint: #69dcc1;
+  --admin-v3-green: #2dba88;
+  --admin-v3-red: #ef6e7c;
+  --admin-v3-slate: #8e96ab;
+
+  --admin-v3-blur: blur(18px);
+  --admin-v3-grid-max: 1440px;
+  --admin-v3-transition: 0.2s ease;
 }
 
 * {
   box-sizing: border-box;
 }
 
-.matey-admin-v2 {
+/* =========================================================
+   2. 페이지 루트 / 상태 화면
+========================================================= */
+.matey-admin-v3 {
   min-height: 100vh;
-  padding: 176px 24px 96px;
-  color: var(--admin-text);
+  padding: 168px 24px 88px;
+  color: var(--admin-v3-text);
   background:
-    radial-gradient(circle at 8% 12%, rgba(123, 124, 255, 0.16), transparent 24%),
-    radial-gradient(circle at 92% 10%, rgba(88, 171, 255, 0.14), transparent 22%),
-    radial-gradient(circle at 18% 82%, rgba(73, 208, 177, 0.10), transparent 22%),
-    radial-gradient(circle at 82% 72%, rgba(255, 131, 189, 0.10), transparent 22%),
-    linear-gradient(180deg, #f8fbff 0%, #f2f6fc 48%, #eef3fa 100%);
+    radial-gradient(circle at 8% 12%, rgba(141, 121, 255, 0.16), transparent 24%),
+    radial-gradient(circle at 92% 10%, rgba(121, 183, 255, 0.16), transparent 22%),
+    radial-gradient(circle at 18% 82%, rgba(105, 220, 193, 0.10), transparent 22%),
+    radial-gradient(circle at 82% 72%, rgba(255, 147, 183, 0.10), transparent 22%),
+    linear-gradient(180deg, #f8fbff 0%, #f3f6fc 48%, #eff3fa 100%);
 }
 
-.matey-admin-v2--state {
+.matey-admin-v3--state {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.matey-admin-v2__state-card,
-.matey-admin-v2__hero,
-.matey-admin-v2__summary-card,
-.matey-admin-v2__panel,
-.matey-admin-v2__chart-card,
-.matey-admin-v2__feedback-card,
-.matey-admin-v2__feedback-detail,
-.matey-admin-v2__activity-item,
-.matey-admin-v2__tabbar,
-.matey-admin-v2__log-filter {
-  background: var(--admin-surface);
-  border: 1px solid var(--admin-border);
-  box-shadow: var(--admin-shadow);
-  backdrop-filter: var(--admin-blur);
-  -webkit-backdrop-filter: var(--admin-blur);
+.matey-admin-v3__state-card,
+.matey-admin-v3__hero,
+.matey-admin-v3__summary-card,
+.matey-admin-v3__panel,
+.matey-admin-v3__chart-card,
+.matey-admin-v3__support-card,
+.matey-admin-v3__support-detail,
+.matey-admin-v3__activity-item,
+.matey-admin-v3__bot-card {
+  background: var(--admin-v3-surface);
+  border: 1px solid var(--admin-v3-border);
+  box-shadow: var(--admin-v3-shadow);
+  backdrop-filter: var(--admin-v3-blur);
+  -webkit-backdrop-filter: var(--admin-v3-blur);
 }
 
-.matey-admin-v2__state-card {
+.matey-admin-v3__state-card {
   width: min(560px, 100%);
   padding: 40px 32px;
-  border-radius: var(--admin-radius-2xl);
+  border-radius: var(--admin-v3-radius-2xl);
   text-align: center;
 }
 
-.matey-admin-v2__spinner {
+.matey-admin-v3__spinner {
   width: 46px;
   height: 46px;
   margin: 0 auto 18px;
   border-radius: 50%;
-  border: 4px solid rgba(123, 124, 255, 0.14);
-  border-top-color: var(--admin-violet);
-  animation: admin-spin 0.85s linear infinite;
+  border: 4px solid rgba(141, 121, 255, 0.16);
+  border-top-color: var(--admin-v3-violet);
+  animation: matey-admin-v3-spin 0.85s linear infinite;
 }
 
-@keyframes admin-spin {
+@keyframes matey-admin-v3-spin {
   to {
     transform: rotate(360deg);
   }
 }
 
-.matey-admin-v2__state-card h2 {
+.matey-admin-v3__state-card h2 {
   margin: 0 0 10px;
-  color: var(--admin-title);
-  font-size: 30px;
+  color: var(--admin-v3-title);
+  font-size: 28px;
   line-height: 1.2;
 }
 
-.matey-admin-v2__state-card p {
+.matey-admin-v3__state-card p {
   margin: 0;
-  color: var(--admin-text-soft);
+  color: var(--admin-v3-text-soft);
   font-size: 15px;
   line-height: 1.8;
 }
 
-.matey-admin-v2__shell {
-  max-width: var(--admin-grid-max);
-  margin: 0 auto;
-}
-
-.matey-admin-v2__hero {
-  max-width: var(--admin-grid-max);
-  margin: 0 auto 24px;
-  padding: 32px;
-  border-radius: var(--admin-radius-2xl);
-  display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.88fr);
-  gap: 20px;
-  position: relative;
-  overflow: hidden;
-}
-
-.matey-admin-v2__hero::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.22), transparent 38%),
-    radial-gradient(circle at top left, rgba(255, 255, 255, 0.45), transparent 28%);
-  pointer-events: none;
-}
-
-.matey-admin-v2__eyebrow,
-.matey-admin-v2__section-kicker {
+/* =========================================================
+   3. 공통 버튼 / 킥커
+========================================================= */
+.matey-admin-v3__eyebrow,
+.matey-admin-v3__section-kicker {
   position: relative;
   z-index: 1;
   display: inline-flex;
   align-items: center;
-  min-height: 34px;
+  min-height: 32px;
   padding: 0 14px;
   border-radius: 999px;
-  background: linear-gradient(135deg, rgba(123, 124, 255, 0.14), rgba(88, 171, 255, 0.12));
-  color: #595ed0;
+  background: linear-gradient(
+    135deg,
+    rgba(141, 121, 255, 0.14),
+    rgba(121, 183, 255, 0.12)
+  );
+  color: #5a4dd0;
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.08em;
-  border: 1px solid rgba(123, 124, 255, 0.10);
+  border: 1px solid rgba(141, 121, 255, 0.12);
 }
 
-.matey-admin-v2__hero-copy {
-  position: relative;
-  z-index: 1;
-}
-
-.matey-admin-v2__hero-copy h1 {
-  margin: 16px 0 14px;
-  color: var(--admin-title);
-  font-size: clamp(34px, 4vw, 52px);
-  line-height: 1.06;
-  letter-spacing: -0.04em;
-}
-
-.matey-admin-v2__hero-copy p {
-  margin: 0;
-  max-width: 760px;
-  color: var(--admin-text-soft);
-  font-size: 16px;
-  line-height: 1.9;
-}
-
-.matey-admin-v2__hero-actions {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-top: 24px;
-}
-
-.matey-admin-v2__primary-button,
-.matey-admin-v2__ghost-button,
-.matey-admin-v2__ghost-link,
-.matey-admin-v2__mini-btn,
-.matey-admin-v2__tab-btn {
+.matey-admin-v3__primary-button,
+.matey-admin-v3__ghost-button,
+.matey-admin-v3__mini-btn,
+.matey-admin-v3__tab-btn {
   min-height: 46px;
   padding: 0 18px;
   border-radius: 14px;
@@ -203,438 +179,662 @@
   font-size: 14px;
   font-weight: 800;
   text-decoration: none;
+  cursor: pointer;
   transition:
-    transform var(--admin-transition),
-    box-shadow var(--admin-transition),
-    border-color var(--admin-transition),
-    background var(--admin-transition),
-    color var(--admin-transition),
-    opacity var(--admin-transition);
+    transform var(--admin-v3-transition),
+    box-shadow var(--admin-v3-transition),
+    background var(--admin-v3-transition),
+    border-color var(--admin-v3-transition),
+    color var(--admin-v3-transition),
+    opacity var(--admin-v3-transition);
 }
 
-.matey-admin-v2__primary-button {
+.matey-admin-v3__primary-button {
   border: none;
-  background: linear-gradient(135deg, #6c76ff 0%, #4f8dff 52%, #4bc9d8 100%);
+  background: linear-gradient(135deg, #79b7ff 0%, #8d79ff 48%, #ff93b7 100%);
   color: #fff;
-  box-shadow: 0 14px 28px rgba(79, 115, 255, 0.24);
-  cursor: pointer;
+  box-shadow: 0 14px 28px rgba(141, 121, 255, 0.24);
 }
 
-.matey-admin-v2__ghost-button,
-.matey-admin-v2__ghost-link,
-.matey-admin-v2__mini-btn,
-.matey-admin-v2__tab-btn {
-  border: 1px solid var(--admin-border-strong);
-  background: rgba(255, 255, 255, 0.58);
+.matey-admin-v3__ghost-button,
+.matey-admin-v3__mini-btn,
+.matey-admin-v3__tab-btn {
+  border: 1px solid var(--admin-v3-border-strong);
+  background: rgba(255, 255, 255, 0.66);
   color: #43506f;
-  cursor: pointer;
 }
 
-.matey-admin-v2__primary-button:hover,
-.matey-admin-v2__ghost-button:hover,
-.matey-admin-v2__ghost-link:hover,
-.matey-admin-v2__mini-btn:hover,
-.matey-admin-v2__tab-btn:hover,
-.matey-admin-v2__primary-button:focus-visible,
-.matey-admin-v2__ghost-button:focus-visible,
-.matey-admin-v2__ghost-link:focus-visible,
-.matey-admin-v2__mini-btn:focus-visible,
-.matey-admin-v2__tab-btn:focus-visible {
+.matey-admin-v3__primary-button:hover,
+.matey-admin-v3__ghost-button:hover,
+.matey-admin-v3__mini-btn:hover,
+.matey-admin-v3__tab-btn:hover,
+.matey-admin-v3__primary-button:focus-visible,
+.matey-admin-v3__ghost-button:focus-visible,
+.matey-admin-v3__mini-btn:focus-visible,
+.matey-admin-v3__tab-btn:focus-visible {
   transform: translateY(-2px);
   outline: none;
 }
 
-.matey-admin-v2__primary-button:hover {
-  box-shadow: 0 18px 34px rgba(79, 115, 255, 0.28);
+.matey-admin-v3__primary-button:hover {
+  box-shadow: 0 18px 34px rgba(141, 121, 255, 0.28);
 }
 
-.matey-admin-v2__ghost-button:hover,
-.matey-admin-v2__ghost-link:hover,
-.matey-admin-v2__mini-btn:hover,
-.matey-admin-v2__tab-btn:hover {
-  border-color: rgba(105, 116, 153, 0.28);
-  background: rgba(255, 255, 255, 0.80);
+.matey-admin-v3__ghost-button:hover,
+.matey-admin-v3__mini-btn:hover,
+.matey-admin-v3__tab-btn:hover {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(120, 130, 170, 0.28);
 }
 
-.matey-admin-v2__hero-side {
-  position: relative;
-  z-index: 1;
+/* =========================================================
+   4. 히어로 영역
+========================================================= */
+.matey-admin-v3__hero {
+  max-width: var(--admin-v3-grid-max);
+  margin: 0 auto 20px;
+  padding: 30px 34px;
+  border-radius: var(--admin-v3-radius-2xl);
   display: grid;
-  gap: 14px;
-}
-
-.matey-admin-v2__hero-metric {
-  padding: 22px;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.54);
-  border: 1px solid rgba(105, 116, 153, 0.10);
-  box-shadow: var(--admin-shadow-soft);
-}
-
-.matey-admin-v2__hero-metric span {
-  display: block;
-  color: var(--admin-text-soft);
-  font-size: 13px;
-  font-weight: 700;
-  margin-bottom: 8px;
-}
-
-.matey-admin-v2__hero-metric strong {
-  display: block;
-  color: var(--admin-title);
-  font-size: 34px;
-  line-height: 1;
-  letter-spacing: -0.03em;
-}
-
-.matey-admin-v2__hero-metric small {
-  display: block;
-  margin-top: 8px;
-  color: #7f879b;
-  font-size: 13px;
-  line-height: 1.6;
-}
-
-.matey-admin-v2__tabbar {
-  max-width: var(--admin-grid-max);
-  margin: 0 auto 24px;
-  padding: 12px;
-  border-radius: 22px;
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.matey-admin-v2__tab-btn {
-  min-height: 44px;
-  padding: 0 16px;
-  border-radius: 14px;
-}
-
-.matey-admin-v2__tab-btn.is-active {
-  background: linear-gradient(135deg, rgba(123, 124, 255, 0.16), rgba(88, 171, 255, 0.12));
-  border-color: rgba(123, 124, 255, 0.18);
-  color: #4d55d9;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
-}
-
-.matey-admin-v2__summary-grid {
-  max-width: var(--admin-grid-max);
-  margin: 0 auto 24px;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
-}
-
-.matey-admin-v2__summary-card {
-  padding: 22px 20px;
-  border-radius: 24px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
   position: relative;
   overflow: hidden;
 }
 
-.matey-admin-v2__summary-card::before {
+.matey-admin-v3__hero::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.20), transparent 42%);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.28), transparent 38%),
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.5), transparent 28%);
   pointer-events: none;
 }
 
-.matey-admin-v2__summary-card span,
-.matey-admin-v2__summary-label {
+.matey-admin-v3__hero-copy {
+  position: relative;
+  z-index: 1;
+}
+
+.matey-admin-v3__hero-copy h1 {
+  margin: 14px 0 12px;
+  font-size: clamp(30px, 3.5vw, 44px);
+  line-height: 1.08;
+  letter-spacing: -0.045em;
+  background: linear-gradient(135deg, #6c76ff 0%, #8d79ff 50%, #ff93b7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+}
+
+.matey-admin-v3__hero-copy p {
+  margin: 0;
+  max-width: 760px;
+  color: var(--admin-v3-text-soft);
+  font-size: 15px;
+  line-height: 1.78;
+}
+
+/* =========================================================
+   4-1. 히어로 내부 탭 버튼 영역
+   - 기존 hero-actions / 독립 tabbar 대체
+========================================================= */
+.matey-admin-v3__hero-tabs {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+  padding: 6px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.48);
+  border: 1px solid rgba(120, 130, 170, 0.10);
+}
+
+.matey-admin-v3__hero-tabs .matey-admin-v3__tab-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 42px;
+  padding: 0 14px;
+  border-radius: 14px;
+  white-space: nowrap;
+}
+
+/* =========================================================
+   4-2. 히어로 우측 메트릭
+========================================================= */
+.matey-admin-v3__hero-side {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.matey-admin-v3__hero-metric {
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.66);
+  border: 1px solid rgba(120, 130, 170, 0.10);
+  box-shadow: var(--admin-v3-shadow-soft);
+  position: relative;
+  overflow: hidden;
+}
+
+.matey-admin-v3__hero-metric::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.28), transparent 40%);
+  pointer-events: none;
+}
+
+.matey-admin-v3__hero-metric span {
   display: block;
-  color: var(--admin-text-soft);
+  color: var(--admin-v3-text-soft);
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.matey-admin-v3__hero-metric strong {
+  display: block;
+  color: var(--admin-v3-title);
+  font-size: 26px;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.matey-admin-v3__hero-metric small {
+  display: block;
+  margin-top: 6px;
+  color: #7f879b;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* =========================================================
+   5. 탭 버튼 공통 스타일
+========================================================= */
+.matey-admin-v3__tab-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 14px;
+  white-space: nowrap;
+}
+
+.matey-admin-v3__tab-btn.is-active {
+  background: linear-gradient(
+    135deg,
+    rgba(141, 121, 255, 0.16),
+    rgba(121, 183, 255, 0.12)
+  );
+  border-color: rgba(141, 121, 255, 0.20);
+  color: #4d55d9;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+/* =========================================================
+   6. 요약 카드
+========================================================= */
+.matey-admin-v3__summary-grid {
+  max-width: var(--admin-v3-grid-max);
+  margin: 0 auto 20px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.matey-admin-v3__summary-card {
+  padding: 20px 20px 18px;
+  border-radius: 22px;
+  position: relative;
+  overflow: hidden;
+  min-height: 132px;
+}
+
+.matey-admin-v3__summary-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.24), transparent 42%);
+  pointer-events: none;
+}
+
+.matey-admin-v3__summary-card span {
+  display: block;
+  color: var(--admin-v3-text-soft);
   font-size: 13px;
   font-weight: 700;
   margin-bottom: 10px;
 }
 
-.matey-admin-v2__summary-card strong,
-.matey-admin-v2__summary-value {
+.matey-admin-v3__summary-card strong {
   display: block;
-  color: var(--admin-title);
+  color: var(--admin-v3-title);
   font-size: 34px;
   line-height: 1;
   margin-bottom: 8px;
   letter-spacing: -0.03em;
 }
 
-.matey-admin-v2__summary-card p,
-.matey-admin-v2__summary-desc {
+.matey-admin-v3__summary-card p {
   margin: 0;
-  color: var(--admin-text-soft);
-  font-size: 14px;
-  line-height: 1.7;
+  color: var(--admin-v3-text-soft);
+  font-size: 13px;
+  line-height: 1.6;
 }
 
 .accent-violet {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.70), rgba(246, 246, 255, 0.76)),
-    linear-gradient(135deg, rgba(123, 124, 255, 0.12), transparent);
-}
-
-.accent-pink {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 246, 250, 0.78)),
-    linear-gradient(135deg, rgba(255, 131, 189, 0.12), transparent);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.74), rgba(248, 246, 255, 0.78)),
+    linear-gradient(135deg, rgba(141, 121, 255, 0.14), transparent);
 }
 
 .accent-blue {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(244, 249, 255, 0.78)),
-    linear-gradient(135deg, rgba(88, 171, 255, 0.12), transparent);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.74), rgba(244, 250, 255, 0.78)),
+    linear-gradient(135deg, rgba(121, 183, 255, 0.14), transparent);
+}
+
+.accent-pink {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.74), rgba(255, 246, 250, 0.78)),
+    linear-gradient(135deg, rgba(255, 147, 183, 0.14), transparent);
 }
 
 .accent-orange {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 249, 241, 0.80)),
-    linear-gradient(135deg, rgba(255, 184, 102, 0.14), transparent);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.74), rgba(255, 249, 240, 0.78)),
+    linear-gradient(135deg, rgba(255, 176, 102, 0.16), transparent);
 }
 
 .accent-mint {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(242, 255, 250, 0.78)),
-    linear-gradient(135deg, rgba(73, 208, 177, 0.14), transparent);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.74), rgba(240, 255, 250, 0.78)),
+    linear-gradient(135deg, rgba(105, 220, 193, 0.16), transparent);
 }
 
-.matey-admin-v2__content-grid {
-  max-width: var(--admin-grid-max);
+/* =========================================================
+   7. 본문 레이아웃 / 패널
+========================================================= */
+.matey-admin-v3__content {
+  max-width: var(--admin-v3-grid-max);
   margin: 0 auto;
   display: grid;
-  gap: 24px;
+  gap: 20px;
 }
 
-.matey-admin-v2__section-stack {
+.matey-admin-v3__section-stack {
   display: grid;
-  gap: 24px;
+  gap: 20px;
 }
 
-.matey-admin-v2__panel {
-  padding: 28px;
-  border-radius: var(--admin-radius-2xl);
+.matey-admin-v3__panel {
+  padding: 24px;
+  border-radius: var(--admin-v3-radius-2xl);
   position: relative;
   overflow: hidden;
 }
 
-.matey-admin-v2__panel::before {
+.matey-admin-v3__panel::before {
   content: '';
   position: absolute;
   inset: 0;
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.16), transparent 34%);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.18), transparent 36%);
   pointer-events: none;
 }
 
-.matey-admin-v2__panel-head {
+.matey-admin-v3__panel-head {
   position: relative;
   z-index: 1;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 22px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
 }
 
-.matey-admin-v2__panel-head h2 {
+.matey-admin-v3__panel-head h2 {
   margin: 10px 0 0;
-  color: var(--admin-title);
-  font-size: 30px;
+  color: var(--admin-v3-title);
+  font-size: 28px;
   line-height: 1.2;
   letter-spacing: -0.03em;
 }
 
-.matey-admin-v2__panel-sub {
+.matey-admin-v3__panel-sub {
   margin: 10px 0 0;
-  color: var(--admin-text-soft);
+  color: var(--admin-v3-text-soft);
   font-size: 14px;
   line-height: 1.8;
 }
 
-.matey-admin-v2__chart-grid {
+/* =========================================================
+   8. 차트 카드 / 라인 그래프 / 막대 그래프
+========================================================= */
+.matey-admin-v3__chart-grid {
   position: relative;
   z-index: 1;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
+  gap: 16px;
 }
 
-.matey-admin-v2__chart-card {
-  padding: 22px;
+.matey-admin-v3__chart-card {
+  padding: 20px;
   border-radius: 22px;
-  box-shadow: var(--admin-shadow-soft);
+  box-shadow: var(--admin-v3-shadow-soft);
 }
 
-.matey-admin-v2__chart-head {
+.matey-admin-v3__chart-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
-.matey-admin-v2__chart-head h3 {
+.matey-admin-v3__chart-head h3 {
   margin: 0 0 6px;
-  color: var(--admin-title);
-  font-size: 20px;
+  color: var(--admin-v3-title);
+  font-size: 18px;
   line-height: 1.3;
 }
 
-.matey-admin-v2__chart-head p {
+.matey-admin-v3__chart-head p {
   margin: 0;
-  color: var(--admin-text-soft);
+  color: var(--admin-v3-text-soft);
   font-size: 13px;
   line-height: 1.6;
 }
 
-.matey-admin-v2__chart-head strong {
-  color: var(--admin-title);
-  font-size: 28px;
+.matey-admin-v3__chart-head strong {
+  color: var(--admin-v3-title);
+  font-size: 24px;
   line-height: 1;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.02em;
 }
 
-.matey-admin-v2__line-chart {
+.matey-admin-v3__line-chart {
   width: 100%;
   height: 220px;
   border-radius: 18px;
   background:
-    linear-gradient(to top, rgba(123, 124, 255, 0.04), rgba(255, 255, 255, 0)),
+    linear-gradient(to top, rgba(141, 121, 255, 0.05), rgba(255, 255, 255, 0)),
     repeating-linear-gradient(
       to top,
-      rgba(105, 116, 153, 0.06) 0,
-      rgba(105, 116, 153, 0.06) 1px,
+      rgba(120, 130, 170, 0.06) 0,
+      rgba(120, 130, 170, 0.06) 1px,
       transparent 1px,
       transparent 44px
     );
-  border: 1px solid rgba(105, 116, 153, 0.08);
+  border: 1px solid rgba(120, 130, 170, 0.10);
   overflow: hidden;
 }
 
-.matey-admin-v2__line-svg {
+.matey-admin-v3__line-svg {
   display: block;
   width: 100%;
   height: 220px;
 }
 
-.matey-admin-v2__line-area {
-  fill: rgba(123, 124, 255, 0.12);
+.matey-admin-v3__line-area {
+  fill: rgba(141, 121, 255, 0.14);
 }
 
-.matey-admin-v2__line-area--blue {
-  fill: rgba(88, 171, 255, 0.12);
+.matey-admin-v3__line-area--blue {
+  fill: rgba(121, 183, 255, 0.14);
 }
 
-.matey-admin-v2__line-stroke {
+.matey-admin-v3__line-stroke {
   fill: none;
-  stroke: var(--admin-violet);
+  stroke: var(--admin-v3-violet);
   stroke-width: 3;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
-.matey-admin-v2__line-stroke--blue {
-  stroke: var(--admin-blue);
+.matey-admin-v3__line-stroke--blue {
+  stroke: var(--admin-v3-blue);
 }
 
-.matey-admin-v2__line-dot {
+.matey-admin-v3__line-dot {
   fill: #fff;
-  stroke: var(--admin-violet);
+  stroke: var(--admin-v3-violet);
   stroke-width: 3;
 }
 
-.matey-admin-v2__line-dot--blue {
-  stroke: var(--admin-blue);
+.matey-admin-v3__line-dot--blue {
+  stroke: var(--admin-v3-blue);
 }
 
-.matey-admin-v2__chart-labels {
+.matey-admin-v3__chart-labels {
   display: grid;
   grid-template-columns: repeat(8, minmax(0, 1fr));
   gap: 6px;
   margin-top: 10px;
 }
 
-.matey-admin-v2__chart-labels span {
+.matey-admin-v3__chart-labels span {
   font-size: 11px;
   color: #7b8295;
   text-align: center;
 }
 
-.matey-admin-v2__bar-list {
+.matey-admin-v3__bar-list {
   display: grid;
   gap: 14px;
 }
 
-.matey-admin-v2__bar-row {
+.matey-admin-v3__bar-row {
   display: grid;
   gap: 8px;
 }
 
-.matey-admin-v2__bar-meta {
+.matey-admin-v3__bar-meta {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
 }
 
-.matey-admin-v2__bar-meta span {
+.matey-admin-v3__bar-meta span {
   color: #4d5771;
   font-size: 14px;
   font-weight: 700;
 }
 
-.matey-admin-v2__bar-meta strong {
-  color: var(--admin-title);
+.matey-admin-v3__bar-meta strong {
+  color: var(--admin-v3-title);
   font-size: 14px;
 }
 
-.matey-admin-v2__bar-track {
+.matey-admin-v3__bar-track {
   width: 100%;
   height: 12px;
   border-radius: 999px;
-  background: rgba(105, 116, 153, 0.10);
+  background: rgba(120, 130, 170, 0.12);
   overflow: hidden;
 }
 
-.matey-admin-v2__bar-fill {
+.matey-admin-v3__bar-fill {
   height: 100%;
   border-radius: inherit;
+  transition: width 0.4s ease;
 }
 
-.matey-admin-v2__bar-fill.violet {
-  background: linear-gradient(90deg, #8d8fff, #6f70ff);
+.matey-admin-v3__bar-fill.violet {
+  background: linear-gradient(90deg, #a89eff, #8d79ff);
 }
 
-.matey-admin-v2__bar-fill.pink {
-  background: linear-gradient(90deg, #ffa8cf, #ff7cb9);
+.matey-admin-v3__bar-fill.blue {
+  background: linear-gradient(90deg, #9cd0ff, #79b7ff);
 }
 
-.matey-admin-v2__bar-fill.blue {
-  background: linear-gradient(90deg, #9ad0ff, #5daeff);
+.matey-admin-v3__bar-fill.pink {
+  background: linear-gradient(90deg, #ffb3cf, #ff93b7);
 }
 
-.matey-admin-v2__bar-fill.orange {
-  background: linear-gradient(90deg, #ffd59e, #ffb25a);
+.matey-admin-v3__bar-fill.orange {
+  background: linear-gradient(90deg, #ffd29c, #ffb066);
 }
 
-.matey-admin-v2__bar-fill.mint {
-  background: linear-gradient(90deg, #98ecd9, #44d0b2);
+.matey-admin-v3__bar-fill.mint {
+  background: linear-gradient(90deg, #9ce6d3, #69dcc1);
 }
 
-.matey-admin-v2__toolbar {
+/* =========================================================
+   9. 봇 랭킹 / 봇 카드
+========================================================= */
+.matey-admin-v3__bot-rank-list {
+  display: grid;
+  gap: 10px;
+}
+
+.matey-admin-v3__bot-rank-row {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(120, 130, 170, 0.10);
+}
+
+.matey-admin-v3__bot-rank-badge {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 900;
+  font-size: 13px;
+  background: linear-gradient(135deg, #8d79ff, #79b7ff);
+  box-shadow: 0 6px 14px rgba(141, 121, 255, 0.25);
+}
+
+.matey-admin-v3__bot-rank-badge.rank-1 {
+  background: linear-gradient(135deg, #ffb066, #ff93b7);
+}
+
+.matey-admin-v3__bot-rank-badge.rank-2 {
+  background: linear-gradient(135deg, #8d79ff, #79b7ff);
+}
+
+.matey-admin-v3__bot-rank-badge.rank-3 {
+  background: linear-gradient(135deg, #79b7ff, #69dcc1);
+}
+
+.matey-admin-v3__bot-rank-meta strong {
+  display: block;
+  color: var(--admin-v3-title);
+  font-size: 14px;
+}
+
+.matey-admin-v3__bot-rank-meta small {
+  display: block;
+  color: var(--admin-v3-text-soft);
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.matey-admin-v3__bot-rank-score {
+  font-weight: 900;
+  color: #5a4dd0;
+  font-size: 14px;
+}
+
+.matey-admin-v3__bot-grid {
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: minmax(280px, 1.35fr) 180px 180px 180px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.matey-admin-v3__bot-card {
+  padding: 22px;
+  border-radius: 24px;
+  display: grid;
+  gap: 14px;
+}
+
+.matey-admin-v3__bot-card-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.matey-admin-v3__bot-card-head strong {
+  color: var(--admin-v3-title);
+  font-size: 17px;
+  letter-spacing: -0.02em;
+}
+
+.matey-admin-v3__bot-desc {
+  margin: 0;
+  color: var(--admin-v3-text-soft);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.matey-admin-v3__bot-stat-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.matey-admin-v3__bot-stat {
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.64);
+  border: 1px solid rgba(120, 130, 170, 0.10);
+  text-align: center;
+}
+
+.matey-admin-v3__bot-stat span {
+  display: block;
+  color: var(--admin-v3-text-soft);
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.matey-admin-v3__bot-stat strong {
+  color: var(--admin-v3-title);
+  font-size: 15px;
+}
+
+/* =========================================================
+   10. 사용자 관리 툴바 / 필터 / 일괄작업
+========================================================= */
+.matey-admin-v3__toolbar {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(240px, 1.4fr) 180px 180px 180px;
   gap: 12px;
   margin-bottom: 16px;
 }
 
-.matey-admin-v2__search-wrap {
+.matey-admin-v3__search-wrap {
   position: relative;
 }
 
-.matey-admin-v2__search-wrap::before {
+.matey-admin-v3__search-wrap::before {
   content: '⌕';
   position: absolute;
   top: 50%;
@@ -645,66 +845,68 @@
   pointer-events: none;
 }
 
-.matey-admin-v2__toolbar input,
-.matey-admin-v2__toolbar select,
-.matey-admin-v2__panel-head select,
-.matey-admin-v2__row-select,
-.matey-admin-v2__log-filter select,
-.matey-admin-v2__log-filter input {
+.matey-admin-v3__toolbar input,
+.matey-admin-v3__toolbar select,
+.matey-admin-v3__row-select,
+.matey-admin-v3__support-filter select,
+.matey-admin-v3__support-filter input {
   min-height: 48px;
   width: 100%;
-  border: 1px solid var(--admin-border-strong);
+  border: 1px solid var(--admin-v3-border-strong);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.62);
-  color: var(--admin-text);
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--admin-v3-text);
   font-size: 14px;
   padding: 0 14px;
   outline: none;
   transition:
-    border-color var(--admin-transition),
-    box-shadow var(--admin-transition),
-    background var(--admin-transition);
+    border-color var(--admin-v3-transition),
+    box-shadow var(--admin-v3-transition),
+    background var(--admin-v3-transition);
 }
 
-.matey-admin-v2__search-wrap input {
+.matey-admin-v3__search-wrap input {
   padding-left: 42px;
 }
 
-.matey-admin-v2__toolbar input:focus,
-.matey-admin-v2__toolbar select:focus,
-.matey-admin-v2__panel-head select:focus,
-.matey-admin-v2__row-select:focus,
-.matey-admin-v2__log-filter select:focus,
-.matey-admin-v2__log-filter input:focus {
-  border-color: rgba(108, 118, 255, 0.34);
-  box-shadow: 0 0 0 4px rgba(108, 118, 255, 0.08);
-  background: rgba(255, 255, 255, 0.82);
+.matey-admin-v3__toolbar input:focus,
+.matey-admin-v3__toolbar select:focus,
+.matey-admin-v3__row-select:focus,
+.matey-admin-v3__support-filter select:focus,
+.matey-admin-v3__support-filter input:focus {
+  border-color: rgba(141, 121, 255, 0.34);
+  box-shadow: 0 0 0 4px rgba(141, 121, 255, 0.10);
+  background: rgba(255, 255, 255, 0.92);
 }
 
-.matey-admin-v2__bulk-bar {
+.matey-admin-v3__bulk-bar {
   position: relative;
   z-index: 1;
   padding: 14px 16px;
   margin-bottom: 16px;
   border-radius: 18px;
-  background: linear-gradient(135deg, rgba(108, 118, 255, 0.07), rgba(88, 171, 255, 0.06));
-  border: 1px solid rgba(108, 118, 255, 0.12);
+  background: linear-gradient(
+    135deg,
+    rgba(141, 121, 255, 0.08),
+    rgba(121, 183, 255, 0.06)
+  );
+  border: 1px solid rgba(141, 121, 255, 0.14);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
-  box-shadow: var(--admin-shadow-tiny);
+  box-shadow: var(--admin-v3-shadow-tiny);
 }
 
-.matey-admin-v2__bulk-info {
+.matey-admin-v3__bulk-info {
   display: flex;
   align-items: center;
   gap: 16px;
   flex-wrap: wrap;
 }
 
-.matey-admin-v2__checkbox {
+.matey-admin-v3__checkbox {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -713,149 +915,149 @@
   font-weight: 700;
 }
 
-.matey-admin-v2__checkbox input {
+.matey-admin-v3__checkbox input {
   width: 16px;
   height: 16px;
-  accent-color: var(--admin-violet);
+  accent-color: var(--admin-v3-violet);
 }
 
-.matey-admin-v2__bulk-info strong {
-  color: var(--admin-title);
+.matey-admin-v3__bulk-info strong {
+  color: var(--admin-v3-title);
   font-size: 14px;
 }
 
-.matey-admin-v2__bulk-actions {
+.matey-admin-v3__bulk-actions {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
 }
 
-.matey-admin-v2__mini-btn {
+.matey-admin-v3__mini-btn {
   min-height: 38px;
   padding: 0 14px;
   border-radius: 12px;
   font-size: 13px;
-  box-shadow: var(--admin-shadow-tiny);
+  box-shadow: var(--admin-v3-shadow-tiny);
 }
 
-.matey-admin-v2__mini-btn:disabled {
+.matey-admin-v3__mini-btn:disabled {
   cursor: not-allowed;
   opacity: 0.45;
   transform: none;
   box-shadow: none;
 }
 
-.matey-admin-v2__mini-btn.is-danger {
+.matey-admin-v3__mini-btn.is-danger {
   color: #c74e68;
-  border-color: rgba(239, 103, 103, 0.18);
-  background: rgba(255, 244, 246, 0.74);
+  border-color: rgba(239, 110, 124, 0.20);
+  background: rgba(255, 244, 246, 0.78);
 }
 
-.matey-admin-v2__mini-btn.is-primary-soft {
+.matey-admin-v3__mini-btn.is-primary-soft {
   color: #5360df;
-  border-color: rgba(108, 118, 255, 0.16);
-  background: rgba(242, 244, 255, 0.74);
+  border-color: rgba(141, 121, 255, 0.18);
+  background: rgba(244, 246, 255, 0.78);
 }
 
-.matey-admin-v2__table-wrap {
+/* =========================================================
+   11. 사용자 테이블
+========================================================= */
+.matey-admin-v3__table-wrap {
   position: relative;
   z-index: 1;
   overflow-x: auto;
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.34);
-  border: 1px solid rgba(105, 116, 153, 0.10);
+  background: rgba(255, 255, 255, 0.42);
+  border: 1px solid rgba(120, 130, 170, 0.10);
 }
 
-.matey-admin-v2__table {
+.matey-admin-v3__table {
   width: 100%;
   min-width: 1180px;
   border-collapse: collapse;
 }
 
-.matey-admin-v2__table th,
-.matey-admin-v2__table td {
+.matey-admin-v3__table th,
+.matey-admin-v3__table td {
   padding: 14px 12px;
-  border-bottom: 1px solid rgba(105, 116, 153, 0.10);
+  border-bottom: 1px solid rgba(120, 130, 170, 0.10);
   text-align: left;
   vertical-align: middle;
 }
 
-.matey-admin-v2__table thead th {
+.matey-admin-v3__table thead th {
   position: sticky;
   top: 0;
   z-index: 1;
-  background: rgba(248, 251, 255, 0.86);
+  background: rgba(248, 251, 255, 0.90);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
 
-.matey-admin-v2__table th {
-  color: #697188;
+.matey-admin-v3__table th {
+  color: #6e7693;
   font-size: 13px;
   font-weight: 800;
 }
 
-.matey-admin-v2__table td {
+.matey-admin-v3__table td {
   color: #33405c;
   font-size: 14px;
-  background: transparent;
 }
 
-.matey-admin-v2__table tbody tr {
-  transition: background var(--admin-transition);
+.matey-admin-v3__table tbody tr {
+  transition: background var(--admin-v3-transition);
 }
 
-.matey-admin-v2__table tbody tr:hover {
-  background: rgba(108, 118, 255, 0.04);
+.matey-admin-v3__table tbody tr:hover {
+  background: rgba(141, 121, 255, 0.04);
 }
 
-.matey-admin-v2__table td strong {
-  color: var(--admin-title);
-}
-
-.matey-admin-v2__user-cell {
+.matey-admin-v3__user-cell {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.matey-admin-v2__user-avatar {
+.matey-admin-v3__user-avatar {
   width: 40px;
   height: 40px;
   border-radius: 14px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #6d77ff 0%, #4d8dff 50%, #49d0b1 100%);
+  background: linear-gradient(135deg, #79b7ff 0%, #8d79ff 50%, #ff93b7 100%);
   color: #fff;
   font-size: 16px;
   font-weight: 900;
-  box-shadow: 0 10px 20px rgba(89, 110, 255, 0.22);
+  box-shadow: 0 10px 20px rgba(141, 121, 255, 0.22);
   flex-shrink: 0;
 }
 
-.matey-admin-v2__user-cell strong {
+.matey-admin-v3__user-cell strong {
   display: block;
-  color: var(--admin-title);
+  color: var(--admin-v3-title);
   font-size: 15px;
   line-height: 1.3;
 }
 
-.matey-admin-v2__user-cell small {
+.matey-admin-v3__user-cell small {
   display: block;
   margin-top: 4px;
-  color: var(--admin-text-soft);
+  color: var(--admin-v3-text-soft);
   font-size: 12px;
-  line-height: 1.5;
 }
 
-.matey-admin-v2__meta-text {
-  color: var(--admin-text-soft);
+.matey-admin-v3__meta-text {
+  color: var(--admin-v3-text-soft);
   font-size: 13px;
   line-height: 1.6;
 }
 
-.matey-admin-v2__pill {
+/* =========================================================
+   12. 상태 / 권한 pill
+========================================================= */
+.matey-admin-v3__pill {
   min-height: 30px;
   padding: 0 10px;
   border-radius: 999px;
@@ -868,73 +1070,70 @@
   border: 1px solid transparent;
 }
 
-.matey-admin-v2__pill.is-super {
-  background: rgba(108, 118, 255, 0.14);
-  color: #5c62e8;
-  border-color: rgba(108, 118, 255, 0.10);
+.matey-admin-v3__pill.is-super {
+  background: rgba(141, 121, 255, 0.14);
+  color: #6457dc;
+  border-color: rgba(141, 121, 255, 0.16);
 }
 
-.matey-admin-v2__pill.is-admin {
-  background: rgba(88, 171, 255, 0.14);
-  color: #317fd7;
-  border-color: rgba(88, 171, 255, 0.10);
+.matey-admin-v3__pill.is-admin {
+  background: rgba(121, 183, 255, 0.14);
+  color: #2f7ad5;
+  border-color: rgba(121, 183, 255, 0.16);
 }
 
-.matey-admin-v2__pill.is-user {
-  background: rgba(105, 116, 153, 0.12);
+.matey-admin-v3__pill.is-user {
+  background: rgba(120, 130, 170, 0.12);
   color: #5d677d;
-  border-color: rgba(105, 116, 153, 0.10);
+  border-color: rgba(120, 130, 170, 0.10);
 }
 
-.matey-admin-v2__pill.is-active {
-  background: rgba(42, 184, 135, 0.14);
-  color: var(--admin-green);
-  border-color: rgba(42, 184, 135, 0.10);
+.matey-admin-v3__pill.is-active {
+  background: rgba(45, 186, 136, 0.14);
+  color: var(--admin-v3-green);
+  border-color: rgba(45, 186, 136, 0.16);
 }
 
-.matey-admin-v2__pill.is-suspended {
-  background: rgba(239, 103, 103, 0.14);
-  color: #d85252;
-  border-color: rgba(239, 103, 103, 0.10);
+.matey-admin-v3__pill.is-suspended {
+  background: rgba(239, 110, 124, 0.14);
+  color: #d85261;
+  border-color: rgba(239, 110, 124, 0.16);
 }
 
-.matey-admin-v2__pill.is-pending {
-  background: rgba(255, 184, 102, 0.16);
+.matey-admin-v3__pill.is-deleted {
+  background: rgba(120, 130, 170, 0.18);
+  color: #5d677d;
+  border-color: rgba(120, 130, 170, 0.16);
+}
+
+.matey-admin-v3__pill.is-pending {
+  background: rgba(255, 176, 102, 0.18);
   color: #cc8128;
-  border-color: rgba(255, 184, 102, 0.12);
+  border-color: rgba(255, 176, 102, 0.18);
 }
 
-.matey-admin-v2__pill.is-review {
-  background: rgba(88, 171, 255, 0.14);
-  color: #2e7ad2;
-  border-color: rgba(88, 171, 255, 0.10);
+.matey-admin-v3__pill.is-resolved {
+  background: rgba(105, 220, 193, 0.16);
+  color: #1f9c84;
+  border-color: rgba(105, 220, 193, 0.18);
 }
 
-.matey-admin-v2__pill.is-resolved {
-  background: rgba(73, 208, 177, 0.14);
-  color: #219c84;
-  border-color: rgba(73, 208, 177, 0.10);
-}
-
-.matey-admin-v2__pill.is-high {
-  background: rgba(255, 131, 189, 0.16);
+.matey-admin-v3__pill.is-high {
+  background: rgba(255, 147, 183, 0.18);
   color: #d94d8e;
-  border-color: rgba(255, 131, 189, 0.10);
+  border-color: rgba(255, 147, 183, 0.18);
 }
 
-.matey-admin-v2__pill.is-medium {
-  background: rgba(123, 124, 255, 0.14);
+.matey-admin-v3__pill.is-medium {
+  background: rgba(141, 121, 255, 0.14);
   color: #5f60d1;
-  border-color: rgba(123, 124, 255, 0.10);
+  border-color: rgba(141, 121, 255, 0.16);
 }
 
-.matey-admin-v2__pill.is-low {
-  background: rgba(105, 116, 153, 0.12);
-  color: #5d677d;
-  border-color: rgba(105, 116, 153, 0.10);
-}
-
-.matey-admin-v2__feedback-grid {
+/* =========================================================
+   13. 문의/신고 관리
+========================================================= */
+.matey-admin-v3__support-grid {
   position: relative;
   z-index: 1;
   display: grid;
@@ -942,67 +1141,83 @@
   gap: 18px;
 }
 
-.matey-admin-v2__feedback-list {
+.matey-admin-v3__support-filter {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.matey-admin-v3__support-list {
   display: grid;
   gap: 12px;
+  align-content: start;
 }
 
-.matey-admin-v2__feedback-card {
+.matey-admin-v3__support-card {
   padding: 18px;
-  border-radius: 20px;
+  border-radius: 22px;
   cursor: pointer;
   transition:
-    transform var(--admin-transition),
-    border-color var(--admin-transition),
-    box-shadow var(--admin-transition),
-    background var(--admin-transition);
+    transform var(--admin-v3-transition),
+    border-color var(--admin-v3-transition),
+    box-shadow var(--admin-v3-transition),
+    background var(--admin-v3-transition);
+  display: grid;
+  gap: 10px;
 }
 
-.matey-admin-v2__feedback-card:hover,
-.matey-admin-v2__feedback-card.is-active {
+.matey-admin-v3__support-card:hover,
+.matey-admin-v3__support-card.is-active {
   transform: translateY(-2px);
-  border-color: rgba(108, 118, 255, 0.24);
+  border-color: rgba(141, 121, 255, 0.26);
   box-shadow: 0 16px 32px rgba(41, 53, 88, 0.08);
-  background: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.86);
 }
 
-.matey-admin-v2__feedback-card-head {
+.matey-admin-v3__support-card-head {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
-.matey-admin-v2__feedback-card h3 {
+.matey-admin-v3__support-card h3 {
   margin: 0;
-  color: var(--admin-title);
-  font-size: 17px;
-  line-height: 1.45;
+  color: var(--admin-v3-title);
+  font-size: 16px;
+  line-height: 1.42;
 }
 
-.matey-admin-v2__feedback-card p {
+.matey-admin-v3__support-card p {
   margin: 0;
-  color: var(--admin-text-soft);
-  font-size: 14px;
-  line-height: 1.75;
+  color: var(--admin-v3-text-soft);
+  font-size: 13px;
+  line-height: 1.7;
 }
 
-.matey-admin-v2__feedback-meta {
+.matey-admin-v3__support-card-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 14px;
+  gap: 10px;
+  color: var(--admin-v3-text-soft);
+  font-size: 12px;
 }
 
-.matey-admin-v2__feedback-detail {
-  min-height: 100%;
+.matey-admin-v3__support-card-meta span {
+  background: rgba(255, 255, 255, 0.72);
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(120, 130, 170, 0.12);
+  font-weight: 700;
+}
+
+.matey-admin-v3__support-detail {
   padding: 24px;
   border-radius: 24px;
-  box-shadow: var(--admin-shadow-soft);
+  box-shadow: var(--admin-v3-shadow-soft);
 }
 
-.matey-admin-v2__feedback-detail-head {
+.matey-admin-v3__support-detail-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -1011,80 +1226,131 @@
   margin-bottom: 18px;
 }
 
-.matey-admin-v2__feedback-detail-head h3 {
+.matey-admin-v3__support-detail-head h3 {
   margin: 0 0 8px;
-  color: var(--admin-title);
-  font-size: 24px;
+  color: var(--admin-v3-title);
+  font-size: 22px;
   line-height: 1.35;
 }
 
-.matey-admin-v2__feedback-detail-info {
+.matey-admin-v3__support-detail-info {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
 
-.matey-admin-v2__feedback-content {
+.matey-admin-v3__support-content {
   padding: 18px;
   border-radius: 18px;
-  background: rgba(248, 250, 255, 0.84);
-  border: 1px solid rgba(105, 116, 153, 0.10);
+  background: rgba(248, 250, 255, 0.86);
+  border: 1px solid rgba(120, 130, 170, 0.10);
   color: #33405c;
   font-size: 15px;
   line-height: 1.9;
   white-space: pre-wrap;
 }
 
-.matey-admin-v2__feedback-actions {
+.matey-admin-v3__support-actions {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
   margin-top: 18px;
 }
 
-.matey-admin-v2__log-filter {
-  position: relative;
-  z-index: 1;
-  padding: 14px;
+/* =========================================================
+   14. 인사이트 / 로그 / 공통 보조 UI
+========================================================= */
+.matey-admin-v3__split-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+  gap: 18px;
+}
+
+.matey-admin-v3__notice {
+  padding: 18px 20px;
   border-radius: 20px;
-  margin-bottom: 16px;
-  display: grid;
-  grid-template-columns: 1.2fr 180px 180px 180px;
-  gap: 12px;
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(120, 130, 170, 0.10);
+  color: var(--admin-v3-text-soft);
+  font-size: 14px;
+  line-height: 1.8;
 }
 
-.matey-admin-v2__activity-list {
+.matey-admin-v3__notice strong {
+  color: var(--admin-v3-title);
+}
+
+.matey-admin-v3__stat-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.matey-admin-v3__stat-chip {
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.74);
+  border: 1px solid rgba(120, 130, 170, 0.14);
+  color: #4d5771;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.matey-admin-v3__stat-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.matey-admin-v3__stat-dot.is-violet {
+  background: var(--admin-v3-violet);
+}
+
+.matey-admin-v3__stat-dot.is-blue {
+  background: var(--admin-v3-blue);
+}
+
+.matey-admin-v3__stat-dot.is-mint {
+  background: var(--admin-v3-mint);
+}
+
+.matey-admin-v3__stat-dot.is-pink {
+  background: var(--admin-v3-pink);
+}
+
+.matey-admin-v3__muted {
+  color: var(--admin-v3-text-soft);
+}
+
+.matey-admin-v3__divider {
+  height: 1px;
+  background: rgba(120, 130, 170, 0.12);
+  margin: 16px 0;
+}
+
+.matey-admin-v3__activity-list {
   position: relative;
   z-index: 1;
   display: grid;
   gap: 12px;
 }
 
-.matey-admin-v2__activity-item {
+.matey-admin-v3__activity-item {
   padding: 18px 20px;
   border-radius: 20px;
   display: grid;
   gap: 10px;
-  position: relative;
 }
 
-.matey-admin-v2__activity-item::before {
-  content: '';
-  position: absolute;
-  left: 18px;
-  top: 20px;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--admin-violet), var(--admin-blue));
-  box-shadow: 0 0 0 6px rgba(123, 124, 255, 0.10);
+.matey-admin-v3__activity-content {
+  padding-left: 0;
 }
 
-.matey-admin-v2__activity-content {
-  padding-left: 24px;
-}
-
-.matey-admin-v2__activity-top {
+.matey-admin-v3__activity-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1092,291 +1358,196 @@
   flex-wrap: wrap;
 }
 
-.matey-admin-v2__activity-top strong {
-  color: var(--admin-title);
+.matey-admin-v3__activity-top strong {
+  color: var(--admin-v3-title);
   font-size: 15px;
 }
 
-.matey-admin-v2__activity-top span {
-  color: var(--admin-text-soft);
+.matey-admin-v3__activity-top span {
+  color: var(--admin-v3-text-soft);
   font-size: 13px;
 }
 
-.matey-admin-v2__activity-body {
+.matey-admin-v3__activity-body {
   color: #42516d;
   font-size: 14px;
   line-height: 1.8;
 }
 
-.matey-admin-v2__activity-tags {
+.matey-admin-v3__activity-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
 
-.matey-admin-v2__tag {
+.matey-admin-v3__tag {
   display: inline-flex;
   align-items: center;
   min-height: 28px;
   padding: 0 10px;
   border-radius: 999px;
-  background: rgba(108, 118, 255, 0.08);
-  color: #5a62da;
+  background: rgba(141, 121, 255, 0.10);
+  color: #5a4dd0;
   font-size: 12px;
   font-weight: 700;
-  border: 1px solid rgba(108, 118, 255, 0.08);
+  border: 1px solid rgba(141, 121, 255, 0.10);
 }
 
-.matey-admin-v2__timeline {
-  position: relative;
-}
-
-.matey-admin-v2__timeline::before {
-  content: '';
-  position: absolute;
-  left: 22px;
-  top: 8px;
-  bottom: 8px;
-  width: 2px;
-  background: linear-gradient(180deg, rgba(123, 124, 255, 0.24), rgba(88, 171, 255, 0.06));
-}
-
-.matey-admin-v2__empty {
-  min-height: 220px;
-  border-radius: 20px;
-  border: 1px dashed rgba(105, 116, 153, 0.20);
-  background: rgba(255, 255, 255, 0.42);
+.matey-admin-v3__empty {
+  min-height: 200px;
+  border-radius: 22px;
+  border: 1px dashed rgba(120, 130, 170, 0.22);
+  background: rgba(255, 255, 255, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
-  color: var(--admin-text-soft);
+  color: var(--admin-v3-text-soft);
   padding: 24px;
   line-height: 1.8;
 }
 
-.matey-admin-v2__split-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
-  gap: 18px;
-}
-
-.matey-admin-v2__notice {
-  padding: 16px 18px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.46);
-  border: 1px solid rgba(105, 116, 153, 0.10);
-  color: var(--admin-text-soft);
-  font-size: 14px;
-  line-height: 1.8;
-}
-
-.matey-admin-v2__notice strong {
-  color: var(--admin-title);
-}
-
-.matey-admin-v2__stat-inline {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.matey-admin-v2__stat-chip {
-  min-height: 38px;
-  padding: 0 14px;
-  border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(255, 255, 255, 0.52);
-  border: 1px solid rgba(105, 116, 153, 0.12);
-  color: #4d5771;
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.matey-admin-v2__stat-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-}
-
-.matey-admin-v2__stat-dot.is-violet {
-  background: var(--admin-violet);
-}
-
-.matey-admin-v2__stat-dot.is-blue {
-  background: var(--admin-blue);
-}
-
-.matey-admin-v2__stat-dot.is-mint {
-  background: var(--admin-mint);
-}
-
-.matey-admin-v2__stat-dot.is-pink {
-  background: var(--admin-pink);
-}
-
-.matey-admin-v2__muted {
-  color: var(--admin-text-soft);
-}
-
-.matey-admin-v2__divider {
-  height: 1px;
-  background: rgba(105, 116, 153, 0.10);
-  margin: 18px 0;
-}
-
-.matey-admin-v2__sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  border: 0;
-}
-
-@media (max-width: 1320px) {
-  .matey-admin-v2__toolbar {
-    grid-template-columns: minmax(240px, 1.2fr) repeat(3, 1fr);
-  }
-
-  .matey-admin-v2__log-filter {
-    grid-template-columns: minmax(240px, 1.1fr) repeat(3, 1fr);
-  }
-}
-
+/* =========================================================
+   15. 반응형
+========================================================= */
 @media (max-width: 1280px) {
-  .matey-admin-v2__summary-grid {
+  .matey-admin-v3__summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .matey-admin-v2__chart-grid,
-  .matey-admin-v2__feedback-grid,
-  .matey-admin-v2__split-grid {
+  .matey-admin-v3__chart-grid,
+  .matey-admin-v3__support-grid,
+  .matey-admin-v3__split-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1100px) {
+  .matey-admin-v3__toolbar {
+    grid-template-columns: minmax(220px, 1.2fr) repeat(3, 1fr);
   }
 }
 
 @media (max-width: 1024px) {
-  .matey-admin-v2 {
-    padding: 156px 20px 84px;
+  .matey-admin-v3 {
+    padding: 152px 20px 82px;
   }
 
-  .matey-admin-v2__hero {
-    padding: 28px;
+  .matey-admin-v3__hero {
+    padding: 26px 24px;
+  }
+
+  .matey-admin-v3__hero-side {
     grid-template-columns: 1fr;
   }
 
-  .matey-admin-v2__panel {
-    padding: 24px;
+  .matey-admin-v3__panel {
+    padding: 22px;
   }
 
-  .matey-admin-v2__toolbar,
-  .matey-admin-v2__log-filter {
+  .matey-admin-v3__toolbar {
     grid-template-columns: 1fr 1fr;
   }
 
-  .matey-admin-v2__panel-head {
+  .matey-admin-v3__panel-head {
     flex-direction: column;
     align-items: flex-start;
   }
 }
 
 @media (max-width: 768px) {
-  .matey-admin-v2 {
-    padding: 136px 16px 76px;
+  .matey-admin-v3 {
+    padding: 134px 16px 74px;
   }
 
-  .matey-admin-v2__hero-copy h1 {
-    font-size: 32px;
+  .matey-admin-v3__hero-copy h1 {
+    font-size: 30px;
   }
 
-  .matey-admin-v2__summary-grid {
+  .matey-admin-v3__summary-grid {
     grid-template-columns: 1fr;
   }
 
-  .matey-admin-v2__chart-grid {
+  .matey-admin-v3__chart-grid {
     grid-template-columns: 1fr;
   }
 
-  .matey-admin-v2__toolbar,
-  .matey-admin-v2__log-filter {
+  .matey-admin-v3__toolbar {
     grid-template-columns: 1fr;
   }
 
-  .matey-admin-v2__table {
+  .matey-admin-v3__table {
     min-width: 980px;
   }
 
-  .matey-admin-v2__tabbar {
-    gap: 8px;
+  .matey-admin-v3__hero-tabs .matey-admin-v3__tab-btn {
+    flex: 1 1 calc(50% - 8px);
   }
 
-  .matey-admin-v2__tab-btn {
-    width: 100%;
+  .matey-admin-v3__bot-stat-row {
+    grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 640px) {
-  .matey-admin-v2 {
-    padding: 120px 14px 64px;
+  .matey-admin-v3 {
+    padding: 118px 14px 62px;
   }
 
-  .matey-admin-v2__hero,
-  .matey-admin-v2__panel,
-  .matey-admin-v2__state-card {
+  .matey-admin-v3__hero,
+  .matey-admin-v3__panel,
+  .matey-admin-v3__state-card {
     padding: 20px;
     border-radius: 22px;
   }
 
-  .matey-admin-v2__hero-copy h1,
-  .matey-admin-v2__panel-head h2 {
+  .matey-admin-v3__hero-copy h1,
+  .matey-admin-v3__panel-head h2 {
     font-size: 26px;
   }
 
-  .matey-admin-v2__hero-metric strong,
-  .matey-admin-v2__summary-card strong {
+  .matey-admin-v3__hero-metric strong,
+  .matey-admin-v3__summary-card strong {
     font-size: 28px;
   }
 
-  .matey-admin-v2__hero-actions,
-  .matey-admin-v2__feedback-actions,
-  .matey-admin-v2__bulk-actions {
+  .matey-admin-v3__hero-tabs {
     flex-direction: column;
   }
 
-  .matey-admin-v2__primary-button,
-  .matey-admin-v2__ghost-button,
-  .matey-admin-v2__ghost-link,
-  .matey-admin-v2__mini-btn {
+  .matey-admin-v3__hero-tabs .matey-admin-v3__tab-btn {
+    flex: 1 1 100%;
+  }
+
+  .matey-admin-v3__support-actions,
+  .matey-admin-v3__bulk-actions {
+    flex-direction: column;
+  }
+
+  .matey-admin-v3__primary-button,
+  .matey-admin-v3__ghost-button,
+  .matey-admin-v3__mini-btn {
     width: 100%;
   }
 
-  .matey-admin-v2__feedback-detail-head {
+  .matey-admin-v3__support-detail-head {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .matey-admin-v2__activity-content {
-    padding-left: 18px;
-  }
-
-  .matey-admin-v2__activity-item::before {
-    left: 14px;
-  }
-
-  .matey-admin-v2__timeline::before {
-    left: 18px;
+  .matey-admin-v3__support-filter {
+    width: 100%;
+    flex-direction: column;
   }
 }
 
+/* =========================================================
+   16. 모션 감소 대응
+========================================================= */
 @media (prefers-reduced-motion: reduce) {
-  .matey-admin-v2 *,
-  .matey-admin-v2 *::before,
-  .matey-admin-v2 *::after {
+  .matey-admin-v3 *,
+  .matey-admin-v3 *::before,
+  .matey-admin-v3 *::after {
     animation: none !important;
     transition: none !important;
     scroll-behavior: auto !important;
