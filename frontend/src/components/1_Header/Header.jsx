@@ -335,7 +335,11 @@ function Header() {
                    비회원 상태 버튼
                 ===================================================== */
                 <div className="matey-header__auth-group">
-                  <Link to="/login" className="matey-header__text-button">
+                  <Link
+                    to="/login"
+                    state={{ from: `${location.pathname}${location.search || ''}` }}
+                    className="matey-header__text-button"
+                  >
                     로그인
                   </Link>
 

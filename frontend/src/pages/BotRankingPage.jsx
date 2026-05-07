@@ -112,7 +112,11 @@ export default function BotRankingPage() {
             <div className={styles.shortcuts}>
               <p className={styles.shortcutsLabel}>바로가기</p>
               <div className={styles.shortcutsRow}>
-                <Link to="/login" className={`${styles.shortcutChip} ${styles.shortcutPrimary}`}>
+                <Link
+                  to="/login"
+                  state={{ from: '/bot-ranking' }}
+                  className={`${styles.shortcutChip} ${styles.shortcutPrimary}`}
+                >
                   로그인
                 </Link>
                 <Link to="/features" className={styles.shortcutChip}>

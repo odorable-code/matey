@@ -127,12 +127,16 @@ export default function AuthPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
+      const rawFrom = location.state?.from;
+      const from =
+        typeof rawFrom === 'string' && rawFrom.startsWith('/') ? rawFrom : '/';
+
       // replace : flase, 기본값 : false는 이동할 때 브라우저 방문 기록에 새로운 페이지를 추가(뒤로가기 하면 이전 페이지가 나옴)
       // replace : true : 현재 페이지 기록을 새로운 페이지로 덮어씀(뒤로가기 해도 이전 페이지 안 나옴)
       // replace : true는 언제 쓸까? 로그인 성공 했는데 뒤로 가기를 눌러서 다시 로그인 폼이 나오면 안될 때 
-      navigate('/', { replace: true });
+      navigate(from, { replace: true });
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, location.state, navigate]);
 
   const goToTab = (tab) => {
     setSubmitMessage('');
@@ -241,13 +245,16 @@ export default function AuthPage() {
       setLoading(true);
       setSubmitMessage('');
 
-    const result = await login({
+      await login({
         email: loginForm.email.trim(),
         password: loginForm.password,
         rememberMe : loginForm.rememberMe
       });
 
-      navigate('/', { replace: true });
+      const rawFrom = location.state?.from;
+      const from =
+        typeof rawFrom === 'string' && rawFrom.startsWith('/') ? rawFrom : '/';
+      navigate(from, { replace: true });
     } catch (error) {
       setSubmitMessage(error.message || '로그인에 실패했어요.');
     } finally {

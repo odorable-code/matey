@@ -28,7 +28,7 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { adminAPI } from '../../utils/api';
 import { displaySupportTicketTitle } from '../../utils/supportReportDisplay';
@@ -277,6 +277,7 @@ function buildLineGeometry(series, width = 620, height = 220, paddingX = 18, pad
    메인 컴포넌트
 ========================================================= */
 export default function AdminPage() {
+  const location = useLocation();
   const { user, isAuthenticated, authLoading } = useAuth();
 
   /* =========================================================
@@ -822,7 +823,13 @@ export default function AdminPage() {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ from: `${location.pathname}${location.search || ''}` }}
+      />
+    );
   }
 
   if (!isAdminLike(adminRole)) {
