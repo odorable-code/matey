@@ -287,17 +287,6 @@ function ProfileInfoContent() {
                   className={`${styles.input} ${styles.readOnly}`}
                 />
               </label>
-
-              <label className={styles.field}>
-                <span className={styles.fieldLabel}>휴대폰 번호</span>
-                <input
-                  type="text"
-                  value={currentProfile.phone}
-                  disabled={!isEditMode}
-                  onChange={(e) => handleEditableChange('phone', e.target.value)}
-                  className={styles.input}
-                />
-              </label>
             </div>
           </div>
         </article>
