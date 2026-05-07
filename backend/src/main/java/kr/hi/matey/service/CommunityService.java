@@ -74,7 +74,7 @@ public class CommunityService {
     }
 
     /**
-     * notification=0 인 카테고리: 공지는 부관리자까지, 이벤트는 정책상 관리자(ADMIN·SUPER_ADMIN)만 작성·수정 가능.
+     * notification=0 인 카테고리: 공지/이벤트는 운영자(SUBADMIN 포함) 작성·수정 가능.
      */
     private void assertCategoryWritableByUser(Long categoryId, String roleCode) {
         if (categoryId == null) {
@@ -91,10 +91,10 @@ public class CommunityService {
         String nameTrim = categoryName != null ? categoryName.trim() : "";
         boolean isEventCategory = "이벤트".equals(nameTrim);
         if (isEventCategory) {
-            if (!isAdminRole(roleCode)) {
+            if (!isCommunityPostPublisherRole(roleCode)) {
                 throw new ResponseStatusException(
                         HttpStatus.FORBIDDEN,
-                        "이벤트 카테고리에는 관리자만 글을 작성할 수 있어요."
+                        "이벤트 카테고리에는 운영자만 글을 작성할 수 있어요."
                 );
             }
             return;
