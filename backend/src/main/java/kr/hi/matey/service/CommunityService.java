@@ -257,6 +257,15 @@ public class CommunityService {
         return res;
     }
 
+    private static Map<String, Object> postReactionBody(PostDTO refreshed) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("liked", Boolean.TRUE.equals(refreshed.getLikedByMe()));
+        body.put("likeCount", refreshed.getLikeCount());
+        body.put("disliked", Boolean.TRUE.equals(refreshed.getDislikedByMe()));
+        body.put("dislikeCount", refreshed.getDislikeCount());
+        return body;
+    }
+
     @Transactional
     public Map<String, Object> togglePostLike(long postId, long userId) {
         PostDTO post = postDAO.selectPostById(postId, null);
@@ -266,14 +275,32 @@ public class CommunityService {
         if (postDAO.deletePostLike(userId, postId) > 0) {
             postDAO.adjustPostLikeCount(postId, -1);
         } else {
+            if (postDAO.deletePostDislike(userId, postId) > 0) {
+                postDAO.adjustPostDislikeCount(postId, -1);
+            }
             postDAO.insertPostLike(userId, postId);
             postDAO.adjustPostLikeCount(postId, 1);
         }
-        PostDTO refreshed = postDAO.selectPostById(postId, userId);
-        Map<String, Object> body = new HashMap<>();
-        body.put("liked", Boolean.TRUE.equals(refreshed.getLikedByMe()));
-        body.put("likeCount", refreshed.getLikeCount());
-        return body;
+        return postReactionBody(postDAO.selectPostById(postId, userId));
+    }
+
+    /** 좋아요와 동시에 둘 수 없음(싫어요 켜면 좋아요 해제) */
+    @Transactional
+    public Map<String, Object> togglePostDislike(long postId, long userId) {
+        PostDTO post = postDAO.selectPostById(postId, null);
+        if (post == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "게시글을 찾을 수 없어요.");
+        }
+        if (postDAO.deletePostDislike(userId, postId) > 0) {
+            postDAO.adjustPostDislikeCount(postId, -1);
+        } else {
+            if (postDAO.deletePostLike(userId, postId) > 0) {
+                postDAO.adjustPostLikeCount(postId, -1);
+            }
+            postDAO.insertPostDislike(userId, postId);
+            postDAO.adjustPostDislikeCount(postId, 1);
+        }
+        return postReactionBody(postDAO.selectPostById(postId, userId));
     }
 
     @Transactional

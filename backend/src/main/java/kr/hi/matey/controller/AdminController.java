@@ -190,8 +190,7 @@ public class AdminController {
         }
 
         String content = body.get("content");
-        String handlingMethod = body.get("handlingMethod");
-        adminService.answerSupportTicket(supportId, content, handlingMethod, user.getUser().getUserId());
+        adminService.answerSupportTicket(supportId, content, user.getUser().getUserId());
         return ResponseEntity.ok("답변이 등록되었습니다.");
     }
 

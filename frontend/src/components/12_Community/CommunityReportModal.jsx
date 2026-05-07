@@ -126,6 +126,8 @@ function CommunityReportModal({
     } catch (e) {
       if (e?.status === 401 || e?.status === 403) {
         setError('로그인 후 신고할 수 있어요.');
+      } else if (e?.status === 409) {
+        setError(e?.message || '이미 신고한 내용이에요.');
       } else {
         setError(e?.message || '신고 접수에 실패했어요.');
       }

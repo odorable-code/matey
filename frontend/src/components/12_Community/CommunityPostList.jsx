@@ -156,11 +156,47 @@ function CommunityPostList() {
       const res = await communityAPI.togglePostLike(p.postId);
       setPosts((prev) =>
         prev.map((row) =>
-          row.postId === p.postId ? { ...row, likedByMe: res.liked, likeCount: res.likeCount } : row
+          row.postId === p.postId
+            ? {
+                ...row,
+                likedByMe: !!res.liked,
+                likeCount: res.likeCount,
+                dislikedByMe: !!res.disliked,
+                dislikeCount: res.dislikeCount,
+              }
+            : row
         )
       );
     } catch (e) {
       setError(e?.message || '좋아요 처리에 실패했어요.');
+    }
+  };
+
+  const handlePostCardDislike = async (event, p) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: `/community/posts/${p.postId}` } });
+      return;
+    }
+    setError('');
+    try {
+      const res = await communityAPI.togglePostDislike(p.postId);
+      setPosts((prev) =>
+        prev.map((row) =>
+          row.postId === p.postId
+            ? {
+                ...row,
+                likedByMe: !!res.liked,
+                likeCount: res.likeCount,
+                dislikedByMe: !!res.disliked,
+                dislikeCount: res.dislikeCount,
+              }
+            : row
+        )
+      );
+    } catch (e) {
+      setError(e?.message || '싫어요 처리에 실패했어요.');
     }
   };
 
@@ -273,19 +309,34 @@ function CommunityPostList() {
                   </Link>
                   {!hideEngagement ? (
                     <div className={styles.postCardFooter}>
-                      <button
-                        type="button"
-                        className={`${styles.likeBtn} ${styles.likeBtnSm} ${
-                          p.likedByMe ? styles.likeBtnActive : ''
-                        }`}
-                        onClick={(e) => handlePostCardLike(e, p)}
-                        aria-pressed={!!p.likedByMe}
-                      >
-                        <span className={styles.likeIcon} aria-hidden>
-                          ♥
-                        </span>
-                        <span>좋아요 {p.likeCount ?? 0}</span>
-                      </button>
+                      <div className={styles.reactionCluster}>
+                        <button
+                          type="button"
+                          className={`${styles.likeBtn} ${styles.likeBtnSm} ${
+                            p.likedByMe ? styles.likeBtnActive : ''
+                          }`}
+                          onClick={(e) => handlePostCardLike(e, p)}
+                          aria-pressed={!!p.likedByMe}
+                        >
+                          <span className={styles.likeIcon} aria-hidden>
+                            ♥
+                          </span>
+                          <span>좋아요 {p.likeCount ?? 0}</span>
+                        </button>
+                        <button
+                          type="button"
+                          className={`${styles.dislikeBtn} ${styles.dislikeBtnSm} ${
+                            p.dislikedByMe ? styles.dislikeBtnActive : ''
+                          }`}
+                          onClick={(e) => handlePostCardDislike(e, p)}
+                          aria-pressed={!!p.dislikedByMe}
+                        >
+                          <span className={styles.dislikeIcon} aria-hidden>
+                            👎
+                          </span>
+                          <span>싫어요 {p.dislikeCount ?? 0}</span>
+                        </button>
+                      </div>
                     </div>
                   ) : null}
                 </div>

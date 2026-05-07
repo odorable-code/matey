@@ -111,6 +111,17 @@ public class CommunityController {
         return ResponseEntity.ok(communityService.togglePostLike(postId, user.getUser().getUserId()));
     }
 
+    @PostMapping("/posts/{postId}/dislike")
+    public ResponseEntity<Map<String, Object>> togglePostDislike(
+            @PathVariable("postId") Long postId,
+            @AuthenticationPrincipal CustomUser user
+    ) {
+        if (user == null || user.getUser() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok(communityService.togglePostDislike(postId, user.getUser().getUserId()));
+    }
+
     @PostMapping("/posts/{postId}/comments/{commentId}/like")
     public ResponseEntity<Map<String, Object>> toggleCommentLike(
             @PathVariable("postId") Long postId,

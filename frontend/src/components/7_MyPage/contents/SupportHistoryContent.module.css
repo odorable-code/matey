@@ -246,6 +246,9 @@
   margin-top: 16px;
   padding-top: 12px;
   border-top: 1px dashed rgba(112, 91, 150, 0.18);
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
 }
 
 .deleteBtn {

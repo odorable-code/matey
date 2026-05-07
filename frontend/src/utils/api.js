@@ -1,6 +1,6 @@
 // 주소 끝에 붙은 슬래시 제거
 // 어떤 사람은 ...api, 어떤 사람은 ...api/ 로 쓸 수도 있으니.
-const API_BASE_URL = (
+export const API_BASE_URL = (
   process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080'
 ).replace(/\/$/, '');
 
@@ -450,6 +450,8 @@ export const communityAPI = {
     }),
   togglePostLike: (postId) =>
     request(`/api/community/posts/${postId}/like`, { method: 'POST' }),
+  togglePostDislike: (postId) =>
+    request(`/api/community/posts/${postId}/dislike`, { method: 'POST' }),
   toggleCommentLike: (postId, commentId) =>
     request(`/api/community/posts/${postId}/comments/${commentId}/like`, {
       method: 'POST',
@@ -473,6 +475,10 @@ export const supportUserAPI = {
   listTickets: () => request('/api/mypage/support'),
   deleteTicket: (supportId) =>
     request(`/api/mypage/support/${supportId}`, { method: 'DELETE' }),
+  reportExists: (targetType, targetId) =>
+    request(
+      `/api/mypage/support/report-exists?targetType=${encodeURIComponent(targetType)}&targetId=${encodeURIComponent(String(targetId))}`
+    ),
 };
 
 export const myPageAPI = {

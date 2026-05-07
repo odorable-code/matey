@@ -21,10 +21,9 @@
  * - 감정    : EMOTION_SCORE + EMOTION_CATEGORY
  *
  * [여기서 주로 수정하면 되는 곳]
- * 1) DUMMY_*                : 백엔드 미구현 시 화면 확인용 더미
- * 2) ROLE_LABELS / STATUS_* : 라벨 표시 코드
- * 3) handleUser*            : 사용자 권한/상태 변경 로직
- * 4) handleSupport*         : 문의/신고 처리 로직
+ * 1) ROLE_LABELS / STATUS_* : 라벨 표시 코드
+ * 2) handleUser*            : 사용자 권한/상태 변경 로직
+ * 3) handleSupport*         : 문의/신고 처리 로직
  * =========================================================
  */
 
@@ -85,193 +84,71 @@ const REASON_TYPE_LABELS = {
   INQUIRY: '문의',
 };
 
-/* =========================================================
-   화면 확인용 더미 데이터 (DB 스키마 기준)
-========================================================= */
-const DUMMY_USERS = [
-  {
-    user_id: 1,
-    email: 'user1@test.com',
-    nickname: '일반유저',
-    user_name: '홍길동',
-    gender: 'MALE',
-    login_type: 'LOCAL',
-    status: 'ACTIVE',
-    last_login_at: '2026-05-05T22:11:00',
-    created_at: '2025-12-01T10:00:00',
-    role_code: 'USER',
-    chat_count: 36,
-    report_count: 1,
-    support_count: 2,
-  },
-  {
-    user_id: 2,
-    email: 'subadmin1@test.com',
-    nickname: '서브관리자',
-    user_name: '김관리',
-    gender: 'FEMALE',
-    login_type: 'LOCAL',
-    status: 'ACTIVE',
-    last_login_at: '2026-05-06T09:42:00',
-    created_at: '2025-11-12T10:00:00',
-    role_code: 'SUBADMIN',
-    chat_count: 92,
-    report_count: 0,
-    support_count: 4,
-  },
-  {
-    user_id: 3,
-    email: 'admin1@test.com',
-    nickname: '총관리자',
-    user_name: '이관리',
-    gender: 'MALE',
-    login_type: 'LOCAL',
-    status: 'ACTIVE',
-    last_login_at: '2026-05-06T08:02:00',
-    created_at: '2025-10-20T10:00:00',
-    role_code: 'ADMIN',
-    chat_count: 148,
-    report_count: 0,
-    support_count: 6,
-  },
-  {
-    user_id: 4,
-    email: 'kakao_user@matey.app',
-    nickname: '서윤',
-    user_name: '이서윤',
-    gender: 'FEMALE',
-    login_type: 'KAKAO',
-    status: 'ACTIVE',
-    last_login_at: '2026-05-06T07:11:00',
-    created_at: '2026-02-04T10:00:00',
-    role_code: 'USER',
-    chat_count: 44,
-    report_count: 0,
-    support_count: 1,
-  },
-  {
-    user_id: 5,
-    email: 'banned_user@matey.app',
-    nickname: '정지유저',
-    user_name: '최현우',
-    gender: 'MALE',
-    login_type: 'LOCAL',
-    status: 'BANNED',
-    last_login_at: '2026-04-21T18:10:00',
-    created_at: '2026-01-14T10:00:00',
-    role_code: 'USER',
-    chat_count: 12,
-    report_count: 4,
-    support_count: 0,
-  },
-  {
-    user_id: 6,
-    email: 'naver_user@matey.app',
-    nickname: '지민',
-    user_name: '한지민',
-    gender: 'FEMALE',
-    login_type: 'NAVER',
-    status: 'ACTIVE',
-    last_login_at: '2026-05-06T06:44:00',
-    created_at: '2026-02-03T10:00:00',
-    role_code: 'USER',
-    chat_count: 58,
-    report_count: 0,
-    support_count: 2,
-  },
-];
+/** API(camelCase) → 화면에서 쓰는 snake_case 사용자 행 */
+function normalizeAdminUser(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const id = raw.userId ?? raw.user_id;
+  if (id == null) return null;
+  return {
+    user_id: id,
+    email: raw.email ?? '',
+    nickname: raw.nickname ?? '',
+    user_name: raw.userName ?? raw.user_name ?? '',
+    gender: raw.gender ?? '',
+    login_type: raw.loginType ?? raw.login_type ?? 'LOCAL',
+    status: raw.status ?? 'ACTIVE',
+    last_login_at: raw.lastLoginAt ?? raw.last_login_at ?? null,
+    created_at: raw.createdAt ?? raw.created_at ?? null,
+    role_code: raw.roleCode ?? raw.role_code ?? raw.roleName ?? 'USER',
+    chat_count: raw.conversationCount ?? raw.chat_count ?? 0,
+    report_count: raw.reportCount ?? raw.report_count ?? 0,
+    support_count: raw.supportCount ?? raw.support_count ?? 0,
+  };
+}
 
-const DUMMY_SUPPORTS = [
-  {
-    support_id: 101,
-    support_reason_id: 1,
-    reason_type: 'REPORT',
-    target_type: 'POST',
-    reason_name: '욕설/비방',
-    user_id: 4,
-    user_nickname: '서윤',
-    title: '욕설이 포함된 게시글 신고합니다',
-    content:
-      '커뮤니티 자유게시판에서 다른 사용자에게 직접적인 욕설을 사용하는 게시글을 발견했습니다.',
-    status: 'PENDING',
-    created_at: '2026-05-06T08:09:00',
-  },
-  {
-    support_id: 102,
-    support_reason_id: 17,
-    reason_type: 'INQUIRY',
-    target_type: null,
-    reason_name: '결제문의',
-    user_id: 6,
-    user_nickname: '지민',
-    title: '주간 리포트 PDF 다운로드 결제 문의',
-    content:
-      '리포트 다운로드 기능이 결제 후에도 동작하지 않습니다. 환불 또는 재결제 처리가 필요합니다.',
-    status: 'PENDING',
-    created_at: '2026-05-05T17:12:00',
-  },
-  {
-    support_id: 103,
-    support_reason_id: 19,
-    reason_type: 'INQUIRY',
-    target_type: null,
-    reason_name: '버그/오류문의',
-    user_id: 1,
-    user_nickname: '일반유저',
-    title: '모바일에서 채팅 입력창이 가려져요',
-    content:
-      '안드로이드 크롬에서 키보드를 올리면 입력창이 가려져 글을 작성하기 어렵습니다.',
-    status: 'DONE',
-    created_at: '2026-05-04T11:08:00',
-  },
-];
+/** API(camelCase) → 문의·신고 목록용 snake_case */
+function normalizeAdminFeedback(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const sid = raw.supportId ?? raw.support_id;
+  if (sid == null) return null;
+  const rt = String(raw.reasonType ?? raw.reason_type ?? 'INQUIRY').toUpperCase();
+  return {
+    support_id: sid,
+    support_reason_id: raw.supportReasonId ?? raw.support_reason_id ?? null,
+    reason_type: rt === 'REPORT' ? 'REPORT' : 'INQUIRY',
+    target_type: raw.targetType ?? raw.target_type ?? null,
+    reason_name: raw.reasonName ?? raw.reason_name ?? '',
+    user_id: raw.userId ?? raw.user_id,
+    user_nickname: raw.userNickname ?? raw.user_nickname ?? '',
+    title: raw.title ?? '',
+    content: raw.content ?? '',
+    status: raw.status ?? 'PENDING',
+    created_at: raw.createdAt ?? raw.created_at ?? '',
+  };
+}
 
-const DUMMY_BOTS = [
-  {
-    bot_id: 1,
-    name: '메이트 A (강아지)',
-    description: '처음 말을 꺼내기 쉬운 다정한 시작형',
-    like_count: 1280,
-    dislike_count: 32,
-    popularity_score: 91.5,
-    ranking: 1,
-  },
-  {
-    bot_id: 2,
-    name: '메이트 B (곰)',
-    description: '복잡한 마음을 차분히 정리해주는 타입',
-    like_count: 980,
-    dislike_count: 41,
-    popularity_score: 84.2,
-    ranking: 2,
-  },
-  {
-    bot_id: 3,
-    name: '메이트 C (고양이)',
-    description: '핵심만 빠르게 짚어주는 또렷한 타입',
-    like_count: 742,
-    dislike_count: 58,
-    popularity_score: 76.8,
-    ranking: 3,
-  },
-  {
-    bot_id: 4,
-    name: '메이트 D (햄스터)',
-    description: '망설이는 마음을 다독여주는 안심형',
-    like_count: 1140,
-    dislike_count: 22,
-    popularity_score: 88.9,
-    ranking: 4,
-  },
-];
-
-const DUMMY_EMOTION_STATS = [
-  { emotion_code: 'STRESSED', emotion_name: '스트레스', count: 412, color: 'blue' },
-  { emotion_code: 'ANXIOUS', emotion_name: '불안', count: 388, color: 'violet' },
-  { emotion_code: 'CALM', emotion_name: '평온', count: 326, color: 'mint' },
-  { emotion_code: 'DEPRESSED', emotion_name: '우울', count: 254, color: 'pink' },
-  { emotion_code: 'TIRED', emotion_name: '지침', count: 221, color: 'orange' },
-];
+/** /api/admin/stats/emotions 등 응답을 막대 그래프용 형태로 */
+function normalizeEmotionStat(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  if (raw.emotion_code != null && raw.count != null) {
+    return {
+      emotion_code: raw.emotion_code,
+      emotion_name: raw.emotion_name ?? raw.emotion_code,
+      count: Number(raw.count) || 0,
+      color: raw.color ?? 'blue',
+    };
+  }
+  if (raw.label != null) {
+    const label = String(raw.label);
+    return {
+      emotion_code: label.replace(/\s+/g, '_').toUpperCase(),
+      emotion_name: label,
+      count: Number(raw.value) || 0,
+      color: 'blue',
+    };
+  }
+  return null;
+}
 
 /* =========================================================
    유틸리티 코드
@@ -515,30 +392,30 @@ export default function AdminPage() {
         setLoading(true);
         setError(null);
 
-        const [usersData, supportsData, botsData, emotionData] = await Promise.all([
-          adminAPI?.getUsers?.().catch(() => DUMMY_USERS) ?? DUMMY_USERS,
-          adminAPI?.getSupports?.().catch(() => DUMMY_SUPPORTS) ?? DUMMY_SUPPORTS,
-          adminAPI?.getBots?.().catch(() => DUMMY_BOTS) ?? DUMMY_BOTS,
-          adminAPI?.getEmotionStats?.().catch(() => DUMMY_EMOTION_STATS) ??
-            DUMMY_EMOTION_STATS,
+        const [usersData, feedbacksData, emotionData] = await Promise.all([
+          adminAPI.getUsers().catch(() => []),
+          adminAPI.getFeedbacks({ status: 'ALL' }).catch(() => []),
+          adminAPI.getEmotionStats().catch(() => []),
         ]);
 
-        setUsers(Array.isArray(usersData) && usersData.length ? usersData : DUMMY_USERS);
-        setSupports(
-          Array.isArray(supportsData) && supportsData.length ? supportsData : DUMMY_SUPPORTS
-        );
-        setBots(Array.isArray(botsData) && botsData.length ? botsData : DUMMY_BOTS);
+        const usersArr = Array.isArray(usersData) ? usersData : [];
+        const feedbacksArr = Array.isArray(feedbacksData) ? feedbacksData : [];
+        const emotionArr = Array.isArray(emotionData) ? emotionData : [];
+
+        setUsers(usersArr.map(normalizeAdminUser).filter(Boolean));
+        setSupports(feedbacksArr.map(normalizeAdminFeedback).filter(Boolean));
+        setBots([]);
         setEmotionStats(
-          Array.isArray(emotionData) && emotionData.length ? emotionData : DUMMY_EMOTION_STATS
+          emotionArr.map(normalizeEmotionStat).filter(Boolean)
         );
         setLogs(loadLogs());
       } catch (err) {
         console.error('관리자 데이터 로드 실패:', err);
-        setError(err.message);
-        setUsers(DUMMY_USERS);
-        setSupports(DUMMY_SUPPORTS);
-        setBots(DUMMY_BOTS);
-        setEmotionStats(DUMMY_EMOTION_STATS);
+        setError(err?.message || '데이터를 불러오지 못했어요.');
+        setUsers([]);
+        setSupports([]);
+        setBots([]);
+        setEmotionStats([]);
         setLogs(loadLogs());
       } finally {
         setLoading(false);
@@ -1248,12 +1125,6 @@ export default function AdminPage() {
                       명
                     </span>
                   </div>
-                  <div className="matey-admin-v3__divider" />
-                  <p className="matey-admin-v3__muted">
-                    <strong>총 관리자(ADMIN)</strong>는 권한 변경과 모든 사용자 상태를 다룰 수 있고,
-                    <strong> 서브 관리자(SUBADMIN)</strong>는 일반 사용자에 대한 운영 작업을
-                    수행해요.
-                  </p>
                 </div>
 
                 <div className="matey-admin-v3__notice">

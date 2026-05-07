@@ -91,4 +91,11 @@ public class SupportService {
     public FaqDTO getFaqById(Long faqId) {
         return supportDAO.selectFaqById(faqId);
     }
+
+    /** 동일 대상(게시글/댓글)에 대한 기존 신고 접수 여부 */
+    public boolean hasExistingReport(long userId, String targetType, long targetId) {
+        String tt = targetType != null ? targetType.trim().toUpperCase() : "";
+        int n = supportDAO.countExistingReportForTarget(userId, tt, targetId);
+        return n > 0;
+    }
 }

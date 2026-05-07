@@ -47,9 +47,14 @@
                         SELECT 1 FROM user_post_like upl
                         WHERE upl.post_id = p.post_id AND upl.user_id = #{viewerUserId}
                     ) AS likedByMe
+                    , EXISTS(
+                        SELECT 1 FROM user_post_dislike upd
+                        WHERE upd.post_id = p.post_id AND upd.user_id = #{viewerUserId}
+                    ) AS dislikedByMe
                 </when>
                 <otherwise>
                     , FALSE AS likedByMe
+                    , FALSE AS dislikedByMe
                 </otherwise>
             </choose>
         FROM POST p
@@ -89,7 +94,8 @@
             c.notification as categoryNotification,
             p.created_at as createdAt,
             p.updated_at as updatedAt,
-            FALSE AS likedByMe
+            FALSE AS likedByMe,
+            FALSE AS dislikedByMe
         FROM POST p
         JOIN USER u ON p.user_id = u.user_id
         JOIN CATEGORY c ON p.category_id = c.category_id
@@ -120,9 +126,14 @@
                         SELECT 1 FROM user_post_like upl
                         WHERE upl.post_id = p.post_id AND upl.user_id = #{viewerUserId}
                     ) AS likedByMe
+                    , EXISTS(
+                        SELECT 1 FROM user_post_dislike upd
+                        WHERE upd.post_id = p.post_id AND upd.user_id = #{viewerUserId}
+                    ) AS dislikedByMe
                 </when>
                 <otherwise>
                     , FALSE AS likedByMe
+                    , FALSE AS dislikedByMe
                 </otherwise>
             </choose>
         FROM POST p
@@ -189,6 +200,22 @@
     <update id="adjustPostLikeCount">
         UPDATE POST
         SET like_count = GREATEST(0, like_count + #{delta})
+        WHERE post_id = #{postId}
+    </update>
+
+    <insert id="insertPostDislike">
+        INSERT INTO user_post_dislike (user_id, post_id)
+        VALUES (#{userId}, #{postId})
+    </insert>
+
+    <delete id="deletePostDislike">
+        DELETE FROM user_post_dislike
+        WHERE user_id = #{userId} AND post_id = #{postId}
+    </delete>
+
+    <update id="adjustPostDislikeCount">
+        UPDATE POST
+        SET dislike_count = GREATEST(0, dislike_count + #{delta})
         WHERE post_id = #{postId}
     </update>
 </mapper>

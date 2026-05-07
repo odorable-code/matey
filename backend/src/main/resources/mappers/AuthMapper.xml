@@ -149,9 +149,19 @@
      
      <update id="removeAutoLoginToken">
 	    UPDATE AUTO_LOGIN 
-	    SET token_hash = #{object} 
+	    SET token_hash = NULL 
 	    WHERE user_id = #{userId}
 	</update>
+
+	<select id="findStoredRefreshTokenByEmail" resultType="java.lang.String">
+		SELECT al.token_hash
+		FROM AUTO_LOGIN al
+		INNER JOIN USER u ON u.user_id = al.user_id
+		WHERE u.email = #{email}
+		  AND al.token_hash IS NOT NULL
+		  AND (al.expired_at IS NULL OR al.expired_at > NOW())
+		LIMIT 1
+	</select>
 	
 	<!-- <delete id="deleteTokenByUserId">
     DELETE FROM auto_login WHERE userId = #{userId}

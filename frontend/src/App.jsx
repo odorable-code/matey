@@ -50,6 +50,7 @@ import MainPage from './pages/HomePage';
 import AdminAccessDeniedPage from './pages/AdminAccessDeniedPage';
 import SocialLoginSuccessPage from './pages/SocialLoginSuccessPage';
 import SocialSignupPage from './pages/SocialSignupPage';
+import { canAccessAdminPage } from './utils/adminAccess';
 
 import { NotificationProvider } from './contexts/NotificationContext';
 
@@ -416,10 +417,7 @@ function AdminRoute({ children }) {
     return <Navigate to="/login" replace />;
   }
 
-  const role = String(user?.role || user?.roles?.[0] || '').toUpperCase();
-  const isAdmin = role === 'ADMIN' || role.includes('ADMIN');
-
-  if (!isAdmin) {
+  if (!canAccessAdminPage(user)) {
     return <Navigate to="/admin-access-denied" replace />;
   }
 

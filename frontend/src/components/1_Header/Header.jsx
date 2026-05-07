@@ -29,6 +29,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { canAccessAdminPage } from '../../utils/adminAccess';
 import { useChatModal } from '../../contexts/ChatModalContext';
 import { useNotifications } from '../../contexts/NotificationContext';
 import NotificationModal from '../16_NotificationModal/NotificationModal';
@@ -51,8 +52,12 @@ const NAV_ITEMS = [
    - boolean 인 경우
    - user.role / roles / authorities 등 다양한 구조 대응
 ========================================================= */
-function getAdminUser(isAdminValue, user) {
+function getAdminUser(isAdminValue, user, canAccessAdmin) {
   try {
+    if (typeof canAccessAdmin === 'function' && canAccessAdmin(user)) {
+      return true;
+    }
+
     if (typeof isAdminValue === 'function') {
       const result = isAdminValue();
       if (typeof result === 'boolean') return result;
@@ -128,7 +133,7 @@ function Header() {
   const loggedIn = isAuthenticated || !!user;
 
   const adminUser = useMemo(() => {
-    return getAdminUser(isAdmin, user);
+    return getAdminUser(isAdmin, user, canAccessAdminPage);
   }, [isAdmin, user]);
 
   /* =========================================================

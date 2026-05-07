@@ -47,7 +47,6 @@ public interface AdminDAO {
     int insertSupportAnswer(
             @Param("supportId") Long supportId,
             @Param("content") String content,
-            @Param("handlingMethod") String handlingMethod,
             @Param("adminUserId") Long adminUserId
     );
 

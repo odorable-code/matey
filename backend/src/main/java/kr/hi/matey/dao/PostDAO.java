@@ -50,5 +50,11 @@ public interface PostDAO {
     int deletePostLike(@Param("userId") long userId, @Param("postId") long postId);
 
     int adjustPostLikeCount(@Param("postId") long postId, @Param("delta") int delta);
+
+    int insertPostDislike(@Param("userId") long userId, @Param("postId") long postId);
+
+    int deletePostDislike(@Param("userId") long userId, @Param("postId") long postId);
+
+    int adjustPostDislikeCount(@Param("postId") long postId, @Param("delta") int delta);
 }
 

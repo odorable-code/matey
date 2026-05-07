@@ -91,8 +91,8 @@ public class AdminService {
     // 문의 답변 작성 (SUPPORT_ANSWER)
     // ==========================================
     @Transactional
-    public void answerSupportTicket(Long supportId, String content, String handlingMethod, Long adminUserId) {
-        adminDAO.insertSupportAnswer(supportId, content, handlingMethod, adminUserId);
+    public void answerSupportTicket(Long supportId, String content, Long adminUserId) {
+        adminDAO.insertSupportAnswer(supportId, content, adminUserId);
         adminDAO.updateFeedbackStatus(supportId, "DONE");
     }
 

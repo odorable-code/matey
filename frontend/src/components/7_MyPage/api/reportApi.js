@@ -27,14 +27,17 @@
  */
 
 import { useState } from 'react';
-import { getStoredToken } from '../../../utils/api';
+
+const ANALYSIS_API_BASE = (
+  process.env.REACT_APP_ANALYSIS_API_URL || 'http://localhost:8000'
+).replace(/\/$/, '');
 
 export function ReportApi(){
 
   const [reportData, setReportData] = useState('');
   const getAnalysis = async (botId, period) => {
     try {
-      const response = await fetch('http://localhost:8000/api/analysis', {
+      const response = await fetch(`${ANALYSIS_API_BASE}/api/analysis`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

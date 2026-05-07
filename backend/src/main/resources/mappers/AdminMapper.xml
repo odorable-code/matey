@@ -149,7 +149,9 @@
             s.content,
             s.status,
             s.created_at as createdAt,
-            sr.reason_name as reasonName
+            sr.reason_name as reasonName,
+            sr.reason_type as reasonType,
+            sr.target_type as targetType
         FROM SUPPORT s
         JOIN USER u ON s.user_id = u.user_id
         JOIN SUPPORT_REASON sr ON s.support_reason_id = sr.support_reason_id
@@ -170,7 +172,9 @@
             s.content,
             s.status,
             s.created_at as createdAt,
-            sr.reason_name as reasonName
+            sr.reason_name as reasonName,
+            sr.reason_type as reasonType,
+            sr.target_type as targetType
         FROM SUPPORT s
         JOIN USER u ON s.user_id = u.user_id
         JOIN SUPPORT_REASON sr ON s.support_reason_id = sr.support_reason_id
@@ -182,10 +186,9 @@
     </update>
 
     <insert id="insertSupportAnswer">
-        INSERT INTO SUPPORT_ANSWER (content, handling_method, support_id, admin_user_id)
+        INSERT INTO SUPPORT_ANSWER (content, support_id, admin_user_id)
         VALUES (
             #{content},
-            #{handlingMethod},
             #{supportId},
             #{adminUserId}
         )
