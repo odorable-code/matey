@@ -17,7 +17,7 @@ CREATE TABLE `USER` (
 	`birth_date`	DATE	NULL,
 	`gender`	VARCHAR(10)	NULL,
 	`profile_image`	VARCHAR(500)	NULL,
-	`login_type` ENUM('LOCAL', 'KAKAO', 'GOOGLE', 'NAVER')	NOT NULL DEFAULT 'LOCAL',
+	`login_type` ENUM('LOCAL', 'KAKAO', 'NAVER')	NOT NULL DEFAULT 'LOCAL',
     `status` ENUM('ACTIVE', 'BANNED', 'DELETED')	NOT NULL DEFAULT 'ACTIVE',
 	`is_terms_agreed`	BOOLEAN	NOT NULL	DEFAULT FALSE,
 	`is_privacy_agreed`	BOOLEAN	NOT NULL	DEFAULT FALSE,
@@ -142,14 +142,15 @@ CREATE TABLE `CHAT_ROOM` (
 );
 
 CREATE TABLE `MESSAGE` (
-	`message_id`	BIGINT	NOT NULL PRIMARY KEY AUTO_INCREMENT,
-	`emotion_id`	BIGINT	NOT NULL,
-	`chat_room_id`	BIGINT	NOT NULL,
-	`risk_level`	INT	NOT NULL,
-	`content`	TEXT	NOT NULL,
-	`sender_type`	VARCHAR(10)	NULL,
-	`keyword`	VARCHAR(100)	NOT NULL,
-	`date`	DATE	NOT NULL,
+	`message_id`    BIGINT      NOT NULL PRIMARY KEY AUTO_INCREMENT,
+	`emotion_id`    BIGINT      NULL,
+	`chat_room_id`  BIGINT      NOT NULL,
+	`risk_level`    INT         NULL,
+	`content`       TEXT        NOT NULL,
+	`sender_type`   VARCHAR(10) NULL,
+	`keyword`       VARCHAR(100) NULL,
+	`summary`       TEXT        NULL COMMENT '해당 메시지 기준 상담/감정 요약',
+	`created_at`    TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
     
 	FOREIGN KEY(`emotion_id`) REFERENCES `EMOTION_CATEGORY`(`emotion_id`),
     FOREIGN KEY(`chat_room_id`) REFERENCES `CHAT_ROOM`(`chat_room_id`),
@@ -243,7 +244,7 @@ CREATE TABLE `PASSWORD_RESET_TOKEN` (
 );
 
 CREATE TABLE `USER_ROLE` (
-	`user_id`	BIGINT	NOT NULL,
+	`user_id`	BIGINT	NOT NULL PRIMARY KEY,
 	`role_id`	BIGINT	NOT NULL	DEFAULT 1,
     
     FOREIGN KEY(`user_id`) REFERENCES `USER`(`user_id`),
@@ -423,7 +424,7 @@ INSERT INTO EMOTION_CATEGORY (emotion_code, emotion_name) VALUES
 INSERT INTO CATEGORY (name, notification) VALUES
 ('공지', 0), ('일상', 1), ('고민상담', 1), ('연애', 1),
 ('우울/불안', 1), ('자유게시판', 1), ('질문', 1),
-('후기', 1), ('정보공유', 1), ('이벤트', 1);
+('후기', 1), ('정보공유', 1), ('이벤트', 0);
 
 INSERT INTO SUPPORT_REASON (reason_type, target_type, reason_code, reason_name, is_active) VALUES
 ('REPORT', 'POST', 'ABUSE', '욕설/비방', 1), ('REPORT', 'POST', 'SEXUAL', '성적/음란 콘텐츠', 1),
@@ -442,6 +443,7 @@ INSERT INTO SUPPORT_REASON (reason_type, target_type, reason_code, reason_name, 
 
 INSERT INTO USER (email, password, nickname, user_name, birth_date, gender, profile_image, login_type, status,
     is_terms_agreed, is_privacy_agreed, is_marketing_agreed, last_login_at)
+-- 아이디 비번 동일	
 VALUES
 ('user1@test.com', '$2a$10$WuFXSHPrxLS4NzmQ2O18/ONxOvvh9yhmtWmVdmXDhZPAllz0ACm.2', '일반유저', '홍길동', '2000-01-01', 'MALE', NULL, 'LOCAL', 'ACTIVE', 
 		TRUE, TRUE, FALSE, NOW()),

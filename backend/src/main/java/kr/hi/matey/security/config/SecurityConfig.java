@@ -1,10 +1,13 @@
 package kr.hi.matey.security.config;
 
 import java.util.List;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 import org.springframework.http.HttpMethod;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -31,6 +34,9 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final MemberDetailService userDetailsService;
+
+    @Value("${app.cors.allowed-origin-patterns:http://localhost:3000}")
+    private String allowedOriginPatternsRaw;
 
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
@@ -61,12 +67,14 @@ public class SecurityConfig {
                         .requestMatchers("/ws-stomp/**").permitAll()
                         .requestMatchers("/error").permitAll() // 에러 페이지 허용 (500 에러가 403으로 가려지는 현상 방지)
                         
+                        // FAQ/문의 사유는 비로그인 조회 허용 (Support 모달/FAQ에서 사용)
+                        .requestMatchers(HttpMethod.GET, "/api/mypage/support/faq").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/mypage/support/reasons").permitAll()
+
                         // 마이페이지 API는 인증된 사용자만 허용
                         .requestMatchers("/api/mypage/**").authenticated()
 
                         .requestMatchers(HttpMethod.GET, "/api/community/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/mypage/support/faq").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/mypage/support/reasons").permitAll()
 
                         .anyRequest().authenticated()
                 )
@@ -93,11 +101,11 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
 
         // 허용할 주소 설정
-        config.setAllowedOriginPatterns(List.of(
-                "http://localhost:3000",
-                "http://3.38.49.151:3000",
-                "http://3.38.49.151"
-        ));
+        List<String> allowedOriginPatterns = Arrays.stream(allowedOriginPatternsRaw.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isBlank())
+                .collect(Collectors.toList());
+        config.setAllowedOriginPatterns(allowedOriginPatterns);
 
         // 허용할 HTTP 메서드
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));

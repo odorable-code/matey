@@ -5,7 +5,7 @@ pip install anthropic
 
 # AWS Bedrock 지원용
 pip install anthropic[bedrock]
-# Google Vertex AI 지원용
+# Vertex AI 연동 (anthropic vertex extra)
 pip install anthropic[vertex]
 # aiohttp 를 사용하여 비동기 성능을 향상시키려는 경우
 pip install anthropic[aiohttp]

@@ -17,7 +17,7 @@ CREATE TABLE `USER` (
 	`birth_date`	DATE	NULL,
 	`gender`	VARCHAR(10)	NULL,
 	`profile_image`	VARCHAR(500)	NULL,
-	`login_type` ENUM('LOCAL', 'KAKAO', 'GOOGLE', 'NAVER')	NOT NULL DEFAULT 'LOCAL',
+	`login_type` ENUM('LOCAL', 'KAKAO', 'NAVER')	NOT NULL DEFAULT 'LOCAL',
     `status` ENUM('ACTIVE', 'BANNED', 'DELETED')	NOT NULL DEFAULT 'ACTIVE',
 	`is_terms_agreed`	BOOLEAN	NOT NULL	DEFAULT FALSE,
 	`is_privacy_agreed`	BOOLEAN	NOT NULL	DEFAULT FALSE,
@@ -141,14 +141,15 @@ CREATE TABLE `CHAT_ROOM` (
 );
 
 CREATE TABLE `MESSAGE` (
-	`message_id`	BIGINT	NOT NULL PRIMARY KEY AUTO_INCREMENT,
-	`emotion_id`	BIGINT	NOT NULL,
-	`chat_room_id`	BIGINT	NOT NULL,
-	`risk_level`	INT	NOT NULL,
-	`content`	TEXT	NOT NULL,
-	`sender_type`	VARCHAR(10)	NULL,
-	`keyword`	VARCHAR(100)	NOT NULL,
-	`date`	DATE	NOT NULL,
+	`message_id`    BIGINT      NOT NULL PRIMARY KEY AUTO_INCREMENT,
+	`emotion_id`    BIGINT      NULL,
+	`chat_room_id`  BIGINT      NOT NULL,
+	`risk_level`    INT         NULL,
+	`content`       TEXT        NOT NULL,
+	`sender_type`   VARCHAR(10) NULL,
+	`keyword`       VARCHAR(100) NULL,
+	`summary`       TEXT        NULL COMMENT '해당 메시지 기준 상담/감정 요약',
+	`created_at`    TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
     
 	FOREIGN KEY(`emotion_id`) REFERENCES `EMOTION_CATEGORY`(`emotion_id`),
     FOREIGN KEY(`chat_room_id`) REFERENCES `CHAT_ROOM`(`chat_room_id`),

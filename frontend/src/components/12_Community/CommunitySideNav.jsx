@@ -14,7 +14,11 @@ function isPostsSection(pathname) {
 }
 
 function CommunitySideNav() {
-  const { pathname } = useLocation();
+  const { pathname, state } = useLocation();
+  const writeMode = state?.writeMode || '';
+  const isNoticeEventWrite = pathname === '/community/write' && writeMode === 'NOTICE_EVENT';
+  const postsActive = isPostsSection(pathname) && !isNoticeEventWrite;
+  const noticesActive = pathname === NOTICES_PATH || isNoticeEventWrite;
 
   return (
     <nav className={sideStyles.card} aria-label="커뮤니티 메뉴">
@@ -23,7 +27,7 @@ function CommunitySideNav() {
           <NavLink
             to="/community"
             className={() =>
-              `${sideStyles.menuButton} ${isPostsSection(pathname) ? sideStyles.active : ''}`
+              `${sideStyles.menuButton} ${postsActive ? sideStyles.active : ''}`
             }
             style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
           >
@@ -36,14 +40,12 @@ function CommunitySideNav() {
         <li className={sideStyles.menuItem}>
           <NavLink
             to={NOTICES_PATH}
-            className={({ isActive }) =>
-              `${sideStyles.menuButton} ${isActive ? sideStyles.active : ''}`
-            }
+            className={() => `${sideStyles.menuButton} ${noticesActive ? sideStyles.active : ''}`}
             style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
           >
             <span className={sideStyles.textGroup}>
               <span className={sideStyles.label}>공지</span>
-              <span className={sideStyles.description}>공지사항</span>
+              <span className={sideStyles.description}>공지·이벤트</span>
             </span>
           </NavLink>
         </li>

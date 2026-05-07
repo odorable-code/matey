@@ -18,7 +18,17 @@ function formatDateTime(value) {
 
 function excerpt(text, max = 120) {
   if (!text) return '';
-  const t = String(text).replace(/\s+/g, ' ').trim();
+  const plain = String(text)
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
+  const t = plain;
   return t.length > max ? `${t.slice(0, max)}…` : t;
 }
 
@@ -146,11 +156,47 @@ function CommunityPostList() {
       const res = await communityAPI.togglePostLike(p.postId);
       setPosts((prev) =>
         prev.map((row) =>
-          row.postId === p.postId ? { ...row, likedByMe: res.liked, likeCount: res.likeCount } : row
+          row.postId === p.postId
+            ? {
+                ...row,
+                likedByMe: !!res.liked,
+                likeCount: res.likeCount,
+                dislikedByMe: !!res.disliked,
+                dislikeCount: res.dislikeCount,
+              }
+            : row
         )
       );
     } catch (e) {
       setError(e?.message || '좋아요 처리에 실패했어요.');
+    }
+  };
+
+  const handlePostCardDislike = async (event, p) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: `/community/posts/${p.postId}` } });
+      return;
+    }
+    setError('');
+    try {
+      const res = await communityAPI.togglePostDislike(p.postId);
+      setPosts((prev) =>
+        prev.map((row) =>
+          row.postId === p.postId
+            ? {
+                ...row,
+                likedByMe: !!res.liked,
+                likeCount: res.likeCount,
+                dislikedByMe: !!res.disliked,
+                dislikeCount: res.dislikeCount,
+              }
+            : row
+        )
+      );
+    } catch (e) {
+      setError(e?.message || '싫어요 처리에 실패했어요.');
     }
   };
 
@@ -246,35 +292,56 @@ function CommunityPostList() {
           {posts.length === 0 ? (
             <p className={styles.hint}>아직 글이 없어요.</p>
           ) : (
-            posts.map((p) => (
-              <div key={p.postId} className={styles.postCard}>
-                <Link to={`/community/posts/${p.postId}`} className={styles.postCardLink}>
-                  <div className={styles.postMeta}>
-                    <span>{p.categoryName || '카테고리'}</span>
-                    <span>{p.userNickname || '익명'}</span>
-                    <span>조회 {p.viewCount ?? 0}</span>
-                    <span>{formatDateTime(p.createdAt)}</span>
-                  </div>
-                  <h2 className={styles.postTitle}>{p.title}</h2>
-                  <p className={styles.postExcerpt}>{excerpt(p.content)}</p>
-                </Link>
-                <div className={styles.postCardFooter}>
-                  <button
-                    type="button"
-                    className={`${styles.likeBtn} ${styles.likeBtnSm} ${
-                      p.likedByMe ? styles.likeBtnActive : ''
-                    }`}
-                    onClick={(e) => handlePostCardLike(e, p)}
-                    aria-pressed={!!p.likedByMe}
-                  >
-                    <span className={styles.likeIcon} aria-hidden>
-                      ♥
-                    </span>
-                    <span>좋아요 {p.likeCount ?? 0}</span>
-                  </button>
+            posts.map((p) => {
+              const hideEngagement =
+                p.categoryNotification === 0 || p.categoryNotification === '0';
+              return (
+                <div key={p.postId} className={styles.postCard}>
+                  <Link to={`/community/posts/${p.postId}`} className={styles.postCardLink}>
+                    <div className={styles.postMeta}>
+                      <span>{p.categoryName || '카테고리'}</span>
+                      <span>{p.userNickname || '익명'}</span>
+                      <span>조회 {p.viewCount ?? 0}</span>
+                      <span>{formatDateTime(p.createdAt)}</span>
+                    </div>
+                    <h2 className={styles.postTitle}>{p.title}</h2>
+                    <p className={styles.postExcerpt}>{excerpt(p.content)}</p>
+                  </Link>
+                  {!hideEngagement ? (
+                    <div className={styles.postCardFooter}>
+                      <div className={styles.reactionCluster}>
+                        <button
+                          type="button"
+                          className={`${styles.likeBtn} ${styles.likeBtnSm} ${
+                            p.likedByMe ? styles.likeBtnActive : ''
+                          }`}
+                          onClick={(e) => handlePostCardLike(e, p)}
+                          aria-pressed={!!p.likedByMe}
+                        >
+                          <span className={styles.likeIcon} aria-hidden>
+                            ♥
+                          </span>
+                          <span>좋아요 {p.likeCount ?? 0}</span>
+                        </button>
+                        <button
+                          type="button"
+                          className={`${styles.dislikeBtn} ${styles.dislikeBtnSm} ${
+                            p.dislikedByMe ? styles.dislikeBtnActive : ''
+                          }`}
+                          onClick={(e) => handlePostCardDislike(e, p)}
+                          aria-pressed={!!p.dislikedByMe}
+                        >
+                          <span className={styles.dislikeIcon} aria-hidden>
+                            👎
+                          </span>
+                          <span>싫어요 {p.dislikeCount ?? 0}</span>
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       )}

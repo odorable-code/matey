@@ -14,13 +14,19 @@ public interface PostDAO {
 
     Integer selectCategoryNotification(@Param("categoryId") Long categoryId);
 
+    String selectCategoryName(@Param("categoryId") Long categoryId);
+
     List<PostDTO> selectPosts(
             @Param("categoryId") Long categoryId,
             @Param("keyword") String keyword,
             @Param("limit") int limit,
             @Param("offset") int offset,
-            @Param("viewerUserId") Long viewerUserId
+            @Param("viewerUserId") Long viewerUserId,
+            @Param("includeNotice") boolean includeNotice
     );
+
+    /** 공지 페이지용: notification=0 카테고리(공지·이벤트) 게시글만, 최신순 */
+    List<PostDTO> selectPostsForNoticeFeed();
 
     PostDTO selectPostById(
             @Param("postId") Long postId,
@@ -44,5 +50,11 @@ public interface PostDAO {
     int deletePostLike(@Param("userId") long userId, @Param("postId") long postId);
 
     int adjustPostLikeCount(@Param("postId") long postId, @Param("delta") int delta);
+
+    int insertPostDislike(@Param("userId") long userId, @Param("postId") long postId);
+
+    int deletePostDislike(@Param("userId") long userId, @Param("postId") long postId);
+
+    int adjustPostDislikeCount(@Param("postId") long postId, @Param("delta") int delta);
 }
 

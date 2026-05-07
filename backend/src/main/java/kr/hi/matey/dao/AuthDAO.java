@@ -43,7 +43,10 @@ public interface AuthDAO {
 
 	void saveAutoLoginInfo(@Param("userId") Long userId, @Param("refreshToken") String refreshToken, @Param("expiryDate") LocalDateTime expiryDate);
 
-	int removeAutoLoginToken(Long userId, Object object);
+	int removeAutoLoginToken(@Param("userId") Long userId);
+
+	/** AUTO_LOGIN에 저장된 리프레시 JWT(컬럼명 token_hash) — 만료 전 행만 */
+	String findStoredRefreshTokenByEmail(@Param("email") String email);
 
 	UserVO selectUser(String email);
 

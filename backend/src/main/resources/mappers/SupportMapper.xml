@@ -13,6 +13,7 @@
             s.status,
             s.support_reason_id as supportReasonId,
             sr.reason_name as reasonName,
+            sr.target_type as targetType,
             (
                 SELECT sa.content
                 FROM SUPPORT_ANSWER sa
@@ -20,6 +21,15 @@
                 ORDER BY sa.created_at DESC
                 LIMIT 1
             ) as answerContent,
+            (
+                SELECT u.nickname
+                FROM SUPPORT_ANSWER sa
+                JOIN USER u ON u.user_id = sa.admin_user_id
+                WHERE sa.support_id = s.support_id
+                ORDER BY sa.created_at DESC
+                LIMIT 1
+            ) as answerAdminNickname,
+            NULL as answerHandlingMethod,
             s.created_at as createdAt
         FROM SUPPORT s
         JOIN SUPPORT_REASON sr ON s.support_reason_id = sr.support_reason_id
@@ -48,13 +58,46 @@
     <select id="selectSupportReasons" resultType="kr.hi.matey.dto.SupportReasonDTO">
         SELECT
             support_reason_id as supportReasonId,
-            reason_code as targetType,
+            target_type as targetType,
             reason_name as reasonName,
             is_active as isActive
         FROM SUPPORT_REASON
         WHERE is_active = 1
         ORDER BY support_reason_id ASC
     </select>
+
+    <select id="selectSupportReasonById" resultType="kr.hi.matey.dto.SupportReasonDTO">
+        SELECT
+            support_reason_id as supportReasonId,
+            target_type as targetType,
+            reason_name as reasonName,
+            is_active as isActive
+        FROM SUPPORT_REASON
+        WHERE support_reason_id = #{supportReasonId}
+        LIMIT 1
+    </select>
+
+    <!-- 중복 신고 방지: title에 들어간 메타 태그로 같은 대상 신고 여부 확인 -->
+    <select id="countExistingReportForTarget" resultType="int">
+        SELECT COUNT(*)
+        FROM SUPPORT s
+        WHERE s.user_id = #{userId}
+          AND s.title LIKE CONCAT('[REPORT ', #{targetType}, ' ', #{targetId}, ']%')
+    </select>
+
+    <!-- 문의·신고 삭제: FK 때문에 본인 티켓의 답변 먼저 삭제 -->
+    <delete id="deleteAnswersForOwnedSupport">
+        DELETE sa FROM SUPPORT_ANSWER sa
+        INNER JOIN SUPPORT s ON s.support_id = sa.support_id
+        WHERE sa.support_id = #{supportId}
+          AND s.user_id = #{userId}
+    </delete>
+
+    <delete id="deleteSupportIfOwner">
+        DELETE FROM SUPPORT
+        WHERE support_id = #{supportId}
+          AND user_id = #{userId}
+    </delete>
 
     <select id="selectFaqList" resultType="kr.hi.matey.dto.FaqDTO">
         SELECT

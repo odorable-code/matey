@@ -78,15 +78,8 @@ function EmotionReportContent() {
       if (!selectedPeriod || !selectedBotKey) return;
 
       try {
-        console.log(`[서버 요청] 동물: ${selectedBotKey}, 기간: ${selectedPeriod}`);
-
         // 올바른 백엔드 API (api.js 경유)
-        const result = await emotionReportAPI.getDashboard();
-
-        console.log("서버 응답 데이터 수신 완료:", result);
-
-        // TODO: 여기서 받아온 result를 setReportData(result) 처럼 
-        // 훅 내부 상태에 업데이트하는 로직이 추가되어야 화면이 바뀝니다.
+        await emotionReportAPI.getDashboard();
 
       } catch (error) {
         console.error("감정 리포트 데이터 로드 실패:", error);

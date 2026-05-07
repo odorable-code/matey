@@ -1,4 +1,6 @@
 import React, { useEffect, useId, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import { supportPublicAPI, supportUserAPI } from '../../utils/api';
 import { filterReportReasons } from './communitySupportReasons';
 import styles from './CommunityPage.module.css';
@@ -18,12 +20,16 @@ function CommunityReportModal({
   target,
   postId,
   postTitle,
+  postAuthorNickname,
   comment,
   onSubmitted,
 }) {
   const uid = useId();
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [reasons, setReasons] = useState([]);
   const [supportReasonId, setSupportReasonId] = useState('');
+  const [title, setTitle] = useState('');
   const [detail, setDetail] = useState('');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -36,6 +42,7 @@ function CommunityReportModal({
       setLoading(true);
       setError('');
       setSupportReasonId('');
+      setTitle('');
       setDetail('');
       try {
         const res = await supportPublicAPI.getReasons();
@@ -58,8 +65,17 @@ function CommunityReportModal({
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError('');
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: `/community/posts/${postId}` } });
+      return;
+    }
     if (!supportReasonId) {
       setError('신고 사유를 선택해 주세요.');
+      return;
+    }
+    const t = title.trim();
+    if (!t) {
+      setError('신고 제목을 입력해 주세요.');
       return;
     }
     const body = detail.trim();
@@ -69,35 +85,32 @@ function CommunityReportModal({
     }
 
     const rid = Number(supportReasonId);
-    const picked = reasons.find((r) => Number(r.supportReasonId) === rid);
-    const reasonLabel = picked?.reasonName || '';
+
+    const metaLines =
+      target === 'COMMENT' && comment
+        ? [`__MATEY_POST_ID__=${postId}`, `__MATEY_COMMENT_ID__=${comment.commentId}`]
+        : [`__MATEY_POST_ID__=${postId}`];
 
     let ticketTitle;
     let ticketContent;
     if (target === 'COMMENT' && comment) {
-      ticketTitle = `[댓글 신고] 게시글 #${postId} 댓글 #${comment.commentId}`;
+      ticketTitle = `[REPORT COMMENT ${comment.commentId}] ${t}`;
       ticketContent = [
-        `신고 유형: 댓글`,
-        `게시글 ID: ${postId}`,
-        `댓글 ID: ${comment.commentId}`,
-        `선택 사유: ${reasonLabel}`,
+        ...metaLines,
+        `신고 대상 댓글: ${excerpt(comment.content, 200)}`,
+        `작성자: ${comment.userNickname || '익명'}`,
+        `대상 글: ${postTitle || ''}`,
         '',
-        '상세:',
-        body,
-        '',
-        `댓글 미리보기: ${excerpt(comment.content, 200)}`,
+        `신고 내용: ${body}`,
       ].join('\n');
     } else {
-      ticketTitle = `[게시글 신고] #${postId}`;
+      ticketTitle = `[REPORT POST ${postId}] ${t}`;
       ticketContent = [
-        `신고 유형: 게시글`,
-        `게시글 ID: ${postId}`,
-        `선택 사유: ${reasonLabel}`,
+        ...metaLines,
+        `신고 대상 글: ${postTitle || ''}`,
+        `작성자: ${postAuthorNickname || '익명'}`,
         '',
-        '상세:',
-        body,
-        '',
-        `글 제목: ${postTitle || ''}`,
+        `신고 내용: ${body}`,
       ].join('\n');
     }
 
@@ -111,7 +124,13 @@ function CommunityReportModal({
       onSubmitted?.();
       onClose();
     } catch (e) {
-      setError(e?.message || '신고 접수에 실패했어요.');
+      if (e?.status === 401 || e?.status === 403) {
+        setError('로그인 후 신고할 수 있어요.');
+      } else if (e?.status === 409) {
+        setError(e?.message || '이미 신고한 내용이에요.');
+      } else {
+        setError(e?.message || '신고 접수에 실패했어요.');
+      }
     } finally {
       setSaving(false);
     }
@@ -148,8 +167,22 @@ function CommunityReportModal({
         {reasons.length > 0 ? (
           <form onSubmit={handleSubmit}>
             <div className={styles.fieldBlock}>
+              <label className={styles.fieldLabel} htmlFor={`${uid}-title`}>
+                제목
+              </label>
+              <input
+                id={`${uid}-title`}
+                className={styles.input}
+                style={{ width: '100%', display: 'block' }}
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                maxLength={200}
+                placeholder="신고 제목을 입력해 주세요."
+              />
+            </div>
+            <div className={styles.fieldBlock}>
               <label className={styles.fieldLabel} htmlFor={`${uid}-reason`}>
-                사유
+                신고 사유
               </label>
               <select
                 id={`${uid}-reason`}
@@ -168,7 +201,7 @@ function CommunityReportModal({
             </div>
             <div className={styles.fieldBlock}>
               <label className={styles.fieldLabel} htmlFor={`${uid}-detail`}>
-                상세 내용
+                신고 내용
               </label>
               <textarea
                 id={`${uid}-detail`}

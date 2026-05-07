@@ -55,6 +55,16 @@ public class SupportController {
         return ResponseEntity.ok(response);
     }
 
+    @DeleteMapping("/{supportId}")
+    public ResponseEntity<Void> deleteSupportTicket(
+            @PathVariable Long supportId,
+            @AuthenticationPrincipal CustomUser user
+    ) {
+        long userId = user.getUser().getUserId();
+        supportService.deleteOwnSupportTicket(userId, supportId);
+        return ResponseEntity.noContent().build();
+    }
+
     // 3. 자주 묻는 질문(FAQ) 리스트 조회
     @GetMapping("/faq")
     public ResponseEntity<Map<String, Object>> getFaqList() {
@@ -71,5 +81,17 @@ public class SupportController {
     public ResponseEntity<Map<String, Object>> getSupportReasons() {
         List<kr.hi.matey.dto.SupportReasonDTO> reasons = supportService.getSupportReasons();
         return ResponseEntity.ok(Map.of("reasons", reasons));
+    }
+
+    /** 게시글·댓글 신고 중복 방지용: 내가 해당 대상을 이미 신고했는지 */
+    @GetMapping("/report-exists")
+    public ResponseEntity<Map<String, Object>> reportExists(
+            @RequestParam String targetType,
+            @RequestParam Long targetId,
+            @AuthenticationPrincipal CustomUser user
+    ) {
+        long userId = user.getUser().getUserId();
+        boolean exists = supportService.hasExistingReport(userId, targetType, targetId);
+        return ResponseEntity.ok(Map.of("exists", exists));
     }
 }

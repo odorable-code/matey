@@ -9,7 +9,10 @@ import kr.hi.matey.dto.CommentCreateRequestDTO;
 import kr.hi.matey.dto.CommentDTO;
 import kr.hi.matey.dto.PostCreateRequestDTO;
 import kr.hi.matey.dto.PostDTO;
+import kr.hi.matey.util.RoleCodeHelper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
@@ -24,6 +27,7 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CommunityService {
 
     private final PostDAO postDAO;
@@ -32,29 +36,22 @@ public class CommunityService {
     private final CommunitySpotlightDAO communitySpotlightDAO;
 
     public List<CategoryDTO> getCategories() {
-        return postDAO.selectCategories();
+        try {
+            List<CategoryDTO> list = postDAO.selectCategories();
+            return list != null ? list : List.of();
+        } catch (DataAccessException ex) {
+            log.warn("getCategories: {}", ex.getMessage());
+            return List.of();
+        }
     }
 
     private static boolean isAdminRole(String roleCode) {
-        if (roleCode == null) {
-            return false;
-        }
-        String r = roleCode.trim().toUpperCase();
-        return "ADMIN".equals(r)
-                || "ROLE_ADMIN".equals(r)
-                || "SUPER_ADMIN".equals(r)
-                || "ROLE_SUPER_ADMIN".equals(r);
+        return RoleCodeHelper.isAdminOrSuperAdmin(roleCode);
     }
 
     /** 커뮤니티 게시글 신규 작성·공지 카테고리 작성 허용 역할 */
     private static boolean isCommunityPostPublisherRole(String roleCode) {
-        if (roleCode == null) {
-            return false;
-        }
-        String r = roleCode.trim().toUpperCase();
-        return isAdminRole(roleCode)
-                || "SUBADMIN".equals(r)
-                || "ROLE_SUBADMIN".equals(r);
+        return RoleCodeHelper.isCommunityStaffPublisher(roleCode);
     }
 
     /** 연말 순위 안내(집계·테이블명 등)는 관리자에게만 노출 */
@@ -69,7 +66,7 @@ public class CommunityService {
             return false;
         }
         for (GrantedAuthority ga : authorities) {
-            if (ga != null && isAdminRole(ga.getAuthority())) {
+            if (ga != null && RoleCodeHelper.isAdminOrSuperAdmin(ga.getAuthority())) {
                 return true;
             }
         }
@@ -77,7 +74,7 @@ public class CommunityService {
     }
 
     /**
-     * notification=0 인 카테고리(예: 공지)는 운영자(관리자·부관리자 등)만 글 작성·해당 카테고리로 수정 가능.
+     * notification=0 인 카테고리: 공지는 부관리자까지, 이벤트는 정책상 관리자(ADMIN·SUPER_ADMIN)만 작성·수정 가능.
      */
     private void assertCategoryWritableByUser(Long categoryId, String roleCode) {
         if (categoryId == null) {
@@ -87,7 +84,22 @@ public class CommunityService {
         if (notification == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "존재하지 않는 카테고리예요.");
         }
-        if (notification == 0 && !isCommunityPostPublisherRole(roleCode)) {
+        if (notification != 0) {
+            return;
+        }
+        String categoryName = postDAO.selectCategoryName(categoryId);
+        String nameTrim = categoryName != null ? categoryName.trim() : "";
+        boolean isEventCategory = "이벤트".equals(nameTrim);
+        if (isEventCategory) {
+            if (!isAdminRole(roleCode)) {
+                throw new ResponseStatusException(
+                        HttpStatus.FORBIDDEN,
+                        "이벤트 카테고리에는 관리자만 글을 작성할 수 있어요."
+                );
+            }
+            return;
+        }
+        if (!isCommunityPostPublisherRole(roleCode)) {
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN,
                     "공지 카테고리에는 운영자만 글을 작성할 수 있어요."
@@ -95,8 +107,14 @@ public class CommunityService {
         }
     }
 
-    public List<PostDTO> getPosts(Long categoryId, String keyword, int limit, int offset, Long viewerUserId) {
-        return postDAO.selectPosts(categoryId, keyword, limit, offset, viewerUserId);
+    public List<PostDTO> getPosts(Long categoryId, String keyword, int limit, int offset, Long viewerUserId, boolean includeNotice) {
+        try {
+            List<PostDTO> list = postDAO.selectPosts(categoryId, keyword, limit, offset, viewerUserId, includeNotice);
+            return list != null ? list : List.of();
+        } catch (DataAccessException ex) {
+            log.warn("getPosts: {}", ex.getMessage());
+            return List.of();
+        }
     }
 
     @Transactional
@@ -111,19 +129,37 @@ public class CommunityService {
      * 상위 readOnly 트랜잭션이 있어도 UPDATE가 거부되지 않도록 함.
      */
     public Map<String, Object> getPostDetailWithComments(Long postId, Long viewerUserId) {
-        postViewIncrementService.incrementPostViewCount(postId);
-        PostDTO post = postDAO.selectPostById(postId, viewerUserId);
-        List<CommentDTO> comments = commentDAO.selectCommentsByPost(postId, viewerUserId);
+        try {
+            postViewIncrementService.incrementPostViewCount(postId);
+        } catch (DataAccessException ex) {
+            log.warn("incrementPostViewCount postId={}: {}", postId, ex.getMessage());
+        }
+        PostDTO post;
+        List<CommentDTO> comments;
+        try {
+            post = postDAO.selectPostById(postId, viewerUserId);
+            comments = commentDAO.selectCommentsByPost(postId, viewerUserId);
+        } catch (DataAccessException ex) {
+            log.warn("getPostDetailWithComments postId={}: {}", postId, ex.getMessage());
+            post = null;
+            comments = List.of();
+        }
 
         Map<String, Object> res = new HashMap<>();
         res.put("post", post);
-        res.put("comments", comments);
+        res.put("comments", comments != null ? comments : List.of());
         return res;
     }
 
     @Transactional(readOnly = true)
     public List<CommentDTO> getComments(Long postId, Long viewerUserId) {
-        return commentDAO.selectCommentsByPost(postId, viewerUserId);
+        try {
+            List<CommentDTO> list = commentDAO.selectCommentsByPost(postId, viewerUserId);
+            return list != null ? list : List.of();
+        } catch (DataAccessException ex) {
+            log.warn("getComments postId={}: {}", postId, ex.getMessage());
+            return List.of();
+        }
     }
 
     /**
@@ -131,7 +167,13 @@ public class CommunityService {
      */
     @Transactional(readOnly = true)
     public Map<String, Object> drawRandomWorryPost(Long viewerUserId) {
-        Long id = communitySpotlightDAO.selectRandomWorryPostId();
+        Long id;
+        try {
+            id = communitySpotlightDAO.selectRandomWorryPostId();
+        } catch (DataAccessException ex) {
+            log.warn("drawRandomWorryPost (select id): {}", ex.getMessage());
+            id = null;
+        }
         Map<String, Object> res = new HashMap<>();
         if (id == null) {
             res.put("post", null);
@@ -141,7 +183,13 @@ public class CommunityService {
             );
             return res;
         }
-        PostDTO post = postDAO.selectPostById(id, viewerUserId);
+        PostDTO post;
+        try {
+            post = postDAO.selectPostById(id, viewerUserId);
+        } catch (DataAccessException ex) {
+            log.warn("drawRandomWorryPost (load post): {}", ex.getMessage());
+            post = null;
+        }
         res.put("post", post);
         res.put("message", post == null ? "글을 찾을 수 없어요." : null);
         return res;
@@ -157,13 +205,33 @@ public class CommunityService {
             Collection<? extends GrantedAuthority> authorities
     ) {
         int currentYear = LocalDate.now().getYear();
-        Integer maxYear = communitySpotlightDAO.selectMaxStatYear();
+        Integer maxYear;
+        try {
+            maxYear = communitySpotlightDAO.selectMaxStatYear();
+        } catch (DataAccessException ex) {
+            log.warn("getYearEndBotRanking selectMaxStatYear: {}", ex.getMessage());
+            maxYear = null;
+        }
         int year = yearIn != null ? yearIn : (maxYear != null ? maxYear : currentYear);
 
-        List<BotYearRankingDTO> rows = communitySpotlightDAO.selectBotRankingForYear(year);
+        List<BotYearRankingDTO> rows = List.of();
         String source = "BOT_POPULARITY_STAT";
+        try {
+            rows = communitySpotlightDAO.selectBotRankingForYear(year);
+        } catch (DataAccessException ex) {
+            log.warn("getYearEndBotRanking selectBotRankingForYear: {}", ex.getMessage());
+            rows = List.of();
+        }
         if (rows == null || rows.isEmpty()) {
-            rows = communitySpotlightDAO.selectBotsByLikeCount(year);
+            try {
+                rows = communitySpotlightDAO.selectBotsByLikeCount(year);
+            } catch (DataAccessException ex) {
+                log.warn("getYearEndBotRanking selectBotsByLikeCount: {}", ex.getMessage());
+                rows = List.of();
+            }
+            if (rows == null) {
+                rows = List.of();
+            }
             source = "BOT_LIKE_FALLBACK";
             int rank = 1;
             for (BotYearRankingDTO row : rows) {
@@ -189,6 +257,15 @@ public class CommunityService {
         return res;
     }
 
+    private static Map<String, Object> postReactionBody(PostDTO refreshed) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("liked", Boolean.TRUE.equals(refreshed.getLikedByMe()));
+        body.put("likeCount", refreshed.getLikeCount());
+        body.put("disliked", Boolean.TRUE.equals(refreshed.getDislikedByMe()));
+        body.put("dislikeCount", refreshed.getDislikeCount());
+        return body;
+    }
+
     @Transactional
     public Map<String, Object> togglePostLike(long postId, long userId) {
         PostDTO post = postDAO.selectPostById(postId, null);
@@ -198,14 +275,32 @@ public class CommunityService {
         if (postDAO.deletePostLike(userId, postId) > 0) {
             postDAO.adjustPostLikeCount(postId, -1);
         } else {
+            if (postDAO.deletePostDislike(userId, postId) > 0) {
+                postDAO.adjustPostDislikeCount(postId, -1);
+            }
             postDAO.insertPostLike(userId, postId);
             postDAO.adjustPostLikeCount(postId, 1);
         }
-        PostDTO refreshed = postDAO.selectPostById(postId, userId);
-        Map<String, Object> body = new HashMap<>();
-        body.put("liked", Boolean.TRUE.equals(refreshed.getLikedByMe()));
-        body.put("likeCount", refreshed.getLikeCount());
-        return body;
+        return postReactionBody(postDAO.selectPostById(postId, userId));
+    }
+
+    /** 좋아요와 동시에 둘 수 없음(싫어요 켜면 좋아요 해제) */
+    @Transactional
+    public Map<String, Object> togglePostDislike(long postId, long userId) {
+        PostDTO post = postDAO.selectPostById(postId, null);
+        if (post == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "게시글을 찾을 수 없어요.");
+        }
+        if (postDAO.deletePostDislike(userId, postId) > 0) {
+            postDAO.adjustPostDislikeCount(postId, -1);
+        } else {
+            if (postDAO.deletePostLike(userId, postId) > 0) {
+                postDAO.adjustPostLikeCount(postId, -1);
+            }
+            postDAO.insertPostDislike(userId, postId);
+            postDAO.adjustPostDislikeCount(postId, 1);
+        }
+        return postReactionBody(postDAO.selectPostById(postId, userId));
     }
 
     @Transactional

@@ -161,11 +161,22 @@ export function AuthProvider({ children }) {
     try {
       const profile = await getMyProfile();
       setToken(currentToken);
-      setUser(profile);
-      setStoredUser(profile);
-      return profile;
+      const prev = getStoredUser();
+      const merged =
+        prev && typeof prev === 'object'
+          ? { ...prev, ...profile }
+          : { ...profile };
+      if (merged.roleCode != null && merged.role == null) {
+        merged.role = merged.roleCode;
+      }
+      if (merged.role != null && merged.roleCode == null) {
+        merged.roleCode = merged.role;
+      }
+      setUser(merged);
+      setStoredUser(merged);
+      return merged;
     } catch (error) {
-      if (error.response?.status === 401) {
+      if (error?.status === 401 || error?.status === 403) {
         clearAuth();
       }
       return null;
@@ -277,18 +288,18 @@ export function AuthProvider({ children }) {
       });
 
       const nextToken = result?.accessToken || '';
-      const nextUser = result?.user || (await syncProfile());
-
       if (nextToken) {
         setStoredToken(nextToken);
       }
 
+      // 로그인 응답 user만으로는 roleCode 등이 빠질 수 있어, 토큰 저장 후 /me로 맞춤
+      let nextUser = (await syncProfile()) || result?.user || null;
       if (nextUser) {
         setStoredUser(nextUser);
       }
 
       setToken(nextToken || getStoredToken() || '');
-      setUser(nextUser || null);
+      setUser(nextUser);
 
       return {
         ...result,
@@ -312,18 +323,17 @@ export function AuthProvider({ children }) {
       });
 
       const nextToken = result?.accessToken || '';
-      const nextUser = result?.user || (await syncProfile());
-
       if (nextToken) {
         setStoredToken(nextToken);
       }
 
+      let nextUser = (await syncProfile()) || result?.user || null;
       if (nextUser) {
         setStoredUser(nextUser);
       }
 
       setToken(nextToken || getStoredToken() || '');
-      setUser(nextUser || null);
+      setUser(nextUser);
 
       return {
         ...result,

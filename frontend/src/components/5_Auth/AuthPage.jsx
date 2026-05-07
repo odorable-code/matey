@@ -170,7 +170,6 @@ export default function AuthPage() {
       ...prev,
       [name]: '',
     }));
-    console.log(signupForm)
   };
 
   const validateLoginForm = () => {
@@ -307,7 +306,6 @@ export default function AuthPage() {
       }));
       setLoading(false);
     }
-      console.log(signupForm.userName.trim())
       const result = await signup({
         userName: signupForm.userName.trim(),
         nickname: signupForm.nickname.trim(),
@@ -317,9 +315,6 @@ export default function AuthPage() {
         privacyAgreed: signupForm.privacyAgreed,
         marketingAgreed: signupForm.marketingAgreed
       });
-
-      console.log(signupForm)
-      console.log(result)
 
       if (result?.accessToken) {
         navigate('/', { replace: true });
@@ -334,7 +329,6 @@ export default function AuthPage() {
         },
       });
     } catch (error) {
-      console.error(error)
       setSubmitMessage(error.message || '회원가입에 실패했어요.');
     } finally {
       setLoading(false);
