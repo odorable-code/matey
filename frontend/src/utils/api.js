@@ -495,3 +495,17 @@ export const emotionReportAPI = {
   getDetail: (analysisId) => request(`/api/emotion-report/${analysisId}`),
 };
 
+// ==========================================
+// Notifications API
+// ==========================================
+
+export const notificationAPI = {
+  getNotifications: () => request('/api/notifications'),
+  markAsRead: (notificationId) =>
+    request(`/api/notifications/${notificationId}/read`, { method: 'PATCH' }),
+  markAllAsRead: () =>
+    request('/api/notifications/read-all', { method: 'PATCH' }),
+  deleteNotification: (notificationId) =>
+    request(`/api/notifications/${notificationId}`, { method: 'DELETE' }),
+};
+
