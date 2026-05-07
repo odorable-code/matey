@@ -50,7 +50,6 @@ export function ReportApi(){
   
       const data = await response.json(); 
       
-      console.log(data);
       setReportData(data);
     } catch (error) {
       console.error("데이터를 가져오는데 실패했어요!", error);

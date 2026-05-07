@@ -1,10 +1,13 @@
 package kr.hi.matey.security.config;
 
 import java.util.List;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 import org.springframework.http.HttpMethod;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -31,6 +34,9 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final MemberDetailService userDetailsService;
+
+    @Value("${app.cors.allowed-origin-patterns:http://localhost:3000}")
+    private String allowedOriginPatternsRaw;
 
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
@@ -95,11 +101,11 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
 
         // 허용할 주소 설정
-        config.setAllowedOriginPatterns(List.of(
-                "http://localhost:3000",
-                "http://3.38.49.151:3000",
-                "http://3.38.49.151"
-        ));
+        List<String> allowedOriginPatterns = Arrays.stream(allowedOriginPatternsRaw.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isBlank())
+                .collect(Collectors.toList());
+        config.setAllowedOriginPatterns(allowedOriginPatterns);
 
         // 허용할 HTTP 메서드
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));

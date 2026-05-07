@@ -153,8 +153,6 @@ export async function signup({
   privacyAgreed,
   marketingAgreed
 }) {
-  console.log(userName);
-
   const payload = await request('/api/v1/auth/signup', {
     method: 'POST',
     headers: {
