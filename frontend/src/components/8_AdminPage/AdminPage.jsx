@@ -207,6 +207,15 @@ function nowTimeLabel(offsetMinutes = 0) {
   return `${hh}:${mm}`;
 }
 
+function createInitialRealtimeSeries(count = 12) {
+  const total = Number.isFinite(Number(count)) ? Math.max(1, Number(count)) : 12;
+  const start = -5 * (total - 1);
+  return Array.from({ length: total }, (_, idx) => {
+    const label = nowTimeLabel(start + idx * 5);
+    return { label, value: 0 };
+  });
+}
+
 /* =========================================================
    활동 로그 저장 코드 (localStorage)
 ========================================================= */
@@ -264,25 +273,6 @@ function buildLineGeometry(series, width = 620, height = 220, paddingX = 18, pad
   return { linePath, areaPath, points };
 }
 
-function createInitialRealtimeSeries(baseValue, count) {
-  const total = Number.isFinite(Number(count)) ? Math.max(1, Number(count)) : 12;
-  const base = Number.isFinite(Number(baseValue)) ? Number(baseValue) : 0;
-
-  const now = new Date();
-  const pad2 = (n) => String(n).padStart(2, '0');
-
-  const labels = Array.from({ length: total }, (_, idx) => {
-    const d = new Date(now.getTime() - (total - 1 - idx) * 5 * 60 * 1000);
-    return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
-  });
-
-  return labels.map((label, idx) => {
-    const wave = Math.sin((idx / Math.max(1, total - 1)) * Math.PI * 2);
-    const value = Math.max(0, Math.round(base + wave * Math.max(1, base * 0.08)));
-    return { label, value };
-  });
-}
-
 /* =========================================================
    메인 컴포넌트
 ========================================================= */
@@ -310,12 +300,8 @@ export default function AdminPage() {
   /* =========================================================
      실시간 차트 데이터
   ========================================================= */
-  const [liveUserSeries, setLiveUserSeries] = useState(() =>
-    createInitialRealtimeSeries(142, 12)
-  );
-  const [liveChatSeries, setLiveChatSeries] = useState(() =>
-    createInitialRealtimeSeries(87, 18)
-  );
+  const [liveUserSeries, setLiveUserSeries] = useState(() => createInitialRealtimeSeries(12));
+  const [liveChatSeries, setLiveChatSeries] = useState(() => createInitialRealtimeSeries(12));
 
   /* =========================================================
      사용자 관리 필터
@@ -522,6 +508,35 @@ export default function AdminPage() {
       totalDislikes,
     };
   }, [users, supports, bots]);
+
+  const summaryStats = useMemo(() => {
+    const o = dbOverview && typeof dbOverview === 'object' ? dbOverview : {};
+
+    const pick = (...keys) => {
+      for (const k of keys) {
+        if (o?.[k] != null) return o[k];
+      }
+      return undefined;
+    };
+
+    return {
+      totalUsers: pick('totalUsers', 'userCount', 'total_users') ?? stats.totalUsers,
+      activeUsers: pick('activeUsers', 'activeUserCount', 'active_users') ?? stats.activeUsers,
+      bannedUsers: pick('bannedUsers', 'bannedUserCount', 'banned_users') ?? stats.bannedUsers,
+      deletedUsers: pick('deletedUsers', 'deletedUserCount', 'deleted_users') ?? stats.deletedUsers,
+
+      pendingSupports:
+        pick('pendingSupports', 'pendingSupportCount', 'pending_supports') ?? stats.pendingSupports,
+      reportCount: pick('reportCount', 'report_count', 'reports') ?? stats.reportCount,
+      inquiryCount: pick('inquiryCount', 'inquiry_count', 'inquiries') ?? stats.inquiryCount,
+
+      adminCount: pick('adminCount', 'admin_count') ?? stats.adminCount,
+      subAdminCount: pick('subAdminCount', 'sub_admin_count') ?? stats.subAdminCount,
+
+      totalLikes: pick('totalLikes', 'total_likes') ?? stats.totalLikes,
+      totalDislikes: pick('totalDislikes', 'total_dislikes') ?? stats.totalDislikes,
+    };
+  }, [dbOverview, stats]);
 
   /* =========================================================
      필터링된 사용자
@@ -921,31 +936,31 @@ export default function AdminPage() {
       <section className="matey-admin-v3__summary-grid">
         <article className="matey-admin-v3__summary-card accent-violet">
           <span>전체 사용자</span>
-          <strong>{stats.totalUsers}</strong>
+          <strong>{summaryStats.totalUsers}</strong>
           <p>USER 테이블 전체 계정 수</p>
         </article>
 
         <article className="matey-admin-v3__summary-card accent-blue">
           <span>활성 사용자</span>
-          <strong>{stats.activeUsers}</strong>
+          <strong>{summaryStats.activeUsers}</strong>
           <p>
-            정지 {stats.bannedUsers}명 · 탈퇴 {stats.deletedUsers}명
+            정지 {summaryStats.bannedUsers}명 · 탈퇴 {summaryStats.deletedUsers}명
           </p>
         </article>
 
         <article className="matey-admin-v3__summary-card accent-orange">
           <span>대기 중 문의·신고</span>
-          <strong>{stats.pendingSupports}</strong>
+          <strong>{summaryStats.pendingSupports}</strong>
           <p>
-            신고 {stats.reportCount}건 · 문의 {stats.inquiryCount}건
+            신고 {summaryStats.reportCount}건 · 문의 {summaryStats.inquiryCount}건
           </p>
         </article>
 
         <article className="matey-admin-v3__summary-card accent-mint">
           <span>관리자 권한 계정</span>
-          <strong>{stats.adminCount + stats.subAdminCount}</strong>
+          <strong>{summaryStats.adminCount + summaryStats.subAdminCount}</strong>
           <p>
-            총 {stats.adminCount}명 · 서브 {stats.subAdminCount}명
+            총 {summaryStats.adminCount}명 · 서브 {summaryStats.subAdminCount}명
           </p>
         </article>
       </section>
