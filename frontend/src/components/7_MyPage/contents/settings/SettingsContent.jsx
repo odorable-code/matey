@@ -182,22 +182,39 @@ function SettingsContent() {
                 </div>
                 <div className={styles.settingList}>
                   {group.items.map((item) => (
-                    <div key={item.key} className={styles.settingRow}>
-                      <div className={styles.settingText}>
-                        <strong className={styles.settingLabel}>{item.label}</strong>
-                        <p className={styles.settingNote}>{item.note}</p>
+                    <React.Fragment key={item.key}>
+                      <div className={styles.settingRow}>
+                        <div className={styles.settingText}>
+                          <strong className={styles.settingLabel}>{item.label}</strong>
+                          <p className={styles.settingNote}>{item.note}</p>
+                        </div>
+                        <button
+                          type="button"
+                          className={`${styles.toggle} ${
+                            settings[item.key] ? styles.toggleOn : styles.toggleOff
+                          }`}
+                          onClick={() => toggleSetting(item.key)}
+                          aria-pressed={settings[item.key]}
+                        >
+                          <span className={styles.toggleThumb} />
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        className={`${styles.toggle} ${
-                          settings[item.key] ? styles.toggleOn : styles.toggleOff
-                        }`}
-                        onClick={() => toggleSetting(item.key)}
-                        aria-pressed={settings[item.key]}
-                      >
-                        <span className={styles.toggleThumb} />
-                      </button>
-                    </div>
+
+                      {item.key === 'pushNotice' && (
+                        <div className={styles.buttonRow}>
+                          <button
+                            type="button"
+                            className={styles.actionSubButton}
+                            onClick={() => alert('상세 알림 설정 기능은 준비 중입니다.')}
+                          >
+                            <div className={styles.settingText}>
+                              <span className={styles.settingLabel}>알림 설정</span>
+                              <p className={styles.settingNote}>알림 상세 설정을 할 수 있어요</p>
+                            </div>
+                          </button>
+                        </div>
+                      )}
+                    </React.Fragment>
                   ))}
                 </div>
               </article>
@@ -235,22 +252,39 @@ function SettingsContent() {
                 </div>
                 <div className={styles.settingList}>
                   {group.items.map((item) => (
-                    <div key={item.key} className={styles.settingRow}>
-                      <div className={styles.settingText}>
-                        <strong className={styles.settingLabel}>{item.label}</strong>
-                        <p className={styles.settingNote}>{item.note}</p>
+                    <React.Fragment key={item.key}>
+                      <div className={styles.settingRow}>
+                        <div className={styles.settingText}>
+                          <strong className={styles.settingLabel}>{item.label}</strong>
+                          <p className={styles.settingNote}>{item.note}</p>
+                        </div>
+                        <button
+                          type="button"
+                          className={`${styles.toggle} ${
+                            settings[item.key] ? styles.toggleOn : styles.toggleOff
+                          }`}
+                          onClick={() => toggleSetting(item.key)}
+                          aria-pressed={settings[item.key]}
+                        >
+                          <span className={styles.toggleThumb} />
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        className={`${styles.toggle} ${
-                          settings[item.key] ? styles.toggleOn : styles.toggleOff
-                        }`}
-                        onClick={() => toggleSetting(item.key)}
-                        aria-pressed={settings[item.key]}
-                      >
-                        <span className={styles.toggleThumb} />
-                      </button>
-                    </div>
+
+                      {item.key === 'pushNotice' && (
+                        <div className={styles.buttonRow}>
+                          <button
+                            type="button"
+                            className={styles.actionSubButton}
+                            onClick={() => alert('상세 알림 설정 기능은 준비 중입니다.')}
+                          >
+                            <div className={styles.settingText}>
+                              <span className={styles.settingLabel}>알림 설정</span>
+                              <p className={styles.settingNote}>알림 상세 설정을 할 수 있어요</p>
+                            </div>
+                          </button>
+                        </div>
+                      )}
+                    </React.Fragment>
                   ))}
                 </div>
               </article>
