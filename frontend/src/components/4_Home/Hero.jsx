@@ -52,7 +52,7 @@ const HERO_COPY = {
 /* =========================================================
    자동 전환 간격(ms)
 ========================================================= */
-const AUTO_INTERVAL = 4000;
+const AUTO_INTERVAL = 7000;
 
 function Hero() {
   const navigate = useNavigate();
