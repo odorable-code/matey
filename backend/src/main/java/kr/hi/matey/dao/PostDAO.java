@@ -45,15 +45,19 @@ public interface PostDAO {
 
     int deletePost(@Param("postId") Long postId, @Param("userId") Long userId);
 
-    int insertPostLike(@Param("userId") long userId, @Param("postId") long postId);
+    /**
+     * 사용자별 게시글 반응 상태 조회.
+     * - 1: 좋아요, 0: 싫어요, null: 반응 없음
+     */
+    Integer selectPostReactionState(@Param("userId") long userId, @Param("postId") long postId);
 
-    int deletePostLike(@Param("userId") long userId, @Param("postId") long postId);
+    /** 반응 저장(없으면 생성, 있으면 state 갱신) */
+    int upsertPostReaction(@Param("userId") long userId, @Param("postId") long postId, @Param("state") int state);
+
+    /** 반응 삭제(좋아요/싫어요 모두 해제) */
+    int deletePostReaction(@Param("userId") long userId, @Param("postId") long postId);
 
     int adjustPostLikeCount(@Param("postId") long postId, @Param("delta") int delta);
-
-    int insertPostDislike(@Param("userId") long userId, @Param("postId") long postId);
-
-    int deletePostDislike(@Param("userId") long userId, @Param("postId") long postId);
 
     int adjustPostDislikeCount(@Param("postId") long postId, @Param("delta") int delta);
 }

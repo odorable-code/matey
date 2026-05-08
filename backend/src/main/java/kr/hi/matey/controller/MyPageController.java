@@ -51,7 +51,7 @@ public class MyPageController {
     @PatchMapping("/letters/{letterId}/read")
     public ResponseEntity<Map<String, String>> readLetter(
             @AuthenticationPrincipal CustomUser user,
-            @PathVariable long letterId) {
+            @PathVariable("letterId") long letterId) {
         myPageService.markLetterAsRead(user.getUser().getUserId(), letterId);
         return ResponseEntity.ok(Map.of("message", "읽음 처리되었습니다."));
     }
@@ -59,7 +59,7 @@ public class MyPageController {
     @DeleteMapping("/letters/{letterId}")
     public ResponseEntity<Map<String, String>> deleteLetter(
             @AuthenticationPrincipal CustomUser user,
-            @PathVariable long letterId) {
+            @PathVariable("letterId") long letterId) {
         myPageService.deleteLetter(user.getUser().getUserId(), letterId);
         return ResponseEntity.ok(Map.of("message", "쪽지가 삭제되었습니다."));
     }

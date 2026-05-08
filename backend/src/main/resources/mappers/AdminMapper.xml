@@ -160,10 +160,21 @@
             s.created_at as createdAt,
             sr.reason_name as reasonName,
             sr.reason_type as reasonType,
-            sr.target_type as targetType
+            sr.target_type as targetType,
+            sa.content as answerContent,
+            au.nickname as answerAdminNickname,
+            sa.created_at as answerCreatedAt
         FROM SUPPORT s
         JOIN USER u ON s.user_id = u.user_id
         JOIN SUPPORT_REASON sr ON s.support_reason_id = sr.support_reason_id
+        LEFT JOIN SUPPORT_ANSWER sa ON sa.answer_id = (
+            SELECT sa2.answer_id
+            FROM SUPPORT_ANSWER sa2
+            WHERE sa2.support_id = s.support_id
+            ORDER BY sa2.created_at DESC, sa2.answer_id DESC
+            LIMIT 1
+        )
+        LEFT JOIN USER au ON sa.admin_user_id = au.user_id
         <where>
             <if test="status != null and status != 'ALL'">
                 AND s.status = #{status}
@@ -183,10 +194,21 @@
             s.created_at as createdAt,
             sr.reason_name as reasonName,
             sr.reason_type as reasonType,
-            sr.target_type as targetType
+            sr.target_type as targetType,
+            sa.content as answerContent,
+            au.nickname as answerAdminNickname,
+            sa.created_at as answerCreatedAt
         FROM SUPPORT s
         JOIN USER u ON s.user_id = u.user_id
         JOIN SUPPORT_REASON sr ON s.support_reason_id = sr.support_reason_id
+        LEFT JOIN SUPPORT_ANSWER sa ON sa.answer_id = (
+            SELECT sa2.answer_id
+            FROM SUPPORT_ANSWER sa2
+            WHERE sa2.support_id = s.support_id
+            ORDER BY sa2.created_at DESC, sa2.answer_id DESC
+            LIMIT 1
+        )
+        LEFT JOIN USER au ON sa.admin_user_id = au.user_id
         WHERE s.support_id = #{supportId}
     </select>
 
@@ -195,11 +217,12 @@
     </update>
 
     <insert id="insertSupportAnswer">
-        INSERT INTO SUPPORT_ANSWER (content, support_id, admin_user_id)
+        INSERT INTO SUPPORT_ANSWER (content, support_id, admin_user_id, created_at)
         VALUES (
             #{content},
             #{supportId},
-            #{adminUserId}
+            #{adminUserId},
+            NOW()
         )
     </insert>
 
