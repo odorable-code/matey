@@ -184,7 +184,7 @@ export default function FaqPage() {
           <div className={styles.heroArt} aria-hidden="true">
             <div className={styles.heroBlob} />
             <div className={styles.heroMascots}>
-              <img className={styles.mascot} src="/images/mascots/dog.png" alt="" />
+              <img className={styles.mascot} src="/images/mascots/dog/dog.png" alt="" />
             </div>
 
             <svg className={styles.heroLines} viewBox="0 0 520 260" fill="none">

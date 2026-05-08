@@ -98,10 +98,10 @@ export default function HowToUsePage() {
           <div className={styles.heroArt} aria-hidden="true">
             <div className={styles.heroBlob} />
             <div className={styles.heroMascots}>
-              <img className={styles.mascot} src="/images/mascots/cat.png" alt="" />
-              <img className={`${styles.mascot} ${styles.mascotLift}`} src="/images/mascots/bear.png" alt="" />
-              <img className={`${styles.mascot} ${styles.mascotRight}`} src="/images/mascots/dog.png" alt="" />
-              <img className={`${styles.mascot} ${styles.mascotSmall}`} src="/images/mascots/hamster.png" alt="" />
+              <img className={styles.mascot} src="/images/mascots/cat/cat.png" alt="" />
+              <img className={`${styles.mascot} ${styles.mascotLift}`} src="/images/mascots/bear/bear.png" alt="" />
+              <img className={`${styles.mascot} ${styles.mascotRight}`} src="/images/mascots/dog/dog.png" alt="" />
+              <img className={`${styles.mascot} ${styles.mascotSmall}`} src="/images/mascots/hamster/hamster.png" alt="" />
             </div>
 
             <svg className={styles.heroLines} viewBox="0 0 520 260" fill="none">

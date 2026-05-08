@@ -68,6 +68,6 @@ export function resolveMateKeyBySituationLabel(label, fallbackKey = 'dog') {
 
 export function resolveMascotImageSrcBySituationLabel(label, fallbackKey = 'dog') {
   const key = resolveMateKeyBySituationLabel(label, fallbackKey);
-  return `${MASCOT_BASE_PATH}/${key}.png`;
+  return `${MASCOT_BASE_PATH}/${key}/${key}.png`;
 }
 

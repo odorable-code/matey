@@ -26,10 +26,10 @@ function normalizeEntries(raw) {
 
 function fallbackAvatarForRank(rank) {
   const pick = (Number(rank) || 0) % 4;
-  if (pick === 1) return '/images/mascots/cat.png';
-  if (pick === 2) return '/images/mascots/dog.png';
-  if (pick === 3) return '/images/mascots/bear.png';
-  return '/images/mascots/hamster.png';
+  if (pick === 1) return '/images/mascots/cat/cat.png';
+  if (pick === 2) return '/images/mascots/dog/dog.png';
+  if (pick === 3) return '/images/mascots/bear/bear.png';
+  return '/images/mascots/hamster/hamster.png';
 }
 
 export default function BotRankingPage() {
@@ -143,10 +143,10 @@ export default function BotRankingPage() {
           <div className={styles.heroArt} aria-hidden="true">
             <div className={styles.heroBlob} />
             <div className={styles.heroMascots}>
-              <img className={`${styles.mascot} ${styles.mascotA}`} src="/images/mascots/cat.png" alt="" />
-              <img className={`${styles.mascot} ${styles.mascotB}`} src="/images/mascots/dog.png" alt="" />
-              <img className={`${styles.mascot} ${styles.mascotC}`} src="/images/mascots/bear.png" alt="" />
-              <img className={`${styles.mascot} ${styles.mascotD}`} src="/images/mascots/hamster.png" alt="" />
+              <img className={`${styles.mascot} ${styles.mascotA}`} src="/images/mascots/cat/cat.png" alt="" />
+              <img className={`${styles.mascot} ${styles.mascotB}`} src="/images/mascots/dog/dog.png" alt="" />
+              <img className={`${styles.mascot} ${styles.mascotC}`} src="/images/mascots/bear/bear.png" alt="" />
+              <img className={`${styles.mascot} ${styles.mascotD}`} src="/images/mascots/hamster/hamster.png" alt="" />
             </div>
             <svg className={styles.heroLines} viewBox="0 0 520 260" fill="none">
               <path
