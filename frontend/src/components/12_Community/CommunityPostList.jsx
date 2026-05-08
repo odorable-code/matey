@@ -46,8 +46,12 @@ function hideCategoryFromPostListChips(c) {
 
 function CommunityPostList() {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const canWrite = isAuthenticated;
+  const myId = useMemo(() => {
+    if (!user) return null;
+    return user.userId ?? user.id ?? user.user_id ?? null;
+  }, [user]);
   const [categories, setCategories] = useState([]);
   const [categoryId, setCategoryId] = useState('');
   const [keywordInput, setKeywordInput] = useState('');
@@ -295,6 +299,7 @@ function CommunityPostList() {
             posts.map((p) => {
               const hideEngagement =
                 p.categoryNotification === 0 || p.categoryNotification === '0';
+              const isOwnPost = myId != null && Number(p.userId) === Number(myId);
               return (
                 <div key={p.postId} className={styles.postCard}>
                   <Link to={`/community/posts/${p.postId}`} className={styles.postCardLink}>
@@ -316,6 +321,8 @@ function CommunityPostList() {
                             p.likedByMe ? styles.likeBtnActive : ''
                           }`}
                           onClick={(e) => handlePostCardLike(e, p)}
+                          disabled={isOwnPost}
+                          title={isOwnPost ? '본인이 작성한 글에는 좋아요를 누를 수 없어요.' : undefined}
                           aria-pressed={!!p.likedByMe}
                         >
                           <span className={styles.likeIcon} aria-hidden>
@@ -329,6 +336,8 @@ function CommunityPostList() {
                             p.dislikedByMe ? styles.dislikeBtnActive : ''
                           }`}
                           onClick={(e) => handlePostCardDislike(e, p)}
+                          disabled={isOwnPost}
+                          title={isOwnPost ? '본인이 작성한 글에는 싫어요를 누를 수 없어요.' : undefined}
                           aria-pressed={!!p.dislikedByMe}
                         >
                           <span className={styles.dislikeIcon} aria-hidden>

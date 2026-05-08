@@ -453,7 +453,8 @@ function CommunityPostDetail() {
                 type="button"
                 className={`${styles.likeBtn} ${post.likedByMe ? styles.likeBtnActive : ''}`}
                 onClick={handleTogglePostLike}
-                disabled={postLikeBusy || postDislikeBusy}
+                disabled={isAuthor || postLikeBusy || postDislikeBusy}
+                title={isAuthor ? '본인이 작성한 글에는 좋아요를 누를 수 없어요.' : undefined}
                 aria-pressed={!!post.likedByMe}
               >
                 <span className={styles.likeIcon} aria-hidden>
@@ -465,7 +466,8 @@ function CommunityPostDetail() {
                 type="button"
                 className={`${styles.dislikeBtn} ${post.dislikedByMe ? styles.dislikeBtnActive : ''}`}
                 onClick={handleTogglePostDislike}
-                disabled={postLikeBusy || postDislikeBusy}
+                disabled={isAuthor || postLikeBusy || postDislikeBusy}
+                title={isAuthor ? '본인이 작성한 글에는 싫어요를 누를 수 없어요.' : undefined}
                 aria-pressed={!!post.dislikedByMe}
               >
                 <span className={styles.dislikeIcon} aria-hidden>
@@ -523,7 +525,8 @@ function CommunityPostDetail() {
                         c.likedByMe ? styles.likeBtnActive : ''
                       }`}
                       onClick={() => handleToggleCommentLike(c.commentId)}
-                      disabled={commentLikeBusyId === c.commentId}
+                      disabled={mine || commentLikeBusyId === c.commentId}
+                      title={mine ? '본인이 작성한 댓글에는 좋아요를 누를 수 없어요.' : undefined}
                       aria-pressed={!!c.likedByMe}
                     >
                       <span className={styles.likeIcon} aria-hidden>

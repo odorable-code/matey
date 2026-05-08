@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -295,6 +296,17 @@ public class CommunityService {
         if (post == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "게시글을 찾을 수 없어요.");
         }
+        if (Objects.equals(post.getUserId(), userId)) {
+            if (postDAO.deletePostLike(userId, postId) > 0) {
+                postDAO.adjustPostLikeCount(postId, -1);
+                return postReactionBody(postDAO.selectPostById(postId, userId));
+            }
+            if (postDAO.deletePostDislike(userId, postId) > 0) {
+                postDAO.adjustPostDislikeCount(postId, -1);
+                return postReactionBody(postDAO.selectPostById(postId, userId));
+            }
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "본인이 작성한 글에는 좋아요를 누를 수 없어요.");
+        }
         if (postDAO.deletePostLike(userId, postId) > 0) {
             postDAO.adjustPostLikeCount(postId, -1);
         } else {
@@ -314,6 +326,17 @@ public class CommunityService {
         if (post == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "게시글을 찾을 수 없어요.");
         }
+        if (Objects.equals(post.getUserId(), userId)) {
+            if (postDAO.deletePostDislike(userId, postId) > 0) {
+                postDAO.adjustPostDislikeCount(postId, -1);
+                return postReactionBody(postDAO.selectPostById(postId, userId));
+            }
+            if (postDAO.deletePostLike(userId, postId) > 0) {
+                postDAO.adjustPostLikeCount(postId, -1);
+                return postReactionBody(postDAO.selectPostById(postId, userId));
+            }
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "본인이 작성한 글에는 싫어요를 누를 수 없어요.");
+        }
         if (postDAO.deletePostDislike(userId, postId) > 0) {
             postDAO.adjustPostDislikeCount(postId, -1);
         } else {
@@ -330,6 +353,18 @@ public class CommunityService {
     public Map<String, Object> toggleCommentLike(long postId, long commentId, long userId) {
         if (commentDAO.countCommentOnPost(commentId, postId) == 0) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "댓글을 찾을 수 없어요.");
+        }
+        CommentDTO commentRow = commentDAO.selectCommentById(commentId, null);
+        if (commentRow != null && Objects.equals(commentRow.getUserId(), userId)) {
+            if (commentDAO.deleteCommentLike(userId, commentId) > 0) {
+                commentDAO.adjustCommentLikeCount(commentId, -1);
+                CommentDTO refreshed = commentDAO.selectCommentById(commentId, userId);
+                Map<String, Object> body = new HashMap<>();
+                body.put("liked", Boolean.TRUE.equals(refreshed.getLikedByMe()));
+                body.put("likeCount", refreshed.getLikeCount());
+                return body;
+            }
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "본인이 작성한 댓글에는 좋아요를 누를 수 없어요.");
         }
         if (commentDAO.deleteCommentLike(userId, commentId) > 0) {
             commentDAO.adjustCommentLikeCount(commentId, -1);
