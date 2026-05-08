@@ -1,3 +1,8 @@
+.pageBg {
+  min-height: calc(100vh - 120px);
+  background: linear-gradient(180deg, #fdfaff 0%, #f7f9ff 48%, #fff8fc 100%);
+}
+
 .communityMax {
   width: 100%;
   max-width: 960px;
