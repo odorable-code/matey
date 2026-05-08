@@ -251,11 +251,14 @@ export async function forgotId(userName, nickname) {
 }
 
 export async function logout() {
+  const token = getStoredToken(); // 저장된 토큰 가져오기
+  const accessToken = normalizeToken(token);
   try {
     const payload = await request('/api/v1/auth/logout', {
       method: 'POST',
       headers: {
       'Content-Type': 'application/json',
+      ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
     },
       body: {},
     });
@@ -272,6 +275,7 @@ export async function logout() {
     throw error;
   }
 }
+
 
 export function getSocialLoginUrl(provider) {
   const providerKey = String(provider || '').toLowerCase();

@@ -152,28 +152,5 @@
 	    SET token_hash = #{object} 
 	    WHERE user_id = #{userId}
 	</update>
-	
-	<!-- <delete id="deleteTokenByUserId">
-    DELETE FROM auto_login WHERE userId = #{userId}
-	</delete> -->
-	
-	<!-- <insert id="insertOrUpdateToken">
-    INSERT INTO auto_login (userId, refreshToken, expiryDate)
-    VALUES (#{userId}, #{refreshToken}, #{expiryDate})
-    ON DUPLICATE KEY UPDATE 
-        refreshToken = #{refreshToken},
-        expiryDate = #{expiryDate}
-	</insert> -->
-	
-	<!-- <select id="findByResetToken" resultType="kr.hi.matey.util.CustomUser">
-	    SELECT 
-	        userName,
-	        password,
-	        role,
-	        email,
-	        token_expiry_date
-	    FROM user
-	    WHERE reset_token = #{token}
-	</select> -->
 
 </mapper>

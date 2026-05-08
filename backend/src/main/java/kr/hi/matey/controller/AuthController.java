@@ -193,8 +193,8 @@ public class AuthController {
 	
 	@PostMapping("/logout")
 	public ResponseEntity<?> logout(HttpServletResponse response, Authentication auth) {
-		System.out.println(response);
-		System.out.println(auth);
+		System.out.println("logout response : " + response);
+		System.out.println("logout auth :" + auth);
 		// 현재 로그인된 사용자의 아이디를 가져옴.
 		// auth.isAuthenticated(): 이 사용자가 현재 유효하게 인증된(로그인된) 상태인가? > true 반환: 아이디/비밀번호가 일치했거나, 유효한 토큰을 가지고 있어서 서버가 "이 사람은 누군지 확실히 알아!"라고 인정한 상태
 	    if (auth != null && auth.isAuthenticated()) {
@@ -202,6 +202,7 @@ public class AuthController {
 	    	// getPrincipal()의 return 타입은 object기 때문에 CustomUser로 형변환을 해서 userId 로 가는 유일한 통로 들어가기
 	    	// 1. 가장 바깥 상자: Authentication (스프링이 관리) 2. 중간 상자: CustomUser (사용자님이 만든 클래스) 3. 안쪽 상자: UserVO (실제 데이터 뭉치) 4. 알맹이: userId
 	        CustomUser customUser = (CustomUser) auth.getPrincipal();
+	        System.out.println(customUser);
 	        Long userId = customUser.getUser().getUserId();
 	        
 	        // 서비스에게 DB에 저장된 자동 로그인 토큰을 지우게 함
