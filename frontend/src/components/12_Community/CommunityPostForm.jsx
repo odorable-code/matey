@@ -1,8 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import ReactQuill, { Quill } from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 import { useAuth } from '../../contexts/AuthContext';
 import { communityAPI } from '../../utils/api';
-import { isCommunityStaffPublisher } from '../../utils/communityWriteAccess';
+import { canSelectCategoryForWriting } from '../../utils/communityWriteAccess';
 import styles from './CommunityPage.module.css';
 
 function resolveUserId(user) {
@@ -10,18 +12,60 @@ function resolveUserId(user) {
   return user.userId ?? user.id ?? user.user_id ?? null;
 }
 
-/** CATEGORY.notification — 0이면 일반 회원 작성 불가(공지) */
-function isWritableCategoryForUser(c) {
-  const n = c?.notification;
-  if (n === 0 || n === '0') return false;
-  return true;
+function categoryOptionSuffix(c) {
+  return '';
 }
+
+// Quill size whitelist (numeric)
+const SizeStyle = Quill.import('attributors/style/size');
+SizeStyle.whitelist = ['12px', '14px', '16px', '18px', '20px', '24px', '28px'];
+Quill.register(SizeStyle, true);
+
+const QUILL_MODULES = {
+  toolbar: [
+    // 1줄: 폰트/크기 + 강조 + 글자색/배경색 (화면이 좁아도 색상은 항상 보이게)
+    [{ font: [] }, { size: SizeStyle.whitelist }],
+    ['bold', 'italic', 'underline', 'strike'],
+    [{ color: [] }, { background: [] }],
+    // 2줄: 정렬/목록/링크
+    [{ list: 'ordered' }, { list: 'bullet' }, { indent: '-1' }, { indent: '+1' }],
+    [{ align: [] }],
+    ['link', 'clean'],
+  ],
+};
+
+const QUILL_FORMATS = [
+  'font',
+  'size',
+  'bold',
+  'italic',
+  'underline',
+  'strike',
+  'color',
+  'background',
+  'list',
+  'bullet',
+  'indent',
+  'align',
+  'link',
+];
+
+// Quill font whitelist (site-friendly)
+const Font = Quill.import('formats/font');
+Font.whitelist = ['system', 'pretendard', 'noto', 'nanum', 'serif', 'mono'];
+Quill.register(Font, true);
 
 function CommunityPostForm() {
   const { postId } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated, user, authLoading } = useAuth();
   const isEdit = Boolean(postId);
+
+  const writeMode = location?.state?.writeMode || '';
+  const fromPath = location?.state?.fromPath || '';
+  const isNoticeEventWrite = writeMode === 'NOTICE_EVENT' && !isEdit;
+  const backPath = isNoticeEventWrite ? '/community/notices' : '/community';
 
   const [categories, setCategories] = useState([]);
   const [categoryId, setCategoryId] = useState('');
@@ -34,8 +78,13 @@ function CommunityPostForm() {
   const myId = useMemo(() => resolveUserId(user), [user]);
 
   const categoryOptions = useMemo(() => {
-    const staff = isCommunityStaffPublisher(user);
-    const allowed = (categories || []).filter((c) => staff || isWritableCategoryForUser(c));
+    let allowed = (categories || []).filter((c) => canSelectCategoryForWriting(user, c));
+    if (isNoticeEventWrite) {
+      allowed = allowed.filter((c) => c?.notification === 0 || c?.notification === '0');
+    } else {
+      // 커뮤니티 글쓰기는 공지/이벤트(notification=0)를 숨김 (공지에서만 작성 가능)
+      allowed = allowed.filter((c) => c?.notification !== 0 && c?.notification !== '0');
+    }
     if (isEdit && categoryId) {
       const cur = (categories || []).find((c) => String(c.categoryId) === String(categoryId));
       if (cur && !allowed.some((c) => String(c.categoryId) === String(categoryId))) {
@@ -43,7 +92,7 @@ function CommunityPostForm() {
       }
     }
     return allowed;
-  }, [categories, user, isEdit, categoryId]);
+  }, [categories, user, isEdit, categoryId, isNoticeEventWrite]);
 
   const loadCategories = useCallback(async () => {
     const list = await communityAPI.getCategories();
@@ -53,9 +102,11 @@ function CommunityPostForm() {
   useEffect(() => {
     if (authLoading) return;
     if (!isAuthenticated) {
-      navigate('/login', { state: { from: isEdit ? `/community/posts/${postId}/edit` : '/community/write' } });
+      const fallbackFrom =
+        isEdit ? `/community/posts/${postId}/edit` : (fromPath || (isNoticeEventWrite ? '/community/notices' : '/community/write'));
+      navigate('/login', { state: { from: fallbackFrom } });
     }
-  }, [authLoading, isAuthenticated, isEdit, navigate, postId]);
+  }, [authLoading, isAuthenticated, isEdit, navigate, postId, fromPath, isNoticeEventWrite]);
 
   useEffect(() => {
     let cancelled = false;
@@ -93,7 +144,7 @@ function CommunityPostForm() {
     if (!isAuthenticated) return;
     setError('');
     const tid = title.trim();
-    const body = content.trim();
+    const body = String(content || '').trim();
     if (!tid || !body) {
       setError('제목과 내용을 모두 입력해 주세요.');
       return;
@@ -139,18 +190,22 @@ function CommunityPostForm() {
   return (
     <div>
       <div className={styles.subPageBar}>
-        <Link to="/community" className={styles.backLink}>
-          ← 커뮤니티
+        <Link to={backPath} className={styles.backLink}>
+          ← {isNoticeEventWrite ? '공지' : '커뮤니티'}
         </Link>
       </div>
       <div className={styles.rowActions} style={{ marginBottom: 16 }}>
-        <Link to={isEdit ? `/community/posts/${postId}` : '/community'} className={styles.ghostBtn}>
+        <Link to={isEdit ? `/community/posts/${postId}` : backPath} className={styles.ghostBtn}>
           취소
         </Link>
       </div>
-      <h1 className={styles.pageTitle}>{isEdit ? '고민글 수정' : '고민글 작성'}</h1>
-      <p className={styles.pageSubtitle} style={{ marginBottom: 20 }}>
-        다른 사용자를 존중하는 마음으로 작성해 주세요. 욕설·개인정보 노출·불법 내용은 제재될 수 있어요.
+      <h1 className={styles.pageTitle}>
+        {isEdit ? '게시글 수정' : isNoticeEventWrite ? '공지·이벤트 작성' : '게시글 작성'}
+      </h1>
+      <p className={styles.pageSubtitle} style={{ marginBottom: 20, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        {isNoticeEventWrite
+          ? '공지·이벤트 소식을 정확하게 작성해 주세요. 욕설·개인정보 노출·불법 내용은 제재될 수 있어요.'
+          : '다른 사용자를 존중하는 마음으로 작성해 주세요. 욕설·개인정보 노출·불법 내용은 제재될 수 있어요.'}
       </p>
 
       {error ? <p className={styles.errorText}>{error}</p> : null}
@@ -171,7 +226,7 @@ function CommunityPostForm() {
             {categoryOptions.map((c) => (
               <option key={c.categoryId} value={c.categoryId}>
                 {c.name}
-                {!isWritableCategoryForUser(c) ? ' (운영자 전용)' : ''}
+                {categoryOptionSuffix(c)}
               </option>
             ))}
           </select>
@@ -193,13 +248,16 @@ function CommunityPostForm() {
           <label className={styles.fieldLabel} htmlFor="comm-body">
             내용
           </label>
-          <textarea
-            id="comm-body"
-            className={styles.textarea}
-            style={{ minHeight: 220 }}
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-          />
+          <div className={styles.richEditor}>
+            <ReactQuill
+              theme="snow"
+              value={content}
+              onChange={setContent}
+              modules={QUILL_MODULES}
+              formats={QUILL_FORMATS}
+              placeholder="내용을 입력해 주세요."
+            />
+          </div>
         </div>
         <div className={styles.rowActions}>
           <button type="submit" className={styles.primaryBtn} disabled={saving}>

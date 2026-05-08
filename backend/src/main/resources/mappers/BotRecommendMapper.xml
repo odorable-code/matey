@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.hi.matey.dao.BotRecommendDAO">
+
+    <select id="exists" resultType="int">
+        SELECT COUNT(*)
+        FROM USER_BOT_RECOMMEND
+        WHERE user_id = #{userId}
+          AND bot_id = #{botId}
+    </select>
+
+    <insert id="insert">
+        INSERT INTO USER_BOT_RECOMMEND (user_id, bot_id, created_at)
+        VALUES (#{userId}, #{botId}, NOW())
+    </insert>
+
+    <delete id="delete">
+        DELETE FROM USER_BOT_RECOMMEND
+        WHERE user_id = #{userId}
+          AND bot_id = #{botId}
+    </delete>
+
+    <update id="incrementBotLike">
+        UPDATE BOT
+        SET like_count = like_count + 1
+        WHERE bot_id = #{botId}
+    </update>
+
+    <update id="decrementBotLike">
+        UPDATE BOT
+        SET like_count = GREATEST(0, like_count - 1)
+        WHERE bot_id = #{botId}
+    </update>
+
+    <select id="selectBotLikeCount" resultType="java.lang.Integer">
+        SELECT like_count
+        FROM BOT
+        WHERE bot_id = #{botId}
+    </select>
+
+</mapper>
+

@@ -1,6 +1,8 @@
 package kr.hi.matey.config;
 
 import java.util.List;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
@@ -21,23 +23,23 @@ import lombok.extern.slf4j.Slf4j;
 @Order(1)
 public class SeedTestUserPasswordRunner implements ApplicationRunner {
 
-    private static final List<String> SEED_EMAILS = List.of(
-            "user1@test.com",
-            "subadmin1@test.com",
-            "admin1@test.com"
-    );
-
     private final JdbcTemplate jdbcTemplate;
     private final PasswordEncoder passwordEncoder;
     private final boolean syncEnabled;
+    private final List<String> syncEmails;
 
     public SeedTestUserPasswordRunner(
             JdbcTemplate jdbcTemplate,
             PasswordEncoder passwordEncoder,
-            @Value("${matey.sync-test-user-passwords:false}") boolean syncEnabled) {
+            @Value("${matey.sync-test-user-passwords:false}") boolean syncEnabled,
+            @Value("${matey.sync-test-user-emails:}") String syncEmailsCsv) {
         this.jdbcTemplate = jdbcTemplate;
         this.passwordEncoder = passwordEncoder;
         this.syncEnabled = syncEnabled;
+        this.syncEmails = Arrays.stream(syncEmailsCsv.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -45,7 +47,10 @@ public class SeedTestUserPasswordRunner implements ApplicationRunner {
         if (!syncEnabled) {
             return;
         }
-        for (String email : SEED_EMAILS) {
+        if (syncEmails.isEmpty()) {
+            return;
+        }
+        for (String email : syncEmails) {
             String encoded = passwordEncoder.encode(email);
             int updated = jdbcTemplate.update(
                     "UPDATE `USER` SET password = ? WHERE email = ?",

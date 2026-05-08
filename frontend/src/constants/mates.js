@@ -27,20 +27,22 @@
 const MASCOT_BASE_PATH = '/images/mascots';
 
 export const MATE_IMAGES = {
-  dog: `${MASCOT_BASE_PATH}/dog.png`,
-  bear: `${MASCOT_BASE_PATH}/bear.png`,
-  cat: `${MASCOT_BASE_PATH}/cat.png`,
-  hamster: `${MASCOT_BASE_PATH}/hamster.png`,
+  dog: `${MASCOT_BASE_PATH}/dog/dog.png`,
+  bear: `${MASCOT_BASE_PATH}/bear/bear.png`,
+  cat: `${MASCOT_BASE_PATH}/cat/cat.png`,
+  hamster: `${MASCOT_BASE_PATH}/hamster/hamster.png`,
 };
 
 // ============================================================
 // 2. 이름 / 역할 / 헤드라인 / 설명
 // ============================================================
 export const MATE_NAMES = {
-  dog: '메이트 A',
-  bear: '메이트 B',
-  cat: '메이트 C',
-  hamster: '메이트 D',
+  // 앱 전반에서 보이는 메이트 이름 (Home, ChatModal, Footer 등 공통)
+  // 감정리포트(냥이/곰이/강아지/햄이)와 동일하게 맞춰 통일감 유지
+  dog: '강이',  // 메이트 A
+  bear: '곰이',     // 메이트 B
+  cat: '냥이',  // 메이트 C
+  hamster: '햄이', // 메이트 D
 };
 
 export const MATE_ROLES = {

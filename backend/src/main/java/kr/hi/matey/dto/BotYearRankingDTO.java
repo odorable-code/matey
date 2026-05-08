@@ -10,6 +10,8 @@ public class BotYearRankingDTO {
     private Long botId;
     private String name;
     private String avatarImage;
+    private String description;
+    private Integer likeCount;
     private BigDecimal popularityScore;
     private Integer statYear;
 }

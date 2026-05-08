@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
-import { setStoredToken } from '../utils/api';
-
-const API_BASE = (process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080').replace(/\/$/, '');
+import { API_BASE_URL, setStoredToken } from '../utils/api';
 
 /**
  * 소셜 최초 로그인 시 백엔드 세션(PENDING_SOCIAL_USER)과 함께 추가 정보 제출
@@ -41,7 +39,7 @@ export default function SocialSignupPage() {
 
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/v1/auth/social/signup`, {
+      const res = await fetch(`${API_BASE_URL}/api/v1/auth/social/signup`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },

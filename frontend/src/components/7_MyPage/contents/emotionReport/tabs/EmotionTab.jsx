@@ -374,7 +374,7 @@ function EmotionTab({
      사용할 원본 데이터 결정
   ========================= */
   const sourceData =
-    data || emotionData || reportData?.emotionTab || FALLBACK_EMOTION_DATA;
+    data || emotionData || reportData?.emotionTab || {};
 
   /* =========================
      봇 클릭 시 호출할 함수
@@ -387,13 +387,13 @@ function EmotionTab({
      sourceData에서 필요한 값 꺼내기
   ========================= */
   const {
-    heroBots = FALLBACK_HERO_BOTS,
-    selectedHero,
-    statCards = FALLBACK_EMOTION_DATA.statCards,
-    coreEmotion = FALLBACK_EMOTION_DATA.coreEmotion,
-    emotionDistribution = FALLBACK_EMOTION_DATA.emotionDistribution,
-    topicTags = FALLBACK_EMOTION_DATA.topicTags,
-    summaryTimeline = FALLBACK_EMOTION_DATA.summaryTimeline,
+    heroBots = [],
+    selectedHero = null,
+    statCards = [],
+    coreEmotion = {},
+    emotionDistribution = { total: 0, items: [] },
+    topicTags = [],
+    summaryTimeline = [],
   } = sourceData;
 
   /* =========================
@@ -403,7 +403,7 @@ function EmotionTab({
   ========================= */
   const resolvedHeroBots = useMemo(() => {
     const fromData =
-      Array.isArray(heroBots) && heroBots.length > 0 ? heroBots : FALLBACK_HERO_BOTS;
+      Array.isArray(heroBots) && heroBots.length > 0 ? heroBots : [];
 
     return fromData.map((hero) => {
       const botOption =
@@ -443,7 +443,11 @@ function EmotionTab({
     resolvedHeroBots.find((bot) => bot.key === selectedBotKey) ||
     resolvedHeroBots.find((bot) => bot.key === selectedHero?.key) ||
     resolvedHeroBots[0] ||
-    FALLBACK_HERO_BOTS[0];
+    null;
+
+  // 서버 데이터가 없으면(더미 fallback 없음) 아무 것도 렌더링하지 않는다.
+  // 단, 훅(useMemo 등)은 항상 호출되어야 하므로 early return은 hooks 이후로 미룬다.
+  const canRender = Boolean(activeHero) && resolvedHeroBots.length > 0;
 
   /* =========================
      감정 분포 차트 데이터 계산
@@ -465,11 +469,9 @@ function EmotionTab({
      선택 기간 문구 변환
   ========================= */
   const selectedPeriodLabel =
-    selectedPeriod === '90d'
-      ? '최근 90일'
-      : selectedPeriod === '30d'
-        ? '최근 30일'
-        : '최근 7일';
+    selectedPeriod === '30d'
+      ? '최근 30일'
+      : '최근 7일';
 
   /* =========================
      주제 태그 요약 문구
@@ -493,11 +495,13 @@ function EmotionTab({
   /* =========================
      캐릭터 / 기간이 바뀔 때 애니메이션 다시 적용하기 위한 key
   ========================= */
-  const animationKey = `${activeHero.key}-${selectedPeriodLabel}`;
+  const animationKey = canRender ? `${activeHero.key}-${selectedPeriodLabel}` : 'empty';
 
   /* =========================
      실제 화면 렌더링
   ========================= */
+  if (!canRender) return null;
+
   return (
     <section className={styles.emotionTab}>
       {/* =========================

@@ -18,7 +18,17 @@ function formatDateTime(value) {
 
 function excerpt(text, max = 120) {
   if (!text) return '';
-  const t = String(text).replace(/\s+/g, ' ').trim();
+  const plain = String(text)
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
+  const t = plain;
   return t.length > max ? `${t.slice(0, max)}…` : t;
 }
 
@@ -36,8 +46,12 @@ function hideCategoryFromPostListChips(c) {
 
 function CommunityPostList() {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const canWrite = isAuthenticated;
+  const myId = useMemo(() => {
+    if (!user) return null;
+    return user.userId ?? user.id ?? user.user_id ?? null;
+  }, [user]);
   const [categories, setCategories] = useState([]);
   const [categoryId, setCategoryId] = useState('');
   const [keywordInput, setKeywordInput] = useState('');
@@ -48,6 +62,7 @@ function CommunityPostList() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState('');
+  const [ownPostReactionHint, setOwnPostReactionHint] = useState('');
   const limit = 20;
 
   const chipCategories = useMemo(
@@ -129,6 +144,12 @@ function CommunityPostList() {
     };
   }, [fetchPage]);
 
+  useEffect(() => {
+    if (!ownPostReactionHint) return undefined;
+    const t = window.setTimeout(() => setOwnPostReactionHint(''), 2800);
+    return () => window.clearTimeout(t);
+  }, [ownPostReactionHint]);
+
   const handleSearch = (event) => {
     event.preventDefault();
     setAppliedKeyword(keywordInput.trim());
@@ -141,16 +162,60 @@ function CommunityPostList() {
       navigate('/login', { state: { from: `/community/posts/${p.postId}` } });
       return;
     }
+    if (myId != null && Number(p.userId) === Number(myId)) {
+      setOwnPostReactionHint('본인이 작성한 글에는 좋아요를 누를 수 없어요.');
+      return;
+    }
     setError('');
     try {
       const res = await communityAPI.togglePostLike(p.postId);
       setPosts((prev) =>
         prev.map((row) =>
-          row.postId === p.postId ? { ...row, likedByMe: res.liked, likeCount: res.likeCount } : row
+          row.postId === p.postId
+            ? {
+                ...row,
+                likedByMe: !!res.liked,
+                likeCount: res.likeCount,
+                dislikedByMe: !!res.disliked,
+                dislikeCount: res.dislikeCount,
+              }
+            : row
         )
       );
     } catch (e) {
       setError(e?.message || '좋아요 처리에 실패했어요.');
+    }
+  };
+
+  const handlePostCardDislike = async (event, p) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: `/community/posts/${p.postId}` } });
+      return;
+    }
+    if (myId != null && Number(p.userId) === Number(myId)) {
+      setOwnPostReactionHint('본인이 작성한 글에는 싫어요를 누를 수 없어요.');
+      return;
+    }
+    setError('');
+    try {
+      const res = await communityAPI.togglePostDislike(p.postId);
+      setPosts((prev) =>
+        prev.map((row) =>
+          row.postId === p.postId
+            ? {
+                ...row,
+                likedByMe: !!res.liked,
+                likeCount: res.likeCount,
+                dislikedByMe: !!res.disliked,
+                dislikeCount: res.dislikeCount,
+              }
+            : row
+        )
+      );
+    } catch (e) {
+      setError(e?.message || '싫어요 처리에 실패했어요.');
     }
   };
 
@@ -174,7 +239,7 @@ function CommunityPostList() {
   };
 
   return (
-    <div>
+    <div className={styles.pageBg}>
       <div className={styles.pageHead}>
         <div className={styles.pageHeadMain}>
           <h1 className={styles.pageTitle}>커뮤니티</h1>
@@ -238,6 +303,11 @@ function CommunityPostList() {
       </div>
 
       {error ? <p className={styles.errorText}>{error}</p> : null}
+      {ownPostReactionHint ? (
+        <p className={styles.hint} role="status" aria-live="polite">
+          {ownPostReactionHint}
+        </p>
+      ) : null}
 
       {loading ? (
         <p className={styles.hint}>불러오는 중이에요…</p>
@@ -246,35 +316,56 @@ function CommunityPostList() {
           {posts.length === 0 ? (
             <p className={styles.hint}>아직 글이 없어요.</p>
           ) : (
-            posts.map((p) => (
-              <div key={p.postId} className={styles.postCard}>
-                <Link to={`/community/posts/${p.postId}`} className={styles.postCardLink}>
-                  <div className={styles.postMeta}>
-                    <span>{p.categoryName || '카테고리'}</span>
-                    <span>{p.userNickname || '익명'}</span>
-                    <span>조회 {p.viewCount ?? 0}</span>
-                    <span>{formatDateTime(p.createdAt)}</span>
-                  </div>
-                  <h2 className={styles.postTitle}>{p.title}</h2>
-                  <p className={styles.postExcerpt}>{excerpt(p.content)}</p>
-                </Link>
-                <div className={styles.postCardFooter}>
-                  <button
-                    type="button"
-                    className={`${styles.likeBtn} ${styles.likeBtnSm} ${
-                      p.likedByMe ? styles.likeBtnActive : ''
-                    }`}
-                    onClick={(e) => handlePostCardLike(e, p)}
-                    aria-pressed={!!p.likedByMe}
-                  >
-                    <span className={styles.likeIcon} aria-hidden>
-                      ♥
-                    </span>
-                    <span>좋아요 {p.likeCount ?? 0}</span>
-                  </button>
+            posts.map((p) => {
+              const hideEngagement =
+                p.categoryNotification === 0 || p.categoryNotification === '0';
+              return (
+                <div key={p.postId} className={styles.postCard}>
+                  <Link to={`/community/posts/${p.postId}`} className={styles.postCardLink}>
+                    <div className={styles.postMeta}>
+                      <span>{p.categoryName || '카테고리'}</span>
+                      <span>{p.userNickname || '익명'}</span>
+                      <span>조회 {p.viewCount ?? 0}</span>
+                      <span>{formatDateTime(p.createdAt)}</span>
+                    </div>
+                    <h2 className={styles.postTitle}>{p.title}</h2>
+                    <p className={styles.postExcerpt}>{excerpt(p.content)}</p>
+                  </Link>
+                  {!hideEngagement ? (
+                    <div className={styles.postCardFooter}>
+                      <div className={styles.reactionCluster}>
+                        <button
+                          type="button"
+                          className={`${styles.likeBtn} ${styles.likeBtnSm} ${
+                            p.likedByMe ? styles.likeBtnActive : ''
+                          }`}
+                          onClick={(e) => handlePostCardLike(e, p)}
+                          aria-pressed={!!p.likedByMe}
+                        >
+                          <span className={styles.likeIcon} aria-hidden>
+                            ♥
+                          </span>
+                          <span>좋아요 {p.likeCount ?? 0}</span>
+                        </button>
+                        <button
+                          type="button"
+                          className={`${styles.dislikeBtn} ${styles.dislikeBtnSm} ${
+                            p.dislikedByMe ? styles.dislikeBtnActive : ''
+                          }`}
+                          onClick={(e) => handlePostCardDislike(e, p)}
+                          aria-pressed={!!p.dislikedByMe}
+                        >
+                          <span className={styles.dislikeIcon} aria-hidden>
+                            👎
+                          </span>
+                          <span>싫어요 {p.dislikeCount ?? 0}</span>
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       )}

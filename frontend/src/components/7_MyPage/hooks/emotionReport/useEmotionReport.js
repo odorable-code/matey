@@ -44,7 +44,6 @@ const DEFAULT_TAB_OPTIONS = [
 const DEFAULT_PERIOD_OPTIONS = [
   { key: '7d', label: '최근 7일' },
   { key: '30d', label: '최근 30일' },
-  { key: '90d', label: '최근 90일' },
 ];
 
 /* =========================
@@ -512,15 +511,8 @@ const normalizeDateOptions = (chatHistoryData = {}) => {
       .filter((item) => item.key);
   }
 
-  return [
-    {
-      key: '04-21',
-      label: '4월 21일',
-      date: new Date(CURRENT_YEAR, 3, 21),
-      fullKey: '2026-04-21',
-      shortKey: '04-21',
-    },
-  ];
+  // 서버 데이터가 없으면 날짜 더미를 만들지 않고 빈 배열로 둔다.
+  return [];
 };
 
 const mergeUniqueByKey = (items = []) => {
@@ -550,16 +542,14 @@ function useEmotionReport() {
      - 나중에 서버 데이터 붙일 때 여기 교체
      - 예: const rawReportData = apiData ?? FALLBACK_REPORT_DATA;
   ========================= */
-  const rawReportData = FALLBACK_REPORT_DATA;
+  // 서버 API 연결 전에는 더미 데이터를 보여주지 않고, 빈 상태로 둔다.
+  const rawReportData = null;
 
   /* =========================
      전체 데이터 안전하게 정리
   ========================= */
   const reportData = useMemo(
-    () =>
-      rawReportData && Object.keys(rawReportData).length > 0
-        ? rawReportData
-        : FALLBACK_REPORT_DATA,
+    () => (rawReportData && Object.keys(rawReportData).length > 0 ? rawReportData : {}),
     [rawReportData]
   );
 
@@ -575,7 +565,7 @@ function useEmotionReport() {
       return reportData.emotionReport;
     }
 
-    return FALLBACK_REPORT_DATA.emotionTab;
+    return {};
   }, [reportData]);
 
   /* =========================
@@ -590,7 +580,7 @@ function useEmotionReport() {
       return reportData.chatHistory;
     }
 
-    return FALLBACK_REPORT_DATA.chatHistoryTab;
+    return {};
   }, [reportData]);
 
   /* =========================
@@ -601,7 +591,7 @@ function useEmotionReport() {
       return reportData.historyOverview;
     }
 
-    return FALLBACK_REPORT_DATA.historyOverview;
+    return {};
   }, [reportData]);
 
   /* =========================
@@ -630,7 +620,6 @@ function useEmotionReport() {
         ...(Array.isArray(reportData?.heroBots) ? reportData.heroBots : []),
         ...(Array.isArray(emotionTabData?.heroBots) ? emotionTabData.heroBots : []),
         ...(Array.isArray(chatHistoryTabData?.heroBots) ? chatHistoryTabData.heroBots : []),
-        ...FALLBACK_HERO_BOTS,
       ]),
     [reportData, emotionTabData, chatHistoryTabData]
   );
@@ -645,7 +634,7 @@ function useEmotionReport() {
   ========================= */
   const defaultActiveTab = getOptionKey(tabOptions[0]) || 'emotion';
   const defaultPeriod = getOptionKey(periodOptions[1]) || getOptionKey(periodOptions[0]) || '30d';
-  const defaultBotKey = getOptionKey(botOptions[0]) || 'cat';
+  const defaultBotKey = getOptionKey(botOptions[0]) || '';
   const defaultDate = chatDateOptions[0]?.key || '';
 
   /* =========================

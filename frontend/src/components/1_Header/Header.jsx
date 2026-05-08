@@ -8,25 +8,28 @@
  * - 로고 클릭 시 홈으로 이동
  * - 가운데 메뉴에서 이용방법 / 무료체험 / 커뮤니티 / 봇랭킹 / FAQ 이동
  * - 비회원은 로그인 / 무료체험 버튼 표시
- * - 회원은 채팅하기 / 알람 / 마이페이지 / 관리자 / 프로필 드롭다운 표시
+ * - 회원은 채팅하기 / 알람 / 마이페이지 / 프로필 드롭다운 표시
+ * - 관리자 계정은 "관리자 대시보드"를 프로필 드롭다운 안에서만 표시
  * - 모바일 메뉴 열기/닫기 처리
  *
  * [이번 수정 핵심]
+ * - 상단 바(auth-group)에서 "관리자 대시보드" 제거
+ * - 프로필 드롭다운 안에서만 "관리자 대시보드" 노출
  * - "채팅하기" 클릭 시 메이트 키 없이 openChat() 호출
- *   → 새 세션이 즉시 만들어지지 않고
- *     좌측 사이드바 + 우측 "왼쪽에서 대화방을 골라주세요" 빈 상태 화면으로 진입
- * - 디자인 / 다른 동작은 그대로 유지
+ *   → 좌측 대화방 목록 + 우측 빈 상태 화면으로 진입
  *
  * [여기서 주로 수정하면 되는 곳]
  * 1) NAV_ITEMS                : 가운데 메뉴 구성
- * 2) handlePrimaryAction      : 채팅 모달 호출
- * 3) handleToggleNotifications: 알람 popover 토글
+ * 2) getAdminUser() 로직      : 관리자 표시 조건
+ * 3) handlePrimaryAction      : 채팅 모달 호출
+ * 4) handleToggleNotifications: 알람 popover 토글
  * =========================================================
  */
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { canAccessAdminPage } from '../../utils/adminAccess';
 import { useChatModal } from '../../contexts/ChatModalContext';
 import { useNotifications } from '../../contexts/NotificationContext';
 import NotificationModal from '../16_NotificationModal/NotificationModal';
@@ -42,6 +45,71 @@ const NAV_ITEMS = [
   { key: 'bot-ranking', label: '봇랭킹', path: '/bot-ranking' },
   { key: 'faq', label: 'FAQ', path: '/faq' },
 ];
+
+/* =========================================================
+   관리자 여부 판별 코드
+   - AuthContext 에서 isAdmin 이 함수인 경우
+   - boolean 인 경우
+   - user.role / roles / authorities 등 다양한 구조 대응
+========================================================= */
+function getAdminUser(isAdminValue, user, canAccessAdmin) {
+  try {
+    if (typeof canAccessAdmin === 'function' && canAccessAdmin(user)) {
+      return true;
+    }
+
+    if (typeof isAdminValue === 'function') {
+      const result = isAdminValue();
+      if (typeof result === 'boolean') return result;
+    }
+
+    if (typeof isAdminValue === 'boolean') {
+      return isAdminValue;
+    }
+
+    if (user?.is_admin === true || user?.isAdmin === true) {
+      return true;
+    }
+
+    const singleRoles = [
+      user?.role,
+      user?.userRole,
+      user?.memberRole,
+      user?.authority,
+    ]
+      .filter(Boolean)
+      .map((value) => String(value).toLowerCase());
+
+    const arrayRoles = [
+      ...(Array.isArray(user?.roles) ? user.roles : []),
+      ...(Array.isArray(user?.authorities) ? user.authorities : []),
+      ...(Array.isArray(user?.permissions) ? user.permissions : []),
+    ]
+      .map((value) => {
+        if (typeof value === 'string') return value.toLowerCase();
+        if (value?.role) return String(value.role).toLowerCase();
+        if (value?.name) return String(value.name).toLowerCase();
+        if (value?.authority) return String(value.authority).toLowerCase();
+        return '';
+      })
+      .filter(Boolean);
+
+    const mergedRoles = [...singleRoles, ...arrayRoles];
+
+    return mergedRoles.some((role) =>
+      [
+        'admin',
+        'administrator',
+        'role_admin',
+        'super_admin',
+        'master',
+      ].includes(role)
+    );
+  } catch (error) {
+    console.error('관리자 여부 판별 중 오류:', error);
+    return false;
+  }
+}
 
 function Header() {
   const navigate = useNavigate();
@@ -65,8 +133,7 @@ function Header() {
   const loggedIn = isAuthenticated || !!user;
 
   const adminUser = useMemo(() => {
-    if (typeof isAdmin === 'function') return isAdmin();
-    return !!user?.is_admin || !!user?.isAdmin || user?.role === 'admin';
+    return getAdminUser(isAdmin, user, canAccessAdminPage);
   }, [isAdmin, user]);
 
   /* =========================================================
@@ -99,6 +166,7 @@ function Header() {
         document.body.style.overflow = '';
       };
     }
+
     document.body.style.overflow = '';
     return undefined;
   }, [mobileOpen]);
@@ -122,6 +190,7 @@ function Header() {
         setProfileOpen(false);
       }
     };
+
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
@@ -137,11 +206,10 @@ function Header() {
   };
 
   /* =========================================================
-     ✅ 채팅 모달 호출
+     채팅 모달 호출
      - 비회원: 회원가입 페이지로 이동
      - 회원  : 메이트 키 없이 openChat()
-       → 사이드바 + "왼쪽에서 대화방을 골라주세요" 빈 상태로 진입
-       (자동으로 새 채팅방 생성하지 않음)
+       → 자동 새 방 생성 없이 빈 상태 화면으로 진입
   ========================================================= */
   const handlePrimaryAction = () => {
     setMobileOpen(false);
@@ -152,6 +220,7 @@ function Header() {
       openChat();
       return;
     }
+
     navigate('/signup');
   };
 
@@ -160,6 +229,7 @@ function Header() {
   ========================================================= */
   const handleToggleNotifications = () => {
     setProfileOpen(false);
+
     if (notiOpen) {
       closeNotifications();
     } else {
@@ -185,9 +255,11 @@ function Header() {
       setProfileOpen(false);
       setMobileOpen(false);
       closeNotifications();
+
       if (typeof logout === 'function') {
         await logout();
       }
+
       navigate('/');
     } catch (error) {
       console.error('로그아웃 중 오류가 발생했습니다:', error);
@@ -200,6 +272,7 @@ function Header() {
   const isNavActive = (path) => {
     if (!path) return false;
     if (path === '/') return location.pathname === '/';
+
     return (
       location.pathname === path || location.pathname.startsWith(`${path}/`)
     );
@@ -209,7 +282,9 @@ function Header() {
     <header className={`matey-header ${isScrolled ? 'is-scrolled' : ''}`}>
       <div className="matey-header__shell">
         <div className="matey-header__inner">
-          {/* 왼쪽 로고 */}
+          {/* =========================================================
+              왼쪽 로고 영역
+          ========================================================= */}
           <div className="matey-header__left">
             <Link
               to="/"
@@ -220,6 +295,7 @@ function Header() {
               }}
             >
               <span className="matey-header__brand-mark">M</span>
+
               <span className="matey-header__brand-copy">
                 <strong className="matey-header__brand-text">메이티</strong>
                 <span className="matey-header__brand-sub">
@@ -229,7 +305,9 @@ function Header() {
             </Link>
           </div>
 
-          {/* 가운데 메뉴 */}
+          {/* =========================================================
+              가운데 네비게이션
+          ========================================================= */}
           <div className="matey-header__center">
             <nav className="matey-header__nav" aria-label="메인 메뉴">
               {NAV_ITEMS.map((item) => (
@@ -247,14 +325,24 @@ function Header() {
             </nav>
           </div>
 
-          {/* 오른쪽 액션 */}
+          {/* =========================================================
+              오른쪽 액션 영역
+          ========================================================= */}
           <div className="matey-header__right">
             <div className="matey-header__actions">
               {!loggedIn ? (
+                /* =====================================================
+                   비회원 상태 버튼
+                ===================================================== */
                 <div className="matey-header__auth-group">
-                  <Link to="/login" className="matey-header__text-button">
+                  <Link
+                    to="/login"
+                    state={{ from: `${location.pathname}${location.search || ''}` }}
+                    className="matey-header__text-button"
+                  >
                     로그인
                   </Link>
+
                   <button
                     type="button"
                     className="matey-header__primary"
@@ -264,6 +352,9 @@ function Header() {
                   </button>
                 </div>
               ) : (
+                /* =====================================================
+                   로그인 상태 버튼
+                ===================================================== */
                 <>
                   <div className="matey-header__auth-group">
                     <button
@@ -274,18 +365,14 @@ function Header() {
                       채팅하기
                     </button>
 
-                    {adminUser && (
-                      <Link to="/admin" className="matey-header__text-button">
-                        관리자 대시보드
-                      </Link>
-                    )}
-
                     <Link to="/mypage" className="matey-header__text-button">
                       마이페이지
                     </Link>
                   </div>
 
-                  {/* ✅ 알람 버튼 + popover */}
+                  {/* =====================================================
+                     알람 버튼 + popover
+                  ===================================================== */}
                   <div className="matey-header__noti-wrap" ref={notiAnchorRef}>
                     <button
                       type="button"
@@ -313,6 +400,7 @@ function Header() {
                           fill="none"
                         />
                       </svg>
+
                       {unreadCount > 0 && (
                         <span className="matey-header__noti-dot" aria-hidden="true">
                           {unreadCount > 9 ? '9+' : unreadCount}
@@ -323,6 +411,10 @@ function Header() {
                     <NotificationModal anchorRef={notiAnchorRef} />
                   </div>
 
+                  {/* =====================================================
+                     프로필 드롭다운
+                     - 관리자 대시보드는 여기에서만 노출
+                  ===================================================== */}
                   <div className="matey-header__profile" ref={profileRef}>
                     <button
                       type="button"
@@ -334,6 +426,7 @@ function Header() {
                       <span className="matey-header__avatar">
                         {user?.nickname?.[0] || user?.name?.[0] || '회'}
                       </span>
+
                       <span className="matey-header__profile-meta">
                         <span className="matey-header__profile-label">
                           환영해요
@@ -342,6 +435,7 @@ function Header() {
                           {user?.nickname || user?.name || '회원'}
                         </span>
                       </span>
+
                       <span className="matey-header__profile-caret">▾</span>
                     </button>
 
@@ -357,6 +451,7 @@ function Header() {
                       >
                         마이페이지
                       </Link>
+
                       {adminUser && (
                         <Link
                           to="/admin"
@@ -366,6 +461,7 @@ function Header() {
                           관리자 대시보드
                         </Link>
                       )}
+
                       <button
                         type="button"
                         className="matey-header__dropdown-link matey-header__dropdown-link--danger"
@@ -379,7 +475,9 @@ function Header() {
               )}
             </div>
 
-            {/* 모바일 햄버거 */}
+            {/* =========================================================
+                모바일 햄버거 버튼
+            ========================================================= */}
             <button
               type="button"
               className={`matey-header__menu-toggle ${
@@ -396,7 +494,9 @@ function Header() {
         </div>
       </div>
 
-      {/* 모바일 메뉴 */}
+      {/* =========================================================
+          모바일 메뉴
+      ========================================================= */}
       <div className={`matey-header__mobile ${mobileOpen ? 'is-open' : ''}`}>
         <button
           type="button"
@@ -406,9 +506,11 @@ function Header() {
         />
 
         <div className="matey-header__mobile-panel">
+          {/* 모바일 상단 브랜드 */}
           <div className="matey-header__mobile-top">
             <div className="matey-header__mobile-brand">
               <span className="matey-header__mobile-brand-mark">M</span>
+
               <div className="matey-header__mobile-brand-copy">
                 <strong>메이티</strong>
                 <span>대화하기 편한 AI 상담 메이트</span>
@@ -416,6 +518,7 @@ function Header() {
             </div>
           </div>
 
+          {/* 모바일 네비 */}
           <div className="matey-header__mobile-nav">
             {NAV_ITEMS.map((item) => (
               <button
@@ -435,6 +538,9 @@ function Header() {
           <div className="matey-header__mobile-divider" />
 
           {!loggedIn ? (
+            /* =====================================================
+               모바일 비회원 버튼
+            ===================================================== */
             <div className="matey-header__mobile-auth">
               <Link
                 to="/login"
@@ -443,6 +549,7 @@ function Header() {
               >
                 로그인
               </Link>
+
               <button
                 type="button"
                 className="matey-header__mobile-primary"
@@ -452,6 +559,9 @@ function Header() {
               </button>
             </div>
           ) : (
+            /* =====================================================
+               모바일 로그인 상태 버튼
+            ===================================================== */
             <div className="matey-header__mobile-actions">
               <button
                 type="button"

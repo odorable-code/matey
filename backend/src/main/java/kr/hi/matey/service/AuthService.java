@@ -1,9 +1,11 @@
 package kr.hi.matey.service;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -13,12 +15,12 @@ import org.springframework.transaction.annotation.Transactional;
 import kr.hi.matey.dao.AuthDAO;
 import kr.hi.matey.dto.PasswordResetDTO;
 import kr.hi.matey.dto.UserDTO;
-import kr.hi.matey.util.CustomUser;
 import kr.hi.matey.vo.RoleVO;
 import kr.hi.matey.vo.UserVO;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -26,6 +28,12 @@ public class AuthService {
 	private final AuthDAO authDAO;
 	private final BCryptPasswordEncoder encoder;
 	private final JavaMailSender mailSender;
+
+	@Value("${app.frontend-url:http://localhost:3000}")
+	private String frontendBaseUrl;
+
+	@Value("${jwt.refresh-token-validity-in-seconds:604800}")
+	private long refreshTokenValiditySeconds;
 	
 	
 	// 닉네임 중복 확인(회원가입시)
@@ -73,7 +81,7 @@ public class AuthService {
             return result;
             
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warn("signup failed for email={}", user.getEmail(), e);
             return false;
         }
     }
@@ -114,8 +122,8 @@ public class AuthService {
             return false;
         }
 
-        // 메일 발송
-        String resetLink = "http://localhost:3000/reset-password?token=" + token;
+        String base = frontendBaseUrl.replaceAll("/$", "");
+        String resetLink = base + "/reset-password?token=" + token;
         
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(user.getEmail());
@@ -128,7 +136,7 @@ public class AuthService {
         return true;
         
         }catch(Exception e){
-        	System.out.println(e);
+        	log.warn("sendLink failed for email={}", user.getEmail(), e);
         	return false;
         }
         
@@ -140,19 +148,12 @@ public class AuthService {
 	public boolean updatePassword(String token, String newpassword) {
 
 		Optional<PasswordResetDTO> resetOpt = authDAO.findUserVOByToken(token);
-		System.out.println(resetOpt) ;
 
 		if (resetOpt.isEmpty()) {
 			return false;
 		}
-		System.out.println("resetOpt.isEmpty() 밑 :" + resetOpt);
-		UserVO vo = new UserVO();
-		
+
 		PasswordResetDTO dto = resetOpt.get();
-		System.out.println("email :" + dto.getEmail());
-		System.out.println("expiresat :" + dto.getExpiresAt());
-		System.out.println("tokenhash :" + dto.getTokenHash());
-		System.out.println("createdat :" + dto.getCreatedAt());
 		
 	    
         if (dto.getExpiresAt() == null || dto.getExpiresAt().isBefore(LocalDateTime.now())) {
@@ -167,7 +168,6 @@ public class AuthService {
 	        }
 	        
 	        boolean isUpdated = authDAO.updateFinalPassword(dto.getEmail(), encodedPassword);
-	        System.out.println("newPassword :" + newpassword);
 	        
 	        if(isUpdated) {
 	            // 4. 성공 시 t.used_at에 시점 기록 (토큰 무효화)
@@ -175,39 +175,33 @@ public class AuthService {
 	            return true;
 	        }
 	        
-//	        if(isUpdated) {
-//	            // 성공하면 db의 토큰 무효화
-//	            authDAO.clearResetToken(dto.getEmail());
-//	            return true;
-//	        }
 	        else {
 	        	return false;
 	        }
 		}
 
 
-	public void enableAutoLogin(Long userId, String refreshToken) {
-		// 1. 현재 시간 기준으로 30일 뒤 만료일 계산
-        LocalDateTime expiryDate = LocalDateTime.now().plusDays(30);
-        
-        // 2. DAO에게 데이터 전달
-        authDAO.saveAutoLoginInfo(userId, refreshToken, expiryDate);
-		
+	/** 로그인/회원가입 시 발급한 리프레시 JWT를 DB에 저장(JWT 만료 설정과 동일한 기간) */
+	public void persistRefreshToken(Long userId, String refreshToken) {
+		LocalDateTime expiryDate = LocalDateTime.now().plusSeconds(refreshTokenValiditySeconds);
+		authDAO.saveAutoLoginInfo(userId, refreshToken, expiryDate);
 	}
 	
 	
 	public boolean isValidRefreshToken(String subject, String refreshToken) {
-		// TODO Auto-generated method stub
-		return false;
+		if (subject == null || subject.isBlank() || refreshToken == null || refreshToken.isBlank()) {
+			return false;
+		}
+		String stored = authDAO.findStoredRefreshTokenByEmail(subject);
+		return stored != null && Objects.equals(stored, refreshToken);
 	}
 
 
 	public boolean removeAutoLoginToken(Long userId) {
-		int removeAutoLoginToken = authDAO.removeAutoLoginToken(userId, null);
+		int removeAutoLoginToken = authDAO.removeAutoLoginToken(userId);
 		return removeAutoLoginToken > 0;
 	}
 
 	
 
 }
-

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { myPageAPI } from '../../utils/api';
 import styles from '../7_MyPage/layout/ProfileCard.module.css';
@@ -7,6 +7,7 @@ import styles from '../7_MyPage/layout/ProfileCard.module.css';
 const DEFAULT_PROFILE_IMAGE = '/images/mypage/bot/matey-profile.png';
 
 function CommunityProfileCard() {
+  const location = useLocation();
   const { isAuthenticated, user } = useAuth();
   const [profile, setProfile] = useState(null);
 
@@ -61,7 +62,12 @@ function CommunityProfileCard() {
           </div>
         </div>
         <div className={styles.meta}>
-          <Link to="/login" className={styles.nickname} style={{ textDecoration: 'none' }}>
+          <Link
+            to="/login"
+            state={{ from: `${location.pathname}${location.search || ''}` }}
+            className={styles.nickname}
+            style={{ textDecoration: 'none' }}
+          >
             로그인하기
           </Link>
           <span className={styles.greeting} style={{ marginTop: 4 }}>

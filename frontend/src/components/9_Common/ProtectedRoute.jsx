@@ -1,9 +1,10 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 
 function ProtectedRoute({ children, requiredRole = null }) {
   const { accessToken, user, isLoading } = useAuth();
+  const location = useLocation();
 
   if (isLoading) {
     return (
@@ -27,7 +28,13 @@ function ProtectedRoute({ children, requiredRole = null }) {
   }
 
   if (!accessToken || !user) {
-    return <Navigate to="/login" replace />;
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ from: `${location.pathname}${location.search || ''}` }}
+      />
+    );
   }
 
   if (requiredRole && user.role !== requiredRole) {

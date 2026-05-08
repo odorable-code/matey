@@ -20,6 +20,8 @@
             b.bot_id AS botId,
             b.name AS name,
             b.avatar_image AS avatarImage,
+            b.description AS description,
+            b.like_count AS likeCount,
             s.popularity_score AS popularityScore,
             s.stat_year AS statYear
         FROM BOT_POPULARITY_STAT s
@@ -41,6 +43,8 @@
             b.bot_id AS botId,
             b.name AS name,
             b.avatar_image AS avatarImage,
+            b.description AS description,
+            b.like_count AS likeCount,
             CAST(b.like_count AS DECIMAL(10, 2)) AS popularityScore,
             #{year} AS statYear
         FROM BOT b

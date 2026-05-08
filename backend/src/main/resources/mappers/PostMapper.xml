@@ -19,6 +19,12 @@
         WHERE category_id = #{categoryId}
     </select>
 
+    <select id="selectCategoryName" resultType="java.lang.String">
+        SELECT name
+        FROM CATEGORY
+        WHERE category_id = #{categoryId}
+    </select>
+
     <select id="selectPosts" resultType="kr.hi.matey.dto.PostDTO">
         SELECT
             p.post_id as postId,
@@ -32,6 +38,7 @@
             u.nickname as userNickname,
             p.category_id as categoryId,
             c.name as categoryName,
+            c.notification as categoryNotification,
             p.created_at as createdAt,
             p.updated_at as updatedAt
             <choose>
@@ -40,17 +47,25 @@
                         SELECT 1 FROM user_post_like upl
                         WHERE upl.post_id = p.post_id AND upl.user_id = #{viewerUserId}
                     ) AS likedByMe
+                    , EXISTS(
+                        SELECT 1 FROM user_post_dislike upd
+                        WHERE upd.post_id = p.post_id AND upd.user_id = #{viewerUserId}
+                    ) AS dislikedByMe
                 </when>
                 <otherwise>
                     , FALSE AS likedByMe
+                    , FALSE AS dislikedByMe
                 </otherwise>
             </choose>
         FROM POST p
         JOIN USER u ON p.user_id = u.user_id
         JOIN CATEGORY c ON p.category_id = c.category_id
         <where>
+            <if test="includeNotice == false">
+                c.notification != 0
+            </if>
             <if test="categoryId != null">
-                p.category_id = #{categoryId}
+                AND p.category_id = #{categoryId}
             </if>
             <if test="keyword != null and keyword != ''">
                 AND (
@@ -59,8 +74,37 @@
                 )
             </if>
         </where>
-        ORDER BY p.created_at DESC
+        ORDER BY
+            (p.like_count - p.dislike_count) DESC,
+            p.view_count DESC,
+            p.created_at DESC
         LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="selectPostsForNoticeFeed" resultType="kr.hi.matey.dto.PostDTO">
+        SELECT
+            p.post_id as postId,
+            p.title,
+            p.content,
+            p.like_count as likeCount,
+            p.dislike_count as dislikeCount,
+            p.report_count as reportCount,
+            p.view_count as viewCount,
+            p.user_id as userId,
+            u.nickname as userNickname,
+            p.category_id as categoryId,
+            c.name as categoryName,
+            c.notification as categoryNotification,
+            p.created_at as createdAt,
+            p.updated_at as updatedAt,
+            FALSE AS likedByMe,
+            FALSE AS dislikedByMe
+        FROM POST p
+        JOIN USER u ON p.user_id = u.user_id
+        JOIN CATEGORY c ON p.category_id = c.category_id
+        WHERE c.notification = 0
+        ORDER BY p.created_at DESC
+        LIMIT 200
     </select>
 
     <select id="selectPostById" resultType="kr.hi.matey.dto.PostDTO">
@@ -76,6 +120,7 @@
             u.nickname as userNickname,
             p.category_id as categoryId,
             c.name as categoryName,
+            c.notification as categoryNotification,
             p.created_at as createdAt,
             p.updated_at as updatedAt
             <choose>
@@ -84,9 +129,14 @@
                         SELECT 1 FROM user_post_like upl
                         WHERE upl.post_id = p.post_id AND upl.user_id = #{viewerUserId}
                     ) AS likedByMe
+                    , EXISTS(
+                        SELECT 1 FROM user_post_dislike upd
+                        WHERE upd.post_id = p.post_id AND upd.user_id = #{viewerUserId}
+                    ) AS dislikedByMe
                 </when>
                 <otherwise>
                     , FALSE AS likedByMe
+                    , FALSE AS dislikedByMe
                 </otherwise>
             </choose>
         FROM POST p
@@ -153,6 +203,22 @@
     <update id="adjustPostLikeCount">
         UPDATE POST
         SET like_count = GREATEST(0, like_count + #{delta})
+        WHERE post_id = #{postId}
+    </update>
+
+    <insert id="insertPostDislike">
+        INSERT INTO user_post_dislike (user_id, post_id)
+        VALUES (#{userId}, #{postId})
+    </insert>
+
+    <delete id="deletePostDislike">
+        DELETE FROM user_post_dislike
+        WHERE user_id = #{userId} AND post_id = #{postId}
+    </delete>
+
+    <update id="adjustPostDislikeCount">
+        UPDATE POST
+        SET dislike_count = GREATEST(0, dislike_count + #{delta})
         WHERE post_id = #{postId}
     </update>
 </mapper>

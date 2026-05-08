@@ -7,8 +7,10 @@ import kr.hi.matey.service.AdminService;
 import kr.hi.matey.service.SupportService;
 import kr.hi.matey.service.NoticeService;
 import kr.hi.matey.util.CustomUser;
+import kr.hi.matey.util.RoleCodeHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -44,9 +46,9 @@ public class AdminController {
 
     @GetMapping("/users")
     public ResponseEntity<List<UserDTO2>> getUsers(
-            @RequestParam(required = false) String keyword,
-            @RequestParam(defaultValue = "ALL") String role,
-            @RequestParam(defaultValue = "ALL") String status) {
+            @RequestParam(name = "keyword", required = false) String keyword,
+            @RequestParam(name = "role", defaultValue = "ALL") String role,
+            @RequestParam(name = "status", defaultValue = "ALL") String status) {
         return ResponseEntity.ok(adminService.findUsers(keyword, role, status));
     }
 
@@ -70,8 +72,7 @@ public class AdminController {
             @PathVariable Long userId, 
             @RequestBody Map<String, String> body,
             @AuthenticationPrincipal CustomUser user) {
-        String actorRoleCode = user.getUser().getRoleCode();
-        if (!"SUPER_ADMIN".equals(actorRoleCode)) {
+        if (!RoleCodeHelper.isSuperAdmin(user.getUser().getRoleCode())) {
             return ResponseEntity.status(403).body("forbidden");
         }
 
@@ -103,12 +104,26 @@ public class AdminController {
         return ResponseEntity.ok("일괄 처리가 완료되었습니다.");
     }
 
+    @PostMapping("/users/batch/role")
+    public ResponseEntity<String> bulkUpdateRole(
+            @RequestBody AdminBatchRequestDTO request,
+            @AuthenticationPrincipal CustomUser user) {
+        if (!RoleCodeHelper.isSuperAdmin(user.getUser().getRoleCode())) {
+            return ResponseEntity.status(403).body("forbidden");
+        }
+
+        String adminID = user.getUsername();
+        adminService.bulkUpdateUserRole(request.getUserIds(), request.getRoleCode(), adminID);
+        return ResponseEntity.ok("일괄 권한 변경이 완료되었습니다.");
+    }
+
     // ==========================================
     // 피드백 관리
     // ==========================================
 
     @GetMapping("/feedbacks")
-    public ResponseEntity<List<FeedbackDTO>> getFeedbacks(@RequestParam(defaultValue = "ALL") String status) {
+    public ResponseEntity<List<FeedbackDTO>> getFeedbacks(
+            @RequestParam(name = "status", defaultValue = "ALL") String status) {
         return ResponseEntity.ok(adminService.findFeedbacks(status));
     }
 
@@ -152,11 +167,15 @@ public class AdminController {
             @RequestBody kr.hi.matey.dto.FaqDTO faqDTO,
             @AuthenticationPrincipal CustomUser user
     ) {
-        String roleCode = user.getUser().getRoleCode();
-        if (!"ADMIN".equals(roleCode) && !"SUPER_ADMIN".equals(roleCode)) {
+        if (!RoleCodeHelper.isCommunityStaffPublisher(user.getUser().getRoleCode())) {
             return ResponseEntity.status(403).body("forbidden");
         }
 
+        Long roleId = user.getUser().getRoleId();
+        if (roleId == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("역할 정보가 없어 FAQ를 등록할 수 없습니다.");
+        }
+        faqDTO.setRoleId(roleId);
         supportService.createFaq(faqDTO);
         return ResponseEntity.ok("FAQ가 등록되었습니다.");
     }
@@ -167,8 +186,7 @@ public class AdminController {
             @RequestBody kr.hi.matey.dto.FaqDTO faqDTO,
             @AuthenticationPrincipal CustomUser user
     ) {
-        String roleCode = user.getUser().getRoleCode();
-        if (!"ADMIN".equals(roleCode) && !"SUPER_ADMIN".equals(roleCode)) {
+        if (!RoleCodeHelper.isCommunityStaffPublisher(user.getUser().getRoleCode())) {
             return ResponseEntity.status(403).body("forbidden");
         }
 
@@ -187,8 +205,7 @@ public class AdminController {
             @RequestBody Map<String, String> body,
             @AuthenticationPrincipal CustomUser user
     ) {
-        String roleCode = user.getUser().getRoleCode();
-        if (!"ADMIN".equals(roleCode) && !"SUPER_ADMIN".equals(roleCode)) {
+        if (!RoleCodeHelper.isAdminOrSuperAdmin(user.getUser().getRoleCode())) {
             return ResponseEntity.status(403).body("forbidden");
         }
 
@@ -206,8 +223,7 @@ public class AdminController {
             @RequestBody kr.hi.matey.dto.AdminNoticeDTO dto,
             @AuthenticationPrincipal CustomUser user
     ) {
-        String roleCode = user.getUser().getRoleCode();
-        if (!"ADMIN".equals(roleCode) && !"SUPER_ADMIN".equals(roleCode)) {
+        if (!RoleCodeHelper.isAdminOrSuperAdmin(user.getUser().getRoleCode())) {
             return ResponseEntity.status(403).body("forbidden");
         }
 
@@ -221,8 +237,7 @@ public class AdminController {
             @RequestBody kr.hi.matey.dto.AdminNoticeDTO dto,
             @AuthenticationPrincipal CustomUser user
     ) {
-        String roleCode = user.getUser().getRoleCode();
-        if (!"ADMIN".equals(roleCode) && !"SUPER_ADMIN".equals(roleCode)) {
+        if (!RoleCodeHelper.isAdminOrSuperAdmin(user.getUser().getRoleCode())) {
             return ResponseEntity.status(403).body("forbidden");
         }
 

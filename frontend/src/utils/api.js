@@ -1,6 +1,6 @@
 // 주소 끝에 붙은 슬래시 제거
 // 어떤 사람은 ...api, 어떤 사람은 ...api/ 로 쓸 수도 있으니.
-const API_BASE_URL = (
+export const API_BASE_URL = (
   process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080'
 ).replace(/\/$/, '');
 
@@ -76,7 +76,11 @@ async function request(
       data?.error ||
       (typeof data === 'string' ? data : null) ||
       '요청 처리 중 오류가 발생했어요.';
-    throw new Error(message);
+    const err = new Error(message);
+    // 호출부에서 401/403 등을 구분할 수 있게 상태/원문을 붙입니다.
+    err.status = response.status;
+    err.data = data;
+    throw err;
   }
 
   return data;
@@ -94,7 +98,22 @@ function normalizeToken(payload) {
 }
 
 function normalizeUser(payload) {
-  return payload?.user || payload?.data?.user || payload?.data || null;
+  if (!payload || typeof payload !== 'object') return null;
+  // /api/v1/auth/me 는 user 래핑 없이 userId·roleCode 등을 최상위에 둠
+  let u = null;
+  if (payload.userId != null || payload.roleCode != null || payload.email != null) {
+    u = { ...payload };
+  } else {
+    const inner = payload.user || payload.data?.user || payload.data || null;
+    u = inner ? { ...inner } : null;
+  }
+  if (u && u.roleCode != null && u.role == null) {
+    u.role = u.roleCode;
+  }
+  if (u && u.role != null && u.roleCode == null) {
+    u.roleCode = u.role;
+  }
+  return u;
 }
 
 export async function login({ email, password, rememberMe }) {
@@ -134,8 +153,6 @@ export async function signup({
   privacyAgreed,
   marketingAgreed
 }) {
-  console.log(userName);
-
   const payload = await request('/api/v1/auth/signup', {
     method: 'POST',
     headers: {
@@ -281,7 +298,6 @@ export function getSocialLoginUrl(provider) {
   const providerKey = String(provider || '').toLowerCase();
 
   const customUrlMap = {
-    google: process.env.REACT_APP_GOOGLE_AUTH_URL,
     kakao: process.env.REACT_APP_KAKAO_AUTH_URL,
     naver: process.env.REACT_APP_NAVER_AUTH_URL,
   };
@@ -292,7 +308,6 @@ export function getSocialLoginUrl(provider) {
 
   // 백엔드는 Spring OAuth2 Client가 아니라 OAuthController: GET /oauth2/{provider} → 프로바이더로 리다이렉트
   const defaultUrlMap = {
-    google: `${BACKEND_BASE_URL}/oauth2/authorization/google`,
     kakao: `${BACKEND_BASE_URL}/oauth2/kakao`,
     naver: `${BACKEND_BASE_URL}/oauth2/naver`,
   };
@@ -330,9 +345,29 @@ export const adminAPI = {
       body: data,
     });
   },
-  
-  deleteUser: (userId) => {
-    return request(`/api/admin/users/${userId}`, {
+
+  updateUserRole: (userId, roleCode) => {
+    return request(`/api/admin/users/${userId}/role`, {
+      method: 'PATCH',
+      body: { roleCode },
+    });
+  },
+
+  bulkUpdateStatus: (data) => {
+    return request('/api/admin/users/batch/status', {
+      method: 'POST',
+      body: data,
+    });
+  },
+
+  bulkUpdateRole: (data) => {
+    return request('/api/admin/users/batch/role', {
+      method: 'POST',
+      body: data,
+    });
+  },
+
+  deleteUser: (userId) => {    return request(`/api/admin/users/${userId}`, {
       method: 'DELETE',
     });
   },
@@ -361,23 +396,37 @@ export const adminAPI = {
   },
 
   // 통계/대시보드
-  getStats: () => {
-    return request('/api/admin/stats', {
+  getDashboardOverview: () => {
+    return request('/api/admin/dashboard/overview', {
       method: 'GET',
     });
   },
-  
-  getEmotionStats: () => {
-    return request('/api/admin/stats/emotions', {
+
+  getLiveMetrics: () => {
+    return request('/api/admin/dashboard/live', {
       method: 'GET',
     });
   },
-  
-  getConcernStats: () => {
-    return request('/api/admin/stats/concerns', {
-      method: 'GET',
-    });
-  },
+
+  /** 공지(ADMIN_NOTICE) — 백엔드에서 ADMIN·SUPER_ADMIN만 허용 */
+  createNotice: (body) =>
+    request('/api/admin/notices', {
+      method: 'POST',
+      body,
+    }),
+
+  // FAQ (ADMIN 전용)
+  getFaqs: () => request('/api/admin/faqs', { method: 'GET' }),
+  createFaq: (body) =>
+    request('/api/admin/faqs', {
+      method: 'POST',
+      body,
+    }),
+  updateFaq: (faqId, body) =>
+    request(`/api/admin/faqs/${faqId}`, {
+      method: 'PUT',
+      body,
+    }),
 };
 
 // ==========================================
@@ -385,19 +434,22 @@ export const adminAPI = {
 // ==========================================
 
 // ==========================================
-// 커뮤니티 (고민글·공지)
+// 커뮤니티 (게시글·공지)
 // ==========================================
 
 export const communityAPI = {
   getCategories: () => request('/api/community/categories'),
   getNotices: () => request('/api/community/notices'),
-  getPosts: ({ categoryId, keyword, limit = 20, offset = 0 } = {}) => {
+  getPosts: ({ categoryId, keyword, limit = 20, offset = 0, includeNotice = false } = {}) => {
     const usp = new URLSearchParams();
     if (categoryId != null && categoryId !== '') {
       usp.set('categoryId', String(categoryId));
     }
     if (keyword) {
       usp.set('keyword', keyword);
+    }
+    if (includeNotice) {
+      usp.set('includeNotice', 'true');
     }
     usp.set('limit', String(limit));
     usp.set('offset', String(offset));
@@ -427,6 +479,8 @@ export const communityAPI = {
     }),
   togglePostLike: (postId) =>
     request(`/api/community/posts/${postId}/like`, { method: 'POST' }),
+  togglePostDislike: (postId) =>
+    request(`/api/community/posts/${postId}/dislike`, { method: 'POST' }),
   toggleCommentLike: (postId, commentId) =>
     request(`/api/community/posts/${postId}/comments/${commentId}/like`, {
       method: 'POST',
@@ -436,6 +490,10 @@ export const communityAPI = {
     request(
       `/api/community/spotlight/bot-ranking${year != null && year !== '' ? `?year=${encodeURIComponent(String(year))}` : ''}`
     ),
+  toggleBotRecommend: (botId) =>
+    request(`/api/community/spotlight/bots/${encodeURIComponent(String(botId))}/recommend`, {
+      method: 'POST',
+    }),
 };
 
 // FAQ·문의 분류는 비로그인 조회 가능 (기획: FAQ는 관리자만 편집, 사용자는 읽기)
@@ -448,6 +506,12 @@ export const supportUserAPI = {
   createTicket: (body) =>
     request('/api/mypage/support', { method: 'POST', body }),
   listTickets: () => request('/api/mypage/support'),
+  deleteTicket: (supportId) =>
+    request(`/api/mypage/support/${supportId}`, { method: 'DELETE' }),
+  reportExists: (targetType, targetId) =>
+    request(
+      `/api/mypage/support/report-exists?targetType=${encodeURIComponent(targetType)}&targetId=${encodeURIComponent(String(targetId))}`
+    ),
 };
 
 export const myPageAPI = {
@@ -470,5 +534,19 @@ export const emotionReportAPI = {
   getDashboard: () => request('/api/emotion-report/dashboard'),
   getList: () => request('/api/emotion-report'),
   getDetail: (analysisId) => request(`/api/emotion-report/${analysisId}`),
+};
+
+// ==========================================
+// Notifications API
+// ==========================================
+
+export const notificationAPI = {
+  getNotifications: () => request('/api/notifications'),
+  markAsRead: (notificationId) =>
+    request(`/api/notifications/${notificationId}/read`, { method: 'PATCH' }),
+  markAllAsRead: () =>
+    request('/api/notifications/read-all', { method: 'PATCH' }),
+  deleteNotification: (notificationId) =>
+    request(`/api/notifications/${notificationId}`, { method: 'DELETE' }),
 };
 

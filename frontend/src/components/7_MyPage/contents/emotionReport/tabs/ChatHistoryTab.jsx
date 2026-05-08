@@ -25,12 +25,12 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import styles from './ChatHistoryTab.module.css';
+import { resolveMascotImageSrcBySituationLabel } from '../../../../../utils/botAvatar';
 
 /* =========================
    공용 파일에서 가져오기
 ========================= */
 import {
-  FALLBACK_HERO_BOTS,
   CHARACTER_IMAGE_MAP,
   CURRENT_YEAR,
   WEEKDAY_LABELS,
@@ -50,10 +50,7 @@ import {
   splitAnimatedValue,
 } from '../../../hooks/emotionReport/emotionReport.utils';
 
-import {
-  FALLBACK_CHAT_HISTORY_DATA,
-  FALLBACK_DAY_DATA,
-} from '../../../hooks/emotionReport/emotionReport.fallback';
+// emotionReport.fallback.js의 더미 데이터를 더 이상 사용하지 않는다.
 
 /* =========================
    날짜 옵션 정규화
@@ -64,7 +61,7 @@ const normalizeDateOptions = (sourceData = {}, historyOverview = null) => {
   const raw =
     sourceData?.dateOptions ||
     historyOverview?.dateOptions ||
-    FALLBACK_CHAT_HISTORY_DATA.dateOptions;
+    [];
 
   const normalized =
     Array.isArray(raw) && raw.length > 0
@@ -89,18 +86,8 @@ const normalizeDateOptions = (sourceData = {}, historyOverview = null) => {
   /* --- 정리된 결과가 있으면 반환, 없으면 기본값 --- */
   if (normalized.length > 0) return normalized;
 
-  return FALLBACK_CHAT_HISTORY_DATA.dateOptions.map((item) => {
-    const date = parseFlexibleDate(item.key);
-
-    return {
-      key: item.key,
-      label: item.label,
-      date,
-      fullKey: date ? formatFullDateKey(date) : '',
-      shortKey: date ? formatShortKey(date) : '',
-      monthKey: date ? formatMonthKey(date) : '',
-    };
-  });
+  // 서버 데이터가 없으면 날짜 더미를 만들지 않고 빈 배열로 둔다.
+  return [];
 };
 
 /* =========================
@@ -111,7 +98,7 @@ const normalizeDateOptions = (sourceData = {}, historyOverview = null) => {
 const normalizeChatEntries = (raw) => {
   /* --- 데이터가 없으면 기본 대화 반환 --- */
   if (!Array.isArray(raw) || raw.length === 0) {
-    return FALLBACK_DAY_DATA.chatRooms[0].chatEntries;
+    return [];
   }
 
   return raw.map((entry, index) => {
@@ -243,16 +230,27 @@ const normalizeChatRooms = (scopedData, sourceData, mergedBots, fallbackBotKey) 
   }
 
   /* --- 없으면 scopedData를 하나의 대화방으로 변환 --- */
+  const hasAnyData = Boolean(
+    scopedData?.summary ||
+      scopedData?.overviewCards ||
+      scopedData?.chatEntries ||
+      scopedData?.chatLogs ||
+      scopedData?.noteCards ||
+      scopedData?.notes ||
+      scopedData?.insight ||
+      scopedData?.botInterpretation
+  );
+
+  // 서버 데이터가 없으면 대화방도 만들지 않는다.
+  if (!hasAnyData) return [];
+
   return [
     normalizeRoomItem(
       {
         id: scopedData?.id || 'default-room',
         botKey: scopedData?.botKey || fallbackBotKey,
         title: '대화방',
-        lastMessage: resolveText(
-          scopedData?.lastMessage,
-          scopedData?.summary?.title
-        ),
+        lastMessage: resolveText(scopedData?.lastMessage, scopedData?.summary?.title),
         summary: scopedData?.summary,
         overviewCards: scopedData?.overviewCards,
         chatEntries: scopedData?.chatEntries || scopedData?.chatLogs,
@@ -350,7 +348,7 @@ function ChatHistoryTab({
   const sourceData =
     data ||
     reportData?.chatHistoryTab ||
-    FALLBACK_CHAT_HISTORY_DATA;
+    {};
 
   /* =========================
      날짜 목록 정리
@@ -422,7 +420,6 @@ function ChatHistoryTab({
       ...(Array.isArray(botOptions) ? botOptions : []),
       ...(Array.isArray(reportData?.heroBots) ? reportData.heroBots : []),
       ...(Array.isArray(sourceData?.heroBots) ? sourceData.heroBots : []),
-      ...FALLBACK_HERO_BOTS,
     ],
     [botOptions, reportData, sourceData]
   );
@@ -434,7 +431,7 @@ function ChatHistoryTab({
     const fallbackBotKey =
       scopedData?.botKey ||
       selectedBotKey ||
-      'cat';
+      '';
 
     return normalizeChatRooms(scopedData, sourceData, mergedBots, fallbackBotKey);
   }, [scopedData, sourceData, mergedBots, selectedBotKey]);
@@ -467,7 +464,7 @@ function ChatHistoryTab({
   const roomBot = currentRoom?.botProfile || null;
 
   /* --- 기본 하루치 대화방 (fallback용) --- */
-  const defaultRoom = FALLBACK_DAY_DATA.chatRooms[0];
+  const defaultRoom = null;
 
   /* =========================
      요약 / 대화 / 메모 / 인사이트 / 봇 해석 / 통계 카드 정리
@@ -476,14 +473,14 @@ function ChatHistoryTab({
   const summary =
     currentRoom?.summary ||
     scopedData?.summary ||
-    defaultRoom.summary;
+    defaultRoom?.summary;
 
   const chatEntries = useMemo(() => {
     const raw =
       currentRoom?.chatEntries ||
       scopedData?.chatEntries ||
       scopedData?.chatLogs ||
-      defaultRoom.chatEntries;
+      defaultRoom?.chatEntries;
 
     return normalizeChatEntries(raw);
   }, [currentRoom, scopedData]);
@@ -493,10 +490,10 @@ function ChatHistoryTab({
       currentRoom?.noteCards ||
       scopedData?.noteCards ||
       scopedData?.notes ||
-      defaultRoom.noteCards;
+      defaultRoom?.noteCards;
 
     if (!Array.isArray(raw) || raw.length === 0) {
-      return defaultRoom.noteCards;
+      return [];
     }
 
     return raw.map((item, index) => ({
@@ -509,19 +506,19 @@ function ChatHistoryTab({
   const insight =
     currentRoom?.insight ||
     scopedData?.insight ||
-    defaultRoom.insight;
+    defaultRoom?.insight;
 
   const botInterpretation =
     currentRoom?.botInterpretation ||
     scopedData?.botInterpretation ||
-    defaultRoom.botInterpretation;
+    defaultRoom?.botInterpretation;
 
   const overviewCards = useMemo(() => {
     const raw =
       currentRoom?.overviewCards ||
       scopedData?.overviewCards ||
       historyOverview?.overviewCards ||
-      defaultRoom.overviewCards;
+      defaultRoom?.overviewCards;
 
     if (Array.isArray(raw) && raw.length > 0) {
       return raw.map((card, index) => ({
@@ -533,32 +530,7 @@ function ChatHistoryTab({
     }
 
     /* --- overviewCards가 없으면 현재 데이터로 자동 생성 --- */
-    return [
-      {
-        id: 'conversation-count',
-        label: '대화 조각',
-        value: `${chatEntries.length}개`,
-        caption: '선택 날짜에 남은 주요 대화 기록',
-      },
-      {
-        id: 'memo-count',
-        label: '메모 수',
-        value: `${noteCards.length}개`,
-        caption: '감정 메모와 핵심 포인트',
-      },
-      {
-        id: 'dominant-emotion',
-        label: '주 감정',
-        value: insight?.tags?.[0] || '안정',
-        caption: '가장 강하게 반복된 감정 톤',
-      },
-      {
-        id: 'focus-topic',
-        label: '집중 주제',
-        value: summary?.chips?.[0] || '일상',
-        caption: '대화에서 많이 다뤄진 주제',
-      },
-    ];
+    return [];
   }, [currentRoom, scopedData, historyOverview, chatEntries.length, noteCards.length, insight, summary]);
 
   /* =========================
@@ -606,6 +578,11 @@ function ChatHistoryTab({
   /* =========================
      실제 화면 렌더링
   ========================= */
+  // 기록이 없을 때는 더미/기본 UI를 보여주지 않는다.
+  if (!dateOptions.length || !chatRooms.length) {
+    return null;
+  }
+
   return (
     <section className={styles.chatHistoryTab}>
       {/* =========================
@@ -862,6 +839,12 @@ function ChatHistoryTab({
             {chatEntries.length > 0 ? (
               chatEntries.map((entry) => {
                 const isBot = entry.speaker === 'bot';
+                const botAvatarSrc = isBot
+                  ? resolveMascotImageSrcBySituationLabel(
+                      entry.emotion,
+                      roomBot?.key || currentRoom?.botKey || selectedBotKey || 'dog'
+                    )
+                  : null;
 
                 return (
                   <div
@@ -871,35 +854,73 @@ function ChatHistoryTab({
                       isBot ? styles.timelineItemBot : styles.timelineItemMe
                     )}
                   >
-                    <div className={styles.timelineMeta}>
-                      <span
-                        className={cx(
-                          styles.speakerBadge,
-                          isBot
-                            ? styles.speakerBadgeBot
-                            : styles.speakerBadgeMe
-                        )}
-                      >
-                        {isBot ? 'BOT' : 'ME'}
-                      </span>
-
-                      {entry.emotion && (
-                        <span className={styles.emotionBadge}>
-                          {entry.emotion}
+                    {isBot ? (
+                      <div className={styles.timelineRow}>
+                        <span className={styles.timelineAvatarWrap} aria-hidden="true">
+                          <img className={styles.timelineAvatar} src={botAvatarSrc} alt="" />
                         </span>
-                      )}
 
-                      <span className={styles.timeBadge}>{entry.time}</span>
-                    </div>
+                        <div className={styles.timelineBody}>
+                          <div className={styles.timelineMeta}>
+                            <span
+                              className={cx(
+                                styles.speakerBadge,
+                                styles.speakerBadgeBot
+                              )}
+                            >
+                              BOT
+                            </span>
 
-                    <div
-                      className={cx(
-                        styles.bubble,
-                        isBot ? styles.bubbleBot : styles.bubbleMe
-                      )}
-                    >
-                      {entry.message}
-                    </div>
+                            {entry.emotion && (
+                              <span className={styles.emotionBadge}>
+                                {entry.emotion}
+                              </span>
+                            )}
+
+                            <span className={styles.timeBadge}>{entry.time}</span>
+                          </div>
+
+                          <div
+                            className={cx(
+                              styles.bubble,
+                              styles.bubbleBot
+                            )}
+                          >
+                            {entry.message}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className={styles.timelineMeta}>
+                          <span
+                            className={cx(
+                              styles.speakerBadge,
+                              styles.speakerBadgeMe
+                            )}
+                          >
+                            ME
+                          </span>
+
+                          {entry.emotion && (
+                            <span className={styles.emotionBadge}>
+                              {entry.emotion}
+                            </span>
+                          )}
+
+                          <span className={styles.timeBadge}>{entry.time}</span>
+                        </div>
+
+                        <div
+                          className={cx(
+                            styles.bubble,
+                            styles.bubbleMe
+                          )}
+                        >
+                          {entry.message}
+                        </div>
+                      </>
+                    )}
                   </div>
                 );
               })

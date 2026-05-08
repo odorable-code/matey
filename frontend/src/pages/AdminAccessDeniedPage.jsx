@@ -1,10 +1,12 @@
 // src/pages/AdminAccessDeniedPage.jsx
 import React from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { canAccessAdminPage, getEffectiveRoleCode } from '../utils/adminAccess';
 import './AdminAccessDeniedPage.css';
 
 function AdminAccessDeniedPage() {
+  const location = useLocation();
   const { isAuthenticated, authLoading, user } = useAuth();
 
   if (authLoading) {
@@ -20,15 +22,20 @@ function AdminAccessDeniedPage() {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ from: `${location.pathname}${location.search || ''}` }}
+      />
+    );
   }
 
-  const role = String(user?.role || user?.roles?.[0] || '').toUpperCase();
-  const isAdmin = role === 'ADMIN' || role.includes('ADMIN');
-
-  if (isAdmin) {
+  if (canAccessAdminPage(user)) {
     return <Navigate to="/admin" replace />;
   }
+
+  const role = getEffectiveRoleCode(user) || 'USER';
 
   return (
     <main className="matey-admin-denied">

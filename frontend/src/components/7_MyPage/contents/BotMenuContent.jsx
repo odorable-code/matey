@@ -4,25 +4,17 @@ import useAnimatedNumber, { usePrefersReducedMotion } from '../hooks/useAnimated
 import { myPageAPI } from '../../../utils/api';
 
 const defaultBotData = {
-  level: 4,
-  remainPoint: 82,
-  progressPercent: 68,
+  level: 1,
+  remainPoint: 100,
+  progressPercent: 0,
   summaryCards: [
-    { title: '언락 배경', value: '6개', note: '현재 사용 가능' },
-    { title: '모션 컬렉션', value: '14개', note: '최근 2개 추가' },
   ],
-  interactions: ['먹이주기', '쓰다듬기', '놀아주기', '고민상담'],
+  interactions: [],
   backgrounds: [
-    { name: '노을 산책로', state: '사용 중' },
-    { name: '포근한 침실', state: '보유' },
-    { name: '별빛 정원', state: '보유' },
-    { name: '비 오는 창가', state: '잠금' },
+
   ],
   motions: [
-    { name: '반짝 점프', tag: 'NEW' },
-    { name: '귀 흔들기', tag: '기본' },
-    { name: '졸린 스트레칭', tag: '보유' },
-    { name: '하트 인사', tag: '보유' },
+
   ],
 };
 

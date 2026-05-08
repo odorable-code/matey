@@ -4,7 +4,6 @@
  * - 알림 설정 토글, 계정 정보 표시, 로그아웃/탈퇴 버튼 UI 담당
  *
  * [여기서 찾을 것]
- * - 기본 설정값: initialSettings
  * - 계정 정보 표시: accountInfo
  * - 서버에서 설정 불러오기: useEffect
  * - 토글 클릭 처리: toggleSetting
@@ -12,35 +11,17 @@
  *
  * [수정 포인트]
  * - 토글 항목 추가/문구 수정: settingGroups
- * - 기본값 수정: initialSettings
  * - 계정 정보 수정: accountInfo
  * - 서버 연동 키 수정: useEffect / toggleSetting 안 myPageAPI 부분
- *
- * [주의]
- * - 현재는 pushNotice만 서버 업데이트 연결되어 있음
- * - emailNotice, gentleTone, quickReply는 UI 상태만 바뀜
  */
 
 import React, { useEffect, useState } from 'react';
 import styles from './SettingsContent.module.css';
 import { myPageAPI } from '../../../../utils/api';
+import { useNotifications } from '../../../../contexts/NotificationContext';
 
-/* =========================
-   설정 기본값
-   - 서버 데이터가 없을 때 먼저 보여줄 값
-========================= */
-const initialSettings = {
-  pushNotice: true,
-  emailNotice: false,
-  gentleTone: true,
-  quickReply: true,
-};
-
-function SettingsContent() {
-  /* =========================
-     현재 토글 상태 저장
-  ========================= */
-  const [settings, setSettings] = useState(initialSettings);
+function SettingsContent({ onSelectMenu }) {
+  const { settings, updateSetting } = useNotifications();
 
   /* =========================
      계정 정보 저장
@@ -52,22 +33,9 @@ function SettingsContent() {
 
   /* =========================
      설정 화면 처음 열릴 때
-     서버에서 설정값 및 계정 정보 불러오는 코드
+     계정 정보 불러오는 코드 (설정값은 NotificationContext에서 관리)
   ========================= */
   useEffect(() => {
-    // 설정값 불러오기
-    myPageAPI
-      .getSettings()
-      .then((data) => {
-        if (data) {
-          setSettings((prev) => ({
-            ...prev,
-            ...data
-          }));
-        }
-      })
-      .catch(console.error);
-
     // 계정 정보 불러오기
     myPageAPI
       .getProfile()
@@ -84,26 +52,9 @@ function SettingsContent() {
 
   /* =========================
      토글 버튼 클릭하는 코드
-     - 화면 상태를 먼저 바꾸고
-     - pushNotice인 경우에만 서버에도 저장
   ========================= */
   const toggleSetting = (key) => {
-    setSettings((prev) => {
-      const newValue = !prev[key];
-      const updated = { ...prev, [key]: newValue };
-
-      // pushNotice만 백엔드와 연동 (나머지는 UI만 변경)
-      if (key === 'pushNotice') {
-        myPageAPI
-          .updateSettings({ 
-            settingKey: key, 
-            settingValue: newValue 
-          })
-          .catch(console.error);
-      }
-
-      return updated;
-    });
+    updateSetting(key, !settings[key]);
   };
 
   /* =========================
@@ -136,6 +87,11 @@ function SettingsContent() {
           note: '메이티가 조금 더 차분한 톤으로 응답해요.',
         },
         {
+          key: 'casualTone',
+          label: '반말 모드',
+          note: '메이티가 친구처럼 편안한 반말로 대화해요.',
+        },
+        {
           key: 'quickReply',
           label: '빠른 답장 모드',
           note: '짧고 빠른 흐름으로 대화를 이어가요.',
@@ -163,46 +119,62 @@ function SettingsContent() {
 
       <div className={styles.layoutGrid}>
         {/* =========================
-            왼쪽 영역: 설정 토글 목록
+            왼쪽 영역: 알림 설정 + 계정 정보
         ========================= */}
         <div className={styles.mainColumn}>
-          {settingGroups.map((group) => (
-            <article key={group.title} className={styles.sectionCard}>
-              <div className={styles.sectionHead}>
-                <h3 className={styles.sectionTitle}>{group.title}</h3>
-              </div>
+          {/* 1. 알림 설정 (기존 첫 번째 그룹) */}
+          {settingGroups
+            .filter((g) => g.title === '알림')
+            .map((group) => (
+              <article key={group.title} className={styles.sectionCard}>
+                <div className={styles.sectionHead}>
+                  <h3 className={styles.sectionTitle}>{group.title}</h3>
+                </div>
+                <div className={styles.settingList}>
+                  {group.items.map((item) => (
+                    <React.Fragment key={item.key}>
+                      <div className={styles.settingRow}>
+                        <div className={styles.settingText}>
+                          <strong className={styles.settingLabel}>{item.label}</strong>
+                          <p className={styles.settingNote}>{item.note}</p>
+                        </div>
+                        <button
+                          type="button"
+                          className={`${styles.toggle} ${
+                            settings[item.key] ? styles.toggleOn : styles.toggleOff
+                          }`}
+                          onClick={() => toggleSetting(item.key)}
+                          aria-pressed={settings[item.key]}
+                        >
+                          <span className={styles.toggleThumb} />
+                        </button>
+                      </div>
 
-              <div className={styles.settingList}>
-                {group.items.map((item) => (
-                  <div key={item.key} className={styles.settingRow}>
-                    <div className={styles.settingText}>
-                      <strong className={styles.settingLabel}>{item.label}</strong>
-                      <p className={styles.settingNote}>{item.note}</p>
-                    </div>
+                      {item.key === 'pushNotice' && (
+                        <div className={styles.buttonRow}>
+                          <button
+                            type="button"
+                            className={styles.actionSubButton}
+                            onClick={() => onSelectMenu('notiSettings')}
+                          >
+                            <div className={styles.settingText}>
+                              <strong className={styles.settingLabel}>알림 상세 설정</strong>
+                              <p className={styles.settingNote}>받고 싶은 알림 타입을 선택할 수 있어요</p>
+                            </div>
+                          </button>
+                        </div>
+                      )}
+                    </React.Fragment>
+                  ))}
+                </div>
+              </article>
+            ))}
 
-                    <button
-                      type="button"
-                      className={`${styles.toggle} ${
-                        settings[item.key] ? styles.toggleOn : styles.toggleOff
-                      }`}
-                      onClick={() => toggleSetting(item.key)}
-                      aria-pressed={settings[item.key]}
-                    >
-                      <span className={styles.toggleThumb} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </article>
-          ))}
-        </div>
-
-        {/* =========================
-            오른쪽 영역: 계정 정보 / 계정 관리
-        ========================= */}
-        <div className={styles.sideColumn}>
-          <article className={styles.infoCard}>
-            <h3 className={styles.sectionTitle}>계정 정보</h3>
+          {/* 2. 계정 정보 (오른쪽에서 이동됨) */}
+          <article className={styles.sectionCard}>
+            <div className={styles.sectionHead}>
+              <h3 className={styles.sectionTitle}>계정 정보</h3>
+            </div>
             <div className={styles.infoList}>
               <div className={styles.infoRow}>
                 <span className={styles.infoLabel}>이메일</span>
@@ -214,6 +186,44 @@ function SettingsContent() {
               </div>
             </div>
           </article>
+        </div>
+
+        {/* =========================
+            오른쪽 영역: 대화 환경 + 계정 관리
+        ========================= */}
+        <div className={styles.sideColumn}>
+          {/* 1. 대화 환경 (왼쪽에서 이동됨) */}
+          {settingGroups
+            .filter((g) => g.title === '대화 환경')
+            .map((group) => (
+              <article key={group.title} className={styles.sectionCard}>
+                <div className={styles.sectionHead}>
+                  <h3 className={styles.sectionTitle}>{group.title}</h3>
+                </div>
+                <div className={styles.settingList}>
+                  {group.items.map((item) => (
+                    <React.Fragment key={item.key}>
+                      <div className={styles.settingRow}>
+                        <div className={styles.settingText}>
+                          <strong className={styles.settingLabel}>{item.label}</strong>
+                          <p className={styles.settingNote}>{item.note}</p>
+                        </div>
+                        <button
+                          type="button"
+                          className={`${styles.toggle} ${
+                            settings[item.key] ? styles.toggleOn : styles.toggleOff
+                          }`}
+                          onClick={() => toggleSetting(item.key)}
+                          aria-pressed={settings[item.key]}
+                        >
+                          <span className={styles.toggleThumb} />
+                        </button>
+                      </div>
+                    </React.Fragment>
+                  ))}
+                </div>
+              </article>
+            ))}
 
           <article className={styles.dangerCard}>
             <h3 className={styles.sectionTitle}>계정 관리</h3>

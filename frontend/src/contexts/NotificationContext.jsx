@@ -30,69 +30,140 @@ import {
   useMemo,
   useState,
 } from 'react';
+import { notificationAPI, myPageAPI } from '../utils/api';
+import { useAuth } from './AuthContext';
+
+const SETTINGS_STORAGE_KEY = 'matey_user_settings';
+const INITIAL_SETTINGS = {
+  pushNotice: true,
+  emailNotice: false,
+  gentleTone: true,
+  quickReply: true,
+  casualTone: false,
+  noti_BOT_MESSAGE: true,
+  noti_CHAT_REMINDER: true,
+  noti_COMMENT_REPLY: true,
+  noti_COMMUNITY_HOT: true,
+  noti_EVENT_NOTICE: true,
+  noti_POINT_REWARD: true,
+  noti_POST_COMMENT: true,
+  noti_REPORT_RESULT: true,
+  noti_SUPPORT_ANSWER: true,
+  noti_SYSTEM_NOTICE: true,
+};
 
 // ============================================================
-// 1. 초기 샘플 데이터 (추후 API로 교체)
-// ============================================================
-const INITIAL_NOTIFICATIONS = [
-  {
-    id: 'noti-1',
-    type: 'system',
-    title: '메이티에 오신 걸 환영해요',
-    message: '오늘은 어떤 메이트와 한 줄 이야기 시작해볼까요?',
-    createdAt: Date.now() - 1000 * 60 * 3, // 3분 전
-    read: false,
-  },
-  {
-    id: 'noti-2',
-    type: 'mate',
-    title: '루루가 메모를 남겼어요',
-    message: '“오늘 하루도 수고 많았어요. 천천히 쉬어가도 괜찮아요.”',
-    createdAt: Date.now() - 1000 * 60 * 35, // 35분 전
-    read: false,
-  },
-  {
-    id: 'noti-3',
-    type: 'update',
-    title: '새로운 업데이트 안내',
-    message: '메이트 프로필 카드 디자인이 더 깔끔하게 개선됐어요.',
-    createdAt: Date.now() - 1000 * 60 * 60 * 5, // 5시간 전
-    read: true,
-  },
-];
-
-// ============================================================
-// 2. Context 생성
+// 1. Context 생성
 // ============================================================
 const NotificationContext = createContext(null);
 
 // ============================================================
-// 3. Provider 컴포넌트
+// 2. Provider 컴포넌트
 // ============================================================
 export function NotificationProvider({ children }) {
+  const { isAuthenticated } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
-  const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState([]);
+  const [settings, setSettings] = useState(() => {
+    const saved = localStorage.getItem(SETTINGS_STORAGE_KEY);
+    if (saved) {
+      try {
+        return { ...INITIAL_SETTINGS, ...JSON.parse(saved) };
+      } catch (e) {
+        return INITIAL_SETTINGS;
+      }
+    }
+    return INITIAL_SETTINGS;
+  });
+
+  // -------- 설정 저장 --------
+  useEffect(() => {
+    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+  }, [settings]);
+
+  // -------- 알람 로드 --------
+  const fetchNotifications = useCallback(async () => {
+    if (!isAuthenticated) return;
+    try {
+      const data = await notificationAPI.getNotifications();
+      // 백엔드 데이터 -> 프론트엔드 형식 변환
+      const transformed = data.map((n) => ({
+        id: n.notificationId,
+        type: n.type,
+        typeCode: n.typeCode,
+        title: n.title,
+        message: n.message,
+        createdAt: new Date(n.createdAt).getTime(),
+        read: n.isRead,
+        targetType: n.targetType,
+        targetId: n.targetId,
+      }));
+      setNotifications(transformed);
+    } catch (err) {
+      console.error('알림 로드 실패:', err);
+    }
+  }, [isAuthenticated]);
+
+  // -------- 설정 로드 --------
+  const fetchSettings = useCallback(async () => {
+    if (!isAuthenticated) return;
+    try {
+      const data = await myPageAPI.getSettings();
+      if (data) {
+        setSettings((prev) => ({ ...prev, ...data }));
+      }
+    } catch (err) {
+      console.error('설정 로드 실패:', err);
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    fetchNotifications();
+    fetchSettings();
+  }, [fetchNotifications, fetchSettings]);
 
   // -------- 모달 열기 / 닫기 --------
   const openNotifications = useCallback(() => setIsOpen(true), []);
   const closeNotifications = useCallback(() => setIsOpen(false), []);
 
   // -------- 단일 읽음 처리 --------
-  const markAsRead = useCallback((id) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
-    );
+  const markAsRead = useCallback(async (id) => {
+    try {
+      await notificationAPI.markAsRead(id);
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
+      );
+    } catch (err) {
+      console.error('알림 읽음 처리 실패:', err);
+    }
   }, []);
 
   // -------- 전체 읽음 처리 --------
-  const markAllAsRead = useCallback(() => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  const markAllAsRead = useCallback(async () => {
+    try {
+      await notificationAPI.markAllAsRead();
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    } catch (err) {
+      console.error('전체 알림 읽음 처리 실패:', err);
+    }
   }, []);
 
-  // -------- 새 알람 추가 (외부에서 push) --------
+  // -------- 설정 업데이트 --------
+  const updateSetting = useCallback(async (key, value) => {
+    setSettings((prev) => ({ ...prev, [key]: value }));
+    try {
+      if (key === 'pushNotice' || key.startsWith('noti_')) {
+        await myPageAPI.updateSettings({ settingKey: key, settingValue: value });
+      }
+    } catch (err) {
+      console.error('설정 업데이트 실패:', err);
+    }
+  }, []);
+
+  // -------- 새 알람 추가 (로컬에서 즉시 반영 용도) --------
   const pushNotification = useCallback((payload) => {
     const newItem = {
-      id: `noti-${Date.now()}`,
+      id: `local-${Date.now()}`,
       type: 'system',
       title: '새 알림',
       message: '',
@@ -104,8 +175,13 @@ export function NotificationProvider({ children }) {
   }, []);
 
   // -------- 알람 삭제 --------
-  const removeNotification = useCallback((id) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
+  const removeNotification = useCallback(async (id) => {
+    try {
+      await notificationAPI.deleteNotification(id);
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
+    } catch (err) {
+      console.error('알림 삭제 실패:', err);
+    }
   }, []);
 
   // -------- ESC 키로 닫기 --------
@@ -140,12 +216,15 @@ export function NotificationProvider({ children }) {
     isOpen,
     notifications,
     unreadCount,
+    settings,
     openNotifications,
     closeNotifications,
     markAsRead,
     markAllAsRead,
     pushNotification,
     removeNotification,
+    updateSetting,
+    fetchSettings,
   };
 
   return (

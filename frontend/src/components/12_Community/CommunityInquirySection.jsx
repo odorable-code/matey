@@ -89,8 +89,7 @@ function CommunityInquirySection({
           </h2>
           <p className={styles.hint} style={{ marginBottom: 16 }}>
             서비스 이용·계정·오류 등 문의를 남기면 관리자가 확인 후 답변해요. 접수 내역과 답변은{' '}
-            <strong>마이페이지 → 문의 내역</strong>에서 확인할 수 있어요. 게시글·댓글 신고는 글 상세 화면의
-            신고 버튼을 이용해 주세요.
+            <strong>마이페이지 → 문의 내역</strong>에서 확인할 수 있어요.
           </p>
         </>
       ) : null}

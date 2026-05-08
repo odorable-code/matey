@@ -59,6 +59,7 @@
 	        u.email,
 	        u.password,
 	        u.nickname,
+	        ur.role_id as roleId,
 	        r.role_code as roleCode
 	    FROM USER u
 	    LEFT JOIN USER_ROLE ur ON u.user_id = ur.user_id
@@ -149,8 +150,41 @@
      
      <update id="removeAutoLoginToken">
 	    UPDATE AUTO_LOGIN 
-	    SET token_hash = #{object} 
+	    SET token_hash = NULL 
 	    WHERE user_id = #{userId}
 	</update>
+
+	<select id="findStoredRefreshTokenByEmail" resultType="java.lang.String">
+		SELECT al.token_hash
+		FROM AUTO_LOGIN al
+		INNER JOIN USER u ON u.user_id = al.user_id
+		WHERE u.email = #{email}
+		  AND al.token_hash IS NOT NULL
+		  AND (al.expired_at IS NULL OR al.expired_at > NOW())
+		LIMIT 1
+	</select>
+	
+	<!-- <delete id="deleteTokenByUserId">
+    DELETE FROM auto_login WHERE userId = #{userId}
+	</delete> -->
+	
+	<!-- <insert id="insertOrUpdateToken">
+    INSERT INTO auto_login (userId, refreshToken, expiryDate)
+    VALUES (#{userId}, #{refreshToken}, #{expiryDate})
+    ON DUPLICATE KEY UPDATE 
+        refreshToken = #{refreshToken},
+        expiryDate = #{expiryDate}
+	</insert> -->
+	
+	<!-- <select id="findByResetToken" resultType="kr.hi.matey.util.CustomUser">
+	    SELECT 
+	        userName,
+	        password,
+	        role,
+	        email,
+	        token_expiry_date
+	    FROM user
+	    WHERE reset_token = #{token}
+	</select> -->
 
 </mapper>
