@@ -525,11 +525,7 @@ function AppRoutes() {
 
         <Route
           path="/forgot-password"
-          element={
-            <PublicOnlyRoute>
-              <ForgotPasswordPage />
-            </PublicOnlyRoute>
-          }
+          element={<ForgotPasswordPage />}
         />
 
         <Route

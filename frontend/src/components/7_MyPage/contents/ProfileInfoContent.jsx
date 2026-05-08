@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styles from './ProfileInfoContent.module.css';
 import { myPageAPI } from '../../../utils/api';
 
@@ -17,6 +18,7 @@ const initialProfile = {
 };
 
 function ProfileInfoContent() {
+  const navigate = useNavigate();
   const fileInputRef = useRef(null);
   const [profile, setProfile] = useState(initialProfile);
   const [draft, setDraft] = useState(initialProfile);
@@ -210,7 +212,7 @@ function ProfileInfoContent() {
                 <button
                   type="button"
                   className={styles.passwordButton}
-                  onClick={() => alert('비밀번호 변경 기능은 준비 중입니다.')}
+                  onClick={() => navigate('/forgot-password')}
                 >
                   비밀번호 변경하기
                 </button>
