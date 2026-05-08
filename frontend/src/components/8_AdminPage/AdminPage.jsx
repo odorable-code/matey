@@ -944,7 +944,7 @@ export default function AdminPage() {
         <article className="matey-admin-v3__summary-card accent-violet">
           <span>전체 사용자</span>
           <strong>{summaryStats.totalUsers}</strong>
-          <p>USER 테이블 전체 계정 수</p>
+          <p>전체 계정 수</p>
         </article>
 
         <article className="matey-admin-v3__summary-card accent-blue">
@@ -985,7 +985,7 @@ export default function AdminPage() {
                   <span className="matey-admin-v3__section-kicker">REALTIME</span>
                   <h2>실시간 운영 통계</h2>
                   <p className="matey-admin-v3__panel-sub">
-                    USER, CHAT_ROOM, MESSAGE 테이블의 최근 활동량을 실시간으로 보여줘요.
+                    최근 활동량을 실시간으로 보여줘요.
                   </p>
                 </div>
 
@@ -1081,7 +1081,7 @@ export default function AdminPage() {
                   <div className="matey-admin-v3__chart-head">
                     <div>
                       <h3>주요 감정 분포</h3>
-                      <p>EMOTION_SCORE 누적 집계</p>
+                      <p>누적 집계</p>
                     </div>
                     <strong>{maxEmotionCount}</strong>
                   </div>
@@ -1112,7 +1112,6 @@ export default function AdminPage() {
                   <div className="matey-admin-v3__chart-head">
                     <div>
                       <h3>상담봇 인기 순위</h3>
-                      <p>BOT_POPULARITY_STAT 기준</p>
                     </div>
                     <strong>{bots.length}</strong>
                   </div>
@@ -1203,7 +1202,7 @@ export default function AdminPage() {
                 <span className="matey-admin-v3__section-kicker">USER</span>
                 <h2>사용자 검색 · 권한 · 상태 관리</h2>
                 <p className="matey-admin-v3__panel-sub">
-                  USER + USER_ROLE 테이블 기준으로 검색, 필터링, 일괄 작업을 처리해요.
+                  검색, 필터링, 일괄 작업을 처리해요.
                 </p>
               </div>
             </div>
@@ -1438,7 +1437,7 @@ export default function AdminPage() {
                 <span className="matey-admin-v3__section-kicker">SUPPORT</span>
                 <h2>문의 · 신고 처리</h2>
                 <p className="matey-admin-v3__panel-sub">
-                  SUPPORT + SUPPORT_REASON 테이블 기준으로 신고와 문의를 한 곳에서 처리해요.
+                  신고와 문의를 한 곳에서 처리해요.
                 </p>
               </div>
 
@@ -1596,7 +1595,7 @@ export default function AdminPage() {
                 <span className="matey-admin-v3__section-kicker">BOT</span>
                 <h2>상담봇 운영 현황</h2>
                 <p className="matey-admin-v3__panel-sub">
-                  BOT + BOT_POPULARITY_STAT 기준 인기, 좋아요/싫어요, 랭킹을 확인해요.
+                  인기, 좋아요/싫어요, 랭킹을 확인해요.
                 </p>
               </div>
             </div>
