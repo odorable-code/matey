@@ -1,14 +1,17 @@
+# 서연 담당!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# 서연 담당!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 import os
 import pandas as pd
 from konlpy.tag import Okt
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.cluster import KMeans
-import anthropic
+from google import genai
+from google.genai import types
 
 # 형태소 분석기 초기화
 okt = Okt()
 api_key = ''
-client = anthropic.Anthropic(api_key)
+client = genai.Client(api_key)
 
 def preprocess_text(text):
     """
@@ -45,7 +48,8 @@ def classify_risk_with_claude(clean_text):
     제시된 상담 키워드를 분석하여 내담자의 위험도를 1(매우 낮음)에서 5(매우 높음) 단계로 분류하세요.
 
     [판단 기준]
-    - 1~2단계: 일상적인 고민, 가벼운 스트레스
+    - 1단계: 일상적인 고민, 가벼운 스트레스
+    - 2단계: 가벼운 우울감, 불안
     - 3단계: 중등도의 우울감, 반복적인 고통 호소
     - 4단계: 심각한 절망감, 자해 사고 혹은 구체적인 위기 징후
     - 5단계: 즉각적인 개입이 필요한 자살 위기 및 긴급 상황
@@ -58,7 +62,7 @@ def classify_risk_with_claude(clean_text):
 
     try:
         message = client.messages.create(
-            model="claude-3-5-sonnet-20240620", # 고성능 모델 사용
+            model="claude-3-5-sonnet-20240620",
             max_tokens=300,
             temperature=0, # 일관된 결과를 위해 0 설정
             messages=[{"role": "user", "content": prompt}]
