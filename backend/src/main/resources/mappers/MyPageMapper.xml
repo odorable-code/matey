@@ -88,9 +88,19 @@
 
     <select id="selectUserSettings" resultType="kr.hi.matey.dto.UserSettingsDTO">
         SELECT
-        us.bot_letter_enabled as pushNotice,
-        us.satisfaction_popup_enabled as satisfactionPopup,
-        u.is_marketing_agreed as marketingNotice
+            us.bot_letter_enabled as pushNotice,
+            us.satisfaction_popup_enabled as satisfactionPopup,
+            u.is_marketing_agreed as marketingNotice,
+            COALESCE((SELECT is_enabled FROM USER_NOTIFICATION_SETTING WHERE user_id = #{userId} AND type_code = 'BOT_MESSAGE'), 1) as noti_BOT_MESSAGE,
+            COALESCE((SELECT is_enabled FROM USER_NOTIFICATION_SETTING WHERE user_id = #{userId} AND type_code = 'CHAT_REMINDER'), 1) as noti_CHAT_REMINDER,
+            COALESCE((SELECT is_enabled FROM USER_NOTIFICATION_SETTING WHERE user_id = #{userId} AND type_code = 'COMMENT_REPLY'), 1) as noti_COMMENT_REPLY,
+            COALESCE((SELECT is_enabled FROM USER_NOTIFICATION_SETTING WHERE user_id = #{userId} AND type_code = 'COMMUNITY_HOT'), 1) as noti_COMMUNITY_HOT,
+            COALESCE((SELECT is_enabled FROM USER_NOTIFICATION_SETTING WHERE user_id = #{userId} AND type_code = 'EVENT_NOTICE'), 1) as noti_EVENT_NOTICE,
+            COALESCE((SELECT is_enabled FROM USER_NOTIFICATION_SETTING WHERE user_id = #{userId} AND type_code = 'POINT_REWARD'), 1) as noti_POINT_REWARD,
+            COALESCE((SELECT is_enabled FROM USER_NOTIFICATION_SETTING WHERE user_id = #{userId} AND type_code = 'POST_COMMENT'), 1) as noti_POST_COMMENT,
+            COALESCE((SELECT is_enabled FROM USER_NOTIFICATION_SETTING WHERE user_id = #{userId} AND type_code = 'REPORT_RESULT'), 1) as noti_REPORT_RESULT,
+            COALESCE((SELECT is_enabled FROM USER_NOTIFICATION_SETTING WHERE user_id = #{userId} AND type_code = 'SUPPORT_ANSWER'), 1) as noti_SUPPORT_ANSWER,
+            COALESCE((SELECT is_enabled FROM USER_NOTIFICATION_SETTING WHERE user_id = #{userId} AND type_code = 'SYSTEM_NOTICE'), 1) as noti_SYSTEM_NOTICE
         FROM USER_SETTING us
         JOIN USER u ON us.user_id = u.user_id
         WHERE us.user_id = #{userId}
@@ -113,6 +123,11 @@
                 UPDATE USER
                 SET is_marketing_agreed = #{value}, updated_at = NOW()
                 WHERE user_id = #{userId}
+            </when>
+            <when test="key.startsWith('noti_')">
+                INSERT INTO USER_NOTIFICATION_SETTING (user_id, type_code, is_enabled)
+                VALUES (#{userId}, REPLACE(#{key}, 'noti_', ''), #{value})
+                ON DUPLICATE KEY UPDATE is_enabled = #{value}
             </when>
             <otherwise>
                 UPDATE USER_SETTING

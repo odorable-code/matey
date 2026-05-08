@@ -108,6 +108,52 @@
   gap: 16px;
 }
 
+.buttonRow {
+  display: flex;
+  width: 100%;
+  margin-top: 4px;
+}
+
+.actionSubButton {
+  width: 100%;
+  min-height: 74px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(232, 222, 246, 0.92);
+  background: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  transition: all 0.16s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+}
+
+.actionSubButton::after {
+  content: '→';
+  font-size: 16px;
+  opacity: 0.6;
+  transition: transform 0.16s ease;
+}
+
+.actionSubButton:hover {
+  border-color: #cab6ff;
+  background: #fdfaff;
+  color: #4f4169;
+  box-shadow: 0 4px 12px rgba(141, 114, 187, 0.08);
+}
+
+.actionSubButton:hover::after {
+  transform: translateX(3px);
+  opacity: 1;
+}
+
+.actionSubButton:hover {
+  border-color: #cab6ff;
+  background: #fdfaff;
+  color: #4f4169;
+}
+
 .settingText {
   min-width: 0;
   display: grid;

@@ -29,6 +29,7 @@ import EmotionReportContent from '../contents/emotionReport/EmotionReportContent
 import BotMenuContent from '../contents/BotMenuContent';
 import LetterBoxContent from '../contents/letterBox/LetterBoxContent';
 import SettingsContent from '../contents/settings/SettingsContent';
+import NotificationSettingsContent from '../contents/settings/NotificationSettingsContent';
 import SupportHistoryContent from '../contents/SupportHistoryContent.jsx';
 import { myPageAPI } from '../../../utils/api';
 
@@ -68,7 +69,7 @@ function MyPageContainer() {
               sender: data.items[0].sender || '메이티',
               preview: data.items[0].preview,
               date: data.items[0].date,
-              status: data.items[0].unread ? '새 편지' : '읽은 편지',
+              status: data.items[0].unread ? `새 편지 ${data.unreadCount}` : '읽음',
             } : {
               id: null,
               unread: false,
@@ -76,7 +77,7 @@ function MyPageContainer() {
               sender: '메이티',
               preview: '메이티가 편지를 보내면 여기에 표시돼요.',
               date: '-',
-              status: '',
+              status: String(data.unreadCount || 0),
             },
             stats: [
               { label: '읽지 않은 편지', value: String(data.unreadCount || 0) },
@@ -96,6 +97,9 @@ function MyPageContainer() {
       })
       .catch(console.error);
   };
+
+  useEffect(() => {
+  }, []);
 
   useEffect(() => {
     if (activeMenu === 'letterBox') {
@@ -147,6 +151,11 @@ function MyPageContainer() {
         description: '알림과 서비스 옵션을 관리해요',
       },
       {
+        key: 'notiSettings',
+        label: '알림 상세 설정',
+        description: '받고 싶은 알림을 선택해요',
+      },
+      {
         key: 'support',
         label: '문의·신고 내역',
         description: '문의·신고 접수와 답변을 확인해요',
@@ -158,6 +167,10 @@ function MyPageContainer() {
   useEffect(() => {
     if (location.state?.highlight === 'support') {
       setActiveMenu('support');
+      setTransitionKey((k) => k + 1);
+      navigate('.', { replace: true, state: {} });
+    } else if (location.state?.highlight === 'notiSettings') {
+      setActiveMenu('notiSettings');
       setTransitionKey((k) => k + 1);
       navigate('.', { replace: true, state: {} });
     }
@@ -205,7 +218,18 @@ function MyPageContainer() {
         return <LetterBoxContent letterData={letterData || undefined} onRead={handleReadLetter} />;
 
       case 'settings':
-        return <SettingsContent />;
+        return <SettingsContent onSelectMenu={handleMenuSelect} />;
+
+      case 'notiSettings':
+        return (
+          <article>
+            <header style={{ marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#2b2640' }}>알림 상세 설정</h2>
+              <p style={{ color: '#8a85a0', marginTop: '4px' }}>받고 싶은 알림을 자유롭게 설정하세요.</p>
+            </header>
+            <NotificationSettingsContent />
+          </article>
+        );
 
       case 'support':
         return <SupportHistoryContent />;
