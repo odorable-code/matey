@@ -239,7 +239,7 @@ function CommunityPostList() {
   };
 
   return (
-    <div>
+    <div className={styles.pageBg}>
       <div className={styles.pageHead}>
         <div className={styles.pageHeadMain}>
           <h1 className={styles.pageTitle}>커뮤니티</h1>

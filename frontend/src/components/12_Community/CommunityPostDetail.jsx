@@ -358,7 +358,7 @@ function CommunityPostDetail() {
 
   if (!post) {
     return (
-      <div>
+      <div className={styles.pageBg}>
         <p className={styles.errorText}>{error || '게시글을 찾을 수 없어요.'}</p>
         <Link to="/community" className={styles.ghostBtn}>
           목록으로
@@ -368,7 +368,7 @@ function CommunityPostDetail() {
   }
 
   return (
-    <div>
+    <div className={styles.pageBg}>
       <CommunityReportModal
         open={reportOpen}
         onClose={() => setReportOpen(false)}
