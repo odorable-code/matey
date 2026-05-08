@@ -142,7 +142,7 @@ function ProfileInfoContent() {
               <strong className={styles.avatarName}>
                 {currentProfile.nickname}
               </strong>
-              <span className={styles.avatarId}>@{profile.userId}</span>
+              <span className={styles.avatarId}>{profile.email}</span>
             </div>
           </div>
 
