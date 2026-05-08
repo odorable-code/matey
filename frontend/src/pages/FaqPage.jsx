@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import styles from './FaqPage.module.css';
 import { supportPublicAPI, adminAPI } from '../utils/api';
 import { useAuth } from '../contexts/AuthContext';
-import { isAdminNoticePublisher } from '../utils/communityWriteAccess';
+import { isCommunityStaffPublisher } from '../utils/communityWriteAccess';
 
 function normalizeFaqList(res) {
   const list = res?.faq ?? res?.items ?? res;
@@ -82,7 +82,7 @@ function FaqEditorModal({ open, initial, onClose, onSubmit, saving }) {
 
 export default function FaqPage() {
   const { user, authLoading } = useAuth();
-  const isAdmin = useMemo(() => isAdminNoticePublisher(user), [user]);
+  const canEditFaq = useMemo(() => isCommunityStaffPublisher(user), [user]);
 
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -127,7 +127,7 @@ export default function FaqPage() {
   };
 
   const handleSubmit = async ({ question, answer }) => {
-    if (!isAdmin) return;
+    if (!canEditFaq) return;
     setSaving(true);
     try {
       if (editorInitial?.faqId) {
@@ -168,17 +168,17 @@ export default function FaqPage() {
                 <Link to="/community/inquiry" className={styles.shortcutChip}>
                   문의
                 </Link>
+                {canEditFaq && !authLoading ? (
+                  <button
+                    type="button"
+                    className={`${styles.shortcutChip} ${styles.shortcutPrimary}`}
+                    onClick={handleOpenCreate}
+                  >
+                    + FAQ 작성
+                  </button>
+                ) : null}
               </div>
             </div>
-
-            {isAdmin && !authLoading ? (
-              <div className={styles.adminRow}>
-                <button type="button" className={styles.adminBtn} onClick={handleOpenCreate}>
-                  + FAQ 작성
-                </button>
-                <span className={styles.adminHint}>관리자만 작성/수정할 수 있습니다.</span>
-              </div>
-            ) : null}
           </div>
 
           <div className={styles.heroArt} aria-hidden="true">
@@ -221,7 +221,7 @@ export default function FaqPage() {
                 <summary className={styles.faqSummary}>
                   <span className={styles.faqQ}>Q.</span>
                   <span className={styles.faqQuestion}>{item.question}</span>
-                  {isAdmin ? (
+                  {canEditFaq ? (
                     <button
                       type="button"
                       className={styles.editBtn}

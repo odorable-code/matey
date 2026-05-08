@@ -10,6 +10,7 @@ import kr.hi.matey.util.CustomUser;
 import kr.hi.matey.util.RoleCodeHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -152,10 +153,15 @@ public class AdminController {
             @RequestBody kr.hi.matey.dto.FaqDTO faqDTO,
             @AuthenticationPrincipal CustomUser user
     ) {
-        if (!RoleCodeHelper.isAdminOrSuperAdmin(user.getUser().getRoleCode())) {
+        if (!RoleCodeHelper.isCommunityStaffPublisher(user.getUser().getRoleCode())) {
             return ResponseEntity.status(403).body("forbidden");
         }
 
+        Long roleId = user.getUser().getRoleId();
+        if (roleId == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("역할 정보가 없어 FAQ를 등록할 수 없습니다.");
+        }
+        faqDTO.setRoleId(roleId);
         supportService.createFaq(faqDTO);
         return ResponseEntity.ok("FAQ가 등록되었습니다.");
     }
@@ -166,7 +172,7 @@ public class AdminController {
             @RequestBody kr.hi.matey.dto.FaqDTO faqDTO,
             @AuthenticationPrincipal CustomUser user
     ) {
-        if (!RoleCodeHelper.isAdminOrSuperAdmin(user.getUser().getRoleCode())) {
+        if (!RoleCodeHelper.isCommunityStaffPublisher(user.getUser().getRoleCode())) {
             return ResponseEntity.status(403).body("forbidden");
         }
 

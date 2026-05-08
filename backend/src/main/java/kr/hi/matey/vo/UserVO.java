@@ -30,4 +30,6 @@ public class UserVO {
     private RoleVO role;
     // ROLE.role_code를 직접 매핑해서, 관리자 권한 체크가 끊기지 않게 한다.
     private String roleCode;
+    /** USER_ROLE.role_id — ADMIN_FAQ 등 FK 컬럼 채우기용 */
+    private Long roleId;
 }

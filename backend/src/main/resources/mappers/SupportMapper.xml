@@ -123,11 +123,13 @@
 
     <insert id="insertFaq" parameterType="kr.hi.matey.dto.FaqDTO" useGeneratedKeys="true" keyProperty="faqId">
         INSERT INTO ADMIN_FAQ (
+            role_id,
             question,
             answer,
             created_at,
             updated_at
         ) VALUES (
+            #{roleId},
             #{question},
             #{answer},
             NOW(),
