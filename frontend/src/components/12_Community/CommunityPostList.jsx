@@ -46,8 +46,12 @@ function hideCategoryFromPostListChips(c) {
 
 function CommunityPostList() {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const canWrite = isAuthenticated;
+  const myId = useMemo(() => {
+    if (!user) return null;
+    return user.userId ?? user.id ?? user.user_id ?? null;
+  }, [user]);
   const [categories, setCategories] = useState([]);
   const [categoryId, setCategoryId] = useState('');
   const [keywordInput, setKeywordInput] = useState('');
@@ -58,6 +62,7 @@ function CommunityPostList() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState('');
+  const [ownPostReactionHint, setOwnPostReactionHint] = useState('');
   const limit = 20;
 
   const chipCategories = useMemo(
@@ -139,6 +144,12 @@ function CommunityPostList() {
     };
   }, [fetchPage]);
 
+  useEffect(() => {
+    if (!ownPostReactionHint) return undefined;
+    const t = window.setTimeout(() => setOwnPostReactionHint(''), 2800);
+    return () => window.clearTimeout(t);
+  }, [ownPostReactionHint]);
+
   const handleSearch = (event) => {
     event.preventDefault();
     setAppliedKeyword(keywordInput.trim());
@@ -149,6 +160,10 @@ function CommunityPostList() {
     event.stopPropagation();
     if (!isAuthenticated) {
       navigate('/login', { state: { from: `/community/posts/${p.postId}` } });
+      return;
+    }
+    if (myId != null && Number(p.userId) === Number(myId)) {
+      setOwnPostReactionHint('본인이 작성한 글에는 좋아요를 누를 수 없어요.');
       return;
     }
     setError('');
@@ -177,6 +192,10 @@ function CommunityPostList() {
     event.stopPropagation();
     if (!isAuthenticated) {
       navigate('/login', { state: { from: `/community/posts/${p.postId}` } });
+      return;
+    }
+    if (myId != null && Number(p.userId) === Number(myId)) {
+      setOwnPostReactionHint('본인이 작성한 글에는 싫어요를 누를 수 없어요.');
       return;
     }
     setError('');
@@ -284,6 +303,11 @@ function CommunityPostList() {
       </div>
 
       {error ? <p className={styles.errorText}>{error}</p> : null}
+      {ownPostReactionHint ? (
+        <p className={styles.hint} role="status" aria-live="polite">
+          {ownPostReactionHint}
+        </p>
+      ) : null}
 
       {loading ? (
         <p className={styles.hint}>불러오는 중이에요…</p>

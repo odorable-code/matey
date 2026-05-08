@@ -12,14 +12,18 @@ export function getEffectiveRoleCode(user) {
       ? firstRole.role_code ?? firstRole.roleCode ?? firstRole.role ?? ''
       : firstRole ?? '';
 
-  const raw =
+  let raw =
     user.role_code ?? user.roleCode ?? user.role ?? user.userRole ?? fromArray ?? '';
 
-  return String(raw).trim().toUpperCase();
+  raw = String(raw).trim().toUpperCase();
+  if (raw.startsWith('ROLE_')) {
+    raw = raw.slice(5);
+  }
+  return raw;
 }
 
 /** 최고 관리자(ADMIN) · 중간 관리자(SUBADMIN) — 관리자 콘솔 진입 */
 export function canAccessAdminPage(user) {
   const code = getEffectiveRoleCode(user);
-  return code === 'ADMIN' || code === 'SUBADMIN';
+  return code === 'ADMIN' || code === 'SUBADMIN' || code === 'SUPER_ADMIN';
 }

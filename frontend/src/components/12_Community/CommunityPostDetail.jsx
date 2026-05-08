@@ -78,6 +78,9 @@ function CommunityPostDetail() {
   const [reportNoticeOpen, setReportNoticeOpen] = useState(false);
   const [reportNoticeMessage, setReportNoticeMessage] = useState('');
   const reportNoticeTitleId = useId();
+  /** 본인 글/댓글 반응 시 잠깐만 보이는 안내(모달·알럿 없음) */
+  const [reactionSelfHint, setReactionSelfHint] = useState('');
+  const [commentSelfLikeHintId, setCommentSelfLikeHintId] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -132,6 +135,18 @@ function CommunityPostDetail() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    if (!reactionSelfHint) return undefined;
+    const t = window.setTimeout(() => setReactionSelfHint(''), 2800);
+    return () => window.clearTimeout(t);
+  }, [reactionSelfHint]);
+
+  useEffect(() => {
+    if (commentSelfLikeHintId == null) return undefined;
+    const t = window.setTimeout(() => setCommentSelfLikeHintId(null), 2800);
+    return () => window.clearTimeout(t);
+  }, [commentSelfLikeHintId]);
 
   useEffect(() => {
     if (loading) return;
@@ -207,6 +222,10 @@ function CommunityPostDetail() {
       navigate('/login', { state: { from: `/community/posts/${postId}` } });
       return;
     }
+    if (isAuthor) {
+      setReactionSelfHint('본인이 작성한 글에는 좋아요를 누를 수 없어요.');
+      return;
+    }
     setPostLikeBusy(true);
     setError('');
     try {
@@ -234,6 +253,10 @@ function CommunityPostDetail() {
       navigate('/login', { state: { from: `/community/posts/${postId}` } });
       return;
     }
+    if (isAuthor) {
+      setReactionSelfHint('본인이 작성한 글에는 싫어요를 누를 수 없어요.');
+      return;
+    }
     setPostDislikeBusy(true);
     setError('');
     try {
@@ -259,6 +282,13 @@ function CommunityPostDetail() {
   const handleToggleCommentLike = async (commentId) => {
     if (!isAuthenticated) {
       navigate('/login', { state: { from: `/community/posts/${postId}` } });
+      return;
+    }
+    const target = comments.find((c) => Number(c.commentId) === Number(commentId));
+    const isCommentAuthor =
+      target && myId != null && Number(target.userId) === Number(myId);
+    if (isCommentAuthor) {
+      setCommentSelfLikeHintId(commentId);
       return;
     }
     setCommentLikeBusyId(commentId);
@@ -480,6 +510,11 @@ function CommunityPostDetail() {
               </button>
             ) : null}
           </div>
+          {reactionSelfHint ? (
+            <p className={styles.hint} role="status" aria-live="polite" style={{ marginTop: 8 }}>
+              {reactionSelfHint}
+            </p>
+          ) : null}
         </div>
       ) : null}
 
@@ -541,6 +576,12 @@ function CommunityPostDetail() {
                       </button>
                     ) : null}
                   </div>
+                  {commentSelfLikeHintId != null &&
+                  Number(commentSelfLikeHintId) === Number(c.commentId) ? (
+                    <p className={styles.hint} role="status" aria-live="polite" style={{ marginTop: 8 }}>
+                      본인이 작성한 댓글에는 좋아요를 누를 수 없어요.
+                    </p>
+                  ) : null}
                 </div>
               ) : null}
             </article>

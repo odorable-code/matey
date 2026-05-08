@@ -30,7 +30,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { adminAPI } from '../../utils/api';
+import { adminAPI, getStoredToken } from '../../utils/api';
 import { displaySupportTicketTitle } from '../../utils/supportReportDisplay';
 import './AdminPage.css';
 
@@ -159,21 +159,38 @@ function normalizeText(value) {
 
 function isAdminLike(roleCode) {
   const code = String(roleCode || '').toUpperCase();
-  return code === 'ADMIN' || code === 'SUBADMIN';
+  return code === 'ADMIN' || code === 'SUBADMIN' || code === 'SUPER_ADMIN';
 }
 
 function isSuperAdmin(roleCode) {
-  return String(roleCode || '').toUpperCase() === 'ADMIN';
+  const code = String(roleCode || '').toUpperCase();
+  return code === 'ADMIN' || code === 'SUPER_ADMIN';
 }
 
 function getUserRoleCode(targetUser) {
-  return (
+  const raw =
     targetUser?.role_code ||
     targetUser?.role ||
     targetUser?.roles?.[0]?.role_code ||
     targetUser?.roles?.[0] ||
-    'USER'
-  );
+    'USER';
+  let code = String(raw).trim().toUpperCase();
+  if (code.startsWith('ROLE_')) {
+    code = code.slice(5);
+  }
+  return code || 'USER';
+}
+
+/** 관리자 API 응답 실패 시 사용자에게 보여 줄 메시지 */
+function formatAdminApiFailure(err) {
+  const st = err?.status;
+  if (st === 401) {
+    return '로그인이 만료되었거나 인증 토큰이 유효하지 않아요. 다시 로그인한 뒤 새로고침해 주세요.';
+  }
+  if (st === 403) {
+    return '관리자 API 접근이 거부되었어요. 백엔드 서버와 역할(ADMIN 등)을 확인해 주세요.';
+  }
+  return err?.message || '관리자 데이터 요청에 실패했어요.';
 }
 
 function formatDate(dateLike) {
@@ -297,6 +314,8 @@ export default function AdminPage() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  /** 일부 API만 실패했을 때(데이터는 일부 표시) 상단 안내 */
+  const [loadWarning, setLoadWarning] = useState(null);
 
   /* =========================================================
      실시간 차트 데이터
@@ -376,41 +395,76 @@ export default function AdminPage() {
       try {
         setLoading(true);
         setError(null);
+        setLoadWarning(null);
 
-        const [usersData, feedbacksData, dashboardData] = await Promise.all([
-          adminAPI.getUsers().catch(() => []),
-          adminAPI.getFeedbacks({ status: 'ALL' }).catch(() => []),
-          adminAPI.getDashboardOverview().catch(() => ({})),
+        const rawToken = getStoredToken();
+        if (String(rawToken || '').startsWith('mock-token-')) {
+          setError(
+            '프런트 테스트(mock) 로그인은 실제 백엔드 JWT가 아니라 관리자 API가 모두 실패해요. 팀과 같은 DB·서버에 붙이려면 일반 로그인으로 발급된 토큰을 쓰는지 확인해 주세요.'
+          );
+          return;
+        }
+
+        const settled = await Promise.allSettled([
+          adminAPI.getUsers(),
+          adminAPI.getFeedbacks({ status: 'ALL' }),
+          adminAPI.getDashboardOverview(),
         ]);
+
+        const failed = settled
+          .map((r, idx) => (r.status === 'rejected' ? { idx, reason: r.reason } : null))
+          .filter(Boolean);
+
+        const usersData = settled[0].status === 'fulfilled' ? settled[0].value : [];
+        const feedbacksData = settled[1].status === 'fulfilled' ? settled[1].value : [];
+        const dashboardData = settled[2].status === 'fulfilled' ? settled[2].value : {};
 
         const usersArr = Array.isArray(usersData) ? usersData : [];
         const feedbacksArr = Array.isArray(feedbacksData) ? feedbacksData : [];
-        
+
         setUsers(usersArr.map(normalizeAdminUser).filter(Boolean));
         setSupports(feedbacksArr.map(normalizeAdminFeedback).filter(Boolean));
-        
+
         if (dashboardData.overview) {
           setDbOverview(dashboardData.overview);
         }
 
         if (dashboardData.liveMetrics) {
-          setLiveChatSeries(dashboardData.liveMetrics.map(m => ({
-            label: m.label,
-            value: Number(m.value) || 0
-          })));
-          // 활성 사용자 데이터는 임시로 liveMetrics와 동일하거나 0으로 설정 (DB에 활성 사용자 기록 테이블이 따로 없는 경우)
-          setLiveUserSeries(dashboardData.liveMetrics.map(m => ({
-            label: m.label,
-            value: Math.floor((Number(m.value) || 0) * 1.5)
-          })));
+          setLiveChatSeries(
+            dashboardData.liveMetrics.map((m) => ({
+              label: m.label,
+              value: Number(m.value) || 0,
+            }))
+          );
+          setLiveUserSeries(
+            dashboardData.liveMetrics.map((m) => ({
+              label: m.label,
+              value: Math.floor((Number(m.value) || 0) * 1.5),
+            }))
+          );
         }
 
         if (dashboardData.emotionDistribution) {
-          setEmotionStats(dashboardData.emotionDistribution.map(normalizeEmotionStat).filter(Boolean));
+          setEmotionStats(
+            dashboardData.emotionDistribution.map(normalizeEmotionStat).filter(Boolean)
+          );
         }
 
-        setBots([]); // BOT 테이블 데이터 조회 API가 현재는 없으므로 빈 배열 유지 (추후 필요시 추가)
+        setBots([]);
         setLogs(loadLogs());
+
+        if (failed.length > 0) {
+          const hint = formatAdminApiFailure(failed[0].reason);
+          if (failed.length >= 3) {
+            setError(hint);
+          } else {
+            setLoadWarning(
+              failed.length === 1
+                ? hint
+                : `일부 데이터만 불러왔어요. (${failed.length}건 요청 실패) ${hint}`
+            );
+          }
+        }
       } catch (err) {
         console.error('관리자 데이터 로드 실패:', err);
         setError(err?.message || '데이터를 불러오지 못했어요.');
@@ -869,6 +923,20 @@ export default function AdminPage() {
 
   return (
     <div className="matey-admin-v3">
+      {loadWarning ? (
+        <div
+          className="matey-admin-v3__state-card"
+          style={{
+            margin: '16px 24px 0',
+            border: '1px solid rgba(234, 179, 8, 0.5)',
+            background: 'rgba(234, 179, 8, 0.08)',
+          }}
+          role="status"
+        >
+          <p style={{ margin: 0, fontWeight: 600 }}>일부 데이터를 불러오지 못했어요</p>
+          <p style={{ margin: '8px 0 0', opacity: 0.9 }}>{loadWarning}</p>
+        </div>
+      ) : null}
       {/* =========================================================
           히어로 섹션
       ========================================================= */}

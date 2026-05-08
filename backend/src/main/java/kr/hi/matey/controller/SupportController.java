@@ -86,8 +86,8 @@ public class SupportController {
     /** 게시글·댓글 신고 중복 방지용: 내가 해당 대상을 이미 신고했는지 */
     @GetMapping("/report-exists")
     public ResponseEntity<Map<String, Object>> reportExists(
-            @RequestParam String targetType,
-            @RequestParam Long targetId,
+            @RequestParam("targetType") String targetType,
+            @RequestParam("targetId") Long targetId,
             @AuthenticationPrincipal CustomUser user
     ) {
         long userId = user.getUser().getUserId();
