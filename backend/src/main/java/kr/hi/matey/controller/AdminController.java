@@ -104,6 +104,19 @@ public class AdminController {
         return ResponseEntity.ok("일괄 처리가 완료되었습니다.");
     }
 
+    @PostMapping("/users/batch/role")
+    public ResponseEntity<String> bulkUpdateRole(
+            @RequestBody AdminBatchRequestDTO request,
+            @AuthenticationPrincipal CustomUser user) {
+        if (!RoleCodeHelper.isSuperAdmin(user.getUser().getRoleCode())) {
+            return ResponseEntity.status(403).body("forbidden");
+        }
+
+        String adminID = user.getUsername();
+        adminService.bulkUpdateUserRole(request.getUserIds(), request.getRoleCode(), adminID);
+        return ResponseEntity.ok("일괄 권한 변경이 완료되었습니다.");
+    }
+
     // ==========================================
     // 피드백 관리
     // ==========================================

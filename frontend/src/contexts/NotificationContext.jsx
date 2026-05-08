@@ -30,8 +30,27 @@ import {
   useMemo,
   useState,
 } from 'react';
-import { notificationAPI } from '../utils/api';
+import { notificationAPI, myPageAPI } from '../utils/api';
 import { useAuth } from './AuthContext';
+
+const SETTINGS_STORAGE_KEY = 'matey_user_settings';
+const INITIAL_SETTINGS = {
+  pushNotice: true,
+  emailNotice: false,
+  gentleTone: true,
+  quickReply: true,
+  casualTone: false,
+  noti_BOT_MESSAGE: true,
+  noti_CHAT_REMINDER: true,
+  noti_COMMENT_REPLY: true,
+  noti_COMMUNITY_HOT: true,
+  noti_EVENT_NOTICE: true,
+  noti_POINT_REWARD: true,
+  noti_POST_COMMENT: true,
+  noti_REPORT_RESULT: true,
+  noti_SUPPORT_ANSWER: true,
+  noti_SYSTEM_NOTICE: true,
+};
 
 // ============================================================
 // 1. Context 생성
@@ -45,6 +64,22 @@ export function NotificationProvider({ children }) {
   const { isAuthenticated } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const [settings, setSettings] = useState(() => {
+    const saved = localStorage.getItem(SETTINGS_STORAGE_KEY);
+    if (saved) {
+      try {
+        return { ...INITIAL_SETTINGS, ...JSON.parse(saved) };
+      } catch (e) {
+        return INITIAL_SETTINGS;
+      }
+    }
+    return INITIAL_SETTINGS;
+  });
+
+  // -------- 설정 저장 --------
+  useEffect(() => {
+    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+  }, [settings]);
 
   // -------- 알람 로드 --------
   const fetchNotifications = useCallback(async () => {
@@ -69,9 +104,23 @@ export function NotificationProvider({ children }) {
     }
   }, [isAuthenticated]);
 
+  // -------- 설정 로드 --------
+  const fetchSettings = useCallback(async () => {
+    if (!isAuthenticated) return;
+    try {
+      const data = await myPageAPI.getSettings();
+      if (data) {
+        setSettings((prev) => ({ ...prev, ...data }));
+      }
+    } catch (err) {
+      console.error('설정 로드 실패:', err);
+    }
+  }, [isAuthenticated]);
+
   useEffect(() => {
     fetchNotifications();
-  }, [fetchNotifications]);
+    fetchSettings();
+  }, [fetchNotifications, fetchSettings]);
 
   // -------- 모달 열기 / 닫기 --------
   const openNotifications = useCallback(() => setIsOpen(true), []);
@@ -96,6 +145,18 @@ export function NotificationProvider({ children }) {
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     } catch (err) {
       console.error('전체 알림 읽음 처리 실패:', err);
+    }
+  }, []);
+
+  // -------- 설정 업데이트 --------
+  const updateSetting = useCallback(async (key, value) => {
+    setSettings((prev) => ({ ...prev, [key]: value }));
+    try {
+      if (key === 'pushNotice' || key.startsWith('noti_')) {
+        await myPageAPI.updateSettings({ settingKey: key, settingValue: value });
+      }
+    } catch (err) {
+      console.error('설정 업데이트 실패:', err);
     }
   }, []);
 
@@ -155,12 +216,15 @@ export function NotificationProvider({ children }) {
     isOpen,
     notifications,
     unreadCount,
+    settings,
     openNotifications,
     closeNotifications,
     markAsRead,
     markAllAsRead,
     pushNotification,
     removeNotification,
+    updateSetting,
+    fetchSettings,
   };
 
   return (

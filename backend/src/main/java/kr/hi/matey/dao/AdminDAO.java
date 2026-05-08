@@ -35,6 +35,7 @@ public interface AdminDAO {
     // 일괄 작업 (Batch Operations)
     // ==========================================
     int bulkUpdateUserStatus(@Param("userIds") List<Long> userIds, @Param("status") String status);
+    int bulkUpdateUserRole(@Param("userIds") List<Long> userIds, @Param("roleCode") String roleCode);
 
     // ==========================================
     // 사용자 피드백 관리

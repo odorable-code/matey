@@ -66,6 +66,11 @@ public class AdminService {
         adminDAO.bulkUpdateUserStatus(userIds, status);
     }
 
+    @Transactional
+    public void bulkUpdateUserRole(List<Long> userIds, String roleCode, String adminActor) {
+        adminDAO.bulkUpdateUserRole(userIds, roleCode);
+    }
+
     // ==========================================
     // 사용자 피드백 관리
     // ==========================================

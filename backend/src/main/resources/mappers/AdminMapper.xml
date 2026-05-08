@@ -137,6 +137,15 @@
         </foreach>
     </update>
 
+    <update id="bulkUpdateUserRole">
+        UPDATE USER_ROLE 
+        SET role_id = (SELECT role_id FROM ROLE WHERE role_code = #{roleCode})
+        WHERE user_id IN
+        <foreach item="id" collection="userIds" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
     <!-- ========================================== -->
     <!-- 사용자 피드백 관리 -->
     <!-- ========================================== -->

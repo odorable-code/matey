@@ -341,9 +341,29 @@ export const adminAPI = {
       body: data,
     });
   },
-  
-  deleteUser: (userId) => {
-    return request(`/api/admin/users/${userId}`, {
+
+  updateUserRole: (userId, roleCode) => {
+    return request(`/api/admin/users/${userId}/role`, {
+      method: 'PATCH',
+      body: { roleCode },
+    });
+  },
+
+  bulkUpdateStatus: (data) => {
+    return request('/api/admin/users/batch/status', {
+      method: 'POST',
+      body: data,
+    });
+  },
+
+  bulkUpdateRole: (data) => {
+    return request('/api/admin/users/batch/role', {
+      method: 'POST',
+      body: data,
+    });
+  },
+
+  deleteUser: (userId) => {    return request(`/api/admin/users/${userId}`, {
       method: 'DELETE',
     });
   },

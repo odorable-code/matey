@@ -722,7 +722,7 @@ export default function AdminPage() {
   /* =========================================================
      사용자 상태 일괄 변경
   ========================================================= */
-  const handleBulkStatus = (nextStatus) => {
+  const handleBulkStatus = async (nextStatus) => {
     const targets = filteredUsers
       .filter((u) => selectedUserIds.includes(u.user_id))
       .filter((u) => canManageStatus(u));
@@ -731,25 +731,32 @@ export default function AdminPage() {
 
     const ids = targets.map((u) => u.user_id);
 
-    setUsers((prev) =>
-      prev.map((u) => (ids.includes(u.user_id) ? { ...u, status: nextStatus } : u))
-    );
+    try {
+      await adminAPI.bulkUpdateStatus({ userIds: ids, status: nextStatus });
 
-    pushAdminLog(
-      '사용자 관리',
-      '일괄 상태 변경',
-      `${ids.length}명 사용자`,
-      `선택한 ${ids.length}명의 상태를 ${USER_STATUS_LABELS[nextStatus]}(으)로 변경했습니다.`,
-      ['일괄 작업', nextStatus]
-    );
+      setUsers((prev) =>
+        prev.map((u) => (ids.includes(u.user_id) ? { ...u, status: nextStatus } : u))
+      );
 
-    setSelectedUserIds([]);
+      pushAdminLog(
+        '사용자 관리',
+        '일괄 상태 변경',
+        `${ids.length}명 사용자`,
+        `선택한 ${ids.length}명의 상태를 ${USER_STATUS_LABELS[nextStatus]}(으)로 변경했습니다.`,
+        ['일괄 작업', nextStatus]
+      );
+
+      setSelectedUserIds([]);
+    } catch (err) {
+      console.error('일괄 상태 변경 실패:', err);
+      alert('상태 변경 중 오류가 발생했어요: ' + (err.message || '서버 응답 실패'));
+    }
   };
 
   /* =========================================================
      사용자 권한 일괄 변경 (총 관리자만 가능)
   ========================================================= */
-  const handleBulkRole = (nextRole) => {
+  const handleBulkRole = async (nextRole) => {
     if (!currentAdminIsSuper) return;
 
     const targets = filteredUsers
@@ -760,56 +767,77 @@ export default function AdminPage() {
 
     const ids = targets.map((u) => u.user_id);
 
-    setUsers((prev) =>
-      prev.map((u) => (ids.includes(u.user_id) ? { ...u, role_code: nextRole } : u))
-    );
+    try {
+      await adminAPI.bulkUpdateRole({ userIds: ids, roleCode: nextRole });
 
-    pushAdminLog(
-      '권한 관리',
-      '일괄 권한 변경',
-      `${ids.length}명 사용자`,
-      `선택한 ${ids.length}명의 권한을 ${ROLE_LABELS[nextRole]}(으)로 변경했습니다.`,
-      ['권한 변경', nextRole]
-    );
+      setUsers((prev) =>
+        prev.map((u) => (ids.includes(u.user_id) ? { ...u, role_code: nextRole } : u))
+      );
 
-    setSelectedUserIds([]);
+      pushAdminLog(
+        '권한 관리',
+        '일괄 권한 변경',
+        `${ids.length}명 사용자`,
+        `선택한 ${ids.length}명의 권한을 ${ROLE_LABELS[nextRole]}(으)로 변경했습니다.`,
+        ['권한 변경', nextRole]
+      );
+
+      setSelectedUserIds([]);
+    } catch (err) {
+      console.error('일괄 권한 변경 실패:', err);
+      alert('권한 변경 중 오류가 발생했어요: ' + (err.message || '서버 응답 실패'));
+    }
   };
 
   /* =========================================================
      단일 사용자 상태/권한 변경
   ========================================================= */
-  const handleUserStatusChange = (userId, nextStatus) => {
+  const handleUserStatusChange = async (userId, nextStatus) => {
     const target = users.find((u) => u.user_id === userId);
     if (!target || !canManageStatus(target) || target.status === nextStatus) return;
 
-    setUsers((prev) =>
-      prev.map((u) => (u.user_id === userId ? { ...u, status: nextStatus } : u))
-    );
+    try {
+      await adminAPI.updateUser(userId, { status: nextStatus });
 
-    pushAdminLog(
-      '사용자 관리',
-      '사용자 상태 변경',
-      target.nickname,
-      `${target.nickname} 사용자의 상태를 ${USER_STATUS_LABELS[nextStatus]}(으)로 변경했습니다.`,
-      ['상태 변경', nextStatus]
-    );
+      setUsers((prev) =>
+        prev.map((u) => (u.user_id === userId ? { ...u, status: nextStatus } : u))
+      );
+
+      pushAdminLog(
+        '사용자 관리',
+        '사용자 상태 변경',
+        target.nickname,
+        `${target.nickname} 사용자의 상태를 ${USER_STATUS_LABELS[nextStatus]}(으)로 변경했습니다.`,
+        ['상태 변경', nextStatus]
+      );
+    } catch (err) {
+      console.error('상태 변경 실패:', err);
+      alert('상태 변경에 실패했어요.');
+    }
   };
 
-  const handleUserRoleChange = (userId, nextRole) => {
+  const handleUserRoleChange = async (userId, nextRole) => {
     const target = users.find((u) => u.user_id === userId);
     if (!target || !canManageRole(target) || getUserRoleCode(target) === nextRole) return;
 
-    setUsers((prev) =>
-      prev.map((u) => (u.user_id === userId ? { ...u, role_code: nextRole } : u))
-    );
+    try {
+      await adminAPI.updateUserRole(userId, nextRole);
 
-    pushAdminLog(
-      '권한 관리',
-      '사용자 권한 변경',
-      target.nickname,
-      `${target.nickname} 사용자의 권한을 ${ROLE_LABELS[nextRole]}(으)로 변경했습니다.`,
-      ['권한 변경', nextRole]
-    );
+      setUsers((prev) =>
+        prev.map((u) => (u.user_id === userId ? { ...u, role_code: nextRole } : u))
+      );
+
+      pushAdminLog(
+        '권한 관리',
+        '사용자 권한 변경',
+        target.nickname,
+        `${target.nickname} 사용자의 권한을 ${ROLE_LABELS[nextRole]}(으)로 변경했습니다.`,
+        ['권한 변경', nextRole]
+      );
+    } catch (err) {
+      console.error('권한 변경 실패:', err);
+      alert('권한 변경에 실패했어요.');
+    }
   };
 
   /* =========================================================
