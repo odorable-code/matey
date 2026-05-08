@@ -3,9 +3,12 @@ import pandas as pd
 from konlpy.tag import Okt
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.cluster import KMeans
+import anthropic
 
 # 형태소 분석기 초기화
 okt = Okt()
+api_key = ''
+client = anthropic.Anthropic(api_key)
 
 def preprocess_text(text):
     """
@@ -33,53 +36,75 @@ def preprocess_text(text):
     
     return " ".join(meaningful_words)
 
-# --- 데이터 로드 및 전처리 ---
-folder_path = r'C:\Users\hi6\Documents\위험도 분류를 위한 데이터셋' 
-all_docs = []
-file_names = []
+def classify_risk_with_claude(clean_text):
+    """
+    Claude API를 사용하여 위험도 분류 및 이유 추출
+    """
+    prompt = f"""
+    당신은 전문 심리 상담가이자 위험 관리 전문가입니다. 
+    제시된 상담 키워드를 분석하여 내담자의 위험도를 1(매우 낮음)에서 5(매우 높음) 단계로 분류하세요.
 
-print("데이터 전처리 중...")
+    [판단 기준]
+    - 1~2단계: 일상적인 고민, 가벼운 스트레스
+    - 3단계: 중등도의 우울감, 반복적인 고통 호소
+    - 4단계: 심각한 절망감, 자해 사고 혹은 구체적인 위기 징후
+    - 5단계: 즉각적인 개입이 필요한 자살 위기 및 긴급 상황
+
+    상담 키워드: {clean_text}
+
+    결과는 반드시 아래의 JSON 형식으로만 답변하세요:
+    {{"risk_level": 숫자, "reason": "한 문장 요약"}}
+    """
+
+    try:
+        message = client.messages.create(
+            model="claude-3-5-sonnet-20240620", # 고성능 모델 사용
+            max_tokens=300,
+            temperature=0, # 일관된 결과를 위해 0 설정
+            messages=[{"role": "user", "content": prompt}]
+        )
+        # 결과 파싱 (JSON 형태의 문자열을 딕셔너리로 변환)
+        import json
+        result = json.loads(message.content[0].text)
+        return result
+    except Exception as e:
+        print(f"API 호출 중 오류 발생: {e}")
+        return {"risk_level": "Error", "reason": "N/A"}
+
+# --- 데이터 로드 및 실행 ---
+folder_path = r'C:\Users\hi6\Documents\위험도 분류를 위한 데이터셋' 
+all_results = []
+
+print("데이터 분석 시작 (Claude API 활용)...")
+
+# 폴더 내 모든 txt 파일 처리
 for filename in os.listdir(folder_path):
     if filename.endswith('.txt'):
         with open(os.path.join(folder_path, filename), 'r', encoding='utf-8') as f:
             content = f.read()
-            # 파일 읽기 직후 전처리 함수 적용
+            
+            # 1. 전처리 (텍스트 길이를 줄여 API 비용 절감)
             clean_text = preprocess_text(content)
-            all_docs.append(clean_text)
-            file_names.append(filename)
+            
+            # 2. Claude에게 위험도 판정 요청
+            print(f"[{filename}] 분석 중...")
+            analysis = classify_risk_with_claude(clean_text)
+            
+            # 3. 결과 저장
+            all_results.append({
+                '파일명': filename,
+                '위험도': analysis['risk_level'],
+                '판단사유': analysis['reason']
+            })
 
-# --- 벡터화 및 군집화 ---
-# 전처리가 이미 되었으므로 TfidfVectorizer는 간단하게 설정
-vectorizer = TfidfVectorizer(max_features=1000)
-x_matrix = vectorizer.fit_transform(all_docs)
-
-# K-means (위험도 1~5단계를 위해 5개 군집)
-kmeans = KMeans(n_clusters=5, n_init=10, random_state=42)
-kmeans.fit(x_matrix)
-
-# --- 결과 정리 및 출력 ---
-results = pd.DataFrame({
-    '파일명': file_names,
-    '군집번호': kmeans.labels_
-})
+# --- 결과 정리 및 저장 ---
+df_final = pd.DataFrame(all_results)
 
 print("\n" + "="*50)
-print("--- 각 군집을 대표하는 핵심 키워드 ---")
-print("이 키워드들을 보고 위험도(1~5)를 매칭하세요.")
+print("--- 최종 위험도 분류 결과 ---")
+print(df_final.sort_values(by='위험도', ascending=False)) # 위험도 높은 순 정렬
 print("="*50)
 
-centroids = kmeans.cluster_centers_.argsort()[:, ::-1]
-terms = vectorizer.get_feature_names_out()
-
-for i in range(5):
-    print(f"[군집 {i}] 주요 단어: ", end="")
-    for ind in centroids[i, :10]: # 상위 10개 단어 출력
-        print(f"{terms[ind]} ", end="")
-    print("\n")
-
-# 군집번호 순으로 정렬하여 출력
-print("--- 파일별 군집 결과 ---")
-print(results.sort_values(by='군집번호'))
-
-# 필요시 CSV 저장
-# results.to_csv('clustering_result.csv', index=False, encoding='utf-8-sig')
+# CSV 파일로 저장
+df_final.to_csv('risk_analysis_results.csv', index=False, encoding='utf-8-sig')
+print("분류 완료! 'risk_analysis_results.csv' 파일을 확인하세요.")
