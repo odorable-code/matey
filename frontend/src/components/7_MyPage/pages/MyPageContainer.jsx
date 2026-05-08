@@ -68,7 +68,7 @@ function MyPageContainer() {
               sender: data.items[0].sender || '메이티',
               preview: data.items[0].preview,
               date: data.items[0].date,
-              status: data.items[0].unread ? '새 편지' : '읽은 편지',
+              status: data.items[0].unread ? `새 편지 ${data.unreadCount}` : '읽음',
             } : {
               id: null,
               unread: false,
@@ -76,7 +76,7 @@ function MyPageContainer() {
               sender: '메이티',
               preview: '메이티가 편지를 보내면 여기에 표시돼요.',
               date: '-',
-              status: '',
+              status: String(data.unreadCount || 0),
             },
             stats: [
               { label: '읽지 않은 편지', value: String(data.unreadCount || 0) },
@@ -96,6 +96,9 @@ function MyPageContainer() {
       })
       .catch(console.error);
   };
+
+  useEffect(() => {
+  }, []);
 
   useEffect(() => {
     if (activeMenu === 'letterBox') {
