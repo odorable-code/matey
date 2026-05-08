@@ -1039,7 +1039,7 @@ export default function AdminPage() {
                   <div className="matey-admin-v3__chart-head">
                     <div>
                       <h3>채팅 세션 추이</h3>
-                      <p>CHAT_ROOM 활성 세션 수</p>
+                      <p>활성 세션 수</p>
                     </div>
                     <strong>{chatLast}</strong>
                   </div>
