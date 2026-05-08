@@ -62,6 +62,7 @@ function CommunityPostList() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState('');
+  const [ownPostReactionHint, setOwnPostReactionHint] = useState('');
   const limit = 20;
 
   const chipCategories = useMemo(
@@ -143,6 +144,12 @@ function CommunityPostList() {
     };
   }, [fetchPage]);
 
+  useEffect(() => {
+    if (!ownPostReactionHint) return undefined;
+    const t = window.setTimeout(() => setOwnPostReactionHint(''), 2800);
+    return () => window.clearTimeout(t);
+  }, [ownPostReactionHint]);
+
   const handleSearch = (event) => {
     event.preventDefault();
     setAppliedKeyword(keywordInput.trim());
@@ -153,6 +160,10 @@ function CommunityPostList() {
     event.stopPropagation();
     if (!isAuthenticated) {
       navigate('/login', { state: { from: `/community/posts/${p.postId}` } });
+      return;
+    }
+    if (myId != null && Number(p.userId) === Number(myId)) {
+      setOwnPostReactionHint('본인이 작성한 글에는 좋아요를 누를 수 없어요.');
       return;
     }
     setError('');
@@ -181,6 +192,10 @@ function CommunityPostList() {
     event.stopPropagation();
     if (!isAuthenticated) {
       navigate('/login', { state: { from: `/community/posts/${p.postId}` } });
+      return;
+    }
+    if (myId != null && Number(p.userId) === Number(myId)) {
+      setOwnPostReactionHint('본인이 작성한 글에는 싫어요를 누를 수 없어요.');
       return;
     }
     setError('');
@@ -288,6 +303,11 @@ function CommunityPostList() {
       </div>
 
       {error ? <p className={styles.errorText}>{error}</p> : null}
+      {ownPostReactionHint ? (
+        <p className={styles.hint} role="status" aria-live="polite">
+          {ownPostReactionHint}
+        </p>
+      ) : null}
 
       {loading ? (
         <p className={styles.hint}>불러오는 중이에요…</p>
@@ -299,7 +319,6 @@ function CommunityPostList() {
             posts.map((p) => {
               const hideEngagement =
                 p.categoryNotification === 0 || p.categoryNotification === '0';
-              const isOwnPost = myId != null && Number(p.userId) === Number(myId);
               return (
                 <div key={p.postId} className={styles.postCard}>
                   <Link to={`/community/posts/${p.postId}`} className={styles.postCardLink}>
@@ -321,8 +340,6 @@ function CommunityPostList() {
                             p.likedByMe ? styles.likeBtnActive : ''
                           }`}
                           onClick={(e) => handlePostCardLike(e, p)}
-                          disabled={isOwnPost}
-                          title={isOwnPost ? '본인이 작성한 글에는 좋아요를 누를 수 없어요.' : undefined}
                           aria-pressed={!!p.likedByMe}
                         >
                           <span className={styles.likeIcon} aria-hidden>
@@ -336,8 +353,6 @@ function CommunityPostList() {
                             p.dislikedByMe ? styles.dislikeBtnActive : ''
                           }`}
                           onClick={(e) => handlePostCardDislike(e, p)}
-                          disabled={isOwnPost}
-                          title={isOwnPost ? '본인이 작성한 글에는 싫어요를 누를 수 없어요.' : undefined}
                           aria-pressed={!!p.dislikedByMe}
                         >
                           <span className={styles.dislikeIcon} aria-hidden>
