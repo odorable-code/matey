@@ -11,6 +11,7 @@
   padding-top: calc(var(--mypage-header-offset) + 24px);
   padding-bottom: 64px;
   box-sizing: border-box;
+  background: linear-gradient(180deg, #fdfaff 0%, #f7f9ff 48%, #fff8fc 100%);
 }
 
 .page * {
