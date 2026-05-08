@@ -34,6 +34,7 @@ const initialSettings = {
   emailNotice: false,
   gentleTone: true,
   quickReply: true,
+  casualTone: false,
 };
 
 function SettingsContent() {
@@ -136,6 +137,11 @@ function SettingsContent() {
           note: '메이티가 조금 더 차분한 톤으로 응답해요.',
         },
         {
+          key: 'casualTone',
+          label: '반말 모드',
+          note: '메이티가 친구처럼 편안한 반말로 대화해요.',
+        },
+        {
           key: 'quickReply',
           label: '빠른 답장 모드',
           note: '짧고 빠른 흐름으로 대화를 이어가요.',
@@ -163,46 +169,45 @@ function SettingsContent() {
 
       <div className={styles.layoutGrid}>
         {/* =========================
-            왼쪽 영역: 설정 토글 목록
+            왼쪽 영역: 알림 설정 + 계정 정보
         ========================= */}
         <div className={styles.mainColumn}>
-          {settingGroups.map((group) => (
-            <article key={group.title} className={styles.sectionCard}>
-              <div className={styles.sectionHead}>
-                <h3 className={styles.sectionTitle}>{group.title}</h3>
-              </div>
-
-              <div className={styles.settingList}>
-                {group.items.map((item) => (
-                  <div key={item.key} className={styles.settingRow}>
-                    <div className={styles.settingText}>
-                      <strong className={styles.settingLabel}>{item.label}</strong>
-                      <p className={styles.settingNote}>{item.note}</p>
+          {/* 1. 알림 설정 (기존 첫 번째 그룹) */}
+          {settingGroups
+            .filter((g) => g.title === '알림')
+            .map((group) => (
+              <article key={group.title} className={styles.sectionCard}>
+                <div className={styles.sectionHead}>
+                  <h3 className={styles.sectionTitle}>{group.title}</h3>
+                </div>
+                <div className={styles.settingList}>
+                  {group.items.map((item) => (
+                    <div key={item.key} className={styles.settingRow}>
+                      <div className={styles.settingText}>
+                        <strong className={styles.settingLabel}>{item.label}</strong>
+                        <p className={styles.settingNote}>{item.note}</p>
+                      </div>
+                      <button
+                        type="button"
+                        className={`${styles.toggle} ${
+                          settings[item.key] ? styles.toggleOn : styles.toggleOff
+                        }`}
+                        onClick={() => toggleSetting(item.key)}
+                        aria-pressed={settings[item.key]}
+                      >
+                        <span className={styles.toggleThumb} />
+                      </button>
                     </div>
+                  ))}
+                </div>
+              </article>
+            ))}
 
-                    <button
-                      type="button"
-                      className={`${styles.toggle} ${
-                        settings[item.key] ? styles.toggleOn : styles.toggleOff
-                      }`}
-                      onClick={() => toggleSetting(item.key)}
-                      aria-pressed={settings[item.key]}
-                    >
-                      <span className={styles.toggleThumb} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </article>
-          ))}
-        </div>
-
-        {/* =========================
-            오른쪽 영역: 계정 정보 / 계정 관리
-        ========================= */}
-        <div className={styles.sideColumn}>
-          <article className={styles.infoCard}>
-            <h3 className={styles.sectionTitle}>계정 정보</h3>
+          {/* 2. 계정 정보 (오른쪽에서 이동됨) */}
+          <article className={styles.sectionCard}>
+            <div className={styles.sectionHead}>
+              <h3 className={styles.sectionTitle}>계정 정보</h3>
+            </div>
             <div className={styles.infoList}>
               <div className={styles.infoRow}>
                 <span className={styles.infoLabel}>이메일</span>
@@ -214,6 +219,42 @@ function SettingsContent() {
               </div>
             </div>
           </article>
+        </div>
+
+        {/* =========================
+            오른쪽 영역: 대화 환경 + 계정 관리
+        ========================= */}
+        <div className={styles.sideColumn}>
+          {/* 1. 대화 환경 (왼쪽에서 이동됨) */}
+          {settingGroups
+            .filter((g) => g.title === '대화 환경')
+            .map((group) => (
+              <article key={group.title} className={styles.sectionCard}>
+                <div className={styles.sectionHead}>
+                  <h3 className={styles.sectionTitle}>{group.title}</h3>
+                </div>
+                <div className={styles.settingList}>
+                  {group.items.map((item) => (
+                    <div key={item.key} className={styles.settingRow}>
+                      <div className={styles.settingText}>
+                        <strong className={styles.settingLabel}>{item.label}</strong>
+                        <p className={styles.settingNote}>{item.note}</p>
+                      </div>
+                      <button
+                        type="button"
+                        className={`${styles.toggle} ${
+                          settings[item.key] ? styles.toggleOn : styles.toggleOff
+                        }`}
+                        onClick={() => toggleSetting(item.key)}
+                        aria-pressed={settings[item.key]}
+                      >
+                        <span className={styles.toggleThumb} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </article>
+            ))}
 
           <article className={styles.dangerCard}>
             <h3 className={styles.sectionTitle}>계정 관리</h3>
