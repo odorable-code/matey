@@ -3,23 +3,6 @@
  * 파일명 : src/contexts/NotificationContext.jsx
  * 역할   : 시스템 알람 상태 + 알람 모달 컨트롤러 (Context)
  * =========================================================
- *
- * [이 파일에서 하는 일]
- * - 알람 모달 열고 닫기 (openNotifications / closeNotifications)
- * - 알람 목록(notifications) 보관
- * - 읽음 처리 (markAsRead, markAllAsRead)
- * - 알람 추가 (pushNotification) — 나중에 WebSocket / API 연결 시 사용
- * - 안 읽은 알람 개수(unreadCount) 계산 → 헤더 빨간 점에 사용
- *
- * [주요 위치]
- * - Provider : App.jsx 최상단에서 전체 앱 감쌈
- * - 사용처   : useNotifications() 훅으로 어디서든 호출
- *
- * [수정 포인트]
- * - 초기 샘플 데이터 : INITIAL_NOTIFICATIONS
- *   → 실제 API 연결 시 빈 배열로 두고 fetch 결과로 채우기
- * - 새 알람 추가     : pushNotification({ type, title, message })
- * =========================================================
  */
 
 import {
@@ -33,7 +16,7 @@ import {
 import { notificationAPI, myPageAPI } from '../utils/api';
 import { useAuth } from './AuthContext';
 
-const SETTINGS_STORAGE_KEY = 'matey_user_settings';
+const SETTINGS_BASE_KEY = 'matey_user_settings';
 const INITIAL_SETTINGS = {
   pushNotice: true,
   emailNotice: false,
@@ -61,25 +44,42 @@ const NotificationContext = createContext(null);
 // 2. Provider 컴포넌트
 // ============================================================
 export function NotificationProvider({ children }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
-  const [settings, setSettings] = useState(() => {
-    const saved = localStorage.getItem(SETTINGS_STORAGE_KEY);
+  const [settings, setSettings] = useState(INITIAL_SETTINGS);
+
+  // 사용자별 고유 스토리지 키 생성 (예: matey_user_settings_12)
+  const settingsStorageKey = useMemo(() => {
+    const userId = user?.userId || user?.user_id || user?.id;
+    return userId ? `${SETTINGS_BASE_KEY}_${userId}` : null;
+  }, [user]);
+
+  // -------- 로그인한 사용자 설정 로드 (사용자 바뀔 때마다 실행) --------
+  useEffect(() => {
+    if (!settingsStorageKey) {
+      setSettings(INITIAL_SETTINGS);
+      return;
+    }
+
+    const saved = localStorage.getItem(settingsStorageKey);
     if (saved) {
       try {
-        return { ...INITIAL_SETTINGS, ...JSON.parse(saved) };
+        setSettings({ ...INITIAL_SETTINGS, ...JSON.parse(saved) });
       } catch (e) {
-        return INITIAL_SETTINGS;
+        setSettings(INITIAL_SETTINGS);
       }
+    } else {
+      setSettings(INITIAL_SETTINGS);
     }
-    return INITIAL_SETTINGS;
-  });
+  }, [settingsStorageKey]);
 
-  // -------- 설정 저장 --------
+  // -------- 설정 변경 시 해당 사용자 키로 저장 --------
   useEffect(() => {
-    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
-  }, [settings]);
+    if (settingsStorageKey && settings !== INITIAL_SETTINGS) {
+      localStorage.setItem(settingsStorageKey, JSON.stringify(settings));
+    }
+  }, [settings, settingsStorageKey]);
 
   // -------- 알람 로드 --------
   const fetchNotifications = useCallback(async () => {
@@ -101,12 +101,13 @@ export function NotificationProvider({ children }) {
     }
   }, [isAuthenticated]);
 
-  // -------- 설정 로드 --------
+  // -------- 서버 설정 로드 (동기화) --------
   const fetchSettings = useCallback(async () => {
     if (!isAuthenticated) return;
     try {
       const data = await myPageAPI.getSettings();
       if (data) {
+        // 서버 데이터를 LocalStorage/State에 병합
         setSettings((prev) => ({ ...prev, ...data }));
       }
     } catch (err) {
@@ -149,7 +150,7 @@ export function NotificationProvider({ children }) {
   const updateSetting = useCallback(async (key, value) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
     try {
-      if (key === 'pushNotice' || key.startsWith('noti_')) {
+      if (key === 'pushNotice' || key === 'emailNotice' || key.startsWith('noti_')) {
         await myPageAPI.updateSettings({ settingKey: key, settingValue: value });
       }
     } catch (err) {
@@ -232,7 +233,7 @@ export function NotificationProvider({ children }) {
 }
 
 // ============================================================
-// 4. 커스텀 훅
+// 3. 커스텀 훅
 // ============================================================
 export function useNotifications() {
   const ctx = useContext(NotificationContext);
