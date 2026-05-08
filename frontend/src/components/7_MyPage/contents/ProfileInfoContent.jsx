@@ -122,35 +122,6 @@ function ProfileInfoContent() {
             남기고 나머지는 읽기 전용으로 정리했어요.
           </p>
         </div>
-
-        <div className={styles.actionRow}>
-          {!isEditMode ? (
-            <button
-              type="button"
-              className={styles.primaryButton}
-              onClick={handleStartEdit}
-            >
-              Edit
-            </button>
-          ) : (
-            <>
-              <button
-                type="button"
-                className={styles.secondaryButton}
-                onClick={handleCancelEdit}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className={styles.primaryButton}
-                onClick={handleSaveEdit}
-              >
-                Save
-              </button>
-            </>
-          )}
-        </div>
       </div>
 
       <div className={styles.contentGrid}>
@@ -192,8 +163,8 @@ function ProfileInfoContent() {
 
           <p className={styles.avatarHint}>
             {isEditMode
-              ? 'Edit 모드에서만 프로필 사진을 변경할 수 있어요.'
-              : '사진 변경은 Edit 모드에서만 가능합니다.'}
+              ? '수정 모드에서만 프로필 사진을 변경할 수 있어요.'
+              : '사진 변경은 수정 버튼을 누른 후 가능합니다.'}
           </p>
         </article>
 
@@ -278,6 +249,35 @@ function ProfileInfoContent() {
                 />
               </label>
             </div>
+          </div>
+
+          <div className={styles.formActions}>
+            {!isEditMode ? (
+              <button
+                type="button"
+                className={styles.primaryButton}
+                onClick={handleStartEdit}
+              >
+                수정
+              </button>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className={styles.secondaryButton}
+                  onClick={handleCancelEdit}
+                >
+                  취소
+                </button>
+                <button
+                  type="button"
+                  className={styles.primaryButton}
+                  onClick={handleSaveEdit}
+                >
+                  저장
+                </button>
+              </>
+            )}
           </div>
         </article>
       </div>
