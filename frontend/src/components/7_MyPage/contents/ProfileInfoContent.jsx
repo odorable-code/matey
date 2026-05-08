@@ -205,15 +205,14 @@ function ProfileInfoContent() {
 
             <div className={styles.fieldGrid}>
               <label className={styles.field}>
-                <span className={styles.fieldLabel}>사용자 ID</span>
+                <span className={styles.fieldLabel}>이메일</span>
                 <input
-                  type="text"
-                  value={currentProfile.userId}
+                  type="email"
+                  value={currentProfile.email}
                   disabled
-                  className={`${styles.input} ${styles.readOnly}`}
+                  className={styles.input}
                 />
               </label>
-
               <label className={styles.field}>
                 <span className={styles.fieldLabel}>닉네임</span>
                 <input
@@ -235,16 +234,7 @@ function ProfileInfoContent() {
                 />
               </label>
 
-              <label className={styles.field}>
-                <span className={styles.fieldLabel}>이메일</span>
-                <input
-                  type="email"
-                  value={currentProfile.email}
-                  disabled={!isEditMode}
-                  onChange={(e) => handleEditableChange('email', e.target.value)}
-                  className={styles.input}
-                />
-              </label>
+
             </div>
           </div>
 
