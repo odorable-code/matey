@@ -13,8 +13,8 @@
             (SELECT COUNT(*) FROM SUPPORT WHERE status = 'PENDING') as pendingFeedbacks,
             (SELECT COUNT(*) FROM USER_ROLE ur JOIN ROLE r ON ur.role_id = r.role_id
              WHERE r.role_code IN ('ADMIN', 'SUPER_ADMIN')) as adminCount,
-            (SELECT COUNT(*) FROM MESSAGE_ANALYSIS) as totalReports,
-            (SELECT COUNT(DISTINCT chat_room_id) FROM CHAT_ROOM 
+            (SELECT COUNT(*) FROM MESSAGE WHERE emotion_id IS NOT NULL) as totalReports,
+            (SELECT COUNT(DISTINCT chat_room_id) FROM CHAT_ROOM
              WHERE updated_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)) as activeConversations
     </select>
 
@@ -31,9 +31,9 @@
     <select id="selectEmotionDistribution" resultType="map">
         SELECT
             ec.emotion_name as label,
-            COUNT(ma.analysis_id) as value
-        FROM MESSAGE_ANALYSIS ma
-        JOIN EMOTION_CATEGORY ec ON ma.emotion_id = ec.emotion_id
+            COUNT(m.message_id) as value
+        FROM MESSAGE m
+        INNER JOIN EMOTION_CATEGORY ec ON m.emotion_id = ec.emotion_id
         GROUP BY ec.emotion_id, ec.emotion_name
         ORDER BY value DESC
     </select>

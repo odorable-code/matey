@@ -46,9 +46,9 @@ public class AdminController {
 
     @GetMapping("/users")
     public ResponseEntity<List<UserDTO2>> getUsers(
-            @RequestParam(required = false) String keyword,
-            @RequestParam(defaultValue = "ALL") String role,
-            @RequestParam(defaultValue = "ALL") String status) {
+            @RequestParam(name = "keyword", required = false) String keyword,
+            @RequestParam(name = "role", defaultValue = "ALL") String role,
+            @RequestParam(name = "status", defaultValue = "ALL") String status) {
         return ResponseEntity.ok(adminService.findUsers(keyword, role, status));
     }
 
@@ -109,7 +109,8 @@ public class AdminController {
     // ==========================================
 
     @GetMapping("/feedbacks")
-    public ResponseEntity<List<FeedbackDTO>> getFeedbacks(@RequestParam(defaultValue = "ALL") String status) {
+    public ResponseEntity<List<FeedbackDTO>> getFeedbacks(
+            @RequestParam(name = "status", defaultValue = "ALL") String status) {
         return ResponseEntity.ok(adminService.findFeedbacks(status));
     }
 

@@ -31,8 +31,8 @@ public class OAuthController {
 
     @GetMapping("/callback/{provider}")
     public void callback(@PathVariable String provider,
-                         @RequestParam String code,
-                         @RequestParam(required = false) String state,
+                         @RequestParam("code") String code,
+                         @RequestParam(name = "state", required = false) String state,
                          HttpServletResponse response,
                          HttpSession session) throws IOException {
         // state/프로바이더 검증 실패 시 500 말고 로그인 쪽으로 돌리기(프론트에서 ?error=oauth 쓰면 됨)
