@@ -70,7 +70,7 @@ def classify_risk_with_gemini(clean_text):
         return {"risk_level": 0, "reason": "분석 실패"}
 
 # --- 데이터 로드 및 실행 ---
-folder_path = r'C:\Users\hi6\Documents\위험도 분류를 위한 데이터셋' 
+folder_path = r'C:\Users\hi6\Documents\테스트용 위험도 분류' 
 all_results = []
 
 if not os.path.exists(folder_path):
@@ -89,6 +89,8 @@ else:
             # 2. AI 판정
             print(f"🔍 [{filename}] 분석 중...")
             analysis = classify_risk_with_gemini(clean_text)
+
+            print(f"   ㄴ AI 응답: {analysis}")
             
             # 3. 결과 저장
             all_results.append({
