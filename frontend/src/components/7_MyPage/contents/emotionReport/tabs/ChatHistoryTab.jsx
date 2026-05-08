@@ -25,6 +25,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import styles from './ChatHistoryTab.module.css';
+import { resolveMascotImageSrcBySituationLabel } from '../../../../../utils/botAvatar';
 
 /* =========================
    공용 파일에서 가져오기
@@ -838,6 +839,12 @@ function ChatHistoryTab({
             {chatEntries.length > 0 ? (
               chatEntries.map((entry) => {
                 const isBot = entry.speaker === 'bot';
+                const botAvatarSrc = isBot
+                  ? resolveMascotImageSrcBySituationLabel(
+                      entry.emotion,
+                      roomBot?.key || currentRoom?.botKey || selectedBotKey || 'dog'
+                    )
+                  : null;
 
                 return (
                   <div
@@ -847,35 +854,73 @@ function ChatHistoryTab({
                       isBot ? styles.timelineItemBot : styles.timelineItemMe
                     )}
                   >
-                    <div className={styles.timelineMeta}>
-                      <span
-                        className={cx(
-                          styles.speakerBadge,
-                          isBot
-                            ? styles.speakerBadgeBot
-                            : styles.speakerBadgeMe
-                        )}
-                      >
-                        {isBot ? 'BOT' : 'ME'}
-                      </span>
-
-                      {entry.emotion && (
-                        <span className={styles.emotionBadge}>
-                          {entry.emotion}
+                    {isBot ? (
+                      <div className={styles.timelineRow}>
+                        <span className={styles.timelineAvatarWrap} aria-hidden="true">
+                          <img className={styles.timelineAvatar} src={botAvatarSrc} alt="" />
                         </span>
-                      )}
 
-                      <span className={styles.timeBadge}>{entry.time}</span>
-                    </div>
+                        <div className={styles.timelineBody}>
+                          <div className={styles.timelineMeta}>
+                            <span
+                              className={cx(
+                                styles.speakerBadge,
+                                styles.speakerBadgeBot
+                              )}
+                            >
+                              BOT
+                            </span>
 
-                    <div
-                      className={cx(
-                        styles.bubble,
-                        isBot ? styles.bubbleBot : styles.bubbleMe
-                      )}
-                    >
-                      {entry.message}
-                    </div>
+                            {entry.emotion && (
+                              <span className={styles.emotionBadge}>
+                                {entry.emotion}
+                              </span>
+                            )}
+
+                            <span className={styles.timeBadge}>{entry.time}</span>
+                          </div>
+
+                          <div
+                            className={cx(
+                              styles.bubble,
+                              styles.bubbleBot
+                            )}
+                          >
+                            {entry.message}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className={styles.timelineMeta}>
+                          <span
+                            className={cx(
+                              styles.speakerBadge,
+                              styles.speakerBadgeMe
+                            )}
+                          >
+                            ME
+                          </span>
+
+                          {entry.emotion && (
+                            <span className={styles.emotionBadge}>
+                              {entry.emotion}
+                            </span>
+                          )}
+
+                          <span className={styles.timeBadge}>{entry.time}</span>
+                        </div>
+
+                        <div
+                          className={cx(
+                            styles.bubble,
+                            styles.bubbleMe
+                          )}
+                        >
+                          {entry.message}
+                        </div>
+                      </>
+                    )}
                   </div>
                 );
               })

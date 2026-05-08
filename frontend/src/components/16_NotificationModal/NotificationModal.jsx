@@ -61,7 +61,6 @@ function NotificationModal({ anchorRef }) {
   } = useNotifications();
 
   const popoverRef = useRef(null);
-  const navigate = useNavigate();
 
   // -------- 바깥 클릭으로 닫기 --------
   useEffect(() => {
