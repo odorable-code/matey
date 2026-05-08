@@ -7,4 +7,5 @@ import java.util.List;
 public class AdminBatchRequestDTO {
     private List<Long> userIds;
     private String status;
+    private String roleCode;
 }

@@ -108,7 +108,7 @@ public class SecurityConfig {
         config.setAllowedOriginPatterns(allowedOriginPatterns);
 
         // 허용할 HTTP 메서드
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         // 허용할 헤더(클라이언트가 요청을 보낼 때 헤어에 어떤 정보를 담아도 다 받겠다)
         config.setAllowedHeaders(List.of("*"));
         // 쿠키 사용 허용
