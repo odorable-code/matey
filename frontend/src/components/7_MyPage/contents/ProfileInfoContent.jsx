@@ -205,6 +205,17 @@ function ProfileInfoContent() {
                 />
               </label>
 
+              <div className={styles.field}>
+                <span className={styles.fieldLabel}>비밀번호</span>
+                <button
+                  type="button"
+                  className={styles.passwordButton}
+                  onClick={() => alert('비밀번호 변경 기능은 준비 중입니다.')}
+                >
+                  비밀번호 변경하기
+                </button>
+              </div>
+
 
             </div>
           </div>

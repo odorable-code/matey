@@ -270,6 +270,28 @@
   box-shadow: 0 0 0 4px rgba(219, 199, 255, 0.28);
 }
 
+.passwordButton {
+  width: 100%;
+  min-height: 50px;
+  padding: 0 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(225, 214, 242, 0.95);
+  background: linear-gradient(135deg, #fffafd 0%, #f6f0ff 100%);
+  color: #6d5b91;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.16s ease;
+}
+
+.passwordButton:hover {
+  border-color: rgba(198, 171, 243, 0.98);
+  background: linear-gradient(135deg, #f6f0ff 0%, #fffafd 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(141, 114, 187, 0.08);
+}
+
 .readOnly,
 .input:disabled,
 .select:disabled {
