@@ -208,7 +208,7 @@ function SettingsContent() {
                             onClick={() => alert('상세 알림 설정 기능은 준비 중입니다.')}
                           >
                             <div className={styles.settingText}>
-                              <span className={styles.settingLabel}>알림 설정</span>
+                              <strong className={styles.settingLabel}>알림 설정</strong>
                               <p className={styles.settingNote}>알림 상세 설정을 할 수 있어요</p>
                             </div>
                           </button>
@@ -278,7 +278,7 @@ function SettingsContent() {
                             onClick={() => alert('상세 알림 설정 기능은 준비 중입니다.')}
                           >
                             <div className={styles.settingText}>
-                              <span className={styles.settingLabel}>알림 설정</span>
+                              <strong className={styles.settingLabel}>알림 설정</strong>
                               <p className={styles.settingNote}>알림 상세 설정을 할 수 있어요</p>
                             </div>
                           </button>

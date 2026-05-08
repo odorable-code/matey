@@ -121,21 +121,12 @@
   border-radius: 18px;
   border: 1px solid rgba(232, 222, 246, 0.92);
   background: rgba(255, 255, 255, 0.6);
-  color: #6d5b91;
-  font-size: 14px;
-  font-weight: 700;
   cursor: pointer;
   transition: all 0.16s ease;
   display: flex;
   align-items: center;
   justify-content: space-between;
   text-align: left;
-}
-
-.actionSubButton .settingLabel {
-  font-weight: 600;
-  color: #55456c;
-  font-size: 14px;
 }
 
 .actionSubButton::after {
