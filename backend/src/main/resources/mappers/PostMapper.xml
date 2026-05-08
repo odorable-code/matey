@@ -74,7 +74,10 @@
                 )
             </if>
         </where>
-        ORDER BY p.created_at DESC
+        ORDER BY
+            (p.like_count - p.dislike_count) DESC,
+            p.view_count DESC,
+            p.created_at DESC
         LIMIT #{limit} OFFSET #{offset}
     </select>
 

@@ -21,6 +21,7 @@
  */
 
 import { useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '../../contexts/NotificationContext';
 import './NotificationModal.css';
 
@@ -74,6 +75,7 @@ function NotificationModal({ anchorRef }) {
   } = useNotifications();
 
   const popoverRef = useRef(null);
+  const navigate = useNavigate();
 
   // -------- 바깥 클릭으로 닫기 --------
   useEffect(() => {
@@ -94,8 +96,48 @@ function NotificationModal({ anchorRef }) {
 
   if (!isOpen) return null;
 
-  // -------- 알람 클릭: 단일 읽음 --------
-  const handleItemClick = (id) => markAsRead(id);
+  const resolveLink = (n) => {
+    const typeCode = String(n?.typeCode || '').toUpperCase();
+    const targetType = String(n?.targetType || '').toUpperCase();
+    const targetId = n?.targetId;
+
+    // 운영 공지/이벤트 → 공지·이벤트 피드로
+    if (typeCode === 'SYSTEM_NOTICE' || typeCode === 'EVENT_NOTICE') {
+      return { path: '/community/notices' };
+    }
+
+    // 인기글 → 게시글 상세
+    if (typeCode === 'COMMUNITY_HOT') {
+      if (targetId != null) return { path: `/community/posts/${targetId}` };
+      return { path: '/community' };
+    }
+
+    // 댓글/대댓글 알림: target이 POST면 상세로, COMMENT만 있으면 목록으로(추후 postId 확장 가능)
+    if (typeCode === 'POST_COMMENT' || typeCode === 'COMMENT_REPLY') {
+      if (targetType === 'POST' && targetId != null) {
+        return { path: `/community/posts/${targetId}` };
+      }
+      return { path: '/community' };
+    }
+
+    // 문의/신고 답변/신고 결과 → 마이페이지 문의·신고 내역 강조
+    if (typeCode === 'SUPPORT_ANSWER' || typeCode === 'REPORT_RESULT') {
+      return { path: '/mypage', state: { highlight: 'support' } };
+    }
+
+    // 기본: 이동 없음
+    return null;
+  };
+
+  // -------- 알람 클릭: 읽음 처리 + (가능하면) 링크 이동 --------
+  const handleItemClick = async (n) => {
+    await markAsRead(n.id);
+    const link = resolveLink(n);
+    if (link?.path) {
+      closeNotifications();
+      navigate(link.path, link.state ? { state: link.state } : undefined);
+    }
+  };
 
   // -------- 개별 삭제 --------
   const handleRemove = (event, id) => {
@@ -200,7 +242,7 @@ function NotificationModal({ anchorRef }) {
                     className={`matey-noti-pop__item ${meta.accent} ${
                       n.read ? 'is-read' : 'is-unread'
                     }`}
-                    onClick={() => handleItemClick(n.id)}
+                    onClick={() => handleItemClick(n)}
                   >
                     <span className="matey-noti-pop__item-dot" />
                     <div className="matey-noti-pop__item-body">

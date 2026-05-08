@@ -55,10 +55,13 @@ export function NotificationProvider({ children }) {
       const transformed = data.map((n) => ({
         id: n.notificationId,
         type: n.type,
+        typeCode: n.typeCode,
         title: n.title,
         message: n.message,
         createdAt: new Date(n.createdAt).getTime(),
         read: n.isRead,
+        targetType: n.targetType,
+        targetId: n.targetId,
       }));
       setNotifications(transformed);
     } catch (err) {
