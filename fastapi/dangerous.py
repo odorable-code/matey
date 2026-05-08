@@ -98,6 +98,9 @@ else:
                 '위험도': analysis.get('risk_level', 0)
             })
 
+            # --- [핵심 수정] 1분에 15번 제한을 피하기 위해 4~5초 정도 쉽니다 ---
+            time.sleep(4)
+
     # --- 결과 정리 및 저장 ---
     if all_results:
         df_final = pd.DataFrame(all_results)
