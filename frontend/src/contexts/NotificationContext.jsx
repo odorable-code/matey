@@ -19,7 +19,7 @@ import { useAuth } from './AuthContext';
 const SETTINGS_BASE_KEY = 'matey_user_settings';
 const INITIAL_SETTINGS = {
   pushNotice: true,
-  emailNotice: false,
+  marketingNotice: false,
   casualTone: false,
   noti_BOT_MESSAGE: true,
   noti_CHAT_REMINDER: true,
@@ -108,7 +108,6 @@ export function NotificationProvider({ children }) {
     try {
       const data = await myPageAPI.getSettings();
       if (data) {
-        // 서버 데이터를 LocalStorage/State에 병합
         setSettings((prev) => ({ ...prev, ...data }));
       }
     } catch (err) {
@@ -151,7 +150,7 @@ export function NotificationProvider({ children }) {
   const updateSetting = useCallback(async (key, value) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
     try {
-      if (key === 'pushNotice' || key === 'emailNotice' || key.startsWith('noti_')) {
+      if (key === 'pushNotice' || key === 'marketingNotice' || key.startsWith('noti_')) {
         await myPageAPI.updateSettings({ settingKey: key, settingValue: value });
       }
     } catch (err) {

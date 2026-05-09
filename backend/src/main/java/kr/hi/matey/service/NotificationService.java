@@ -13,6 +13,7 @@ import java.util.List;
 public class NotificationService {
 
     private final NotificationDAO notificationDAO;
+    private final NotificationEmailService notificationEmailService;
 
     @Transactional(readOnly = true)
     public List<NotificationDTO> getNotifications(Long userId) {
@@ -32,5 +33,12 @@ public class NotificationService {
     @Transactional
     public void deleteNotification(Long userId, Long notificationId) {
         notificationDAO.deleteNotification(userId, notificationId);
+    }
+
+    @Transactional
+    public void createNotification(Long userId, String typeCode, String content,
+                                   String targetType, Long targetId) {
+        notificationDAO.insertNotification(userId, typeCode, content, targetType, targetId);
+        notificationEmailService.sendIfEnabled(userId, typeCode, content);
     }
 }

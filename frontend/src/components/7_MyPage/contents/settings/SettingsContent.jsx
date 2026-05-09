@@ -72,7 +72,7 @@ function SettingsContent({ onSelectMenu }) {
           note: '새 편지나 중요한 알림을 바로 받아요.',
         },
         {
-          key: 'emailNotice',
+          key: 'marketingNotice',
           label: '이메일 알림',
           note: '중요 공지를 이메일로도 받아요.',
         },
