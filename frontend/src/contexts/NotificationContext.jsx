@@ -20,8 +20,6 @@ const SETTINGS_BASE_KEY = 'matey_user_settings';
 const INITIAL_SETTINGS = {
   pushNotice: true,
   emailNotice: false,
-  gentleTone: true,
-  quickReply: true,
   casualTone: false,
   noti_BOT_MESSAGE: true,
   noti_CHAT_REMINDER: true,
