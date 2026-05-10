@@ -32,10 +32,12 @@ import SettingsContent from '../contents/settings/SettingsContent';
 import NotificationSettingsContent from '../contents/settings/NotificationSettingsContent';
 import SupportHistoryContent from '../contents/SupportHistoryContent.jsx';
 import { myPageAPI } from '../../../utils/api';
+import { useChatModal } from '../../../contexts/ChatModalContext';
 
 function MyPageContainer() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { openChat } = useChatModal();
   /* =========================
      현재 선택된 메뉴 상태
      - 기본값: dashboard
@@ -189,10 +191,14 @@ function MyPageContainer() {
   };
 
   /* =========================
-     대시보드 안에서 "메이티 정보"로 이동시키는 코드
+     대시보드 안에서 "상담하기"나 "메이티 정보"로 이동시키는 코드
      - DashboardContent 내부 버튼 등에서 사용 가능
   ========================= */
-  const handleInteractionSelect = () => {
+  const handleInteractionSelect = (key) => {
+    if (key === 'counsel') {
+      openChat();
+      return;
+    }
     if (activeMenu !== 'botMenu') {
       setActiveMenu('botMenu');
       setTransitionKey((prev) => prev + 1);
