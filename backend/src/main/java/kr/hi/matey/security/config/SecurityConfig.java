@@ -56,7 +56,7 @@ public class SecurityConfig {
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                // AuthController 의 로그아웃 등이 스프링 기본 logout 필터에 가로채이지 않도록
+                // AuthController 로그아웃 요청이 기본 logout 필터에 걸리지 않도록
                 .logout(logout -> logout.disable())
 
                 // HTTP 요청에 대한 접근 권한(인가) 설정을 시작
