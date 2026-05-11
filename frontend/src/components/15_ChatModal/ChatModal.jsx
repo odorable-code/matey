@@ -36,11 +36,18 @@ import {
 } from "../../constants/mates";
 import "./ChatModal.css";
 
-const CHAT_API_BASE = (
-  process.env.REACT_APP_CHAT_API_URL ||
-  process.env.REACT_APP_ANALYSIS_API_URL ||
-  "http://localhost:8000"
-).replace(/\/$/, "");
+function resolveChatApiBase() {
+  const fromEnv =
+    process.env.REACT_APP_CHAT_API_URL || process.env.REACT_APP_ANALYSIS_API_URL;
+  if (fromEnv != null && String(fromEnv).trim() !== "") {
+    return String(fromEnv).replace(/\/$/, "");
+  }
+  // 개발: setupProxy 가 /api/chat → FastAPI(8000) 로 넘김 → 동일 출처라 CORS 없음
+  if (process.env.NODE_ENV === "development") return "";
+  return "http://localhost:8000";
+}
+
+const CHAT_API_BASE = resolveChatApiBase();
 
 /* =========================================================
    카피 설정 코드
