@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import styles from './HowToUsePage.module.css';
 import { useAuth } from '../contexts/AuthContext';
+import { useChatModal } from '../contexts/ChatModalContext';
 
 const SECTIONS = [
   {
@@ -12,6 +13,10 @@ const SECTIONS = [
     items: [
       '처음 이용하신다면 회원가입 후 로그인해 주세요.',
       '로그인 후에는 상담(채팅)을 이용하실 수 있어요.',
+    ],
+    actions: [
+      { key: 'signup', label: '회원가입', to: '/signup', variant: 'primary' },
+      { key: 'login', label: '로그인', to: '/login', state: { from: '/features' }, variant: 'secondary' },
     ],
   },
   {
@@ -24,6 +29,7 @@ const SECTIONS = [
       '왼쪽에서 대화방을 선택하고, 오른쪽에서 상담을 진행해 주세요.',
       '대화 내용은 기록으로 저장됩니다.',
     ],
+    actions: [{ key: 'chat', label: '채팅하기', kind: 'chat', variant: 'primary' }],
   },
   {
     eyebrow: 'NOTICES',
@@ -34,6 +40,7 @@ const SECTIONS = [
       '공지 탭에서 운영 공지와 이벤트 소식을 함께 확인하실 수 있어요.',
       '필요한 경우, 커뮤니티에서 관련 글을 확인할 수 있습니다.',
     ],
+    actions: [{ key: 'notices', label: '공지·이벤트 보기', to: '/community/notices', variant: 'primary' }],
   },
   {
     eyebrow: 'HELP',
@@ -44,15 +51,20 @@ const SECTIONS = [
       '자주 묻는 질문은 FAQ에서 빠르게 확인하실 수 있어요.',
       '문제가 해결되지 않으면 커뮤니티의 문의 페이지에 남겨 주세요.',
     ],
+    actions: [
+      { key: 'faq', label: 'FAQ 보기', to: '/community/faq', variant: 'primary' },
+      { key: 'inquiry', label: '문의하기', kind: 'inquiry', variant: 'secondary' },
+    ],
   },
 ];
 
 export default function HowToUsePage() {
   const navigate = useNavigate();
+  const { openChat } = useChatModal();
   const { isAuthenticated, user, authLoading } = useAuth();
   const loggedIn = isAuthenticated || !!user;
 
-  const handleInquiryShortcut = () => {
+  const handleInquiryClick = () => {
     if (authLoading) return;
     if (!loggedIn) {
       window.alert('문의 작성은 로그인이 필요합니다. 로그인 후 이용해 주세요.');
@@ -60,6 +72,40 @@ export default function HowToUsePage() {
       return;
     }
     navigate('/community/inquiry');
+  };
+
+  const handleChatClick = () => {
+    if (authLoading) return;
+    if (loggedIn) {
+      openChat();
+      return;
+    }
+    navigate('/signup');
+  };
+
+  const renderAction = (a) => {
+    const cls =
+      a.variant === 'primary' ? styles.cardActionPrimary : styles.cardActionSecondary;
+
+    if (a.kind === 'chat') {
+      return (
+        <button key={a.key} type="button" className={cls} onClick={handleChatClick}>
+          {a.label}
+        </button>
+      );
+    }
+    if (a.kind === 'inquiry') {
+      return (
+        <button key={a.key} type="button" className={cls} onClick={handleInquiryClick}>
+          {a.label}
+        </button>
+      );
+    }
+    return (
+      <Link key={a.key} to={a.to} state={a.state} className={cls}>
+        {a.label}
+      </Link>
+    );
   };
 
   return (
@@ -72,27 +118,6 @@ export default function HowToUsePage() {
             <p className={styles.subtitle}>
               처음 방문하신 분도 바로 시작하실 수 있도록, 메이티의 기본 이용 흐름을 정리했습니다.
             </p>
-
-            <div className={styles.shortcuts} aria-label="바로가기">
-              <p className={styles.shortcutsLabel}>바로가기</p>
-              <div className={styles.shortcutsRow}>
-                <Link to="/signup" className={`${styles.shortcutChip} ${styles.shortcutPrimary}`}>
-                  무료체험 시작
-                </Link>
-                <Link to="/community/notices" className={`${styles.shortcutChip} ${styles.shortcutPrimary}`}>
-                  공지·이벤트 보기
-                </Link>
-                <Link to="/login" state={{ from: '/features' }} className={styles.shortcutChip}>
-                  로그인
-                </Link>
-                <Link to="/community/faq" className={styles.shortcutChip}>
-                  FAQ
-                </Link>
-                <button type="button" className={styles.shortcutChip} onClick={handleInquiryShortcut}>
-                  문의
-                </button>
-              </div>
-            </div>
           </div>
 
           <div className={styles.heroArt} aria-hidden="true">
@@ -144,10 +169,12 @@ export default function HowToUsePage() {
                 </li>
               ))}
             </ul>
+            {s.actions?.length > 0 && (
+              <div className={styles.cardActions}>{s.actions.map(renderAction)}</div>
+            )}
           </article>
         ))}
       </section>
     </main>
   );
 }
-
