@@ -475,6 +475,41 @@ a.detailNickname:hover {
   overflow: hidden;
 }
 
+/* 공지 피드 목록 미리보기(목록 화면 전용) */
+.noticeFeedCard {
+  border-left: 4px solid rgba(139, 111, 216, 0.42);
+}
+
+.noticeBadgePill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 11px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  background: linear-gradient(
+    135deg,
+    rgba(139, 111, 216, 0.22),
+    rgba(108, 158, 255, 0.18)
+  );
+  color: #4b3f6b;
+  border: 1px solid rgba(112, 91, 150, 0.18);
+}
+
+.noticeFeedExcerpt {
+  font-size: 14px;
+  color: #5c5368;
+  margin: 0;
+  line-height: 1.55;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
+
 .detailTitle {
   font-size: 23px;
   font-weight: 800;
@@ -715,11 +750,10 @@ a.commentNick:hover {
   font-size: 14px;
   font-weight: 600;
   color: #7a6f8f;
-  line-height: 1.55;
-  max-width: 520px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.6;
+  max-width: min(100%, 640px);
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
 /* 관리자 지정 고민 스포트라이트 — 목록 상단 강조 카드 */
