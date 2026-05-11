@@ -65,7 +65,21 @@
              FROM CHAT_ROOM cr
              JOIN EXCLUSIVE e2 ON cr.exclusive_id = e2.exclusive_id
              WHERE e2.user_id = u.user_id) as conversationCount,
-            0 as activityScore
+            0 as activityScore,
+            COALESCE(
+                (SELECT b.name FROM BOT b WHERE b.bot_id = u.assigned_bot_id),
+                (SELECT b2.name
+                 FROM EXCLUSIVE e
+                 INNER JOIN BOT b2 ON e.bot_id = b2.bot_id
+                 WHERE e.user_id = u.user_id
+                 ORDER BY e.exclusive_id ASC
+                 LIMIT 1)
+            ) as assignedBotName,
+            (SELECT COUNT(*)
+             FROM SUPPORT s
+             INNER JOIN SUPPORT_REASON sr ON s.support_reason_id = sr.support_reason_id
+             WHERE s.user_id = u.user_id AND sr.reason_type = 'REPORT') as reportCount,
+            (SELECT COUNT(*) FROM SUPPORT s WHERE s.user_id = u.user_id) as supportCount
         FROM USER u
         LEFT JOIN USER_ROLE ur ON u.user_id = ur.user_id
         LEFT JOIN ROLE r ON ur.role_id = r.role_id
@@ -98,7 +112,21 @@
              FROM CHAT_ROOM cr
              JOIN EXCLUSIVE e2 ON cr.exclusive_id = e2.exclusive_id
              WHERE e2.user_id = u.user_id) as conversationCount,
-            0 as activityScore
+            0 as activityScore,
+            COALESCE(
+                (SELECT b.name FROM BOT b WHERE b.bot_id = u.assigned_bot_id),
+                (SELECT b2.name
+                 FROM EXCLUSIVE e
+                 INNER JOIN BOT b2 ON e.bot_id = b2.bot_id
+                 WHERE e.user_id = u.user_id
+                 ORDER BY e.exclusive_id ASC
+                 LIMIT 1)
+            ) as assignedBotName,
+            (SELECT COUNT(*)
+             FROM SUPPORT s
+             INNER JOIN SUPPORT_REASON sr ON s.support_reason_id = sr.support_reason_id
+             WHERE s.user_id = u.user_id AND sr.reason_type = 'REPORT') as reportCount,
+            (SELECT COUNT(*) FROM SUPPORT s WHERE s.user_id = u.user_id) as supportCount
         FROM USER u
         LEFT JOIN USER_ROLE ur ON u.user_id = ur.user_id
         LEFT JOIN ROLE r ON ur.role_id = r.role_id
@@ -225,6 +253,10 @@
             NOW()
         )
     </insert>
+
+    <select id="countSupportAnswersBySupportId" resultType="int">
+        SELECT COUNT(*) FROM SUPPORT_ANSWER WHERE support_id = #{supportId}
+    </select>
 
     <select id="selectSupportUserId" resultType="long">
         SELECT user_id FROM SUPPORT WHERE support_id = #{supportId}

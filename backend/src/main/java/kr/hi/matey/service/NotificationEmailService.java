@@ -37,11 +37,21 @@ public class NotificationEmailService {
             if (user == null || !user.isMarketingNotice()) return;
 
             String title = TYPE_TITLES.getOrDefault(typeCode, "새로운 알림이 있습니다");
+            String body = content != null ? content : title;
+
+            if ("SUPPORT_ANSWER".equals(typeCode) && content != null && content.indexOf('\n') >= 0) {
+                int nl = content.indexOf('\n');
+                title = content.substring(0, nl).trim();
+                body = content.substring(nl + 1).trim();
+                if (body.isEmpty()) {
+                    body = title;
+                }
+            }
 
             SimpleMailMessage message = new SimpleMailMessage();
             message.setTo(user.getEmail());
             message.setSubject("[Matey] " + title);
-            message.setText(content != null ? content : title);
+            message.setText(body);
             mailSender.send(message);
         } catch (Exception e) {
             log.warn("알림 이메일 발송 실패: userId={}, typeCode={}", userId, typeCode, e);

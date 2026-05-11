@@ -51,6 +51,9 @@ public interface AdminDAO {
             @Param("adminUserId") Long adminUserId
     );
 
+    /** 답변 추가 전 건수 — 0이면 최초 등록, 1 이상이면 추가 답변(화면상 수정) */
+    int countSupportAnswersBySupportId(@Param("supportId") Long supportId);
+
     Long selectSupportUserId(@Param("supportId") Long supportId);
 
 }

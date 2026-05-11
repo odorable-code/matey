@@ -77,7 +77,11 @@ public class AdminController {
         }
 
         String adminID = user.getUsername();
-        adminService.updateUserRole(userId, body.get("roleCode"), adminID);
+        try {
+            adminService.updateUserRole(userId, body.get("roleCode"), adminID);
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(ex.getMessage());
+        }
         return ResponseEntity.ok("사용자 권한이 수정되었습니다.");
     }
 
@@ -113,7 +117,11 @@ public class AdminController {
         }
 
         String adminID = user.getUsername();
-        adminService.bulkUpdateUserRole(request.getUserIds(), request.getRoleCode(), adminID);
+        try {
+            adminService.bulkUpdateUserRole(request.getUserIds(), request.getRoleCode(), adminID);
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(ex.getMessage());
+        }
         return ResponseEntity.ok("일괄 권한 변경이 완료되었습니다.");
     }
 
@@ -222,8 +230,8 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("관리자 계정 식별에 실패했어요. 다시 로그인해 주세요.");
         }
 
-        adminService.answerSupportTicket(supportId, content.trim(), adminUserId);
-        return ResponseEntity.ok("답변이 등록되었습니다.");
+        boolean updated = adminService.answerSupportTicket(supportId, content.trim(), adminUserId);
+        return ResponseEntity.ok(updated ? "답변이 수정되었습니다." : "답변이 등록되었습니다.");
     }
 
     // ==========================================
