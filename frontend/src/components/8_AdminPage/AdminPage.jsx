@@ -1756,31 +1756,36 @@ export default function AdminPage() {
                 </p>
               </div>
 
-              <div className="matey-admin-v3__support-filter">
+              <div className="matey-admin-v3__support-filter" style={{ alignItems: 'flex-start' }}>
                 <input
                   type="text"
                   value={logKeyword}
                   onChange={(e) => setLogKeyword(e.target.value)}
                   placeholder="작업/대상/태그 검색"
+                  style={{ flex: 1 }}
                 />
-                <select
-                  value={logCategoryFilter}
-                  onChange={(e) => setLogCategoryFilter(e.target.value)}
-                >
-                  <option value="ALL">전체 카테고리</option>
-                  <option value="대시보드">대시보드</option>
-                  <option value="사용자 관리">사용자 관리</option>
-                  <option value="권한 관리">권한 관리</option>
-                  <option value="문의·신고 관리">문의·신고 관리</option>
-                </select>
-                <button
-                  type="button"
-                  className="matey-admin-v3__mini-btn is-danger"
-                  onClick={handleClearLogs}
-                  disabled={logs.length === 0}
-                >
-                  로그 전체 삭제
-                </button>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '160px', flexShrink: 0 }}>
+                  <select
+                    value={logCategoryFilter}
+                    onChange={(e) => setLogCategoryFilter(e.target.value)}
+                    style={{ height: '48px' }}
+                  >
+                    <option value="ALL">전체 카테고리</option>
+                    <option value="대시보드">대시보드</option>
+                    <option value="사용자 관리">사용자 관리</option>
+                    <option value="권한 관리">권한 관리</option>
+                    <option value="문의·신고 관리">문의·신고 관리</option>
+                  </select>
+                  <button
+                    type="button"
+                    className="matey-admin-v3__mini-btn is-danger"
+                    onClick={handleClearLogs}
+                    disabled={logs.length === 0}
+                    style={{ width: '100%', height: '48px', minHeight: '48px' }}
+                  >
+                    로그 전체 삭제
+                  </button>
+                </div>
               </div>
             </div>
 

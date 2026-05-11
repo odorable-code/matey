@@ -72,7 +72,9 @@ public class MyPageService {
         // 상호작용 시간 갱신 및 결과 반환
         myPageDAO.updateLastInteractedAt(userId);
         return getBotMenuData(userId);
-    }    @Transactional(readOnly = true)
+    }
+
+    @Transactional(readOnly = true)
     public LetterBoxDTO getLetterBoxData(long userId) {
         LetterBoxDTO dto = new LetterBoxDTO();
         dto.setUnreadCount(myPageDAO.countUnreadLetters(userId));

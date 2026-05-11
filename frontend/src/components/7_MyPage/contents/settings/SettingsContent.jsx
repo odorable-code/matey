@@ -72,7 +72,7 @@ function SettingsContent({ onSelectMenu }) {
           note: '새 편지나 중요한 알림을 바로 받아요.',
         },
         {
-          key: 'emailNotice',
+          key: 'marketingNotice',
           label: '이메일 알림',
           note: '중요 공지를 이메일로도 받아요.',
         },
@@ -82,19 +82,9 @@ function SettingsContent({ onSelectMenu }) {
       title: '대화 환경',
       items: [
         {
-          key: 'gentleTone',
-          label: '부드러운 말투 유지',
-          note: '메이티가 조금 더 차분한 톤으로 응답해요.',
-        },
-        {
           key: 'casualTone',
           label: '반말 모드',
           note: '메이티가 친구처럼 편안한 반말로 대화해요.',
-        },
-        {
-          key: 'quickReply',
-          label: '빠른 답장 모드',
-          note: '짧고 빠른 흐름으로 대화를 이어가요.',
         },
       ],
     },

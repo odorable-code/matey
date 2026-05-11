@@ -1144,7 +1144,12 @@
 .matey-admin-v3__support-filter {
   display: flex;
   gap: 10px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  align-items: center;
+}
+
+.matey-admin-v3__support-filter select {
+  width: 160px;
 }
 
 .matey-admin-v3__support-list {
@@ -1546,11 +1551,6 @@
   .matey-admin-v3__support-detail-head {
     flex-direction: column;
     align-items: flex-start;
-  }
-
-  .matey-admin-v3__support-filter {
-    width: 100%;
-    flex-direction: column;
   }
 }
 

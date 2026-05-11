@@ -1,0 +1,5 @@
+"motion_id","bot_id","motion_code","motion_name","motion_group","asset_url","unlock_intimacy_level","sort_order","is_active","created_at"
+"1","1","JUMP","반짝 점프","COMMON","/images/mypage/bot/matey-jump.gif","4","1","1","2026-04-28 10:00:00"
+"2","1","EAR_SHAKE","귀 흔들기","COMMON","/images/mypage/bot/matey-ear.gif","0","2","1","2026-04-28 10:00:00"
+"3","1","STRETCH","졸린 스트레칭","COMMON","/images/mypage/bot/matey-stretch.gif","2","3","1","2026-04-28 10:00:00"
+"4","1","HEART","하트 인사","COMMON","/images/mypage/bot/matey-heart.gif","3","4","1","2026-04-28 10:00:00"

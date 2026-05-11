@@ -55,4 +55,15 @@
         WHERE notification_id = #{notificationId} AND user_id = #{userId}
     </delete>
 
+    <insert id="insertNotification">
+        INSERT INTO NOTIFICATION (user_id, type_code, content, target_type, target_id)
+        VALUES (#{userId}, #{typeCode}, #{content}, #{targetType}, #{targetId})
+    </insert>
+
+    <select id="selectUserEmail" resultType="kr.hi.matey.dto.UserEmailDTO">
+        SELECT email, is_marketing_agreed AS marketingNotice
+        FROM USER
+        WHERE user_id = #{userId}
+    </select>
+
 </mapper>

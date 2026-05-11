@@ -1,0 +1,5 @@
+"background_id","name","image_url","unlock_intimacy_level","sort_order","is_active"
+"1","노을 산책로","/images/mypage/bot/matey-house-noon.png","0","1","1"
+"2","포근한 침실","/images/mypage/bot/matey-house-night.png","2","2","1"
+"3","별빛 정원","/images/mypage/bot/matey-house-day.png","3","3","1"
+"4","비 오는 창가","/images/mypage/bot/matey-house-rain.png","5","4","1"
