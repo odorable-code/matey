@@ -358,8 +358,7 @@ public class CommunityService {
             sourceDescription =
                     "BOT_RECOMMEND_EVENT 월간 delta 합(추천 +1, 싫어요 -1)으로 순위를 냅니다.";
         } else {
-            description =
-                    "전월 반응 이벤트가 아직 없어요. 지금은 등록된 봇을 좋아요 수 순으로 보여 드려요. 사용자 추천이 쌓이면 전월 집계 순위로 바뀝니다.";
+            description = "지금은 봇 좋아요 많은 순으로만 보여 드려요.";
             source = "BOT_LIKE_COUNT";
             sourceDescription =
                     "BOT 테이블의 like_count 기준 임시 순위예요. BOT_RECOMMEND_EVENT에 해당 월 데이터가 생기면 자동으로 전환됩니다.";
