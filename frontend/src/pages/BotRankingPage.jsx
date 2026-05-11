@@ -180,17 +180,13 @@ export default function BotRankingPage() {
             <p className={styles.eyebrow}>BOT RANKING</p>
             <h1 className={styles.title}>인기 봇 랭킹</h1>
             <p className={styles.subtitle}>{subtitle}</p>
-            {rankDescription ? (
+            {!loading && entries.length > 0 && rankDescription ? (
               <p className={styles.rankHint}>{rankDescription}</p>
             ) : null}
 
-            {!authLoading && isAuthenticated ? (
-              <p className={styles.hint}>
-                추천이랑 싫어요는 봇마다 한 번만 남겨요. 골라 둘 중 하나만요.
-              </p>
-            ) : (
+            {!authLoading && !isAuthenticated ? (
               <p className={styles.hint}>로그인하면 추천·싫어요를 남길 수 있어요.</p>
-            )}
+            ) : null}
           </div>
 
           <div className={styles.heroArt} aria-hidden="true">
