@@ -36,7 +36,7 @@ public class MyPageService {
             botMenu.setRemainPoint(maxExp - currentExp);
             
             botMenu.setBackgrounds(myPageDAO.selectUserBackgrounds(botMenu.getLevel()));
-            botMenu.setMotions(myPageDAO.selectUserMotions(botMenu.getLevel()));
+            botMenu.setMotions(myPageDAO.selectUserMotions(userId, botMenu.getLevel()));
         }
         return botMenu;
     }
