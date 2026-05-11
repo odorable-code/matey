@@ -358,6 +358,7 @@ CREATE TABLE `USER_BOT_RECOMMEND` (
 	`recommend_id`	BIGINT	NOT NULL PRIMARY KEY AUTO_INCREMENT,
 	`user_id`	BIGINT	NOT NULL,
 	`bot_id`	BIGINT	NOT NULL,
+	`reaction`	TINYINT	NOT NULL	DEFAULT 1	COMMENT '1=좋아요,0=싫어요',
 	`created_at`	TIMESTAMP	NOT NULL	DEFAULT CURRENT_TIMESTAMP,
 
 	UNIQUE KEY `uq_user_bot_recommend` (`user_id`, `bot_id`),

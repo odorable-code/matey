@@ -365,6 +365,7 @@ CREATE TABLE `USER_BOT_RECOMMEND` (
 	`recommend_id`	BIGINT	NOT NULL PRIMARY KEY AUTO_INCREMENT,
 	`user_id`	BIGINT	NOT NULL,
 	`bot_id`	BIGINT	NOT NULL,
+	`reaction`	TINYINT	NOT NULL	DEFAULT 1	COMMENT '1=좋아요,0=싫어요',
 	`created_at`	TIMESTAMP	NOT NULL	DEFAULT CURRENT_TIMESTAMP,
 
 	UNIQUE KEY `uq_user_bot_recommend` (`user_id`, `bot_id`),
@@ -410,6 +411,17 @@ CREATE TABLE `user_post_reaction` (
 	KEY `idx_upr_post` (`post_id`),
 	FOREIGN KEY(`user_id`) REFERENCES `USER`(`user_id`) ON DELETE CASCADE,
 	FOREIGN KEY(`post_id`) REFERENCES `POST`(`post_id`) ON DELETE CASCADE
+);
+
+-- 관리자 고민 스포트라이트(운영 답변과 함께 커뮤니티 상단 노출, 단일 행 id=1)
+CREATE TABLE `WORRY_SPOTLIGHT` (
+	`id`	TINYINT	NOT NULL DEFAULT 1 PRIMARY KEY,
+	`post_id`	BIGINT	NOT NULL,
+	`answer_content`	TEXT	NOT NULL,
+	`updated_at`	TIMESTAMP	NOT NULL	DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	`updated_by_user_id`	BIGINT	NULL,
+	FOREIGN KEY(`post_id`) REFERENCES `POST`(`post_id`) ON DELETE CASCADE,
+	FOREIGN KEY(`updated_by_user_id`) REFERENCES `USER`(`user_id`) ON DELETE SET NULL
 );
 
 -- 댓글은 좋아요만 사용(별도 테이블)
