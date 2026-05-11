@@ -95,13 +95,13 @@ export function NotificationProvider({ children }) {
         return {
           id: n.notificationId,
           type: n.type,
-          typeCode: n.typeCode,
+          typeCode: n.typeCode ?? n.type_code,
           title: n.title,
           message: n.message,
           createdAt: new Date(n.createdAt).getTime(),
           read,
-          targetType: n.targetType,
-          targetId: n.targetId,
+          targetType: n.targetType ?? n.target_type,
+          targetId: n.targetId ?? n.target_id,
         };
       });
       setNotifications(transformed);
@@ -216,17 +216,7 @@ export function NotificationProvider({ children }) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, closeNotifications]);
 
-  // -------- 열릴 때 body 스크롤 잠금 --------
-  useEffect(() => {
-    if (isOpen) {
-      const prev = document.body.style.overflow;
-      document.body.style.overflow = 'hidden';
-      return () => {
-        document.body.style.overflow = prev;
-      };
-    }
-    return undefined;
-  }, [isOpen]);
+  // 헤더 알림은 작은 팝오버라 본문 스크롤을 막지 않음 — 막으면 스크롤바가 사라져 페이지가 옆으로 밀리는 현상이 납니다.
 
   // -------- 안 읽은 개수 계산 --------
   const unreadCount = useMemo(
