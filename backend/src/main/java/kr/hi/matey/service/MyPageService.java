@@ -27,11 +27,14 @@ public class MyPageService {
         BotMenuDTO botMenu = myPageDAO.selectBotRelationInfo(userId);
 
         if (botMenu != null) {
-            int currentExp = botMenu.getRemainPoint();
+            int currentExp = botMenu.getRemainPoint(); // DB의 current_exp를 DTO의 remainPoint에 매핑 중임
             int maxExp = 100; // 레벨업 필요 경험치 (기획에 맞게 수정)
 
+            // UI에서는 progressPercent를 (현재 경험치 / 최대 경험치 * 100)으로 사용함
             botMenu.setProgressPercent((int) ((double) currentExp / maxExp * 100));
+            // 남은 경험치 계산
             botMenu.setRemainPoint(maxExp - currentExp);
+            
             botMenu.setBackgrounds(myPageDAO.selectUserBackgrounds(botMenu.getLevel()));
             botMenu.setMotions(myPageDAO.selectUserMotions(botMenu.getLevel()));
         }
