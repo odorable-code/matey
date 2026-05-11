@@ -48,7 +48,7 @@ public class CommunityService {
             List<CategoryDTO> list = postDAO.selectCategories();
             return list != null ? list : List.of();
         } catch (DataAccessException ex) {
-            log.warn("getCategories: {}", ex.getMessage());
+            log.error("getCategories: CATEGORY 조회 실패 (테이블·DB 연결 확인)", ex);
             return List.of();
         }
     }
