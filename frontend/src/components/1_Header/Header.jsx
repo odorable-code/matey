@@ -8,7 +8,7 @@
  * - 로고 클릭 시 홈으로 이동
  * - 가운데 메뉴에서 이용방법 / 무료체험 / 커뮤니티 / 봇랭킹 / FAQ 이동
  * - 비회원은 로그인 / 회원가입 버튼 표시 (회원가입 → /signup)
- * - 회원은 채팅하기 / 알람 / 마이페이지 / 프로필 드롭다운 표시
+ * - 회원은 채팅하기 / 알람 / 마이페이지(상단 링크) / 프로필 드롭다운 표시
  * - 관리자 계정은 "관리자 대시보드"를 프로필 드롭다운 안에서만 표시
  * - 모바일 메뉴 열기/닫기 처리
  *
@@ -268,17 +268,33 @@ function Header() {
 
   /* =========================================================
      active 메뉴 판별
+     - /community/faq 는 헤더「FAQ」에만 매칭 (커뮤니티 하위 FAQ라도 탭은 FAQ 강조)
   ========================================================= */
-  const isNavActive = (path) => {
+  const isNavActive = (item) => {
+    const path = item?.path;
     if (!path) return false;
-    if (path === '/') return location.pathname === '/';
+    const { pathname } = location;
+    if (path === '/') return pathname === '/';
 
-    return (
-      location.pathname === path || location.pathname.startsWith(`${path}/`)
-    );
+    if (item.key === 'faq') {
+      return pathname === '/faq' || pathname === '/community/faq';
+    }
+
+    if (item.key === 'community') {
+      if (pathname === '/community/faq') return false;
+      return pathname === path || pathname.startsWith(`${path}/`);
+    }
+
+    return pathname === path || pathname.startsWith(`${path}/`);
   };
 
-  const myPageActive = isNavActive('/mypage');
+  const myPageActive =
+    location.pathname === '/mypage' || location.pathname.startsWith('/mypage/');
+
+  const adminDashboardActive =
+    location.pathname === '/admin' ||
+    (location.pathname.startsWith('/admin/') &&
+      !location.pathname.startsWith('/admin-access'));
 
   return (
     <header className={`matey-header ${isScrolled ? 'is-scrolled' : ''}`}>
@@ -317,7 +333,7 @@ function Header() {
                   key={item.key}
                   type="button"
                   className={`matey-header__nav-link ${
-                    isNavActive(item.path) ? 'is-active' : ''
+                    isNavActive(item) ? 'is-active' : ''
                   }`}
                   onClick={() => handleNavClick(item.path)}
                 >
@@ -452,20 +468,13 @@ function Header() {
                         profileOpen ? 'is-open' : ''
                       }`}
                     >
-                      <Link
-                        to="/mypage"
-                        className={`matey-header__dropdown-link ${
-                          myPageActive ? 'is-active' : ''
-                        }`}
-                        onClick={() => setProfileOpen(false)}
-                      >
-                        마이페이지
-                      </Link>
-
                       {adminUser && (
                         <Link
                           to="/admin"
-                          className="matey-header__dropdown-link"
+                          className={`matey-header__dropdown-link ${
+                            adminDashboardActive ? 'is-active' : ''
+                          }`}
+                          aria-current={adminDashboardActive ? 'page' : undefined}
                           onClick={() => setProfileOpen(false)}
                         >
                           관리자 대시보드
@@ -613,7 +622,10 @@ function Header() {
               {adminUser && (
                 <Link
                   to="/admin"
-                  className="matey-header__mobile-soft"
+                  className={`matey-header__mobile-soft ${
+                    adminDashboardActive ? 'is-active' : ''
+                  }`}
+                  aria-current={adminDashboardActive ? 'page' : undefined}
                   onClick={() => setMobileOpen(false)}
                 >
                   관리자 대시보드

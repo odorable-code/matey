@@ -475,6 +475,41 @@ a.detailNickname:hover {
   overflow: hidden;
 }
 
+/* 공지 피드 목록 미리보기(목록 화면 전용) */
+.noticeFeedCard {
+  border-left: 4px solid rgba(139, 111, 216, 0.42);
+}
+
+.noticeBadgePill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 11px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  background: linear-gradient(
+    135deg,
+    rgba(139, 111, 216, 0.22),
+    rgba(108, 158, 255, 0.18)
+  );
+  color: #4b3f6b;
+  border: 1px solid rgba(112, 91, 150, 0.18);
+}
+
+.noticeFeedExcerpt {
+  font-size: 14px;
+  color: #5c5368;
+  margin: 0;
+  line-height: 1.55;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
+
 .detailTitle {
   font-size: 23px;
   font-weight: 800;
@@ -715,11 +750,177 @@ a.commentNick:hover {
   font-size: 14px;
   font-weight: 600;
   color: #7a6f8f;
-  line-height: 1.55;
-  max-width: 520px;
-  white-space: nowrap;
+  line-height: 1.6;
+  max-width: min(100%, 640px);
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+/* 관리자 지정 고민 스포트라이트 — 목록 상단 강조 카드 */
+.worrySpotlight {
+  position: relative;
+  margin: 0 0 26px;
+  padding: 2px;
+  border-radius: 28px;
+  background: linear-gradient(
+    135deg,
+    rgba(141, 121, 255, 0.55),
+    rgba(121, 183, 255, 0.45),
+    rgba(255, 147, 183, 0.42)
+  );
+  box-shadow: 0 24px 48px rgba(112, 91, 150, 0.14);
   overflow: hidden;
-  text-overflow: ellipsis;
+}
+
+.worrySpotlightInner {
+  position: relative;
+  border-radius: 26px;
+  padding: 26px 24px 22px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.97) 0%, rgba(250, 248, 255, 0.96) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+}
+
+.worrySpotlightGlow {
+  display: none;
+}
+
+.worrySpotlightTop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.worrySpotlightBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  color: #fff;
+  background: linear-gradient(120deg, #8b6fd8 0%, #6c9eff 55%, #ff93b7 100%);
+  box-shadow: 0 8px 18px rgba(108, 158, 255, 0.28);
+}
+
+.worrySpotlightMeta {
+  font-size: 12px;
+  font-weight: 700;
+  color: #8a829f;
+}
+
+.worrySpotlightTitle {
+  margin: 0 0 12px;
+  font-size: clamp(22px, 4vw, 28px);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  color: #231c34;
+  line-height: 1.35;
+  word-break: keep-all;
+}
+
+.worrySpotlightExcerpt {
+  margin: 0 0 20px;
+  font-size: 15px;
+  line-height: 1.75;
+  font-weight: 600;
+  color: #534b68;
+  word-break: keep-all;
+}
+
+.worrySpotlightAnswer {
+  border-radius: 20px;
+  padding: 18px 18px 16px;
+  background: linear-gradient(145deg, rgba(232, 244, 255, 0.95), rgba(248, 242, 255, 0.92));
+  border: 1px solid rgba(121, 183, 255, 0.28);
+  margin-bottom: 18px;
+}
+
+.worrySpotlightAnswerHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.worrySpotlightAnswerKicker {
+  font-size: 13px;
+  font-weight: 900;
+  color: #4b5a8f;
+}
+
+.worrySpotlightAnswerAuthor {
+  font-size: 13px;
+  font-weight: 700;
+  color: #8b6fd8;
+}
+
+.worrySpotlightAnswerBody {
+  font-size: 15px;
+  line-height: 1.75;
+  font-weight: 700;
+  color: #2f2a42;
+  white-space: pre-wrap;
+  word-break: keep-all;
+}
+
+.worrySpotlightCta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 20px;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 900;
+  text-decoration: none;
+  color: #fff;
+  background: linear-gradient(120deg, #8b6fd8 0%, #6c9eff 100%);
+  box-shadow: 0 10px 22px rgba(108, 158, 255, 0.28);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.worrySpotlightCta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(108, 158, 255, 0.34);
+}
+
+@media (max-width: 560px) {
+  .worrySpotlightInner {
+    padding: 22px 18px 18px;
+  }
+}
+
+.randomPickRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.randomPickBtn {
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #4b3f6b;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(112, 91, 150, 0.28);
+  cursor: pointer;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+}
+
+.randomPickBtn:hover {
+  border-color: rgba(108, 158, 255, 0.45);
+  box-shadow: 0 4px 12px rgba(112, 91, 150, 0.12);
+  transform: translateY(-1px);
 }
 
 /* ReactQuill: site-matching rich editor */

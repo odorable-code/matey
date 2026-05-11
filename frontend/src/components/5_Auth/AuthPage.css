@@ -272,6 +272,12 @@
   color: var(--matey-auth-success);
 }
 
+.matey-auth-alert--info {
+  background: rgba(121, 183, 255, 0.14);
+  border: 1px solid rgba(121, 183, 255, 0.35);
+  color: #2d4a6f;
+}
+
 .matey-auth-alert--error {
   background: rgba(210, 96, 132, 0.12);
   color: var(--matey-auth-error);

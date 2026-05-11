@@ -8,9 +8,11 @@ import React, {
   useState,
 } from 'react';
 import {
+  clearClientAuthSession,
   getMyProfile,
   getSocialLoginUrl,
   getStoredToken,
+  isMockAccessToken,
   login as loginRequest,
   logout as logoutRequest,
   setStoredToken,
@@ -68,19 +70,12 @@ function setStoredUser(user) {
 }
 
 function clearStoredAuth() {
-  // if (user)가 false가 되어 else문이 실행됨
-  setStoredToken(null);
+  clearClientAuthSession();
   setStoredUser(null);
-  window.localStorage.removeItem('accessToken');
-  window.localStorage.removeItem('mateyToken');
 }
 
 function createMockToken(user) {
   return `mock-token-${user.id}-${Date.now()}`;
-}
-
-function isMockToken(token) {
-  return String(token || '').startsWith('mock-token-');
 }
 
 function findMockUser(email, password) {
@@ -151,7 +146,7 @@ export function AuthProvider({ children }) {
       return null;
     }
 
-    if (isMockToken(currentToken)) {
+    if (isMockAccessToken(currentToken)) {
       const storedUser = getStoredUser();
       setToken(currentToken);
       setUser(storedUser);
@@ -350,7 +345,7 @@ export function AuthProvider({ children }) {
     clearAuth();
 
     try {
-      if (currentToken && !isMockToken(currentToken)) {
+      if (currentToken && !isMockAccessToken(currentToken)) {
         await logoutRequest();
       }
     } catch (error) {

@@ -1,14 +1,46 @@
-// 주소 끝에 붙은 슬래시 제거
-// 어떤 사람은 ...api, 어떤 사람은 ...api/ 로 쓸 수도 있으니.
-export const API_BASE_URL = (
-  process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080'
-).replace(/\/$/, '');
+// 주소 끝 슬래시 제거. '' 이면 브라우저가 /api 를 CRA(3000)로 보냄 → 프록시가 없거나 빗나가면 index.html 이 와서 깨짐.
+const rawApiBase = process.env.REACT_APP_API_BASE_URL;
+function defaultApiBaseUrl() {
+  // 기본은 스프링(8080) 직접. CRA에 상대 /api만 보내면 index.html 이 올 수 있어 기본값은 비우지 않음. 프록시만 쓰려면 .env 에 REACT_APP_API_BASE_URL=
+  return 'http://localhost:8080';
+}
+export const API_BASE_URL =
+  rawApiBase === ''
+    ? ''
+    : String(
+        rawApiBase !== undefined && rawApiBase !== null && rawApiBase !== ''
+          ? rawApiBase
+          : defaultApiBaseUrl()
+      ).replace(/\/$/, '');
 
 const BACKEND_BASE_URL = API_BASE_URL.replace(/\/api$/, '');
+
+/**
+ * fetch 주소 조합:
+ * - base 가 비어 있으면 path 만 씀 → 개발 프록시·동일 출처 배포에 맞춤.
+ * - base 가 .../api 인데 path 도 /api/... 면 /api 가 두 번 붙지 않게 함.
+ */
+function resolveRequestUrl(path) {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  const base = API_BASE_URL.replace(/\/$/, '');
+  if (!base) {
+    return normalizedPath;
+  }
+  if (base.endsWith('/api') && normalizedPath.startsWith('/api/')) {
+    return `${base}${normalizedPath.replace(/^\/api/, '')}`;
+  }
+  return `${base}${normalizedPath}`;
+}
 const TOKEN_KEY = 'matey_access_token';
 
 function getStoredToken() {
   return localStorage.getItem(TOKEN_KEY);
+}
+
+/** AuthContext 테스트 로그인과 동일 규칙 — mock 토큰으로는 스프링 JWT 검증을 통과하지 못함 */
+export function isMockAccessToken(tokenOpt) {
+  const t = tokenOpt !== undefined ? tokenOpt : getStoredToken();
+  return String(t || '').startsWith('mock-token-');
 }
 
 // LocalStorage의 Access Token을 지움!
@@ -19,6 +51,15 @@ export function setStoredToken(token) {
   } else {
     localStorage.removeItem(TOKEN_KEY);
   }
+}
+
+/** 로컬 저장된 로그인 정보 제거 (토큰 만료·강제 로그아웃 시 공통 사용) */
+export function clearClientAuthSession() {
+  setStoredToken(null);
+  window.localStorage.removeItem('mateyUser');
+  window.localStorage.removeItem('user');
+  window.localStorage.removeItem('accessToken');
+  window.localStorage.removeItem('mateyToken');
 }
 
 function buildHeaders(customHeaders = {}, isJson = true) {
@@ -36,6 +77,13 @@ function buildHeaders(customHeaders = {}, isJson = true) {
   return headers;
 }
 
+/** 동일 출처(개발 프록시·상대 경로)면 쿠키 불필요·CORS 단순. 절대 URL로 백엔드 직결이면 예전과 같이 include 유지 */
+function defaultFetchCredentials() {
+  const base = String(API_BASE_URL || '').trim();
+  if (!base) return 'omit';
+  return 'include';
+}
+
 async function request(
   path,
   {
@@ -43,40 +91,121 @@ async function request(
     body,
     headers = {},
     isJson = true,
-    credentials = 'include',
+    credentials = defaultFetchCredentials(),
   } = {}
 ) {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    method,
-    headers: buildHeaders(headers, isJson),
-    body:
-      body === undefined || body === null
-        ? undefined
-        : (isJson
-        ? JSON.stringify(body)
-        : body),
-    credentials,
-  });
+  const m = String(method || 'GET').toUpperCase();
+  const p = typeof path === 'string' ? path : '';
+  if (
+    m !== 'GET' &&
+    m !== 'HEAD' &&
+    m !== 'OPTIONS' &&
+    p.startsWith('/api') &&
+    !p.startsWith('/api/v1/auth/login') &&
+    !p.startsWith('/api/v1/auth/signup') &&
+    !p.startsWith('/api/v1/auth/admin/signup') &&
+    isMockAccessToken()
+  ) {
+    const err = new Error(
+      '테스트(mock) 로그인으로는 서버 API를 호출할 수 없어요. DB에 등록된 계정으로 로그인한 뒤 다시 시도해 주세요.'
+    );
+    err.status = 401;
+    err.code = 'MOCK_TOKEN_BLOCKED';
+    throw err;
+  }
+
+  const url = resolveRequestUrl(path);
+  let response;
+  try {
+    response = await fetch(url, {
+      method,
+      headers: buildHeaders(headers, isJson),
+      body:
+        body === undefined || body === null
+          ? undefined
+          : (isJson
+          ? JSON.stringify(body)
+          : body),
+      credentials,
+    });
+  } catch (networkErr) {
+    const raw = String(networkErr?.message || networkErr || '');
+    const hint =
+      raw === 'Failed to fetch' || /network/i.test(raw)
+        ? ' 서버(보통 localhost:8080)가 실행 중인지 확인하고, 주소창은 localhost와 127.0.0.1을 섞어 쓰지 마세요.'
+        : '';
+    const err = new Error(
+      (raw === 'Failed to fetch' ? '서버에 연결하지 못했어요.' : raw) + hint
+    );
+    err.cause = networkErr;
+    err.code = 'FETCH_NETWORK_ERROR';
+    throw err;
+  }
 
   const text = await response.text();
-  // try 밖에서도 data를 사용하기 위해 try 밖에서 미리 선언.
-  let data = null;
+  const isApiPath = typeof path === 'string' && path.startsWith('/api');
+  const contentType = String(response.headers.get('content-type') || '').toLowerCase();
 
+  // CRA 가 /api 를 못 넘기면 index.html(text/html) 이 옴. 본문만 보고 판단하면 JSON 과 충돌할 수 있어 헤더 우선.
+  const looksLikeHtmlPage =
+    contentType.includes('text/html') ||
+    (!contentType.includes('application/json') &&
+      text &&
+      text.length < 200000 &&
+      /^\s*<\s*!DOCTYPE\s+html/i.test(text.trim()));
+
+  if (response.ok && isApiPath && looksLikeHtmlPage) {
+    const err = new Error(
+      'API 대신 HTML 페이지가 왔어요. 스프링(8080) 실행 여부를 확인하고, 주소가 localhost:3000 인데 api.js 가 상대 경로만 쓰는지(.env 의 REACT_APP_API_BASE_URL) 확인해 주세요.'
+    );
+    err.status = response.status;
+    throw err;
+  }
+
+  let data = null;
   try {
-    // text를 json 객체로 변환
     data = text ? JSON.parse(text) : null;
-  } catch (error) {
+  } catch (parseErr) {
+    if (response.ok && isApiPath) {
+      const err = new Error(
+        'JSON이 아닌 응답이 왔어요. 같은 주소를 브라우저에서 직접 열었는지, 백엔드가 아닌 프런트만 응답하는지 확인해 주세요.'
+      );
+      err.status = response.status;
+      throw err;
+    }
     data = text || null;
   }
 
   if (!response.ok) {
-    const message =
+    // 액세스 토큰 만료·무효 → 저장소 비우고 전역 이벤트로 Auth 상태·화면 동기화
+    if (response.status === 401 && getStoredToken()) {
+      clearClientAuthSession();
+      window.dispatchEvent(new CustomEvent('matey:session-expired'));
+    }
+
+    let message =
       data?.message ||
       data?.detail ||
       data?.error ||
       (typeof data === 'string' ? data : null) ||
       '요청 처리 중 오류가 발생했어요.';
-    const err = new Error(message);
+    if (response.status === 404) {
+      const t = String(message || '').trim();
+      if (t === 'Not Found' || /^No static resource\b/i.test(t)) {
+        message =
+          '요청한 API를 찾을 수 없어요. 서버 주소(REACT_APP_API_BASE_URL)에 /api 가 중복 없는지 확인해 주세요.';
+      }
+    }
+    let msgOut = message;
+    if (response.status === 403) {
+      const t = String(msgOut || '').trim();
+      if (!t || t === 'Forbidden' || t === 'Access Denied') {
+        msgOut =
+          '접근이 거부되었어요. 로그인이 만료됐거나 권한이 없을 수 있어요. 공지·이벤트 글은 운영자만 작성할 수 있어요.';
+      }
+    }
+
+    const err = new Error(msgOut);
     // 호출부에서 401/403 등을 구분할 수 있게 상태/원문을 붙입니다.
     err.status = response.status;
     err.data = data;
@@ -338,7 +467,12 @@ export const adminAPI = {
       method: 'GET',
     });
   },
-  
+
+  getUser: (userId) =>
+    request(`/api/admin/users/${encodeURIComponent(userId)}`, {
+      method: 'GET',
+    }),
+
   updateUser: (userId, data) => {
     return request(`/api/admin/users/${userId}`, {
       method: 'PUT',
@@ -419,6 +553,12 @@ export const adminAPI = {
     });
   },
 
+  /** 상담봇 관리: 누적 지표 + 전월 추천 이벤트·순위 */
+  getBotStats: () =>
+    request('/api/admin/bots/stats', {
+      method: 'GET',
+    }),
+
   /** 공지(ADMIN_NOTICE) — 백엔드에서 ADMIN·SUPER_ADMIN만 허용 */
   createNotice: (body) =>
     request('/api/admin/notices', {
@@ -438,6 +578,17 @@ export const adminAPI = {
       method: 'PUT',
       body,
     }),
+
+  /** 고민 스포트라이트: 무작위 고민 글 추첨(미리보기) */
+  drawWorrySpotlightCandidate: () =>
+    request('/api/admin/community/worry-spotlight/draw', { method: 'POST' }),
+
+  /** 고민 스포트라이트: 글·운영 답변 공개 */
+  publishWorrySpotlight: (body) =>
+    request('/api/admin/community/worry-spotlight', {
+      method: 'PUT',
+      body,
+    }),
 };
 
 // ==========================================
@@ -448,8 +599,25 @@ export const adminAPI = {
 // 커뮤니티 (게시글·공지)
 // ==========================================
 
+/** 스프링이 List 를 그대로 내보내면 JSON 배열. 가끔 래핑된 형태도 허용 */
+function normalizeJsonArray(payload) {
+  if (Array.isArray(payload)) return payload;
+  if (payload && Array.isArray(payload.data)) return payload.data;
+  if (payload && Array.isArray(payload.items)) return payload.items;
+  return null;
+}
+
 export const communityAPI = {
-  getCategories: () => request('/api/community/categories'),
+  getCategories: async () => {
+    const raw = await request('/api/community/categories');
+    const list = normalizeJsonArray(raw);
+    if (list === null) {
+      throw new Error(
+        '카테고리 응답 형식이 예상과 달라요. 개발자 도구 Network에서 GET /api/community/categories 본문이 JSON 배열인지 확인해 주세요.'
+      );
+    }
+    return list;
+  },
   getNotices: () => request('/api/community/notices'),
   getPosts: ({ categoryId, keyword, limit = 20, offset = 0, includeNotice = false } = {}) => {
     const usp = new URLSearchParams();
@@ -497,6 +665,11 @@ export const communityAPI = {
       method: 'POST',
     }),
   drawRandomWorryPost: () => request('/api/community/spotlight/worry-draw'),
+  drawRandomStoryPost: () => request('/api/community/spotlight/story-draw'),
+  /** 관리자 지정 고민 스포트라이트 + 운영 답변 */
+  getWorryFeatured: () => request('/api/community/spotlight/worry-featured'),
+  /** 전월 봇 추천 집계 순위 */
+  getMonthlyBotRanking: () => request('/api/community/spotlight/bot-ranking/monthly'),
   getYearEndBotRanking: (year) =>
     request(
       `/api/community/spotlight/bot-ranking${year != null && year !== '' ? `?year=${encodeURIComponent(String(year))}` : ''}`
@@ -505,6 +678,11 @@ export const communityAPI = {
     request(`/api/community/spotlight/bots/${encodeURIComponent(String(botId))}/recommend`, {
       method: 'POST',
     }),
+  addBotDislike: (botId) =>
+    request(`/api/community/spotlight/bots/${encodeURIComponent(String(botId))}/dislike`, {
+      method: 'POST',
+    }),
+  getMyBotReactions: () => request('/api/community/spotlight/my-bot-reactions'),
 };
 
 // FAQ·문의 분류는 비로그인 조회 가능 (기획: FAQ는 관리자만 편집, 사용자는 읽기)

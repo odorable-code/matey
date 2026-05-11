@@ -425,6 +425,12 @@ export default function AuthPage() {
               </div>
             )}
 
+            {location.state?.sessionExpired && activeTab === 'login' && (
+              <div className="matey-auth-alert matey-auth-alert--info">
+                로그인 유지 시간이 만료됐어요. 다시 로그인해 주세요.
+              </div>
+            )}
+
             {submitMessage && (
               <div className="matey-auth-alert matey-auth-alert--error">
                 {submitMessage}

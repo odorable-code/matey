@@ -28,9 +28,16 @@
 
 import { useState } from 'react';
 
-const ANALYSIS_API_BASE = (
-  process.env.REACT_APP_ANALYSIS_API_URL || 'http://localhost:8000'
-).replace(/\/$/, '');
+function resolveAnalysisApiBase() {
+  const env = process.env.REACT_APP_ANALYSIS_API_URL;
+  if (env != null && String(env).trim() !== '') {
+    return String(env).replace(/\/$/, '');
+  }
+  if (process.env.NODE_ENV === 'development') return '';
+  return 'http://localhost:8000';
+}
+
+const ANALYSIS_API_BASE = resolveAnalysisApiBase();
 
 export function ReportApi(){
 

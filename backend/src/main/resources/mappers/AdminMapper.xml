@@ -65,7 +65,21 @@
              FROM CHAT_ROOM cr
              JOIN EXCLUSIVE e2 ON cr.exclusive_id = e2.exclusive_id
              WHERE e2.user_id = u.user_id) as conversationCount,
-            0 as activityScore
+            0 as activityScore,
+            COALESCE(
+                (SELECT b.name FROM BOT b WHERE b.bot_id = u.assigned_bot_id),
+                (SELECT b2.name
+                 FROM EXCLUSIVE e
+                 INNER JOIN BOT b2 ON e.bot_id = b2.bot_id
+                 WHERE e.user_id = u.user_id
+                 ORDER BY e.exclusive_id ASC
+                 LIMIT 1)
+            ) as assignedBotName,
+            (SELECT COUNT(*)
+             FROM SUPPORT s
+             INNER JOIN SUPPORT_REASON sr ON s.support_reason_id = sr.support_reason_id
+             WHERE s.user_id = u.user_id AND sr.reason_type = 'REPORT') as reportCount,
+            (SELECT COUNT(*) FROM SUPPORT s WHERE s.user_id = u.user_id) as supportCount
         FROM USER u
         LEFT JOIN USER_ROLE ur ON u.user_id = ur.user_id
         LEFT JOIN ROLE r ON ur.role_id = r.role_id
@@ -98,7 +112,21 @@
              FROM CHAT_ROOM cr
              JOIN EXCLUSIVE e2 ON cr.exclusive_id = e2.exclusive_id
              WHERE e2.user_id = u.user_id) as conversationCount,
-            0 as activityScore
+            0 as activityScore,
+            COALESCE(
+                (SELECT b.name FROM BOT b WHERE b.bot_id = u.assigned_bot_id),
+                (SELECT b2.name
+                 FROM EXCLUSIVE e
+                 INNER JOIN BOT b2 ON e.bot_id = b2.bot_id
+                 WHERE e.user_id = u.user_id
+                 ORDER BY e.exclusive_id ASC
+                 LIMIT 1)
+            ) as assignedBotName,
+            (SELECT COUNT(*)
+             FROM SUPPORT s
+             INNER JOIN SUPPORT_REASON sr ON s.support_reason_id = sr.support_reason_id
+             WHERE s.user_id = u.user_id AND sr.reason_type = 'REPORT') as reportCount,
+            (SELECT COUNT(*) FROM SUPPORT s WHERE s.user_id = u.user_id) as supportCount
         FROM USER u
         LEFT JOIN USER_ROLE ur ON u.user_id = ur.user_id
         LEFT JOIN ROLE r ON ur.role_id = r.role_id
@@ -226,6 +254,10 @@
         )
     </insert>
 
+    <select id="countSupportAnswersBySupportId" resultType="int">
+        SELECT COUNT(*) FROM SUPPORT_ANSWER WHERE support_id = #{supportId}
+    </select>
+
     <select id="selectSupportUserId" resultType="long">
         SELECT user_id FROM SUPPORT WHERE support_id = #{supportId}
     </select>
@@ -233,5 +265,45 @@
     <delete id="deleteFeedback">
         DELETE FROM SUPPORT WHERE support_id = #{supportId}
     </delete>
+
+    <!-- 상담봇: 누적 좋/싫 + 전월 추천 이벤트 건별 집계 -->
+    <select id="selectBotsWithPrevMonthBreakdown" resultType="kr.hi.matey.dto.AdminBotStatsRow">
+        SELECT
+            b.bot_id AS botId,
+            b.name AS name,
+            b.description AS description,
+            b.avatar_image AS avatarImage,
+            b.like_count AS likeCount,
+            b.dislike_count AS dislikeCount,
+            COALESCE(s.net, 0) AS prevMonthNet,
+            COALESCE(s.reco, 0) AS prevMonthRecommendCount,
+            COALESCE(s.disc, 0) AS prevMonthDislikeCount
+        FROM BOT b
+        LEFT JOIN (
+            SELECT
+                e.bot_id AS bot_id,
+                SUM(e.delta) AS net,
+                SUM(CASE WHEN e.delta = 1 THEN 1 ELSE 0 END) AS reco,
+                SUM(CASE WHEN e.delta = -1 THEN 1 ELSE 0 END) AS disc
+            FROM BOT_RECOMMEND_EVENT e
+            WHERE e.created_at &gt;= STR_TO_DATE(CONCAT(#{year}, '-', LPAD(#{month}, 2, '0'), '-01 00:00:00'), '%Y-%m-%d %H:%i:%s')
+              AND e.created_at &lt; DATE_ADD(
+                  STR_TO_DATE(CONCAT(#{year}, '-', LPAD(#{month}, 2, '0'), '-01 00:00:00'), '%Y-%m-%d %H:%i:%s'),
+                  INTERVAL 1 MONTH
+              )
+            GROUP BY e.bot_id
+        ) s ON s.bot_id = b.bot_id
+        ORDER BY b.bot_id ASC
+    </select>
+
+    <select id="countRecommendEventsInMonth" resultType="long">
+        SELECT COUNT(*)
+        FROM BOT_RECOMMEND_EVENT e
+        WHERE e.created_at &gt;= STR_TO_DATE(CONCAT(#{year}, '-', LPAD(#{month}, 2, '0'), '-01 00:00:00'), '%Y-%m-%d %H:%i:%s')
+          AND e.created_at &lt; DATE_ADD(
+              STR_TO_DATE(CONCAT(#{year}, '-', LPAD(#{month}, 2, '0'), '-01 00:00:00'), '%Y-%m-%d %H:%i:%s'),
+              INTERVAL 1 MONTH
+          )
+    </select>
 
 </mapper>

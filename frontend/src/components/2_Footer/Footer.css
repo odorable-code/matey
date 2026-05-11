@@ -64,7 +64,7 @@
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 56px;
+  gap: 40px;
 }
 
 /* =========================================================
@@ -386,48 +386,20 @@
 }
 
 /* =========================================================
-   6. 하단 - 저작권 + 보조 링크
+   6. 하단 - 저작권 (상단 서비스·계정 링크와 중복 없음)
 ========================================================= */
 .matey-footer__bottom {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 22px 0 0;
+  padding: 20px 0 0;
   border-top: 1px solid rgba(123, 139, 176, 0.14);
 }
 
 .matey-footer__caption {
   margin: 0;
   color: var(--matey-color-text-soft);
-  font-size: 0.84rem;
+  font-size: 0.82rem;
   font-weight: 500;
   letter-spacing: -0.01em;
-}
-
-.matey-footer__bottom-links {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 14px;
-}
-
-.matey-footer__bottom-link {
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: var(--matey-color-text-soft);
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: color var(--matey-transition-fast);
-}
-
-.matey-footer__bottom-link:hover,
-.matey-footer__bottom-link:focus-visible {
-  color: var(--matey-color-text-strong);
-  outline: none;
+  line-height: 1.55;
 }
 
 /* =========================================================
@@ -435,8 +407,7 @@
 ========================================================= */
 .matey-footer__brand-mark:focus-visible,
 .matey-footer__cta-primary:focus-visible,
-.matey-footer__link:focus-visible,
-.matey-footer__bottom-link:focus-visible {
+.matey-footer__link:focus-visible {
   outline: 3px solid rgba(141, 121, 255, 0.28);
   outline-offset: 3px;
   border-radius: 10px;
@@ -505,14 +476,6 @@
     gap: 24px;
   }
 
-  .matey-footer__bottom {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .matey-footer__bottom-links {
-    justify-content: flex-start;
-  }
 }
 
 /* =========================================================
@@ -566,13 +529,6 @@
     gap: 20px;
   }
 
-  .matey-footer__bottom-links {
-    gap: 12px;
-  }
-
-  .matey-footer__bottom-link {
-    font-size: 0.82rem;
-  }
 }
 
 /* =========================================================
@@ -582,8 +538,7 @@
   .matey-footer__cta-primary,
   .matey-footer__cta-arrow,
   .matey-footer__cta-mate-image,
-  .matey-footer__link,
-  .matey-footer__bottom-link {
+  .matey-footer__link {
     animation: none !important;
     transition: none !important;
   }

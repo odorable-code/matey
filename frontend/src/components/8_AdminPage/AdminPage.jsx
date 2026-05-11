@@ -17,8 +17,7 @@
  * - 문의/신고: SUPPORT + SUPPORT_REASON + SUPPORT_ANSWER
  *   reason_type = 'REPORT' / 'INQUIRY'
  *   status      = 'PENDING' / 'DONE'
- * - 상담봇  : BOT + BOT_POPULARITY_STAT
- * - 감정    : EMOTION_SCORE + EMOTION_CATEGORY
+ * - 상담봇  : BOT (상담봇 관리 탭에서 목록만 — 개요에서 인기·감정 카드는 제거)
  *
  * [여기서 주로 수정하면 되는 곳]
  * 1) ROLE_LABELS / STATUS_* : 라벨 표시 코드
@@ -30,7 +29,7 @@
 import React, { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { Navigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { adminAPI, getStoredToken } from '../../utils/api';
+import { adminAPI, communityAPI, getStoredToken } from '../../utils/api';
 import { displaySupportTicketTitle } from '../../utils/supportReportDisplay';
 import './AdminPage.css';
 
@@ -40,34 +39,49 @@ import './AdminPage.css';
 const ADMIN_LOG_STORAGE_KEY = 'matey_admin_activity_logs_v4';
 const VALID_ADMIN_TABS = new Set(['overview', 'users', 'supports', 'bots', 'logs']);
 
+function adminBotRankBadgeClass(rank) {
+  const r = Number(rank);
+  if (r === 1) return 'rank-1';
+  if (r === 2) return 'rank-2';
+  if (r === 3) return 'rank-3';
+  return '';
+}
+
 const ROLE_LABELS = {
   ADMIN: '총 관리자',
   SUBADMIN: '서브 관리자',
   USER: '일반 사용자',
 };
 
-const ROLE_PILL_CLASS = {
-  ADMIN: 'is-super',
-  SUBADMIN: 'is-admin',
-  USER: 'is-user',
-};
+function formatRoleLabelForTable(roleCode) {
+  const r = String(roleCode || '').toUpperCase();
+  if (r === 'SUPER_ADMIN') return ROLE_LABELS.ADMIN;
+  return ROLE_LABELS[r] || r || '—';
+}
 
-const USER_STATUS_LABELS = {
-  ACTIVE: '활성',
-  BANNED: '정지',
-  DELETED: '탈퇴',
-};
-
-const USER_STATUS_PILL_CLASS = {
-  ACTIVE: 'is-active',
-  BANNED: 'is-suspended',
-  DELETED: 'is-deleted',
-};
+/** 목록 · 상세 패널 관리 열 라벨 (일반 사용자만 상세, 그 외 관리) */
+function manageButtonLabelForRole(roleCode) {
+  const r = String(roleCode || '').toUpperCase();
+  const bucket = r === 'SUPER_ADMIN' ? 'ADMIN' : r;
+  return bucket === 'USER' ? '상세' : '관리';
+}
 
 const LOGIN_TYPE_LABELS = {
   LOCAL: '이메일',
   KAKAO: '카카오',
   NAVER: '네이버',
+  GOOGLE: '구글',
+};
+
+function formatLoginTypeLabel(loginType) {
+  const k = String(loginType || 'LOCAL').toUpperCase();
+  return LOGIN_TYPE_LABELS[k] || k || '—';
+}
+
+const USER_STATUS_LABELS = {
+  ACTIVE: '활성',
+  BANNED: '정지',
+  DELETED: '탈퇴',
 };
 
 const SUPPORT_STATUS_LABELS = {
@@ -104,6 +118,7 @@ function normalizeAdminUser(raw) {
     chat_count: raw.conversationCount ?? raw.chat_count ?? 0,
     report_count: raw.reportCount ?? raw.report_count ?? 0,
     support_count: raw.supportCount ?? raw.support_count ?? 0,
+    assigned_bot_name: raw.assignedBotName ?? raw.assigned_bot_name ?? '',
   };
 }
 
@@ -128,29 +143,6 @@ function normalizeAdminFeedback(raw) {
   };
 }
 
-/** /api/admin/stats/emotions 등 응답을 막대 그래프용 형태로 */
-function normalizeEmotionStat(raw) {
-  if (!raw || typeof raw !== 'object') return null;
-  if (raw.emotion_code != null && raw.count != null) {
-    return {
-      emotion_code: raw.emotion_code,
-      emotion_name: raw.emotion_name ?? raw.emotion_code,
-      count: Number(raw.count) || 0,
-      color: raw.color ?? 'blue',
-    };
-  }
-  if (raw.label != null) {
-    const label = String(raw.label);
-    return {
-      emotion_code: label.replace(/\s+/g, '_').toUpperCase(),
-      emotion_name: label,
-      count: Number(raw.value) || 0,
-      color: 'blue',
-    };
-  }
-  return null;
-}
-
 /* =========================================================
    유틸리티 코드
 ========================================================= */
@@ -164,6 +156,12 @@ function isAdminLike(roleCode) {
 }
 
 function isSuperAdmin(roleCode) {
+  const code = String(roleCode || '').toUpperCase();
+  return code === 'ADMIN' || code === 'SUPER_ADMIN';
+}
+
+/** 총관리자 등급 — UI/API에서 타 계정에 부여 불가 */
+function isTopAdminRole(roleCode) {
   const code = String(roleCode || '').toUpperCase();
   return code === 'ADMIN' || code === 'SUPER_ADMIN';
 }
@@ -218,6 +216,39 @@ function formatDateTime(dateLike) {
   });
 }
 
+/** 상세 패널 닫은 뒤 목록에서 해당 카드(또는 목록 상단)로 스크롤 */
+function scrollSupportCardIntoView(supportId) {
+  if (supportId == null) return;
+  const key = String(supportId);
+  const run = () => {
+    const el = document.querySelector(`[data-matey-support-card="${key}"]`);
+    if (el) {
+      el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      return;
+    }
+    document
+      .querySelector('.matey-admin-v3__support-grid')
+      ?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  };
+  requestAnimationFrame(() => {
+    requestAnimationFrame(run);
+  });
+}
+
+function isReactSyntheticEvent(value) {
+  return (
+    value != null &&
+    typeof value === 'object' &&
+    typeof value.preventDefault === 'function' &&
+    typeof value.stopPropagation === 'function'
+  );
+}
+
+function getSupportAnswerTextFromDetail(detail) {
+  if (!detail) return '';
+  return String(detail.answerContent ?? detail.answer_content ?? '').trim();
+}
+
 function nowTimeLabel(offsetMinutes = 0) {
   const date = new Date(Date.now() + offsetMinutes * 60000);
   const hh = `${date.getHours()}`.padStart(2, '0');
@@ -256,42 +287,6 @@ function saveLogs(logs) {
 }
 
 /* =========================================================
-   라인 차트 패스 빌더 코드
-========================================================= */
-function buildLineGeometry(series, width = 620, height = 220, paddingX = 18, paddingY = 18) {
-  if (!Array.isArray(series) || series.length === 0) {
-    return { linePath: '', areaPath: '', points: [] };
-  }
-
-  const values = series.map((item) => item.value);
-  const max = Math.max(...values, 1);
-  const min = Math.min(...values, 0);
-  const range = Math.max(max - min, 1);
-
-  const chartWidth = width - paddingX * 2;
-  const chartHeight = height - paddingY * 2;
-
-  const points = series.map((item, index) => {
-    const x =
-      paddingX +
-      (series.length === 1 ? chartWidth / 2 : (chartWidth / (series.length - 1)) * index);
-    const y = paddingY + chartHeight - ((item.value - min) / range) * chartHeight;
-
-    return { x, y, value: item.value, label: item.label };
-  });
-
-  const linePath = points
-    .map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`)
-    .join(' ');
-
-  const areaPath = `${linePath} L ${points[points.length - 1].x} ${
-    height - paddingY
-  } L ${points[0].x} ${height - paddingY} Z`;
-
-  return { linePath, areaPath, points };
-}
-
-/* =========================================================
    메인 컴포넌트
 ========================================================= */
 export default function AdminPage() {
@@ -327,7 +322,9 @@ export default function AdminPage() {
   const [users, setUsers] = useState([]);
   const [supports, setSupports] = useState([]);
   const [bots, setBots] = useState([]);
-  const [emotionStats, setEmotionStats] = useState([]);
+  /** 상담봇 탭 API 메타(전월 라벨·순위 산정 방식) */
+  const [botStatsMeta, setBotStatsMeta] = useState(null);
+  const [botsLoading, setBotsLoading] = useState(false);
   const [logs, setLogs] = useState([]);
   const [dbOverview, setDbOverview] = useState(null);
 
@@ -335,6 +332,12 @@ export default function AdminPage() {
   const [error, setError] = useState(null);
   /** 일부 API만 실패했을 때(데이터는 일부 표시) 상단 안내 */
   const [loadWarning, setLoadWarning] = useState(null);
+
+  /** 커뮤니티 고민 스포트라이트 (관리자 추첨 + 운영 답변 공개) */
+  const [worrySpotlightDraft, setWorrySpotlightDraft] = useState(null);
+  const [worrySpotlightAnswer, setWorrySpotlightAnswer] = useState('');
+  const [worrySpotlightBusy, setWorrySpotlightBusy] = useState(false);
+  const [worrySpotlightPublished, setWorrySpotlightPublished] = useState(null);
 
   /* =========================================================
      실시간 차트 데이터
@@ -348,8 +351,15 @@ export default function AdminPage() {
   const [userKeyword, setUserKeyword] = useState('');
   const [userRoleFilter, setUserRoleFilter] = useState('ALL');
   const [userStatusFilter, setUserStatusFilter] = useState('ALL');
-  const [userLoginFilter, setUserLoginFilter] = useState('ALL');
-  const [selectedUserIds, setSelectedUserIds] = useState([]);
+  const [userManageId, setUserManageId] = useState(null);
+  const [userManageLoading, setUserManageLoading] = useState(false);
+  const [userManageFetchError, setUserManageFetchError] = useState('');
+  const [userDrawerRoleDraft, setUserDrawerRoleDraft] = useState('USER');
+  const [userDrawerStatusDraft, setUserDrawerStatusDraft] = useState('ACTIVE');
+  const [userDrawerSaving, setUserDrawerSaving] = useState(false);
+  const userDrawerTitleId = useId();
+  const userDrawerRoleFieldId = useId();
+  const userDrawerStatusFieldId = useId();
 
   /* =========================================================
      문의/신고 필터
@@ -365,6 +375,8 @@ export default function AdminPage() {
   const [supportAnswerDraft, setSupportAnswerDraft] = useState('');
   const [supportAnswerSaving, setSupportAnswerSaving] = useState(false);
   const [supportAnswerDoneOpen, setSupportAnswerDoneOpen] = useState(false);
+  /** 답변 확인 모달 문구: 기존 답변 수정 vs 신규 등록 */
+  const [supportAnswerDoneWasEdit, setSupportAnswerDoneWasEdit] = useState(false);
   const supportAnswerDoneTitleId = useId();
 
   /* =========================================================
@@ -472,13 +484,6 @@ export default function AdminPage() {
           );
         }
 
-        if (dashboardData.emotionDistribution) {
-          setEmotionStats(
-            dashboardData.emotionDistribution.map(normalizeEmotionStat).filter(Boolean)
-          );
-        }
-
-        setBots([]);
         setLogs(loadLogs());
 
         if (failed.length > 0) {
@@ -549,14 +554,97 @@ export default function AdminPage() {
     return () => window.clearInterval(interval);
   }, []);
 
-  /* =========================================================
-     선택된 사용자가 목록에서 사라지면 정리
-  ========================================================= */
   useEffect(() => {
-    setSelectedUserIds((prev) =>
-      prev.filter((id) => users.some((item) => item.user_id === id))
-    );
-  }, [users]);
+    if (activeTab !== 'overview') return undefined;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await communityAPI.getWorryFeatured();
+        if (!cancelled) setWorrySpotlightPublished(res?.spotlight ?? null);
+      } catch {
+        if (!cancelled) setWorrySpotlightPublished(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab !== 'bots' || !isAuthenticated || authLoading) return undefined;
+    let cancelled = false;
+    (async () => {
+      setBotsLoading(true);
+      try {
+        const data = await adminAPI.getBotStats();
+        if (cancelled) return;
+        const list = Array.isArray(data?.bots) ? data.bots : [];
+        setBots(list);
+        setBotStatsMeta({
+          periodLabel: data?.periodLabel ?? '',
+          rankingSource: data?.rankingSource ?? '',
+        });
+      } catch (e) {
+        console.error('상담봇 통계 로드 실패:', e);
+        if (!cancelled) {
+          setBots([]);
+          setBotStatsMeta(null);
+        }
+      } finally {
+        if (!cancelled) setBotsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, isAuthenticated, authLoading]);
+
+  const handleWorrySpotlightDraw = useCallback(async () => {
+    setWorrySpotlightBusy(true);
+    try {
+      const res = await adminAPI.drawWorrySpotlightCandidate();
+      const post = res?.post;
+      const pid = post?.postId ?? post?.post_id;
+      if (pid != null) {
+        setWorrySpotlightDraft(post);
+        setWorrySpotlightAnswer('');
+      } else {
+        window.alert(res?.message || '추첨할 고민 글이 없어요.');
+      }
+    } catch (e) {
+      window.alert(e?.message || '추첨에 실패했어요.');
+    } finally {
+      setWorrySpotlightBusy(false);
+    }
+  }, []);
+
+  const handleWorrySpotlightPublish = useCallback(async () => {
+    const pid = worrySpotlightDraft?.postId ?? worrySpotlightDraft?.post_id;
+    if (pid == null) {
+      window.alert('먼저 「고민 글 무작위 추첨」으로 글을 골라 주세요.');
+      return;
+    }
+    const ans = worrySpotlightAnswer.trim();
+    if (!ans) {
+      window.alert('운영 답변을 입력해 주세요.');
+      return;
+    }
+    setWorrySpotlightBusy(true);
+    try {
+      const res = await adminAPI.publishWorrySpotlight({
+        postId: Number(pid),
+        answerContent: ans,
+      });
+      setWorrySpotlightPublished(res?.spotlight ?? null);
+      setWorrySpotlightDraft(null);
+      setWorrySpotlightAnswer('');
+      window.alert('커뮤니티 상단에 공개했어요.');
+    } catch (e) {
+      window.alert(e?.message || '저장에 실패했어요.');
+    } finally {
+      setWorrySpotlightBusy(false);
+    }
+  }, [worrySpotlightAnswer, worrySpotlightDraft]);
 
   /* =========================================================
      운영 통계 요약 (DB 컬럼 기반)
@@ -574,9 +662,6 @@ export default function AdminPage() {
     const reportCount = supports.filter((s) => s.reason_type === 'REPORT').length;
     const inquiryCount = supports.filter((s) => s.reason_type === 'INQUIRY').length;
 
-    const totalLikes = bots.reduce((sum, b) => sum + (b.like_count || 0), 0);
-    const totalDislikes = bots.reduce((sum, b) => sum + (b.dislike_count || 0), 0);
-
     return {
       totalUsers,
       activeUsers,
@@ -587,10 +672,8 @@ export default function AdminPage() {
       pendingSupports,
       reportCount,
       inquiryCount,
-      totalLikes,
-      totalDislikes,
     };
-  }, [users, supports, bots]);
+  }, [users, supports]);
 
   const summaryStats = useMemo(() => {
     const o = dbOverview && typeof dbOverview === 'object' ? dbOverview : {};
@@ -615,11 +698,18 @@ export default function AdminPage() {
 
       adminCount: pick('adminCount', 'admin_count') ?? stats.adminCount,
       subAdminCount: pick('subAdminCount', 'sub_admin_count') ?? stats.subAdminCount,
-
-      totalLikes: pick('totalLikes', 'total_likes') ?? stats.totalLikes,
-      totalDislikes: pick('totalDislikes', 'total_dislikes') ?? stats.totalDislikes,
     };
   }, [dbOverview, stats]);
+
+  const userDirectoryMetrics = useMemo(
+    () => ({
+      total: summaryStats.totalUsers,
+      active: summaryStats.activeUsers,
+      banned: summaryStats.bannedUsers,
+      staff: users.filter((u) => isAdminLike(getUserRoleCode(u))).length,
+    }),
+    [users, summaryStats]
+  );
 
   /* =========================================================
      필터링된 사용자
@@ -637,12 +727,15 @@ export default function AdminPage() {
       const role = getUserRoleCode(item);
       const matchesRole = userRoleFilter === 'ALL' || role === userRoleFilter;
       const matchesStatus = userStatusFilter === 'ALL' || item.status === userStatusFilter;
-      const matchesLogin =
-        userLoginFilter === 'ALL' || item.login_type === userLoginFilter;
 
-      return matchesKeyword && matchesRole && matchesStatus && matchesLogin;
+      return matchesKeyword && matchesRole && matchesStatus;
     });
-  }, [users, userKeyword, userRoleFilter, userStatusFilter, userLoginFilter]);
+  }, [users, userKeyword, userRoleFilter, userStatusFilter]);
+
+  const userManageRow = useMemo(() => {
+    if (userManageId == null) return null;
+    return users.find((u) => u.user_id === userManageId) || null;
+  }, [users, userManageId]);
 
   /* =========================================================
      필터링된 문의/신고
@@ -681,19 +774,36 @@ export default function AdminPage() {
     [supportDetail?.reasonType]
   );
 
+  const supportHasExistingAnswer = useMemo(
+    () => Boolean(getSupportAnswerTextFromDetail(supportDetail)),
+    [supportDetail]
+  );
+
   const openSupportModal = useCallback((supportId) => {
     setSelectedSupportId(supportId);
     setSupportModalOpen(true);
   }, []);
 
-  const closeSupportModal = useCallback(() => {
-    setSupportModalOpen(false);
-    setSupportDetail(null);
-    setSupportDetailError('');
-    setSupportDetailLoading(false);
-    setSupportAnswerDraft('');
-    setSupportAnswerSaving(false);
-  }, []);
+  const closeSupportModal = useCallback(
+    (arg) => {
+      const opts = isReactSyntheticEvent(arg) ? {} : arg || {};
+      const scrollToId =
+        opts.scrollToSupportId != null ? opts.scrollToSupportId : selectedSupportId;
+
+      setSupportModalOpen(false);
+      setSupportDetail(null);
+      setSupportDetailError('');
+      setSupportDetailLoading(false);
+      setSupportAnswerDraft('');
+      setSupportAnswerSaving(false);
+
+      if (opts.scroll === false) return;
+      if (scrollToId != null) {
+        scrollSupportCardIntoView(scrollToId);
+      }
+    },
+    [selectedSupportId]
+  );
 
   useEffect(() => {
     if (!supportModalOpen || selectedSupportId == null) return undefined;
@@ -735,36 +845,45 @@ export default function AdminPage() {
 
     try {
       setSupportAnswerSaving(true);
-      await adminAPI.answerFeedback(selectedSupportId, content);
+      const ticketId = selectedSupportId;
+      const wasEdit = Boolean(getSupportAnswerTextFromDetail(supportDetail));
+
+      await adminAPI.answerFeedback(ticketId, content);
 
       setSupports((prev) =>
         prev.map((s) =>
-          s.support_id === selectedSupportId ? { ...s, status: 'DONE' } : s
+          s.support_id === ticketId ? { ...s, status: 'DONE' } : s
         )
       );
-      try {
-        const refreshed = await adminAPI.getFeedbackDetail(selectedSupportId);
-        setSupportDetail(refreshed || null);
-        setSupportAnswerDraft(String(refreshed?.answerContent || '').trim());
-      } catch {
-        setSupportDetail((prev) =>
-          prev ? { ...prev, answerContent: content, status: 'DONE' } : prev
-        );
-      }
 
       pushAdminLog(
         '문의·신고 관리',
-        '답변 등록',
-        `티켓 #${selectedSupportId}`,
-        '관리자 답변을 등록했습니다.'
+        wasEdit ? '답변 수정' : '답변 등록',
+        `티켓 #${ticketId}`,
+        wasEdit
+          ? '관리자 답변을 수정했습니다.'
+          : '관리자 답변을 등록했습니다.'
       );
+
+      setSupportAnswerDoneWasEdit(wasEdit);
+      closeSupportModal({ scrollToSupportId: ticketId });
       setSupportAnswerDoneOpen(true);
     } catch (e) {
-      window.alert(e?.message || '답변 등록에 실패했어요.');
+      const wasEdit = Boolean(getSupportAnswerTextFromDetail(supportDetail));
+      window.alert(
+        e?.message ||
+          (wasEdit ? '답변 수정에 실패했어요.' : '답변 등록에 실패했어요.')
+      );
     } finally {
       setSupportAnswerSaving(false);
     }
-  }, [selectedSupportId, supportAnswerDraft, pushAdminLog]);
+  }, [
+    selectedSupportId,
+    supportAnswerDraft,
+    supportDetail,
+    pushAdminLog,
+    closeSupportModal,
+  ]);
 
   /* =========================================================
      필터링된 활동 로그
@@ -810,151 +929,152 @@ export default function AdminPage() {
     [currentAdminIsSuper, user]
   );
 
-  /* =========================
-     사용자 선택 토글
-  ========================= */
-  const handleToggleUserSelect = (userId) => {
-    setSelectedUserIds((prev) =>
-      prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
-    );
+  useEffect(() => {
+    if (userManageId != null && !users.some((u) => u.user_id === userManageId)) {
+      setUserManageId(null);
+    }
+  }, [users, userManageId]);
+
+  useEffect(() => {
+    if (userManageId == null) {
+      setUserManageFetchError('');
+      return undefined;
+    }
+
+    let cancelled = false;
+    setUserManageLoading(true);
+    setUserManageFetchError('');
+
+    adminAPI
+      .getUser(userManageId)
+      .then((raw) => {
+        if (cancelled) return;
+        const u = normalizeAdminUser(raw);
+        if (!u) return;
+        setUsers((prev) =>
+          prev.some((x) => x.user_id === u.user_id)
+            ? prev.map((x) => (x.user_id === u.user_id ? { ...x, ...u } : x))
+            : [...prev, u]
+        );
+      })
+      .catch((err) => {
+        if (!cancelled) setUserManageFetchError(formatAdminApiFailure(err));
+      })
+      .finally(() => {
+        if (!cancelled) setUserManageLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userManageId]);
+
+  useEffect(() => {
+    if (userManageId == null) return undefined;
+    const onKey = (e) => {
+      if (e.key === 'Escape') setUserManageId(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [userManageId]);
+
+  const userManageRowSignature = userManageRow
+    ? `${userManageRow.user_id}:${userManageRow.role_code}:${userManageRow.status}`
+    : '';
+
+  useEffect(() => {
+    if (userManageId == null || !userManageRow) return;
+    setUserDrawerRoleDraft(getUserRoleCode(userManageRow));
+    setUserDrawerStatusDraft(String(userManageRow.status || 'ACTIVE').toUpperCase());
+  }, [userManageId, userManageRowSignature]);
+
+  const userDrawerRoleEditable =
+    Boolean(userManageRow) && currentAdminIsSuper && canManageRole(userManageRow);
+  const userDrawerStatusEditable =
+    Boolean(userManageRow) && canManageStatus(userManageRow);
+  const userDrawerHasPendingChanges =
+    Boolean(userManageRow) &&
+    ((userDrawerRoleEditable &&
+      userDrawerRoleDraft !== getUserRoleCode(userManageRow)) ||
+      (userDrawerStatusEditable &&
+        userDrawerStatusDraft !== String(userManageRow.status || '').toUpperCase()));
+
+  const handleUserDrawerCancel = () => {
+    if (!userManageRow || userManageLoading) return;
+    setUserDrawerRoleDraft(getUserRoleCode(userManageRow));
+    setUserDrawerStatusDraft(String(userManageRow.status || 'ACTIVE').toUpperCase());
   };
 
-  const allVisibleSelected =
-    filteredUsers.length > 0 &&
-    filteredUsers.every((item) => selectedUserIds.includes(item.user_id));
+  const handleUserDrawerSave = async () => {
+    if (!userManageRow || !userDrawerHasPendingChanges || userDrawerSaving) return;
 
-  const handleSelectAllVisible = () => {
-    if (allVisibleSelected) {
-      setSelectedUserIds((prev) =>
-        prev.filter((id) => !filteredUsers.some((u) => u.user_id === id))
-      );
+    const uid = userManageRow.user_id;
+    const curRole = getUserRoleCode(userManageRow);
+    const curStatus = String(userManageRow.status || 'ACTIVE').toUpperCase();
+    const nextRole = userDrawerRoleDraft;
+    const nextStatus = userDrawerStatusDraft;
+
+    if (
+      userDrawerRoleEditable &&
+      nextRole !== curRole &&
+      isTopAdminRole(nextRole) &&
+      !isTopAdminRole(curRole)
+    ) {
+      window.alert('총관리자 권한은 다른 계정에 부여할 수 없습니다.');
       return;
     }
 
-    setSelectedUserIds((prev) => {
-      const merged = new Set([...prev, ...filteredUsers.map((u) => u.user_id)]);
-      return Array.from(merged);
-    });
-  };
-
-  /* =========================================================
-     사용자 상태 일괄 변경
-  ========================================================= */
-  const handleBulkStatus = async (nextStatus) => {
-    const targets = filteredUsers
-      .filter((u) => selectedUserIds.includes(u.user_id))
-      .filter((u) => canManageStatus(u));
-
-    if (targets.length === 0) return;
-
-    const ids = targets.map((u) => u.user_id);
-
-    try {
-      await adminAPI.bulkUpdateStatus({ userIds: ids, status: nextStatus });
-
-      setUsers((prev) =>
-        prev.map((u) => (ids.includes(u.user_id) ? { ...u, status: nextStatus } : u))
+    const lines = [];
+    if (userDrawerRoleEditable && nextRole !== curRole) {
+      lines.push(
+        `${formatRoleLabelForTable(curRole)}의 권한을 ${formatRoleLabelForTable(nextRole)}(으)로 변경하시겠습니까?`
       );
-
-      pushAdminLog(
-        '사용자 관리',
-        '일괄 상태 변경',
-        `${ids.length}명 사용자`,
-        `선택한 ${ids.length}명의 상태를 ${USER_STATUS_LABELS[nextStatus]}(으)로 변경했습니다.`,
-        ['일괄 작업', nextStatus]
-      );
-
-      setSelectedUserIds([]);
-    } catch (err) {
-      console.error('일괄 상태 변경 실패:', err);
-      alert('상태 변경 중 오류가 발생했어요: ' + (err.message || '서버 응답 실패'));
     }
-  };
-
-  /* =========================================================
-     사용자 권한 일괄 변경 (총 관리자만 가능)
-  ========================================================= */
-  const handleBulkRole = async (nextRole) => {
-    if (!currentAdminIsSuper) return;
-
-    const targets = filteredUsers
-      .filter((u) => selectedUserIds.includes(u.user_id))
-      .filter((u) => canManageRole(u));
-
-    if (targets.length === 0) return;
-
-    const ids = targets.map((u) => u.user_id);
-
-    try {
-      await adminAPI.bulkUpdateRole({ userIds: ids, roleCode: nextRole });
-
-      setUsers((prev) =>
-        prev.map((u) => (ids.includes(u.user_id) ? { ...u, role_code: nextRole } : u))
+    if (userDrawerStatusEditable && nextStatus !== curStatus) {
+      lines.push(
+        `상태를 ${USER_STATUS_LABELS[curStatus] || curStatus}에서 ${USER_STATUS_LABELS[nextStatus] || nextStatus}(으)로 변경하시겠습니까?`
       );
-
-      pushAdminLog(
-        '권한 관리',
-        '일괄 권한 변경',
-        `${ids.length}명 사용자`,
-        `선택한 ${ids.length}명의 권한을 ${ROLE_LABELS[nextRole]}(으)로 변경했습니다.`,
-        ['권한 변경', nextRole]
-      );
-
-      setSelectedUserIds([]);
-    } catch (err) {
-      console.error('일괄 권한 변경 실패:', err);
-      alert('권한 변경 중 오류가 발생했어요: ' + (err.message || '서버 응답 실패'));
     }
-  };
+    if (lines.length === 0) return;
 
-  /* =========================================================
-     단일 사용자 상태/권한 변경
-  ========================================================= */
-  const handleUserStatusChange = async (userId, nextStatus) => {
-    const target = users.find((u) => u.user_id === userId);
-    if (!target || !canManageStatus(target) || target.status === nextStatus) return;
+    const emailLine = userManageRow.email?.trim() || '등록된 이메일 없음';
+    const msg = `${lines.join('\n\n')}\n\n계정: ${emailLine}\n\n저장하면 바로 반영돼요.`;
+    if (!window.confirm(msg)) return;
 
+    setUserDrawerSaving(true);
     try {
-      await adminAPI.updateUser(userId, { status: nextStatus });
+      if (userDrawerRoleEditable && nextRole !== curRole) {
+        await adminAPI.updateUserRole(uid, nextRole);
+        setUsers((prev) =>
+          prev.map((u) => (u.user_id === uid ? { ...u, role_code: nextRole } : u))
+        );
+        pushAdminLog(
+          '권한 관리',
+          '사용자 권한 변경',
+          userManageRow.nickname,
+          `${userManageRow.nickname} 사용자의 권한을 ${formatRoleLabelForTable(nextRole)}(으)로 변경했습니다.`,
+          ['권한 변경', nextRole]
+        );
+      }
 
-      setUsers((prev) =>
-        prev.map((u) => (u.user_id === userId ? { ...u, status: nextStatus } : u))
-      );
-
-      pushAdminLog(
-        '사용자 관리',
-        '사용자 상태 변경',
-        target.nickname,
-        `${target.nickname} 사용자의 상태를 ${USER_STATUS_LABELS[nextStatus]}(으)로 변경했습니다.`,
-        ['상태 변경', nextStatus]
-      );
+      if (userDrawerStatusEditable && nextStatus !== curStatus) {
+        await adminAPI.updateUser(uid, { status: nextStatus });
+        setUsers((prev) =>
+          prev.map((u) => (u.user_id === uid ? { ...u, status: nextStatus } : u))
+        );
+        pushAdminLog(
+          '사용자 관리',
+          '사용자 상태 변경',
+          userManageRow.nickname,
+          `${userManageRow.nickname} 사용자의 상태를 ${USER_STATUS_LABELS[nextStatus]}(으)로 변경했습니다.`,
+          ['상태 변경', nextStatus]
+        );
+      }
     } catch (err) {
-      console.error('상태 변경 실패:', err);
-      alert('상태 변경에 실패했어요.');
-    }
-  };
-
-  const handleUserRoleChange = async (userId, nextRole) => {
-    const target = users.find((u) => u.user_id === userId);
-    if (!target || !canManageRole(target) || getUserRoleCode(target) === nextRole) return;
-
-    try {
-      await adminAPI.updateUserRole(userId, nextRole);
-
-      setUsers((prev) =>
-        prev.map((u) => (u.user_id === userId ? { ...u, role_code: nextRole } : u))
-      );
-
-      pushAdminLog(
-        '권한 관리',
-        '사용자 권한 변경',
-        target.nickname,
-        `${target.nickname} 사용자의 권한을 ${ROLE_LABELS[nextRole]}(으)로 변경했습니다.`,
-        ['권한 변경', nextRole]
-      );
-    } catch (err) {
-      console.error('권한 변경 실패:', err);
-      alert('권한 변경에 실패했어요.');
+      console.error(err);
+      window.alert(formatAdminApiFailure(err) || '저장에 실패했어요. 잠시 후 다시 시도해 주세요.');
+    } finally {
+      setUserDrawerSaving(false);
     }
   };
 
@@ -998,12 +1118,6 @@ export default function AdminPage() {
     setLogs([]);
     saveLogs([]);
   };
-
-  /* =========================================================
-     라인 차트 패스
-  ========================================================= */
-  const userLine = useMemo(() => buildLineGeometry(liveUserSeries), [liveUserSeries]);
-  const chatLine = useMemo(() => buildLineGeometry(liveChatSeries), [liveChatSeries]);
 
   /* =========================================================
      인증 / 권한 가드
@@ -1072,11 +1186,6 @@ export default function AdminPage() {
     return Date.now() - t <= 1000 * 60 * 60 * 24;
   }).length;
 
-  const maxEmotionCount = emotionStats.reduce(
-    (max, item) => Math.max(max, item.count || 0),
-    1
-  );
-
   return (
     <div className="matey-admin-v3">
       {supportAnswerDoneOpen ? (
@@ -1094,10 +1203,12 @@ export default function AdminPage() {
             aria-labelledby={supportAnswerDoneTitleId}
           >
             <h2 id={supportAnswerDoneTitleId} className="matey-admin-v3__modal-title">
-              답변 완료
+              {supportAnswerDoneWasEdit ? '답변 수정 완료' : '답변 등록 완료'}
             </h2>
             <p className="matey-admin-v3__panel-sub" style={{ margin: '0 0 22px', textAlign: 'center' }}>
-              답변이 등록되었어요. 이용자에게 알림이 전달됩니다.
+              {supportAnswerDoneWasEdit
+                ? '답변이 수정되었어요. 이용자에게 알림이 전달됩니다.'
+                : '답변이 등록되었어요. 이용자에게 알림이 전달됩니다.'}
             </p>
             <div style={{ display: 'flex', justifyContent: 'center' }}>
               <button
@@ -1137,8 +1248,8 @@ export default function AdminPage() {
             <br />한 눈에 관리해요 🐾
           </h1>
           <p>
-            사용자 권한, 문의 및 신고, 상담봇 인기 지표, 감정 분포까지 메이티가 운영되는 모든
-            흐름을 한 화면에서 확인할 수 있어요.
+            사용자 권한, 문의·신고, 커뮤니티 고민 스포트라이트까지 메이티 운영에 필요한 흐름을 한
+            화면에서 다룰 수 있어요.
           </p>
 
           {/* 탭 버튼을 히어로 내부에 배치 */}
@@ -1239,6 +1350,77 @@ export default function AdminPage() {
             <section className="matey-admin-v3__panel">
               <div className="matey-admin-v3__panel-head">
                 <div>
+                  <span className="matey-admin-v3__section-kicker">COMMUNITY</span>
+                  <h2>고민 스포트라이트</h2>
+                  <p className="matey-admin-v3__panel-sub">
+                    고민 글을 추첨하고 운영 답변을 저장하면 커뮤니티 목록 맨 위에 크게 보여요.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="matey-admin-v3__ghost-button"
+                  disabled={worrySpotlightBusy}
+                  onClick={handleWorrySpotlightDraw}
+                >
+                  고민 글 무작위 추첨
+                </button>
+              </div>
+
+              {worrySpotlightPublished?.post?.title ? (
+                <p className="matey-admin-v3__panel-sub" style={{ marginTop: 0 }}>
+                  지금 공개 중인 글:{' '}
+                  <strong>{worrySpotlightPublished.post.title}</strong>
+                </p>
+              ) : (
+                <p className="matey-admin-v3__panel-sub" style={{ marginTop: 0 }}>
+                  아직 공개된 스포트라이트가 없어요. 추첨 후 답변을 입력하고 공개해 보세요.
+                </p>
+              )}
+
+              {worrySpotlightDraft ? (
+                <div style={{ marginTop: 18 }}>
+                  <p style={{ margin: '0 0 6px', fontSize: 13, fontWeight: 800, color: '#5b5470' }}>
+                    추첨된 고민 글
+                  </p>
+                  <p style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 900, color: '#2a2238' }}>
+                    {worrySpotlightDraft.title}
+                  </p>
+                  <p style={{ margin: '0 0 14px', fontSize: 13, lineHeight: 1.55, color: '#6b6285' }}>
+                    {String(worrySpotlightDraft.content || '')
+                      .replace(/<[^>]*>/g, ' ')
+                      .replace(/\s+/g, ' ')
+                      .trim()
+                      .slice(0, 260)}
+                    {String(worrySpotlightDraft.content || '').length > 260 ? '…' : ''}
+                  </p>
+                  <label className="matey-admin-v3__panel-sub" style={{ display: 'block', marginBottom: 8 }}>
+                    운영 답변 (전체 회원에게 공개)
+                  </label>
+                  <textarea
+                    className="matey-admin-v3__support-reply-textarea"
+                    rows={7}
+                    placeholder="따뜻하고 명확한 답변을 남겨 주세요. 글 본문과 함께 커뮤니티 상단에 크게 표시돼요."
+                    value={worrySpotlightAnswer}
+                    onChange={(e) => setWorrySpotlightAnswer(e.target.value)}
+                    disabled={worrySpotlightBusy}
+                  />
+                  <div style={{ marginTop: 12 }}>
+                    <button
+                      type="button"
+                      className="matey-admin-v3__primary-button"
+                      disabled={worrySpotlightBusy}
+                      onClick={handleWorrySpotlightPublish}
+                    >
+                      커뮤니티에 공개하기
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+            </section>
+
+            <section className="matey-admin-v3__panel">
+              <div className="matey-admin-v3__panel-head">
+                <div>
                   <span className="matey-admin-v3__section-kicker">REALTIME</span>
                   <h2>실시간 운영 통계</h2>
                   <p className="matey-admin-v3__panel-sub">
@@ -1264,32 +1446,6 @@ export default function AdminPage() {
                     </div>
                     <strong>{userLast}</strong>
                   </div>
-
-                  <div className="matey-admin-v3__line-chart">
-                    <svg
-                      className="matey-admin-v3__line-svg"
-                      viewBox="0 0 620 220"
-                      preserveAspectRatio="none"
-                    >
-                      <path className="matey-admin-v3__line-area" d={userLine.areaPath} />
-                      <path className="matey-admin-v3__line-stroke" d={userLine.linePath} />
-                      {userLine.points.map((p, i) => (
-                        <circle
-                          key={`u-${i}`}
-                          cx={p.x}
-                          cy={p.y}
-                          r="4.5"
-                          className="matey-admin-v3__line-dot"
-                        />
-                      ))}
-                    </svg>
-                  </div>
-
-                  <div className="matey-admin-v3__chart-labels">
-                    {liveUserSeries.map((it, i) => (
-                      <span key={`ul-${i}`}>{it.label}</span>
-                    ))}
-                  </div>
                 </article>
 
                 <article className="matey-admin-v3__chart-card">
@@ -1299,98 +1455,6 @@ export default function AdminPage() {
                       <p>활성 세션 수</p>
                     </div>
                     <strong>{chatLast}</strong>
-                  </div>
-
-                  <div className="matey-admin-v3__line-chart">
-                    <svg
-                      className="matey-admin-v3__line-svg"
-                      viewBox="0 0 620 220"
-                      preserveAspectRatio="none"
-                    >
-                      <path
-                        className="matey-admin-v3__line-area matey-admin-v3__line-area--blue"
-                        d={chatLine.areaPath}
-                      />
-                      <path
-                        className="matey-admin-v3__line-stroke matey-admin-v3__line-stroke--blue"
-                        d={chatLine.linePath}
-                      />
-                      {chatLine.points.map((p, i) => (
-                        <circle
-                          key={`c-${i}`}
-                          cx={p.x}
-                          cy={p.y}
-                          r="4.5"
-                          className="matey-admin-v3__line-dot matey-admin-v3__line-dot--blue"
-                        />
-                      ))}
-                    </svg>
-                  </div>
-
-                  <div className="matey-admin-v3__chart-labels">
-                    {liveChatSeries.map((it, i) => (
-                      <span key={`cl-${i}`}>{it.label}</span>
-                    ))}
-                  </div>
-                </article>
-
-                <article className="matey-admin-v3__chart-card">
-                  <div className="matey-admin-v3__chart-head">
-                    <div>
-                      <h3>주요 감정 분포</h3>
-                      <p>누적 집계</p>
-                    </div>
-                    <strong>{maxEmotionCount}</strong>
-                  </div>
-
-                  <div className="matey-admin-v3__bar-list">
-                    {emotionStats.map((item) => (
-                      <div className="matey-admin-v3__bar-row" key={item.emotion_code}>
-                        <div className="matey-admin-v3__bar-meta">
-                          <span>{item.emotion_name}</span>
-                          <strong>{item.count}건</strong>
-                        </div>
-                        <div className="matey-admin-v3__bar-track">
-                          <div
-                            className={`matey-admin-v3__bar-fill ${item.color || 'violet'}`}
-                            style={{
-                              width: `${Math.round(
-                                (item.count / maxEmotionCount) * 100
-                              )}%`,
-                            }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </article>
-
-                <article className="matey-admin-v3__chart-card">
-                  <div className="matey-admin-v3__chart-head">
-                    <div>
-                      <h3>상담봇 인기 순위</h3>
-                    </div>
-                    <strong>{bots.length}</strong>
-                  </div>
-
-                  <div className="matey-admin-v3__bot-rank-list">
-                    {bots
-                      .slice()
-                      .sort((a, b) => (b.popularity_score || 0) - (a.popularity_score || 0))
-                      .map((bot, idx) => (
-                        <div className="matey-admin-v3__bot-rank-row" key={bot.bot_id}>
-                          <span className={`matey-admin-v3__bot-rank-badge rank-${idx + 1}`}>
-                            {idx + 1}
-                          </span>
-                          <div className="matey-admin-v3__bot-rank-meta">
-                            <strong>{bot.name}</strong>
-                            <small>👍 {bot.like_count} · 👎 {bot.dislike_count}</small>
-                          </div>
-                          <span className="matey-admin-v3__bot-rank-score">
-                            {bot.popularity_score?.toFixed(1)}점
-                          </span>
-                        </div>
-                      ))}
                   </div>
                 </article>
               </div>
@@ -1439,12 +1503,6 @@ export default function AdminPage() {
                     <strong>{stats.reportCount}건</strong>, 일반 문의{' '}
                     <strong>{stats.inquiryCount}건</strong>이 누적되어 있어요.
                   </p>
-                  <div className="matey-admin-v3__divider" />
-                  <p className="matey-admin-v3__muted">
-                    상담봇 누적 좋아요 <strong>{stats.totalLikes}</strong>, 싫어요{' '}
-                    <strong>{stats.totalDislikes}</strong>로 사용자 만족도가 비교적 높게 유지되고
-                    있어요.
-                  </p>
                 </div>
               </div>
             </section>
@@ -1453,237 +1511,322 @@ export default function AdminPage() {
 
         {/* ----------------- 사용자 관리 탭 ----------------- */}
         {activeTab === 'users' && (
-          <section className="matey-admin-v3__panel">
-            <div className="matey-admin-v3__panel-head">
-              <div>
-                <span className="matey-admin-v3__section-kicker">USER</span>
-                <h2>사용자 검색 · 권한 · 상태 관리</h2>
-                <p className="matey-admin-v3__panel-sub">
-                  검색, 필터링, 일괄 작업을 처리해요.
-                </p>
-              </div>
-            </div>
-
-            <div className="matey-admin-v3__toolbar">
-              <div className="matey-admin-v3__search-wrap">
-                <input
-                  type="text"
-                  value={userKeyword}
-                  onChange={(e) => setUserKeyword(e.target.value)}
-                  placeholder="이메일, 닉네임, 실명으로 검색"
-                />
+          <>
+            <section className="matey-admin-v3__panel matey-admin-v3__panel--users-wide matey-admin-v3__panel--users-dense">
+              <div className="matey-admin-v3__panel-head matey-admin-v3__panel-head--users">
+                <div>
+                  <p className="matey-admin-v3__panel-breadcrumb">관리자 / 사용자</p>
+                  <h2>사용자 관리</h2>
+                  <p className="matey-admin-v3__panel-sub">
+                    목록에서 계정을 조회한 뒤, 상세·관리 화면에서 권한과 상태를 수정할 수 있어요.
+                  </p>
+                </div>
               </div>
 
-              <select
-                value={userRoleFilter}
-                onChange={(e) => setUserRoleFilter(e.target.value)}
+              <div
+                className="matey-admin-v3__user-summary-strip"
+                role="region"
+                aria-label="사용자 요약 지표"
               >
-                <option value="ALL">전체 권한</option>
-                <option value="ADMIN">총 관리자</option>
-                <option value="SUBADMIN">서브 관리자</option>
-                <option value="USER">일반 사용자</option>
-              </select>
+                <div className="matey-admin-v3__user-summary-card">
+                  <span className="matey-admin-v3__user-summary-value">
+                    {Number(userDirectoryMetrics.total).toLocaleString('ko-KR')}
+                  </span>
+                  <span className="matey-admin-v3__user-summary-label">전체 사용자</span>
+                </div>
+                <div className="matey-admin-v3__user-summary-card">
+                  <span className="matey-admin-v3__user-summary-value">
+                    {Number(userDirectoryMetrics.active).toLocaleString('ko-KR')}
+                  </span>
+                  <span className="matey-admin-v3__user-summary-label">활성</span>
+                </div>
+                <div className="matey-admin-v3__user-summary-card">
+                  <span className="matey-admin-v3__user-summary-value">
+                    {Number(userDirectoryMetrics.banned).toLocaleString('ko-KR')}
+                  </span>
+                  <span className="matey-admin-v3__user-summary-label">정지</span>
+                </div>
+                <div className="matey-admin-v3__user-summary-card">
+                  <span className="matey-admin-v3__user-summary-value">
+                    {Number(userDirectoryMetrics.staff).toLocaleString('ko-KR')}
+                  </span>
+                  <span className="matey-admin-v3__user-summary-label">운영 권한</span>
+                </div>
+              </div>
 
-              <select
-                value={userStatusFilter}
-                onChange={(e) => setUserStatusFilter(e.target.value)}
-              >
-                <option value="ALL">전체 상태</option>
-                <option value="ACTIVE">활성</option>
-                <option value="BANNED">정지</option>
-                <option value="DELETED">탈퇴</option>
-              </select>
-
-              <select
-                value={userLoginFilter}
-                onChange={(e) => setUserLoginFilter(e.target.value)}
-              >
-                <option value="ALL">전체 로그인</option>
-                <option value="LOCAL">이메일</option>
-                <option value="KAKAO">카카오</option>
-                <option value="NAVER">네이버</option>
-              </select>
-            </div>
-
-            <div className="matey-admin-v3__bulk-bar">
-              <div className="matey-admin-v3__bulk-info">
-                <label className="matey-admin-v3__checkbox">
+              <div className="matey-admin-v3__toolbar matey-admin-v3__toolbar--users matey-admin-v3__toolbar--users-inline">
+                <div className="matey-admin-v3__search-wrap">
                   <input
-                    type="checkbox"
-                    checked={allVisibleSelected}
-                    onChange={handleSelectAllVisible}
+                    type="text"
+                    value={userKeyword}
+                    onChange={(e) => setUserKeyword(e.target.value)}
+                    placeholder="이메일·닉네임 검색"
                   />
-                  현재 목록 전체 선택
-                </label>
-                <strong>선택된 사용자 {selectedUserIds.length}명</strong>
+                </div>
+                <select
+                  id="admin-users-filter-role"
+                  value={userRoleFilter}
+                  onChange={(e) => setUserRoleFilter(e.target.value)}
+                  aria-label="권한 필터"
+                >
+                  <option value="ALL">전체 권한</option>
+                  <option value="ADMIN">총 관리자</option>
+                  <option value="SUBADMIN">서브 관리자</option>
+                  <option value="USER">일반 사용자</option>
+                </select>
+                <select
+                  id="admin-users-filter-status"
+                  value={userStatusFilter}
+                  onChange={(e) => setUserStatusFilter(e.target.value)}
+                  aria-label="상태 필터"
+                >
+                  <option value="ALL">전체 상태</option>
+                  <option value="ACTIVE">활성</option>
+                  <option value="BANNED">정지</option>
+                  <option value="DELETED">탈퇴</option>
+                </select>
               </div>
 
-              <div className="matey-admin-v3__bulk-actions">
-                <button
-                  type="button"
-                  className="matey-admin-v3__mini-btn is-primary-soft"
-                  disabled={selectedUserIds.length === 0}
-                  onClick={() => handleBulkStatus('ACTIVE')}
-                >
-                  일괄 활성화
-                </button>
-                <button
-                  type="button"
-                  className="matey-admin-v3__mini-btn is-danger"
-                  disabled={selectedUserIds.length === 0}
-                  onClick={() => handleBulkStatus('BANNED')}
-                >
-                  일괄 정지
-                </button>
-                <button
-                  type="button"
-                  className="matey-admin-v3__mini-btn"
-                  disabled={selectedUserIds.length === 0 || !currentAdminIsSuper}
-                  onClick={() => handleBulkRole('SUBADMIN')}
-                >
-                  서브 관리자 지정
-                </button>
-                <button
-                  type="button"
-                  className="matey-admin-v3__mini-btn"
-                  disabled={selectedUserIds.length === 0 || !currentAdminIsSuper}
-                  onClick={() => handleBulkRole('ADMIN')}
-                >
-                  총 관리자 지정
-                </button>
-                <button
-                  type="button"
-                  className="matey-admin-v3__mini-btn"
-                  disabled={selectedUserIds.length === 0 || !currentAdminIsSuper}
-                  onClick={() => handleBulkRole('USER')}
-                >
-                  일반 사용자 전환
-                </button>
-              </div>
-            </div>
+              <div className="matey-admin-v3__table-wrap matey-admin-v3__table-wrap--users-fit">
+                <table className="matey-admin-v3__table matey-admin-v3__table--users-compact matey-admin-v3__table--users-list-only">
+                  <thead>
+                    <tr>
+                      <th className="matey-admin-v3__th-user">사용자</th>
+                      <th className="matey-admin-v3__th-role">권한</th>
+                      <th className="matey-admin-v3__th-status">상태</th>
+                      <th className="matey-admin-v3__th-manage">관리</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredUsers.map((item) => {
+                      const role = getUserRoleCode(item);
+                      const manageLabel = manageButtonLabelForRole(role);
 
-            <div className="matey-admin-v3__table-wrap">
-              <table className="matey-admin-v3__table">
-                <thead>
-                  <tr>
-                    <th style={{ width: 56 }}>선택</th>
-                    <th>사용자</th>
-                    <th>권한</th>
-                    <th>상태</th>
-                    <th>로그인</th>
-                    <th>가입일</th>
-                    <th>최근 로그인</th>
-                    <th>상담수</th>
-                    <th>신고당함</th>
-                    <th>권한 변경</th>
-                    <th>상태 변경</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredUsers.map((item) => {
-                    const role = getUserRoleCode(item);
-
-                    return (
-                      <tr key={item.user_id}>
-                        <td>
-                          <input
-                            type="checkbox"
-                            checked={selectedUserIds.includes(item.user_id)}
-                            onChange={() => handleToggleUserSelect(item.user_id)}
-                          />
-                        </td>
-
-                        <td>
-                          <div className="matey-admin-v3__user-cell">
-                            <span className="matey-admin-v3__user-avatar">
-                              {String(item.nickname || '?').charAt(0)}
-                            </span>
-                            <div>
-                              <strong>{item.nickname}</strong>
-                              <small>{item.email}</small>
+                      return (
+                        <tr key={item.user_id}>
+                          <td className="matey-admin-v3__td-user">
+                            <div className="matey-admin-v3__user-cell matey-admin-v3__user-cell--compact">
+                              <span className="matey-admin-v3__user-avatar matey-admin-v3__user-avatar--sm">
+                                {String(item.nickname || '?').charAt(0)}
+                              </span>
+                              <div className="matey-admin-v3__user-cell-text">
+                                <strong>{item.nickname}</strong>
+                                <small title={item.email}>{item.email}</small>
+                              </div>
                             </div>
+                          </td>
+
+                          <td className="matey-admin-v3__td-role">
+                            <span className="matey-admin-v3__role-plain">
+                              {formatRoleLabelForTable(role)}
+                            </span>
+                          </td>
+
+                          <td className="matey-admin-v3__td-status">
+                            <span
+                              className={`matey-admin-v3__user-status-pill matey-admin-v3__user-status-pill--${String(
+                                item.status || 'ACTIVE'
+                              ).toLowerCase()}`}
+                            >
+                              {USER_STATUS_LABELS[item.status] || item.status || '—'}
+                            </span>
+                          </td>
+
+                          <td className="matey-admin-v3__td-manage">
+                            <button
+                              type="button"
+                              className={
+                                manageLabel === '상세'
+                                  ? 'matey-admin-v3__user-manage-btn matey-admin-v3__user-manage-btn--detail'
+                                  : 'matey-admin-v3__user-manage-btn matey-admin-v3__user-manage-btn--manage'
+                              }
+                              onClick={() => setUserManageId(item.user_id)}
+                            >
+                              {manageLabel}
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+
+                    {filteredUsers.length === 0 && (
+                      <tr>
+                        <td colSpan={4}>
+                          <div className="matey-admin-v3__empty">
+                            조건에 맞는 사용자가 없어요. 검색어 또는 필터를 조정해 주세요.
                           </div>
                         </td>
-
-                        <td>
-                          <span
-                            className={`matey-admin-v3__pill ${ROLE_PILL_CLASS[role] || 'is-user'}`}
-                          >
-                            {ROLE_LABELS[role] || '일반 사용자'}
-                          </span>
-                        </td>
-
-                        <td>
-                          <span
-                            className={`matey-admin-v3__pill ${
-                              USER_STATUS_PILL_CLASS[item.status] || ''
-                            }`}
-                          >
-                            {USER_STATUS_LABELS[item.status] || '-'}
-                          </span>
-                        </td>
-
-                        <td className="matey-admin-v3__meta-text">
-                          {LOGIN_TYPE_LABELS[item.login_type] || item.login_type}
-                        </td>
-
-                        <td className="matey-admin-v3__meta-text">
-                          {formatDate(item.created_at)}
-                        </td>
-
-                        <td className="matey-admin-v3__meta-text">
-                          {formatDateTime(item.last_login_at)}
-                        </td>
-
-                        <td>{item.chat_count ?? 0}건</td>
-                        <td>{item.report_count ?? 0}건</td>
-
-                        <td>
-                          <select
-                            className="matey-admin-v3__row-select"
-                            value={role}
-                            onChange={(e) =>
-                              handleUserRoleChange(item.user_id, e.target.value)
-                            }
-                            disabled={!canManageRole(item)}
-                          >
-                            <option value="ADMIN">총 관리자</option>
-                            <option value="SUBADMIN">서브 관리자</option>
-                            <option value="USER">일반 사용자</option>
-                          </select>
-                        </td>
-
-                        <td>
-                          <select
-                            className="matey-admin-v3__row-select"
-                            value={item.status}
-                            onChange={(e) =>
-                              handleUserStatusChange(item.user_id, e.target.value)
-                            }
-                            disabled={!canManageStatus(item)}
-                          >
-                            <option value="ACTIVE">활성</option>
-                            <option value="BANNED">정지</option>
-                            <option value="DELETED">탈퇴</option>
-                          </select>
-                        </td>
                       </tr>
-                    );
-                  })}
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </section>
 
-                  {filteredUsers.length === 0 && (
-                    <tr>
-                      <td colSpan={11}>
-                        <div className="matey-admin-v3__empty">
-                          조건에 맞는 사용자가 없어요. 검색어 또는 필터를 조정해 주세요.
-                        </div>
-                      </td>
-                    </tr>
+            {userManageId != null && userManageRow && (
+              <div
+                className="matey-admin-v3__drawer-overlay"
+                role="presentation"
+                onClick={() => setUserManageId(null)}
+              >
+                <aside
+                  className="matey-admin-v3__user-drawer"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby={userDrawerTitleId}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="matey-admin-v3__user-drawer-head">
+                    <div>
+                      <p className="matey-admin-v3__user-drawer-eyebrow">
+                        {manageButtonLabelForRole(getUserRoleCode(userManageRow)) === '상세'
+                          ? '사용자 상세'
+                          : '계정 관리'}
+                      </p>
+                      <h3 className="matey-admin-v3__user-drawer-title" id={userDrawerTitleId}>
+                        {userManageRow.nickname || '이름 없음'}
+                      </h3>
+                      <p className="matey-admin-v3__user-drawer-email">{userManageRow.email}</p>
+                    </div>
+                    <button
+                      type="button"
+                      className="matey-admin-v3__modal-close"
+                      onClick={() => setUserManageId(null)}
+                      aria-label="닫기"
+                    >
+                      ×
+                    </button>
+                  </div>
+
+                  {userManageLoading && (
+                    <p className="matey-admin-v3__user-drawer-banner">최신 정보를 불러오는 중…</p>
                   )}
-                </tbody>
-              </table>
-            </div>
-          </section>
+                  {userManageFetchError && (
+                    <p className="matey-admin-v3__user-drawer-banner matey-admin-v3__user-drawer-banner--warn">
+                      {userManageFetchError}
+                    </p>
+                  )}
+
+                  <div className="matey-admin-v3__user-drawer-section">
+                    <h4 className="matey-admin-v3__user-drawer-section-title">계정 정보</h4>
+                    <dl className="matey-admin-v3__user-drawer-dl">
+                      <div>
+                        <dt>이메일</dt>
+                        <dd>{userManageRow.email || '—'}</dd>
+                      </div>
+                      <div>
+                        <dt>가입일</dt>
+                        <dd>{formatDateTime(userManageRow.created_at)}</dd>
+                      </div>
+                      <div>
+                        <dt>최근 로그인</dt>
+                        <dd>{formatDateTime(userManageRow.last_login_at)}</dd>
+                      </div>
+                      <div>
+                        <dt>로그인 유형</dt>
+                        <dd>{formatLoginTypeLabel(userManageRow.login_type)}</dd>
+                      </div>
+                      <div>
+                        <dt>담당 상담봇</dt>
+                        <dd>{userManageRow.assigned_bot_name || '—'}</dd>
+                      </div>
+                      <div>
+                        <dt>상담(대화) 건수</dt>
+                        <dd>{userManageRow.chat_count ?? 0}</dd>
+                      </div>
+                      <div>
+                        <dt>신고 접수</dt>
+                        <dd>{userManageRow.report_count ?? 0}</dd>
+                      </div>
+                      <div>
+                        <dt>문의·신고 접수</dt>
+                        <dd>{userManageRow.support_count ?? 0}</dd>
+                      </div>
+                    </dl>
+                  </div>
+
+                  <div className="matey-admin-v3__user-drawer-section">
+                    <h4 className="matey-admin-v3__user-drawer-section-title">권한·상태</h4>
+                    <div className="matey-admin-v3__user-drawer-controls">
+                      <div className="matey-admin-v3__user-drawer-field">
+                        <label htmlFor={userDrawerRoleFieldId}>권한</label>
+                        {userDrawerRoleEditable ? (
+                          <select
+                            id={userDrawerRoleFieldId}
+                            className="matey-admin-v3__row-select"
+                            value={userDrawerRoleDraft}
+                            onChange={(e) => setUserDrawerRoleDraft(e.target.value)}
+                            aria-label="권한 변경"
+                            disabled={userDrawerSaving}
+                          >
+                            {(getUserRoleCode(userManageRow) === 'ADMIN' ||
+                              getUserRoleCode(userManageRow) === 'SUPER_ADMIN') && (
+                              <option value={getUserRoleCode(userManageRow)}>
+                                {ROLE_LABELS.ADMIN}
+                              </option>
+                            )}
+                            <option value="SUBADMIN">{ROLE_LABELS.SUBADMIN}</option>
+                            <option value="USER">{ROLE_LABELS.USER}</option>
+                          </select>
+                        ) : (
+                          <p className="matey-admin-v3__user-drawer-readonly">
+                            {formatRoleLabelForTable(getUserRoleCode(userManageRow))}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="matey-admin-v3__user-drawer-field">
+                        <label htmlFor={userDrawerStatusFieldId}>상태</label>
+                        {userDrawerStatusEditable ? (
+                          <select
+                            id={userDrawerStatusFieldId}
+                            className="matey-admin-v3__row-select"
+                            value={userDrawerStatusDraft}
+                            onChange={(e) => setUserDrawerStatusDraft(e.target.value)}
+                            aria-label="상태 변경"
+                            disabled={userDrawerSaving}
+                          >
+                            <option value="ACTIVE">{USER_STATUS_LABELS.ACTIVE}</option>
+                            <option value="BANNED">{USER_STATUS_LABELS.BANNED}</option>
+                            <option value="DELETED">{USER_STATUS_LABELS.DELETED}</option>
+                          </select>
+                        ) : (
+                          <p className="matey-admin-v3__user-drawer-readonly">
+                            {USER_STATUS_LABELS[userManageRow.status] || userManageRow.status}
+                          </p>
+                        )}
+                      </div>
+
+                      {(userDrawerRoleEditable || userDrawerStatusEditable) && (
+                        <div className="matey-admin-v3__user-drawer-actions">
+                          <button
+                            type="button"
+                            className="matey-admin-v3__user-drawer-action-btn matey-admin-v3__user-drawer-action-btn--cancel"
+                            onClick={handleUserDrawerCancel}
+                            disabled={
+                              userDrawerSaving || !userDrawerHasPendingChanges
+                            }
+                          >
+                            변경 취소
+                          </button>
+                          <button
+                            type="button"
+                            className="matey-admin-v3__user-drawer-action-btn matey-admin-v3__user-drawer-action-btn--save"
+                            onClick={handleUserDrawerSave}
+                            disabled={
+                              userDrawerSaving || !userDrawerHasPendingChanges
+                            }
+                          >
+                            {userDrawerSaving ? '저장 중…' : '저장'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </aside>
+              </div>
+            )}
+          </>
         )}
 
         {/* ----------------- 문의/신고 관리 탭 ----------------- */}
@@ -1745,6 +1888,7 @@ export default function AdminPage() {
                   {filteredSupports.map((item) => (
                     <article
                       key={item.support_id}
+                      data-matey-support-card={item.support_id}
                       className={`matey-admin-v3__support-card ${
                         selectedSupport?.support_id === item.support_id ? 'is-active' : ''
                       }`}
@@ -1903,14 +2047,20 @@ export default function AdminPage() {
                       <section className="matey-admin-v3__support-detail-panel matey-admin-v3__support-detail-panel--reply">
                         <div className="matey-admin-v3__support-detail-panel-head">
                           <h4 className="matey-admin-v3__support-detail-panel-title">
-                            관리자 답변
+                            {supportHasExistingAnswer
+                              ? '관리자 답변 (수정)'
+                              : '관리자 답변 (등록)'}
                           </h4>
                         </div>
                         <div className="matey-admin-v3__support-reply">
                           <textarea
                             className="matey-admin-v3__support-reply-textarea"
                             rows={5}
-                            placeholder="답변 내용을 입력해 주세요."
+                            placeholder={
+                              supportHasExistingAnswer
+                                ? '등록된 답변을 수정해 주세요.'
+                                : '답변 내용을 입력해 주세요.'
+                            }
                             value={supportAnswerDraft}
                             onChange={(e) => setSupportAnswerDraft(e.target.value)}
                             disabled={supportAnswerSaving}
@@ -1939,11 +2089,18 @@ export default function AdminPage() {
                                 !String(supportAnswerDraft || '').trim()
                               }
                             >
-                              {supportAnswerSaving ? '저장 중…' : '답변 등록'}
+                              {supportAnswerSaving
+                                ? supportHasExistingAnswer
+                                  ? '수정 중…'
+                                  : '등록 중…'
+                                : supportHasExistingAnswer
+                                  ? '답변 수정'
+                                  : '답변 등록'}
                             </button>
                             {selectedSupportId == null ? (
                               <p className="matey-admin-v3__hint-text">
-                                먼저 목록에서 문의/신고를 클릭해 선택한 뒤 등록해 주세요.
+                                먼저 목록에서 문의/신고를 클릭해 선택한 뒤 답변을 등록하거나 수정해
+                                주세요.
                               </p>
                             ) : null}
                           </div>
@@ -1965,55 +2122,83 @@ export default function AdminPage() {
                 <span className="matey-admin-v3__section-kicker">BOT</span>
                 <h2>상담봇 운영 현황</h2>
                 <p className="matey-admin-v3__panel-sub">
-                  인기, 좋아요/싫어요, 랭킹을 확인해요.
+                  {botStatsMeta?.periodLabel
+                    ? `${botStatsMeta.periodLabel} 기준 순위와 전월 추천 이벤트 건수예요.`
+                    : '누적 좋아요·싫어요와 전월 랭킹 지표를 확인해요.'}
                 </p>
+                {botStatsMeta?.rankingSource ? (
+                  <p className="matey-admin-v3__hint-text" style={{ marginTop: 6 }}>
+                    {botStatsMeta.rankingSource === 'BOT_RECOMMEND_EVENT_MONTHLY'
+                      ? '순위는 해당 월 커뮤니티 추천 이벤트 순이득(추천 − 싫어요)과 동일한 규칙이에요.'
+                      : '해당 월 추천 이벤트가 없어, 공개 랭킹과 같이 누적 좋아요 수로 순위를 매겼어요.'}
+                  </p>
+                ) : null}
               </div>
             </div>
 
-            <div className="matey-admin-v3__bot-grid">
-              {bots.map((bot) => (
-                <article className="matey-admin-v3__bot-card" key={bot.bot_id}>
-                  <div className="matey-admin-v3__bot-card-head">
-                    <span className="matey-admin-v3__bot-rank-badge rank-1">
-                      #{bot.ranking ?? '-'}
-                    </span>
-                    <strong>{bot.name}</strong>
-                  </div>
-
-                  <p className="matey-admin-v3__bot-desc">{bot.description}</p>
-
-                  <div className="matey-admin-v3__bot-stat-row">
-                    <div className="matey-admin-v3__bot-stat">
-                      <span>좋아요</span>
-                      <strong>👍 {bot.like_count}</strong>
+            {botsLoading && bots.length === 0 ? (
+              <div className="matey-admin-v3__empty">상담봇 통계를 불러오는 중이에요…</div>
+            ) : (
+              <div className="matey-admin-v3__bot-grid">
+                {bots.map((bot) => (
+                  <article
+                    className="matey-admin-v3__bot-card"
+                    key={bot.botId ?? bot.bot_id}
+                  >
+                    <div className="matey-admin-v3__bot-card-head">
+                      <span
+                        className={`matey-admin-v3__bot-rank-badge ${adminBotRankBadgeClass(
+                          bot.prevMonthRank
+                        )}`}
+                      >
+                        #{bot.prevMonthRank ?? '-'}
+                      </span>
+                      <strong>{bot.name}</strong>
                     </div>
-                    <div className="matey-admin-v3__bot-stat">
-                      <span>싫어요</span>
-                      <strong>👎 {bot.dislike_count}</strong>
-                    </div>
-                    <div className="matey-admin-v3__bot-stat">
-                      <span>인기 점수</span>
-                      <strong>{bot.popularity_score?.toFixed(1)}</strong>
-                    </div>
-                  </div>
 
-                  <div className="matey-admin-v3__bar-track">
-                    <div
-                      className="matey-admin-v3__bar-fill violet"
-                      style={{
-                        width: `${Math.min(100, Math.round(bot.popularity_score || 0))}%`,
-                      }}
-                    />
-                  </div>
-                </article>
-              ))}
+                    <p className="matey-admin-v3__bot-desc">{bot.description}</p>
 
-              {bots.length === 0 && (
-                <div className="matey-admin-v3__empty">
-                  등록된 상담봇이 없어요.
-                </div>
-              )}
-            </div>
+                    <p className="matey-admin-v3__bot-section-label">누적 (BOT)</p>
+                    <div className="matey-admin-v3__bot-stat-row matey-admin-v3__bot-stat-row--two">
+                      <div className="matey-admin-v3__bot-stat">
+                        <span>좋아요</span>
+                        <strong>👍 {bot.cumulativeLikeCount ?? 0}</strong>
+                      </div>
+                      <div className="matey-admin-v3__bot-stat">
+                        <span>싫어요</span>
+                        <strong>👎 {bot.cumulativeDislikeCount ?? 0}</strong>
+                      </div>
+                    </div>
+
+                    <p className="matey-admin-v3__bot-section-label">
+                      전월 이벤트 ({bot.prevMonthYear ?? '—'}년 {bot.prevMonthMonth ?? '—'}월)
+                    </p>
+                    <div className="matey-admin-v3__bot-stat-row matey-admin-v3__bot-stat-row--wrap">
+                      <div className="matey-admin-v3__bot-stat">
+                        <span>추천 이벤트</span>
+                        <strong>{bot.prevMonthRecommendEvents ?? 0}건</strong>
+                      </div>
+                      <div className="matey-admin-v3__bot-stat">
+                        <span>싫어요 이벤트</span>
+                        <strong>{bot.prevMonthDislikeEvents ?? 0}건</strong>
+                      </div>
+                      <div className="matey-admin-v3__bot-stat">
+                        <span>순이득</span>
+                        <strong>
+                          {bot.prevMonthNetScore != null ? bot.prevMonthNetScore : 0}
+                        </strong>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+
+                {!botsLoading && bots.length === 0 ? (
+                  <div className="matey-admin-v3__empty">
+                    등록된 상담봇이 없어요.
+                  </div>
+                ) : null}
+              </div>
+            )}
           </section>
         )}
 

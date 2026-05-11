@@ -17,6 +17,22 @@ function formatDateTime(value) {
   return String(value);
 }
 
+/** 목록 미리보기: 리치텍스트·줄바꿈 제거 후 글자만 (상세와 동일 본문은 상세에서) */
+function excerptPlain(htmlOrText, max = 220) {
+  if (htmlOrText == null || htmlOrText === '') return '';
+  const plain = String(htmlOrText)
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
+  return plain.length > max ? `${plain.slice(0, max)}…` : plain;
+}
+
 function CommunityNoticesPage() {
   const { user, authLoading } = useAuth();
   const canWriteStaffPost = !authLoading && isCommunityStaffPublisher(user);
@@ -74,36 +90,28 @@ function CommunityNoticesPage() {
           {items.map((n) => {
             const key = n.postId != null ? `post-${n.postId}` : `notice-${n.noticeId ?? n.title}`;
             const badge = n.badge || (n.itemType === 'POST' ? '게시글' : '공지');
-            const inner = (
+            const preview = excerptPlain(n.content);
+            const body = (
               <>
                 <div className={styles.postMeta}>
-                  <span>{badge}</span>
+                  <span className={styles.noticeBadgePill}>{badge}</span>
                   {n.publishedAt ? <span>{formatDateTime(n.publishedAt)}</span> : null}
                 </div>
                 <h2 className={styles.postTitle}>{n.title}</h2>
-                {n.content ? (
-                  <p className={styles.postExcerpt} style={{ whiteSpace: 'pre-wrap' }}>
-                    {n.content}
-                  </p>
-                ) : null}
+                {preview ? <p className={styles.noticeFeedExcerpt}>{preview}</p> : null}
               </>
             );
-            if (n.itemType === 'POST' && n.postId != null) {
-              return (
-                <Link
-                  key={key}
-                  to={`/community/posts/${n.postId}`}
-                  className={styles.postCard}
-                  style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
-                >
-                  {inner}
-                </Link>
-              );
-            }
+            const isBoardPost = n.itemType === 'POST' && n.postId != null;
             return (
-              <article key={key} className={styles.postCard}>
-                {inner}
-              </article>
+              <div key={key} className={`${styles.postCard} ${styles.noticeFeedCard}`}>
+                {isBoardPost ? (
+                  <Link to={`/community/posts/${n.postId}`} className={styles.postCardLink}>
+                    {body}
+                  </Link>
+                ) : (
+                  <div className={styles.postCardLink}>{body}</div>
+                )}
+              </div>
             );
           })}
         </div>

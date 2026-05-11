@@ -16,6 +16,8 @@ html {
   scroll-behavior: smooth;
   scrollbar-width: thin;
   scrollbar-color: #a06dff rgba(248, 244, 255, 0.96);
+  /* 스크롤바 유무로 인한 가로 폭 변화(본문 오른쪽으로 밀림) 완화 */
+  scrollbar-gutter: stable;
 }
 
 body {

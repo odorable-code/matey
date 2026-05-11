@@ -20,6 +20,8 @@
                 ELSE 'update'
             END AS type,
             CASE
+                WHEN type_code = 'SUPPORT_ANSWER' AND LOCATE('\n', content) > 0
+                    THEN TRIM(SUBSTRING_INDEX(content, '\n', 1))
                 WHEN type_code = 'SUPPORT_ANSWER' THEN '신고/문의 답변이 등록되었습니다'
                 WHEN type_code = 'POST_COMMENT' THEN '새 댓글이 달렸습니다'
                 WHEN type_code = 'COMMENT_REPLY' THEN '대댓글이 달렸습니다'
@@ -32,7 +34,11 @@
                 WHEN type_code = 'EVENT_NOTICE' THEN '새로운 이벤트가 시작되었습니다'
                 ELSE '새로운 알림이 있습니다'
             END AS title,
-            content AS message
+            CASE
+                WHEN type_code = 'SUPPORT_ANSWER' AND LOCATE('\n', content) > 0
+                    THEN TRIM(SUBSTRING(content, LOCATE('\n', content) + 1))
+                ELSE content
+            END AS message
         FROM NOTIFICATION
         WHERE user_id = #{userId}
         ORDER BY created_at DESC

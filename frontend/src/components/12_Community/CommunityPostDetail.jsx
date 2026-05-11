@@ -8,7 +8,7 @@ import {
   COMMUNITY_DEFAULT_AVATAR,
   isCommunityUserSelf,
   resolveCommunityAvatarUrl,
-} from './communityProfileDisplay';
+} from 'components/12_Community/communityProfileDisplay';
 import styles from './CommunityPage.module.css';
 
 function formatDateTime(value) {

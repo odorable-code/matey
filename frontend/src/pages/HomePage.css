@@ -4,6 +4,11 @@
    1. 페이지 전체 통합 배경
 ========================================================= */
 .matey-home {
+  /* 홈에서만 섹션 위아래 패딩 줄임 (봇/이용방법/FAQ에 같이 적용) */
+  --matey-section-py-desktop: 72px;
+  --matey-section-py-tablet: 56px;
+  --matey-section-py-mobile: 48px;
+
   position: relative;
   min-height: 100vh;
   background:
@@ -83,7 +88,7 @@
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 64px;
+  gap: 44px;
 }
 
 /* =========================================================
@@ -490,7 +495,7 @@
 ========================================================= */
 @media (max-width: 820px) {
   .matey-mates__inner {
-    gap: 48px;
+    gap: 36px;
   }
 
   .matey-mate-card {
@@ -525,7 +530,7 @@
   }
 
   .matey-mates__inner {
-    gap: 40px;
+    gap: 28px;
   }
 
   .matey-mates__title {
@@ -553,6 +558,86 @@
 
   .matey-mate-card__stats {
     padding: 12px;
+  }
+}
+
+/* =========================================================
+   13-b. 홈 전용 마무리 CTA (푸터에서는 제거, 카드 스타일은 Footer.css 재사용)
+========================================================= */
+.matey-home__closing-wrap {
+  width: 100%;
+  padding: 0 var(--matey-page-gutter-desktop) 40px;
+  box-sizing: border-box;
+}
+
+.matey-home__closing-inner {
+  width: min(var(--matey-max-width), 100%);
+  margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+  .matey-home__closing-wrap {
+    padding-left: var(--matey-page-gutter-mobile, 18px);
+    padding-right: var(--matey-page-gutter-mobile, 18px);
+    padding-bottom: 32px;
+  }
+}
+
+/* =========================================================
+   13-c. 홈 전용: Hero·이용방법·FAQ 블록 안 여백 (컴포넌트 CSS보다 나중에 로드됨)
+========================================================= */
+.matey-home .matey-hero {
+  padding:
+    calc(var(--matey-header-height) + 48px)
+    var(--matey-page-gutter-desktop)
+    72px;
+}
+
+.matey-home .matey-hero__inner {
+  gap: 44px;
+}
+
+.matey-home .matey-features__inner {
+  gap: 44px;
+}
+
+.matey-home .matey-features__header {
+  gap: 40px;
+}
+
+.matey-home .matey-faq__inner {
+  gap: 40px;
+}
+
+@media (max-width: 1180px) {
+  .matey-home .matey-hero {
+    padding:
+      calc(var(--matey-header-height) + 44px)
+      var(--matey-page-gutter-tablet)
+      56px;
+  }
+
+  .matey-home .matey-hero__inner {
+    gap: 36px;
+  }
+}
+
+@media (max-width: 960px) {
+  .matey-home .matey-hero__inner {
+    gap: 32px;
+  }
+}
+
+@media (max-width: 640px) {
+  .matey-home .matey-hero {
+    padding:
+      calc(var(--matey-header-height) + 28px)
+      var(--matey-page-gutter-mobile)
+      52px;
+  }
+
+  .matey-home .matey-features__inner {
+    gap: 36px;
   }
 }
 

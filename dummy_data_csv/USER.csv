@@ -1,2 +1,0 @@
-"user_id","email","password","nickname","user_name","birth_date","gender","profile_image","login_type","status","is_terms_agreed","is_privacy_agreed","is_marketing_agreed"
-"1","sungho@example.com","$2a$10$xyz1234567890hashedpw1234567890123","성호","김성호","1999-10-24","남성","/images/mypage/bot/matey-profile.png","LOCAL","ACTIVE","1","1","1"

@@ -19,6 +19,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
+
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
@@ -35,7 +37,7 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final MemberDetailService userDetailsService;
 
-    @Value("${app.cors.allowed-origin-patterns:http://localhost:3000}")
+    @Value("${app.cors.allowed-origin-patterns:http://localhost:*,http://127.0.0.1:*}")
     private String allowedOriginPatternsRaw;
 
     @Bean
@@ -55,10 +57,10 @@ public class SecurityConfig {
                 // 서버에서 세션을 생성하거나 유지하지 않도록 설정(JWT 인증 기반이므로 서버는 클라이언트의 상태를 저장하지 않는 'Stateless' 방식을 따름.)
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                
-                // AuthController의 로그아웃 요청이 SecurityConfig 에게 가로채지지 않도록.
+
+                // AuthController 로그아웃 요청이 기본 logout 필터에 걸리지 않도록
                 .logout(logout -> logout.disable())
-                
+
                 // HTTP 요청에 대한 접근 권한(인가) 설정을 시작
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/**").permitAll()
@@ -82,6 +84,12 @@ public class SecurityConfig {
 
                         .anyRequest().authenticated()
                 )
+                // 비로그인 상태에서 authenticated() 구역 접근 시 기본 403 대신 API 클라이언트가 구분하기 쉽게 401 + JSON
+                .exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) -> {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType("application/json;charset=UTF-8");
+                    response.getWriter().write("{\"message\":\"로그인이 필요해요.\"}");
+                }))
                 .userDetailsService(userDetailsService)
                 // JWT 인증 필터를 우선순위에 배치합니다. 아이디/비밀번호 인증 필터(UsernamePasswordAuthenticationFilter)가 실행되기 전에, 들어온 요청의 JWT 토큰을 먼저 검사하여 인증 처리.
                 .addFilterBefore(

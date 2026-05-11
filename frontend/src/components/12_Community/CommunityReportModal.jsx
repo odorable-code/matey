@@ -2,7 +2,7 @@ import React, { useEffect, useId, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { supportPublicAPI, supportUserAPI } from '../../utils/api';
-import { filterReportReasons } from './communitySupportReasons';
+import { filterReportReasons, normalizeReasonsPayload } from './communitySupportReasons';
 import styles from './CommunityPage.module.css';
 
 function excerpt(text, max = 80) {
@@ -47,9 +47,8 @@ function CommunityReportModal({
       setDetail('');
       try {
         const res = await supportPublicAPI.getReasons();
-        const list = res?.reasons ?? [];
         const want = target === 'COMMENT' ? 'COMMENT' : 'POST';
-        setReasons(filterReportReasons(Array.isArray(list) ? list : [], want));
+        setReasons(filterReportReasons(normalizeReasonsPayload(res), want));
       } catch (e) {
         if (!cancelled) setError(e?.message || '사유 목록을 불러오지 못했어요.');
       } finally {

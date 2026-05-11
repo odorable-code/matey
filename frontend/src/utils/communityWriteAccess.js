@@ -61,6 +61,10 @@ export function isAdminNoticePublisher(user) {
 export function canSelectCategoryForWriting(user, category) {
 
   const n = category?.notification;
+  // null/undefined 는 일반 게시용으로 간주 (DB 누락·구버전 대비)
+  if (n === null || n === undefined) {
+    return true;
+  }
 
   if (n !== 0 && n !== '0') {
 

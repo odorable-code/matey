@@ -16,6 +16,13 @@ function categoryOptionSuffix(c) {
   return '';
 }
 
+/** CATEGORY.notification — 0 이면 공지·이벤트 슬롯 */
+function isNoticeSlotCategory(c) {
+  const n = c?.notification;
+  if (n === null || n === undefined) return false;
+  return n === 0 || n === '0';
+}
+
 // Quill size whitelist (numeric)
 const SizeStyle = Quill.import('attributors/style/size');
 SizeStyle.whitelist = ['12px', '14px', '16px', '18px', '20px', '24px', '28px'];
@@ -74,16 +81,17 @@ function CommunityPostForm() {
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [categoryLoadHint, setCategoryLoadHint] = useState('');
 
   const myId = useMemo(() => resolveUserId(user), [user]);
 
   const categoryOptions = useMemo(() => {
     let allowed = (categories || []).filter((c) => canSelectCategoryForWriting(user, c));
     if (isNoticeEventWrite) {
-      allowed = allowed.filter((c) => c?.notification === 0 || c?.notification === '0');
+      allowed = allowed.filter((c) => isNoticeSlotCategory(c));
     } else {
       // 커뮤니티 글쓰기는 공지/이벤트(notification=0)를 숨김 (공지에서만 작성 가능)
-      allowed = allowed.filter((c) => c?.notification !== 0 && c?.notification !== '0');
+      allowed = allowed.filter((c) => !isNoticeSlotCategory(c));
     }
     if (isEdit && categoryId) {
       const cur = (categories || []).find((c) => String(c.categoryId) === String(categoryId));
@@ -94,9 +102,33 @@ function CommunityPostForm() {
     return allowed;
   }, [categories, user, isEdit, categoryId, isNoticeEventWrite]);
 
-  const loadCategories = useCallback(async () => {
-    const list = await communityAPI.getCategories();
-    setCategories(Array.isArray(list) ? list : []);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setCategoryLoadHint('');
+      try {
+        const list = await communityAPI.getCategories();
+        const arr = Array.isArray(list) ? list : [];
+        if (!cancelled) {
+          setCategories(arr);
+          if (arr.length === 0) {
+            setCategoryLoadHint(
+              '서버가 카테고리 0건을 돌려줬어요. Workbench 등에 넣은 DB 이름이 spring.datasource.jdbc-url 과 같은지, 다른 스키마에 넣지 않았는지 확인해 주세요. 서버 로그에 getCategories 오류가 있으면 CATEGORY 테이블·권한을 봐 주세요.'
+            );
+          }
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setCategories([]);
+          setCategoryLoadHint(
+            e?.message || '카테고리를 불러오지 못했어요. 서버 주소와 로그인 상태를 확인해 주세요.'
+          );
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -109,25 +141,27 @@ function CommunityPostForm() {
   }, [authLoading, isAuthenticated, isEdit, navigate, postId, fromPath, isNoticeEventWrite]);
 
   useEffect(() => {
+    if (!isEdit) return undefined;
     let cancelled = false;
     (async () => {
+      setLoading(true);
+      setError('');
       try {
-        await loadCategories();
-        if (!isEdit || cancelled) return;
-        setLoading(true);
         const data = await communityAPI.getPostDetail(postId);
         const p = data?.post;
         if (!p) {
-          setError('글을 찾을 수 없어요.');
+          if (!cancelled) setError('글을 찾을 수 없어요.');
           return;
         }
         if (myId != null && Number(p.userId) !== Number(myId)) {
-          setError('본인이 작성한 글만 수정할 수 있어요.');
+          if (!cancelled) setError('본인이 작성한 글만 수정할 수 있어요.');
           return;
         }
-        setTitle(p.title || '');
-        setContent(p.content || '');
-        setCategoryId(p.categoryId != null ? String(p.categoryId) : '');
+        if (!cancelled) {
+          setTitle(p.title || '');
+          setContent(p.content || '');
+          setCategoryId(p.categoryId != null ? String(p.categoryId) : '');
+        }
       } catch (e) {
         if (!cancelled) setError(e?.message || '불러오지 못했어요.');
       } finally {
@@ -137,7 +171,7 @@ function CommunityPostForm() {
     return () => {
       cancelled = true;
     };
-  }, [isEdit, loadCategories, myId, postId]);
+  }, [isEdit, myId, postId]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -202,13 +236,14 @@ function CommunityPostForm() {
       <h1 className={styles.pageTitle}>
         {isEdit ? '게시글 수정' : isNoticeEventWrite ? '공지·이벤트 작성' : '게시글 작성'}
       </h1>
-      <p className={styles.pageSubtitle} style={{ marginBottom: 20, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+      <p className={styles.pageSubtitle} style={{ marginBottom: 20 }}>
         {isNoticeEventWrite
           ? '공지·이벤트 소식을 정확하게 작성해 주세요. 욕설·개인정보 노출·불법 내용은 제재될 수 있어요.'
           : '다른 사용자를 존중하는 마음으로 작성해 주세요. 욕설·개인정보 노출·불법 내용은 제재될 수 있어요.'}
       </p>
 
       {error ? <p className={styles.errorText}>{error}</p> : null}
+      {categoryLoadHint ? <p className={styles.errorText}>{categoryLoadHint}</p> : null}
 
       <form onSubmit={handleSubmit}>
         <div className={styles.fieldBlock}>
@@ -230,6 +265,15 @@ function CommunityPostForm() {
               </option>
             ))}
           </select>
+          {!categoryLoadHint &&
+          categories.length > 0 &&
+          categoryOptions.length === 0 ? (
+            <p className={styles.hint} style={{ marginTop: 8 }}>
+              {isNoticeEventWrite
+                ? '이 계정으로 선택할 수 있는 공지·이벤트 카테고리가 없어요. 운영 권한과 CATEGORY.notification 값을 확인해 주세요.'
+                : '일반 회원이 쓸 수 있는 카테고리가 없어요. 공지·이벤트만 남았거나 권한이 맞지 않을 수 있어요.'}
+            </p>
+          ) : null}
         </div>
         <div className={styles.fieldBlock}>
           <label className={styles.fieldLabel} htmlFor="comm-title">
