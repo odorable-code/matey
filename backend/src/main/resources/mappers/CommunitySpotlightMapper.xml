@@ -14,6 +14,35 @@
         LIMIT 1
     </select>
 
+    <select id="selectWorrySpotlightRow" resultType="kr.hi.matey.dto.WorrySpotlightRow">
+        SELECT
+            ws.post_id AS postId,
+            ws.answer_content AS answerContent,
+            ws.updated_at AS updatedAt,
+            u.nickname AS answeredByNickname
+        FROM WORRY_SPOTLIGHT ws
+        LEFT JOIN USER u ON u.user_id = ws.updated_by_user_id
+        WHERE ws.id = 1
+    </select>
+
+    <select id="countWorryCategoryPostByPostId" resultType="int">
+        SELECT COUNT(*)
+        FROM POST p
+        INNER JOIN CATEGORY c ON c.category_id = p.category_id
+        WHERE p.post_id = #{postId}
+          AND c.name LIKE CONCAT('%', '고민', '%')
+    </select>
+
+    <insert id="upsertWorrySpotlight">
+        INSERT INTO WORRY_SPOTLIGHT (id, post_id, answer_content, updated_by_user_id)
+        VALUES (1, #{postId}, #{answerContent}, #{userId})
+        ON DUPLICATE KEY UPDATE
+            post_id = VALUES(post_id),
+            answer_content = VALUES(answer_content),
+            updated_by_user_id = VALUES(updated_by_user_id),
+            updated_at = CURRENT_TIMESTAMP
+    </insert>
+
     <!-- 카테고리 이름에 '사연'이 포함된 게시글 중 무작위 1건 -->
     <select id="selectRandomStoryPostId" resultType="java.lang.Long">
         SELECT p.post_id
@@ -48,6 +77,23 @@
         ) x
         JOIN BOT b ON b.bot_id = x.bot_id
         ORDER BY x.net DESC, b.bot_id ASC
+        LIMIT 30
+    </select>
+
+    <!-- 전월 BOT_RECOMMEND_EVENT 가 비었을 때: BOT 테이블만으로 순위 -->
+    <select id="selectBotsByLikeCountMonthlyFallback" resultType="kr.hi.matey.dto.BotYearRankingDTO">
+        SELECT
+            NULL AS ranking,
+            b.bot_id AS botId,
+            b.name AS name,
+            b.avatar_image AS avatarImage,
+            b.description AS description,
+            b.like_count AS likeCount,
+            CAST(b.like_count AS DECIMAL(10, 2)) AS popularityScore,
+            #{year} AS statYear,
+            #{month} AS statMonth
+        FROM BOT b
+        ORDER BY b.like_count DESC, b.bot_id ASC
         LIMIT 30
     </select>
 
