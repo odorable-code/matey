@@ -21,6 +21,15 @@ export function setStoredToken(token) {
   }
 }
 
+/** 로컬 저장된 로그인 정보 제거 (토큰 만료·강제 로그아웃 시 공통 사용) */
+export function clearClientAuthSession() {
+  setStoredToken(null);
+  window.localStorage.removeItem('mateyUser');
+  window.localStorage.removeItem('user');
+  window.localStorage.removeItem('accessToken');
+  window.localStorage.removeItem('mateyToken');
+}
+
 function buildHeaders(customHeaders = {}, isJson = true) {
   const headers = { ...customHeaders };
   const token = getStoredToken();
@@ -70,6 +79,12 @@ async function request(
   }
 
   if (!response.ok) {
+    // 액세스 토큰 만료·무효 → 저장소 비우고 전역 이벤트로 Auth 상태·화면 동기화
+    if (response.status === 401 && getStoredToken()) {
+      clearClientAuthSession();
+      window.dispatchEvent(new CustomEvent('matey:session-expired'));
+    }
+
     const message =
       data?.message ||
       data?.detail ||
@@ -334,7 +349,12 @@ export const adminAPI = {
       method: 'GET',
     });
   },
-  
+
+  getUser: (userId) =>
+    request(`/api/admin/users/${encodeURIComponent(userId)}`, {
+      method: 'GET',
+    }),
+
   updateUser: (userId, data) => {
     return request(`/api/admin/users/${userId}`, {
       method: 'PUT',
