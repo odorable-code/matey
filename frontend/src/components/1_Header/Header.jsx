@@ -268,17 +268,28 @@ function Header() {
 
   /* =========================================================
      active 메뉴 판별
+     - /community/faq 는 헤더「FAQ」에만 매칭 (커뮤니티 하위 FAQ라도 탭은 FAQ 강조)
   ========================================================= */
-  const isNavActive = (path) => {
+  const isNavActive = (item) => {
+    const path = item?.path;
     if (!path) return false;
-    if (path === '/') return location.pathname === '/';
+    const { pathname } = location;
+    if (path === '/') return pathname === '/';
 
-    return (
-      location.pathname === path || location.pathname.startsWith(`${path}/`)
-    );
+    if (item.key === 'faq') {
+      return pathname === '/faq' || pathname === '/community/faq';
+    }
+
+    if (item.key === 'community') {
+      if (pathname === '/community/faq') return false;
+      return pathname === path || pathname.startsWith(`${path}/`);
+    }
+
+    return pathname === path || pathname.startsWith(`${path}/`);
   };
 
-  const myPageActive = isNavActive('/mypage');
+  const myPageActive =
+    location.pathname === '/mypage' || location.pathname.startsWith('/mypage/');
 
   return (
     <header className={`matey-header ${isScrolled ? 'is-scrolled' : ''}`}>
@@ -317,7 +328,7 @@ function Header() {
                   key={item.key}
                   type="button"
                   className={`matey-header__nav-link ${
-                    isNavActive(item.path) ? 'is-active' : ''
+                    isNavActive(item) ? 'is-active' : ''
                   }`}
                   onClick={() => handleNavClick(item.path)}
                 >
