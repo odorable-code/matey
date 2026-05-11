@@ -18,7 +18,7 @@
  *
  * [여기서 주로 수정하면 되는 곳]
  * 1) COPY              : 화면 카피 모음
- * 2) SAMPLE_REPLIES    : 메이트별 샘플 답변
+ * 2) AI 답변          : FastAPI POST /api/chat/completions (환경변수 REACT_APP_CHAT_API_URL)
  * 3) PickView          : 봇 고르기 화면
  * 4) ChatView          : 1:1 채팅방
  * =========================================================
@@ -31,12 +31,19 @@ import {
   MATE_IMAGES,
   MATE_NAMES,
   MATE_ROLES,
+  MATE_GREETINGS,
   ABILITY_AXES,
 } from "../../constants/mates";
 import "./ChatModal.css";
 
+const CHAT_API_BASE = (
+  process.env.REACT_APP_CHAT_API_URL ||
+  process.env.REACT_APP_ANALYSIS_API_URL ||
+  "http://localhost:8000"
+).replace(/\/$/, "");
+
 /* =========================================================
-   카피 / 샘플 응답 설정 코드
+   카피 설정 코드
 ========================================================= */
 const COPY = {
   sidebarTitle: "나의 대화",
@@ -55,29 +62,6 @@ const COPY = {
   pickIdleChartHint: "카드를 선택하면 능력치 차트가 표시돼요.",
   chatPlaceholder: "한 줄이면 충분해요…",
   sessionNoMate: "메이트 미지정",
-};
-
-const SAMPLE_REPLIES = {
-  dog: [
-    "음, 그 마음 충분히 이해돼요.",
-    "오늘 하루 어땠는지 같이 짚어볼까요?",
-    "괜찮아요, 천천히 말해도 돼요.",
-  ],
-  bear: [
-    "하나씩 풀어볼게요. 가장 신경 쓰이는 게 뭐예요?",
-    "생각의 흐름을 정리해볼까요?",
-    "천천히, 같이 봐요.",
-  ],
-  cat: [
-    "핵심부터 정리하면 이래요.",
-    "가장 중요한 건 한 가지일 거예요.",
-    "뭐부터 짚어드릴까요?",
-  ],
-  hamster: [
-    "괜찮아요, 곁에 있어요.",
-    "천천히, 한 줄이면 충분해요.",
-    "말 안 해도 돼요. 그냥 와줘서 고마워요.",
-  ],
 };
 
 /* =========================================================
@@ -694,8 +678,14 @@ function ChatView({ mobileBar = false, onMobileBack }) {
 
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  /** 봇 응답 말투 — API 요청마다 speech_level 로 전달 (학습 데이터 톤 분리 대신 즉시 지시) */
+  const [speechLevel, setSpeechLevel] = useState("polite");
   const inputRef = useRef(null);
   const scrollRef = useRef(null);
+
+  useEffect(() => {
+    setSpeechLevel("polite");
+  }, [activeSession?.id]);
 
   /* ---------------------------------------------
      방 진입 시 인풋 포커스 (인사 말풍선은 넣지 않음 — 사용자가 먼저 말을 걸 때까지 대화창 비움)
@@ -719,38 +709,75 @@ function ChatView({ mobileBar = false, onMobileBack }) {
   if (!activeSession || !mate) return null;
 
   /* ---------------------------------------------
-     메시지 전송 처리
+     메시지 전송 → FastAPI(/api/chat/completions)로 봇 응답
+     - ANTHROPIC_API_KEY 설정 시 Claude가 사이트 안내·대화 생성
+     - 미설정 시 서버 쪽 규칙 기반 폴백(fastapi/services/matey_chat.py)
   --------------------------------------------- */
-  const sendMessage = (text) => {
+  const sendMessage = async (text) => {
     const trimmed = text.trim();
     if (!trimmed) return;
 
-    appendMessage(activeSession.id, {
+    const userMsg = {
       id: `user-${Date.now()}`,
       role: "user",
       text: trimmed,
       time: nowTimeString(),
-    });
+    };
+    appendMessage(activeSession.id, userMsg);
     setInputValue("");
     setIsTyping(true);
 
-    const replies = SAMPLE_REPLIES[mate.key] ?? ["천천히 들려줘요."];
-    const reply = replies[Math.floor(Math.random() * replies.length)];
+    const historyForApi = [...activeSession.messages, userMsg].map((m) => ({
+      role: m.role === "mate" ? "assistant" : "user",
+      content: m.text,
+    }));
 
-    setTimeout(() => {
+    try {
+      const res = await fetch(`${CHAT_API_BASE}/api/chat/completions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: historyForApi,
+          mate_key: mate.key,
+          mate_name: MATE_NAMES[mate.key],
+          mate_role: MATE_ROLES[mate.key],
+          mate_persona: MATE_GREETINGS[mate.key] ?? "",
+          speech_level: speechLevel === "casual" ? "casual" : "polite",
+        }),
+      });
+      const raw = await res.text();
+      if (!res.ok) {
+        throw new Error(raw || res.statusText);
+      }
+      const data = raw ? JSON.parse(raw) : {};
+      const reply =
+        data.reply ||
+        data.message ||
+        "잠시만, 다시 한 번 말해줄래?";
+
       appendMessage(activeSession.id, {
         id: `mate-${Date.now()}`,
         role: "mate",
-        text: reply,
+        text: String(reply).trim() || "…",
         time: nowTimeString(),
       });
+    } catch (err) {
+      console.error("채팅 API 실패:", err);
+      appendMessage(activeSession.id, {
+        id: `mate-${Date.now()}`,
+        role: "mate",
+        text:
+          "지금 AI 서버에 연결할 수 없어요. FastAPI가 켜져 있는지(기본 포트 8000) 확인해 주세요.",
+        time: nowTimeString(),
+      });
+    } finally {
       setIsTyping(false);
-    }, 900);
+    }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    sendMessage(inputValue);
+    void sendMessage(inputValue);
   };
 
   const showChips = activeSession.messages.length === 0;
@@ -784,6 +811,34 @@ function ChatView({ mobileBar = false, onMobileBack }) {
               지금 온라인 · {MATE_ROLES[mate.key]}
             </p>
           </div>
+        </div>
+        <div
+          className="matey-chat-room__speech-toggle"
+          role="group"
+          aria-label="봇 말투"
+        >
+          <button
+            type="button"
+            className={
+              speechLevel === "polite"
+                ? "matey-chat-room__speech-btn is-active"
+                : "matey-chat-room__speech-btn"
+            }
+            onClick={() => setSpeechLevel("polite")}
+          >
+            존댓말
+          </button>
+          <button
+            type="button"
+            className={
+              speechLevel === "casual"
+                ? "matey-chat-room__speech-btn is-active"
+                : "matey-chat-room__speech-btn"
+            }
+            onClick={() => setSpeechLevel("casual")}
+          >
+            반말
+          </button>
         </div>
       </header>
 
@@ -827,7 +882,7 @@ function ChatView({ mobileBar = false, onMobileBack }) {
               key={chip}
               type="button"
               className="matey-chat-room__chip"
-              onClick={() => sendMessage(chip)}
+              onClick={() => void sendMessage(chip)}
             >
               {chip}
             </button>

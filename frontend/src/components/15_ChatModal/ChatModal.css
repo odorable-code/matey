@@ -1084,6 +1084,7 @@
 .matey-chat-room__header {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
   padding: 14px 78px 14px 22px;
   border-bottom: 1px solid #efeaf8;
@@ -1144,6 +1145,36 @@
   border-radius: 50%;
   background: #36d399;
   box-shadow: 0 0 0 3px rgba(54, 211, 153, 0.18);
+}
+
+.matey-chat-room__speech-toggle {
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: 0;
+  padding: 3px;
+  border-radius: 12px;
+  border: 1px solid #e8e3f2;
+  background: rgba(255, 255, 255, 0.85);
+}
+.matey-chat-room__speech-btn {
+  margin: 0;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 9px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #6b6585;
+  background: transparent;
+  cursor: pointer;
+  line-height: 1.2;
+}
+.matey-chat-room__speech-btn:hover {
+  color: #4b4468;
+  background: rgba(141, 121, 255, 0.08);
+}
+.matey-chat-room__speech-btn.is-active {
+  color: #3d2f6b;
+  background: rgba(141, 121, 255, 0.2);
 }
 
 .matey-chat-room__messages {
