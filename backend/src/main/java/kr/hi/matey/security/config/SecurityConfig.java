@@ -35,7 +35,7 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final MemberDetailService userDetailsService;
 
-    @Value("${app.cors.allowed-origin-patterns:http://localhost:3000}")
+    @Value("${app.cors.allowed-origin-patterns:http://localhost:*,http://127.0.0.1:*}")
     private String allowedOriginPatternsRaw;
 
     @Bean
@@ -55,6 +55,10 @@ public class SecurityConfig {
                 // 서버에서 세션을 생성하거나 유지하지 않도록 설정(JWT 인증 기반이므로 서버는 클라이언트의 상태를 저장하지 않는 'Stateless' 방식을 따름.)
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+                // AuthController 의 로그아웃 등이 스프링 기본 logout 필터에 가로채이지 않도록
+                .logout(logout -> logout.disable())
+
                 // HTTP 요청에 대한 접근 권한(인가) 설정을 시작
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/**").permitAll()
