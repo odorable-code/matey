@@ -17,8 +17,7 @@
  * - 문의/신고: SUPPORT + SUPPORT_REASON + SUPPORT_ANSWER
  *   reason_type = 'REPORT' / 'INQUIRY'
  *   status      = 'PENDING' / 'DONE'
- * - 상담봇  : BOT + BOT_POPULARITY_STAT
- * - 감정    : EMOTION_SCORE + EMOTION_CATEGORY
+ * - 상담봇  : BOT (상담봇 관리 탭에서 목록만 — 개요에서 인기·감정 카드는 제거)
  *
  * [여기서 주로 수정하면 되는 곳]
  * 1) ROLE_LABELS / STATUS_* : 라벨 표시 코드
@@ -30,7 +29,7 @@
 import React, { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { Navigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { adminAPI, getStoredToken } from '../../utils/api';
+import { adminAPI, communityAPI, getStoredToken } from '../../utils/api';
 import { displaySupportTicketTitle } from '../../utils/supportReportDisplay';
 import './AdminPage.css';
 
@@ -39,6 +38,14 @@ import './AdminPage.css';
 ========================================================= */
 const ADMIN_LOG_STORAGE_KEY = 'matey_admin_activity_logs_v4';
 const VALID_ADMIN_TABS = new Set(['overview', 'users', 'supports', 'bots', 'logs']);
+
+function adminBotRankBadgeClass(rank) {
+  const r = Number(rank);
+  if (r === 1) return 'rank-1';
+  if (r === 2) return 'rank-2';
+  if (r === 3) return 'rank-3';
+  return '';
+}
 
 const ROLE_LABELS = {
   ADMIN: '총 관리자',
@@ -134,29 +141,6 @@ function normalizeAdminFeedback(raw) {
     status: raw.status ?? 'PENDING',
     created_at: raw.createdAt ?? raw.created_at ?? '',
   };
-}
-
-/** /api/admin/stats/emotions 등 응답을 막대 그래프용 형태로 */
-function normalizeEmotionStat(raw) {
-  if (!raw || typeof raw !== 'object') return null;
-  if (raw.emotion_code != null && raw.count != null) {
-    return {
-      emotion_code: raw.emotion_code,
-      emotion_name: raw.emotion_name ?? raw.emotion_code,
-      count: Number(raw.count) || 0,
-      color: raw.color ?? 'blue',
-    };
-  }
-  if (raw.label != null) {
-    const label = String(raw.label);
-    return {
-      emotion_code: label.replace(/\s+/g, '_').toUpperCase(),
-      emotion_name: label,
-      count: Number(raw.value) || 0,
-      color: 'blue',
-    };
-  }
-  return null;
 }
 
 /* =========================================================
@@ -303,42 +287,6 @@ function saveLogs(logs) {
 }
 
 /* =========================================================
-   라인 차트 패스 빌더 코드
-========================================================= */
-function buildLineGeometry(series, width = 620, height = 220, paddingX = 18, paddingY = 18) {
-  if (!Array.isArray(series) || series.length === 0) {
-    return { linePath: '', areaPath: '', points: [] };
-  }
-
-  const values = series.map((item) => item.value);
-  const max = Math.max(...values, 1);
-  const min = Math.min(...values, 0);
-  const range = Math.max(max - min, 1);
-
-  const chartWidth = width - paddingX * 2;
-  const chartHeight = height - paddingY * 2;
-
-  const points = series.map((item, index) => {
-    const x =
-      paddingX +
-      (series.length === 1 ? chartWidth / 2 : (chartWidth / (series.length - 1)) * index);
-    const y = paddingY + chartHeight - ((item.value - min) / range) * chartHeight;
-
-    return { x, y, value: item.value, label: item.label };
-  });
-
-  const linePath = points
-    .map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`)
-    .join(' ');
-
-  const areaPath = `${linePath} L ${points[points.length - 1].x} ${
-    height - paddingY
-  } L ${points[0].x} ${height - paddingY} Z`;
-
-  return { linePath, areaPath, points };
-}
-
-/* =========================================================
    메인 컴포넌트
 ========================================================= */
 export default function AdminPage() {
@@ -374,7 +322,9 @@ export default function AdminPage() {
   const [users, setUsers] = useState([]);
   const [supports, setSupports] = useState([]);
   const [bots, setBots] = useState([]);
-  const [emotionStats, setEmotionStats] = useState([]);
+  /** 상담봇 탭 API 메타(전월 라벨·순위 산정 방식) */
+  const [botStatsMeta, setBotStatsMeta] = useState(null);
+  const [botsLoading, setBotsLoading] = useState(false);
   const [logs, setLogs] = useState([]);
   const [dbOverview, setDbOverview] = useState(null);
 
@@ -382,6 +332,12 @@ export default function AdminPage() {
   const [error, setError] = useState(null);
   /** 일부 API만 실패했을 때(데이터는 일부 표시) 상단 안내 */
   const [loadWarning, setLoadWarning] = useState(null);
+
+  /** 커뮤니티 고민 스포트라이트 (관리자 추첨 + 운영 답변 공개) */
+  const [worrySpotlightDraft, setWorrySpotlightDraft] = useState(null);
+  const [worrySpotlightAnswer, setWorrySpotlightAnswer] = useState('');
+  const [worrySpotlightBusy, setWorrySpotlightBusy] = useState(false);
+  const [worrySpotlightPublished, setWorrySpotlightPublished] = useState(null);
 
   /* =========================================================
      실시간 차트 데이터
@@ -528,13 +484,6 @@ export default function AdminPage() {
           );
         }
 
-        if (dashboardData.emotionDistribution) {
-          setEmotionStats(
-            dashboardData.emotionDistribution.map(normalizeEmotionStat).filter(Boolean)
-          );
-        }
-
-        setBots([]);
         setLogs(loadLogs());
 
         if (failed.length > 0) {
@@ -605,6 +554,98 @@ export default function AdminPage() {
     return () => window.clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    if (activeTab !== 'overview') return undefined;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await communityAPI.getWorryFeatured();
+        if (!cancelled) setWorrySpotlightPublished(res?.spotlight ?? null);
+      } catch {
+        if (!cancelled) setWorrySpotlightPublished(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab !== 'bots' || !isAuthenticated || authLoading) return undefined;
+    let cancelled = false;
+    (async () => {
+      setBotsLoading(true);
+      try {
+        const data = await adminAPI.getBotStats();
+        if (cancelled) return;
+        const list = Array.isArray(data?.bots) ? data.bots : [];
+        setBots(list);
+        setBotStatsMeta({
+          periodLabel: data?.periodLabel ?? '',
+          rankingSource: data?.rankingSource ?? '',
+        });
+      } catch (e) {
+        console.error('상담봇 통계 로드 실패:', e);
+        if (!cancelled) {
+          setBots([]);
+          setBotStatsMeta(null);
+        }
+      } finally {
+        if (!cancelled) setBotsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, isAuthenticated, authLoading]);
+
+  const handleWorrySpotlightDraw = useCallback(async () => {
+    setWorrySpotlightBusy(true);
+    try {
+      const res = await adminAPI.drawWorrySpotlightCandidate();
+      const post = res?.post;
+      const pid = post?.postId ?? post?.post_id;
+      if (pid != null) {
+        setWorrySpotlightDraft(post);
+        setWorrySpotlightAnswer('');
+      } else {
+        window.alert(res?.message || '추첨할 고민 글이 없어요.');
+      }
+    } catch (e) {
+      window.alert(e?.message || '추첨에 실패했어요.');
+    } finally {
+      setWorrySpotlightBusy(false);
+    }
+  }, []);
+
+  const handleWorrySpotlightPublish = useCallback(async () => {
+    const pid = worrySpotlightDraft?.postId ?? worrySpotlightDraft?.post_id;
+    if (pid == null) {
+      window.alert('먼저 「고민 글 무작위 추첨」으로 글을 골라 주세요.');
+      return;
+    }
+    const ans = worrySpotlightAnswer.trim();
+    if (!ans) {
+      window.alert('운영 답변을 입력해 주세요.');
+      return;
+    }
+    setWorrySpotlightBusy(true);
+    try {
+      const res = await adminAPI.publishWorrySpotlight({
+        postId: Number(pid),
+        answerContent: ans,
+      });
+      setWorrySpotlightPublished(res?.spotlight ?? null);
+      setWorrySpotlightDraft(null);
+      setWorrySpotlightAnswer('');
+      window.alert('커뮤니티 상단에 공개했어요.');
+    } catch (e) {
+      window.alert(e?.message || '저장에 실패했어요.');
+    } finally {
+      setWorrySpotlightBusy(false);
+    }
+  }, [worrySpotlightAnswer, worrySpotlightDraft]);
+
   /* =========================================================
      운영 통계 요약 (DB 컬럼 기반)
   ========================================================= */
@@ -621,9 +662,6 @@ export default function AdminPage() {
     const reportCount = supports.filter((s) => s.reason_type === 'REPORT').length;
     const inquiryCount = supports.filter((s) => s.reason_type === 'INQUIRY').length;
 
-    const totalLikes = bots.reduce((sum, b) => sum + (b.like_count || 0), 0);
-    const totalDislikes = bots.reduce((sum, b) => sum + (b.dislike_count || 0), 0);
-
     return {
       totalUsers,
       activeUsers,
@@ -634,10 +672,8 @@ export default function AdminPage() {
       pendingSupports,
       reportCount,
       inquiryCount,
-      totalLikes,
-      totalDislikes,
     };
-  }, [users, supports, bots]);
+  }, [users, supports]);
 
   const summaryStats = useMemo(() => {
     const o = dbOverview && typeof dbOverview === 'object' ? dbOverview : {};
@@ -662,9 +698,6 @@ export default function AdminPage() {
 
       adminCount: pick('adminCount', 'admin_count') ?? stats.adminCount,
       subAdminCount: pick('subAdminCount', 'sub_admin_count') ?? stats.subAdminCount,
-
-      totalLikes: pick('totalLikes', 'total_likes') ?? stats.totalLikes,
-      totalDislikes: pick('totalDislikes', 'total_dislikes') ?? stats.totalDislikes,
     };
   }, [dbOverview, stats]);
 
@@ -1087,12 +1120,6 @@ export default function AdminPage() {
   };
 
   /* =========================================================
-     라인 차트 패스
-  ========================================================= */
-  const userLine = useMemo(() => buildLineGeometry(liveUserSeries), [liveUserSeries]);
-  const chatLine = useMemo(() => buildLineGeometry(liveChatSeries), [liveChatSeries]);
-
-  /* =========================================================
      인증 / 권한 가드
   ========================================================= */
   if (authLoading || loading) {
@@ -1159,11 +1186,6 @@ export default function AdminPage() {
     return Date.now() - t <= 1000 * 60 * 60 * 24;
   }).length;
 
-  const maxEmotionCount = emotionStats.reduce(
-    (max, item) => Math.max(max, item.count || 0),
-    1
-  );
-
   return (
     <div className="matey-admin-v3">
       {supportAnswerDoneOpen ? (
@@ -1226,8 +1248,8 @@ export default function AdminPage() {
             <br />한 눈에 관리해요 🐾
           </h1>
           <p>
-            사용자 권한, 문의 및 신고, 상담봇 인기 지표, 감정 분포까지 메이티가 운영되는 모든
-            흐름을 한 화면에서 확인할 수 있어요.
+            사용자 권한, 문의·신고, 커뮤니티 고민 스포트라이트까지 메이티 운영에 필요한 흐름을 한
+            화면에서 다룰 수 있어요.
           </p>
 
           {/* 탭 버튼을 히어로 내부에 배치 */}
@@ -1328,6 +1350,77 @@ export default function AdminPage() {
             <section className="matey-admin-v3__panel">
               <div className="matey-admin-v3__panel-head">
                 <div>
+                  <span className="matey-admin-v3__section-kicker">COMMUNITY</span>
+                  <h2>고민 스포트라이트</h2>
+                  <p className="matey-admin-v3__panel-sub">
+                    고민 글을 추첨하고 운영 답변을 저장하면 커뮤니티 목록 맨 위에 크게 보여요.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="matey-admin-v3__ghost-button"
+                  disabled={worrySpotlightBusy}
+                  onClick={handleWorrySpotlightDraw}
+                >
+                  고민 글 무작위 추첨
+                </button>
+              </div>
+
+              {worrySpotlightPublished?.post?.title ? (
+                <p className="matey-admin-v3__panel-sub" style={{ marginTop: 0 }}>
+                  지금 공개 중인 글:{' '}
+                  <strong>{worrySpotlightPublished.post.title}</strong>
+                </p>
+              ) : (
+                <p className="matey-admin-v3__panel-sub" style={{ marginTop: 0 }}>
+                  아직 공개된 스포트라이트가 없어요. 추첨 후 답변을 입력하고 공개해 보세요.
+                </p>
+              )}
+
+              {worrySpotlightDraft ? (
+                <div style={{ marginTop: 18 }}>
+                  <p style={{ margin: '0 0 6px', fontSize: 13, fontWeight: 800, color: '#5b5470' }}>
+                    추첨된 고민 글
+                  </p>
+                  <p style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 900, color: '#2a2238' }}>
+                    {worrySpotlightDraft.title}
+                  </p>
+                  <p style={{ margin: '0 0 14px', fontSize: 13, lineHeight: 1.55, color: '#6b6285' }}>
+                    {String(worrySpotlightDraft.content || '')
+                      .replace(/<[^>]*>/g, ' ')
+                      .replace(/\s+/g, ' ')
+                      .trim()
+                      .slice(0, 260)}
+                    {String(worrySpotlightDraft.content || '').length > 260 ? '…' : ''}
+                  </p>
+                  <label className="matey-admin-v3__panel-sub" style={{ display: 'block', marginBottom: 8 }}>
+                    운영 답변 (전체 회원에게 공개)
+                  </label>
+                  <textarea
+                    className="matey-admin-v3__support-reply-textarea"
+                    rows={7}
+                    placeholder="따뜻하고 명확한 답변을 남겨 주세요. 글 본문과 함께 커뮤니티 상단에 크게 표시돼요."
+                    value={worrySpotlightAnswer}
+                    onChange={(e) => setWorrySpotlightAnswer(e.target.value)}
+                    disabled={worrySpotlightBusy}
+                  />
+                  <div style={{ marginTop: 12 }}>
+                    <button
+                      type="button"
+                      className="matey-admin-v3__primary-button"
+                      disabled={worrySpotlightBusy}
+                      onClick={handleWorrySpotlightPublish}
+                    >
+                      커뮤니티에 공개하기
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+            </section>
+
+            <section className="matey-admin-v3__panel">
+              <div className="matey-admin-v3__panel-head">
+                <div>
                   <span className="matey-admin-v3__section-kicker">REALTIME</span>
                   <h2>실시간 운영 통계</h2>
                   <p className="matey-admin-v3__panel-sub">
@@ -1353,32 +1446,6 @@ export default function AdminPage() {
                     </div>
                     <strong>{userLast}</strong>
                   </div>
-
-                  <div className="matey-admin-v3__line-chart">
-                    <svg
-                      className="matey-admin-v3__line-svg"
-                      viewBox="0 0 620 220"
-                      preserveAspectRatio="none"
-                    >
-                      <path className="matey-admin-v3__line-area" d={userLine.areaPath} />
-                      <path className="matey-admin-v3__line-stroke" d={userLine.linePath} />
-                      {userLine.points.map((p, i) => (
-                        <circle
-                          key={`u-${i}`}
-                          cx={p.x}
-                          cy={p.y}
-                          r="4.5"
-                          className="matey-admin-v3__line-dot"
-                        />
-                      ))}
-                    </svg>
-                  </div>
-
-                  <div className="matey-admin-v3__chart-labels">
-                    {liveUserSeries.map((it, i) => (
-                      <span key={`ul-${i}`}>{it.label}</span>
-                    ))}
-                  </div>
                 </article>
 
                 <article className="matey-admin-v3__chart-card">
@@ -1388,98 +1455,6 @@ export default function AdminPage() {
                       <p>활성 세션 수</p>
                     </div>
                     <strong>{chatLast}</strong>
-                  </div>
-
-                  <div className="matey-admin-v3__line-chart">
-                    <svg
-                      className="matey-admin-v3__line-svg"
-                      viewBox="0 0 620 220"
-                      preserveAspectRatio="none"
-                    >
-                      <path
-                        className="matey-admin-v3__line-area matey-admin-v3__line-area--blue"
-                        d={chatLine.areaPath}
-                      />
-                      <path
-                        className="matey-admin-v3__line-stroke matey-admin-v3__line-stroke--blue"
-                        d={chatLine.linePath}
-                      />
-                      {chatLine.points.map((p, i) => (
-                        <circle
-                          key={`c-${i}`}
-                          cx={p.x}
-                          cy={p.y}
-                          r="4.5"
-                          className="matey-admin-v3__line-dot matey-admin-v3__line-dot--blue"
-                        />
-                      ))}
-                    </svg>
-                  </div>
-
-                  <div className="matey-admin-v3__chart-labels">
-                    {liveChatSeries.map((it, i) => (
-                      <span key={`cl-${i}`}>{it.label}</span>
-                    ))}
-                  </div>
-                </article>
-
-                <article className="matey-admin-v3__chart-card">
-                  <div className="matey-admin-v3__chart-head">
-                    <div>
-                      <h3>주요 감정 분포</h3>
-                      <p>누적 집계</p>
-                    </div>
-                    <strong>{maxEmotionCount}</strong>
-                  </div>
-
-                  <div className="matey-admin-v3__bar-list">
-                    {emotionStats.map((item) => (
-                      <div className="matey-admin-v3__bar-row" key={item.emotion_code}>
-                        <div className="matey-admin-v3__bar-meta">
-                          <span>{item.emotion_name}</span>
-                          <strong>{item.count}건</strong>
-                        </div>
-                        <div className="matey-admin-v3__bar-track">
-                          <div
-                            className={`matey-admin-v3__bar-fill ${item.color || 'violet'}`}
-                            style={{
-                              width: `${Math.round(
-                                (item.count / maxEmotionCount) * 100
-                              )}%`,
-                            }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </article>
-
-                <article className="matey-admin-v3__chart-card">
-                  <div className="matey-admin-v3__chart-head">
-                    <div>
-                      <h3>상담봇 인기 순위</h3>
-                    </div>
-                    <strong>{bots.length}</strong>
-                  </div>
-
-                  <div className="matey-admin-v3__bot-rank-list">
-                    {bots
-                      .slice()
-                      .sort((a, b) => (b.popularity_score || 0) - (a.popularity_score || 0))
-                      .map((bot, idx) => (
-                        <div className="matey-admin-v3__bot-rank-row" key={bot.bot_id}>
-                          <span className={`matey-admin-v3__bot-rank-badge rank-${idx + 1}`}>
-                            {idx + 1}
-                          </span>
-                          <div className="matey-admin-v3__bot-rank-meta">
-                            <strong>{bot.name}</strong>
-                            <small>👍 {bot.like_count} · 👎 {bot.dislike_count}</small>
-                          </div>
-                          <span className="matey-admin-v3__bot-rank-score">
-                            {bot.popularity_score?.toFixed(1)}점
-                          </span>
-                        </div>
-                      ))}
                   </div>
                 </article>
               </div>
@@ -1527,12 +1502,6 @@ export default function AdminPage() {
                     대기 중 문의·신고 <strong>{stats.pendingSupports}건</strong>, 그 중 신고{' '}
                     <strong>{stats.reportCount}건</strong>, 일반 문의{' '}
                     <strong>{stats.inquiryCount}건</strong>이 누적되어 있어요.
-                  </p>
-                  <div className="matey-admin-v3__divider" />
-                  <p className="matey-admin-v3__muted">
-                    상담봇 누적 좋아요 <strong>{stats.totalLikes}</strong>, 싫어요{' '}
-                    <strong>{stats.totalDislikes}</strong>로 사용자 만족도가 비교적 높게 유지되고
-                    있어요.
                   </p>
                 </div>
               </div>
@@ -2153,55 +2122,83 @@ export default function AdminPage() {
                 <span className="matey-admin-v3__section-kicker">BOT</span>
                 <h2>상담봇 운영 현황</h2>
                 <p className="matey-admin-v3__panel-sub">
-                  인기, 좋아요/싫어요, 랭킹을 확인해요.
+                  {botStatsMeta?.periodLabel
+                    ? `${botStatsMeta.periodLabel} 기준 순위와 전월 추천 이벤트 건수예요.`
+                    : '누적 좋아요·싫어요와 전월 랭킹 지표를 확인해요.'}
                 </p>
+                {botStatsMeta?.rankingSource ? (
+                  <p className="matey-admin-v3__hint-text" style={{ marginTop: 6 }}>
+                    {botStatsMeta.rankingSource === 'BOT_RECOMMEND_EVENT_MONTHLY'
+                      ? '순위는 해당 월 커뮤니티 추천 이벤트 순이득(추천 − 싫어요)과 동일한 규칙이에요.'
+                      : '해당 월 추천 이벤트가 없어, 공개 랭킹과 같이 누적 좋아요 수로 순위를 매겼어요.'}
+                  </p>
+                ) : null}
               </div>
             </div>
 
-            <div className="matey-admin-v3__bot-grid">
-              {bots.map((bot) => (
-                <article className="matey-admin-v3__bot-card" key={bot.bot_id}>
-                  <div className="matey-admin-v3__bot-card-head">
-                    <span className="matey-admin-v3__bot-rank-badge rank-1">
-                      #{bot.ranking ?? '-'}
-                    </span>
-                    <strong>{bot.name}</strong>
-                  </div>
-
-                  <p className="matey-admin-v3__bot-desc">{bot.description}</p>
-
-                  <div className="matey-admin-v3__bot-stat-row">
-                    <div className="matey-admin-v3__bot-stat">
-                      <span>좋아요</span>
-                      <strong>👍 {bot.like_count}</strong>
+            {botsLoading && bots.length === 0 ? (
+              <div className="matey-admin-v3__empty">상담봇 통계를 불러오는 중이에요…</div>
+            ) : (
+              <div className="matey-admin-v3__bot-grid">
+                {bots.map((bot) => (
+                  <article
+                    className="matey-admin-v3__bot-card"
+                    key={bot.botId ?? bot.bot_id}
+                  >
+                    <div className="matey-admin-v3__bot-card-head">
+                      <span
+                        className={`matey-admin-v3__bot-rank-badge ${adminBotRankBadgeClass(
+                          bot.prevMonthRank
+                        )}`}
+                      >
+                        #{bot.prevMonthRank ?? '-'}
+                      </span>
+                      <strong>{bot.name}</strong>
                     </div>
-                    <div className="matey-admin-v3__bot-stat">
-                      <span>싫어요</span>
-                      <strong>👎 {bot.dislike_count}</strong>
-                    </div>
-                    <div className="matey-admin-v3__bot-stat">
-                      <span>인기 점수</span>
-                      <strong>{bot.popularity_score?.toFixed(1)}</strong>
-                    </div>
-                  </div>
 
-                  <div className="matey-admin-v3__bar-track">
-                    <div
-                      className="matey-admin-v3__bar-fill violet"
-                      style={{
-                        width: `${Math.min(100, Math.round(bot.popularity_score || 0))}%`,
-                      }}
-                    />
-                  </div>
-                </article>
-              ))}
+                    <p className="matey-admin-v3__bot-desc">{bot.description}</p>
 
-              {bots.length === 0 && (
-                <div className="matey-admin-v3__empty">
-                  등록된 상담봇이 없어요.
-                </div>
-              )}
-            </div>
+                    <p className="matey-admin-v3__bot-section-label">누적 (BOT)</p>
+                    <div className="matey-admin-v3__bot-stat-row matey-admin-v3__bot-stat-row--two">
+                      <div className="matey-admin-v3__bot-stat">
+                        <span>좋아요</span>
+                        <strong>👍 {bot.cumulativeLikeCount ?? 0}</strong>
+                      </div>
+                      <div className="matey-admin-v3__bot-stat">
+                        <span>싫어요</span>
+                        <strong>👎 {bot.cumulativeDislikeCount ?? 0}</strong>
+                      </div>
+                    </div>
+
+                    <p className="matey-admin-v3__bot-section-label">
+                      전월 이벤트 ({bot.prevMonthYear ?? '—'}년 {bot.prevMonthMonth ?? '—'}월)
+                    </p>
+                    <div className="matey-admin-v3__bot-stat-row matey-admin-v3__bot-stat-row--wrap">
+                      <div className="matey-admin-v3__bot-stat">
+                        <span>추천 이벤트</span>
+                        <strong>{bot.prevMonthRecommendEvents ?? 0}건</strong>
+                      </div>
+                      <div className="matey-admin-v3__bot-stat">
+                        <span>싫어요 이벤트</span>
+                        <strong>{bot.prevMonthDislikeEvents ?? 0}건</strong>
+                      </div>
+                      <div className="matey-admin-v3__bot-stat">
+                        <span>순이득</span>
+                        <strong>
+                          {bot.prevMonthNetScore != null ? bot.prevMonthNetScore : 0}
+                        </strong>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+
+                {!botsLoading && bots.length === 0 ? (
+                  <div className="matey-admin-v3__empty">
+                    등록된 상담봇이 없어요.
+                  </div>
+                ) : null}
+              </div>
+            )}
           </section>
         )}
 

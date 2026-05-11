@@ -803,6 +803,30 @@
   font-size: 15px;
 }
 
+.matey-admin-v3__bot-section-label {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--admin-v3-text-soft);
+  opacity: 0.88;
+}
+
+.matey-admin-v3__bot-stat-row--two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.matey-admin-v3__bot-stat-row--wrap {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 520px) {
+  .matey-admin-v3__bot-stat-row--wrap {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* =========================================================
    10. 사용자 관리 툴바 / 필터 / 일괄작업
 ========================================================= */
