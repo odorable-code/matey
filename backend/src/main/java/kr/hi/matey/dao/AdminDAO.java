@@ -1,5 +1,6 @@
 package kr.hi.matey.dao;
 
+import kr.hi.matey.dto.AdminBotStatsRow;
 import kr.hi.matey.dto.FeedbackDTO;
 import kr.hi.matey.dto.UserDTO2;
 import org.apache.ibatis.annotations.Mapper;
@@ -55,5 +56,15 @@ public interface AdminDAO {
     int countSupportAnswersBySupportId(@Param("supportId") Long supportId);
 
     Long selectSupportUserId(@Param("supportId") Long supportId);
+
+    // ==========================================
+    // 상담봇 관리 (랭킹·전월 이벤트)
+    // ==========================================
+    List<AdminBotStatsRow> selectBotsWithPrevMonthBreakdown(
+            @Param("year") int year,
+            @Param("month") int month
+    );
+
+    long countRecommendEventsInMonth(@Param("year") int year, @Param("month") int month);
 
 }

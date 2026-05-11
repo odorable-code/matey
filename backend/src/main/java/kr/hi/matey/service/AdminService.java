@@ -1,19 +1,27 @@
 package kr.hi.matey.service;
 
 import kr.hi.matey.dao.AdminDAO;
+import kr.hi.matey.dto.AdminBotStatsRow;
 import kr.hi.matey.dto.FeedbackDTO;
 import kr.hi.matey.dto.UserDTO2;
 import kr.hi.matey.util.RoleCodeHelper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.YearMonth;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AdminService {
     private final AdminDAO adminDAO;
     private final NotificationService notificationService;
@@ -32,6 +40,85 @@ public class AdminService {
 
     public List<Map<String, Object>> getLiveMetrics() {
         return adminDAO.selectLiveMetrics();
+    }
+
+    /**
+     * 상담봇 관리 탭: 전월 기준 순위 + 누적 좋/싫 + 전월 추천·싫어요 이벤트 건수.
+     * 공개 랭킹과 동일하게, 해당 월 이벤트가 하나도 없으면 순위는 BOT.like_count 기준입니다.
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> getBotManagementStats() {
+        YearMonth ym = YearMonth.now().minusMonths(1);
+        int y = ym.getYear();
+        int m = ym.getMonthValue();
+
+        List<AdminBotStatsRow> rows;
+        try {
+            rows = adminDAO.selectBotsWithPrevMonthBreakdown(y, m);
+        } catch (DataAccessException ex) {
+            log.warn("getBotManagementStats (bots join): {}", ex.getMessage());
+            rows = List.of();
+        }
+        if (rows == null) {
+            rows = List.of();
+        }
+
+        long eventCount = 0;
+        try {
+            eventCount = adminDAO.countRecommendEventsInMonth(y, m);
+        } catch (DataAccessException ex) {
+            log.warn("getBotManagementStats (count events): {}", ex.getMessage());
+            eventCount = 0;
+        }
+
+        boolean useEventRanking = eventCount > 0;
+
+        List<AdminBotStatsRow> sorted = new ArrayList<>(rows);
+        Comparator<AdminBotStatsRow> cmp =
+                useEventRanking
+                        ? Comparator.<AdminBotStatsRow>comparingInt(
+                                        r -> r.getPrevMonthNet() != null ? r.getPrevMonthNet() : 0)
+                                .reversed()
+                                .thenComparingLong(AdminBotStatsRow::getBotId)
+                        : Comparator.<AdminBotStatsRow>comparingInt(
+                                        r -> r.getLikeCount() != null ? r.getLikeCount() : 0)
+                                .reversed()
+                                .thenComparingLong(AdminBotStatsRow::getBotId);
+        sorted.sort(cmp);
+
+        List<Map<String, Object>> bots = new ArrayList<>();
+        int rank = 1;
+        for (AdminBotStatsRow r : sorted) {
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("botId", r.getBotId());
+            item.put("name", r.getName());
+            item.put("description", r.getDescription());
+            item.put("avatarImage", r.getAvatarImage());
+            item.put("cumulativeLikeCount", r.getLikeCount());
+            item.put("cumulativeDislikeCount", r.getDislikeCount());
+            item.put("prevMonthYear", y);
+            item.put("prevMonthMonth", m);
+            item.put("prevMonthRecommendEvents", r.getPrevMonthRecommendCount());
+            item.put("prevMonthDislikeEvents", r.getPrevMonthDislikeCount());
+            item.put("prevMonthNetScore", r.getPrevMonthNet());
+            item.put("prevMonthRank", rank++);
+            item.put(
+                    "rankingMode",
+                    useEventRanking ? "BOT_RECOMMEND_EVENT_MONTHLY" : "BOT_LIKE_COUNT"
+            );
+            bots.add(item);
+        }
+
+        Map<String, Object> res = new HashMap<>();
+        res.put("periodYear", y);
+        res.put("periodMonth", m);
+        res.put("periodLabel", y + "년 " + m + "월");
+        res.put(
+                "rankingSource",
+                useEventRanking ? "BOT_RECOMMEND_EVENT_MONTHLY" : "BOT_LIKE_COUNT"
+        );
+        res.put("bots", bots);
+        return res;
     }
 
     // ==========================================

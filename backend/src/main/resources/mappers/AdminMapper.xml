@@ -266,4 +266,44 @@
         DELETE FROM SUPPORT WHERE support_id = #{supportId}
     </delete>
 
+    <!-- 상담봇: 누적 좋/싫 + 전월 추천 이벤트 건별 집계 -->
+    <select id="selectBotsWithPrevMonthBreakdown" resultType="kr.hi.matey.dto.AdminBotStatsRow">
+        SELECT
+            b.bot_id AS botId,
+            b.name AS name,
+            b.description AS description,
+            b.avatar_image AS avatarImage,
+            b.like_count AS likeCount,
+            b.dislike_count AS dislikeCount,
+            COALESCE(s.net, 0) AS prevMonthNet,
+            COALESCE(s.reco, 0) AS prevMonthRecommendCount,
+            COALESCE(s.disc, 0) AS prevMonthDislikeCount
+        FROM BOT b
+        LEFT JOIN (
+            SELECT
+                e.bot_id AS bot_id,
+                SUM(e.delta) AS net,
+                SUM(CASE WHEN e.delta = 1 THEN 1 ELSE 0 END) AS reco,
+                SUM(CASE WHEN e.delta = -1 THEN 1 ELSE 0 END) AS disc
+            FROM BOT_RECOMMEND_EVENT e
+            WHERE e.created_at &gt;= STR_TO_DATE(CONCAT(#{year}, '-', LPAD(#{month}, 2, '0'), '-01 00:00:00'), '%Y-%m-%d %H:%i:%s')
+              AND e.created_at &lt; DATE_ADD(
+                  STR_TO_DATE(CONCAT(#{year}, '-', LPAD(#{month}, 2, '0'), '-01 00:00:00'), '%Y-%m-%d %H:%i:%s'),
+                  INTERVAL 1 MONTH
+              )
+            GROUP BY e.bot_id
+        ) s ON s.bot_id = b.bot_id
+        ORDER BY b.bot_id ASC
+    </select>
+
+    <select id="countRecommendEventsInMonth" resultType="long">
+        SELECT COUNT(*)
+        FROM BOT_RECOMMEND_EVENT e
+        WHERE e.created_at &gt;= STR_TO_DATE(CONCAT(#{year}, '-', LPAD(#{month}, 2, '0'), '-01 00:00:00'), '%Y-%m-%d %H:%i:%s')
+          AND e.created_at &lt; DATE_ADD(
+              STR_TO_DATE(CONCAT(#{year}, '-', LPAD(#{month}, 2, '0'), '-01 00:00:00'), '%Y-%m-%d %H:%i:%s'),
+              INTERVAL 1 MONTH
+          )
+    </select>
+
 </mapper>
