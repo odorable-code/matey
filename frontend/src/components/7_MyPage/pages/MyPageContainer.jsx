@@ -29,7 +29,7 @@ import EmotionReportContent from '../contents/emotionReport/EmotionReportContent
 import BotMenuContent from '../contents/BotMenuContent';
 import LetterBoxContent from '../contents/letterBox/LetterBoxContent';
 import SettingsContent from '../contents/settings/SettingsContent';
-import NotificationSettingsContent from '../contents/settings/NotificationSettingsContent';
+import NotificationSettingsContent from 'components/7_MyPage/contents/settings/NotificationSettingsContent';
 import SupportHistoryContent from '../contents/SupportHistoryContent.jsx';
 import { myPageAPI } from '../../../utils/api';
 import { useChatModal } from '../../../contexts/ChatModalContext';
