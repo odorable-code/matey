@@ -226,6 +226,10 @@
         )
     </insert>
 
+    <select id="selectSupportUserId" resultType="long">
+        SELECT user_id FROM SUPPORT WHERE support_id = #{supportId}
+    </select>
+
     <delete id="deleteFeedback">
         DELETE FROM SUPPORT WHERE support_id = #{supportId}
     </delete>

@@ -25,5 +25,8 @@ public class SupportDTO {
     /** 최신 답변의 처리 방법(관리자 입력) */
     private String answerHandlingMethod;
 
+    /** 최신 답변 등록 시각 */
+    private java.time.LocalDateTime answerCreatedAt;
+
     private java.time.LocalDateTime createdAt;
 }

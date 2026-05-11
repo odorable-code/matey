@@ -13,6 +13,7 @@
             cm.report_count as reportCount,
             cm.user_id as userId,
             u.nickname as userNickname,
+            u.profile_image as userProfileImage,
             cm.post_id as postId,
             cm.created_at as createdAt,
             cm.created_at as updatedAt
@@ -48,6 +49,7 @@
             cm.report_count as reportCount,
             cm.user_id as userId,
             u.nickname as userNickname,
+            u.profile_image as userProfileImage,
             cm.post_id as postId,
             cm.created_at as createdAt,
             cm.created_at as updatedAt

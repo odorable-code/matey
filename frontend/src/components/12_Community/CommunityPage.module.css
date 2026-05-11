@@ -165,6 +165,28 @@
   color: inherit;
 }
 
+.postCardLinkInner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+}
+
+.postListAvatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid rgba(112, 91, 150, 0.12);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.postCardTextCol {
+  flex: 1;
+  min-width: 0;
+}
+
 .postCardFooter {
   display: flex;
   justify-content: flex-end;
@@ -255,16 +277,46 @@
 }
 
 .detailByline {
-  margin: 10px 0 0;
-  font-size: 13px;
-  line-height: 1.5;
-  color: #8a8a8a;
+  margin: 12px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px 18px;
+}
+
+.detailAuthorBlock {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.detailAuthorAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid rgba(112, 91, 150, 0.15);
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.detailAuthorNames {
+  min-width: 0;
 }
 
 .detailNickname {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
-  color: #333;
+  color: #352b4a;
+  text-decoration: none;
+}
+
+a.detailNickname:hover {
+  color: #6c4fbd;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .detailMetaSep {
@@ -272,8 +324,26 @@
 }
 
 .detailMetaPieces {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 0;
+  max-width: 100%;
+  font-size: 13px;
   font-weight: 400;
+  line-height: 1.5;
   color: #8a8a8a;
+  margin-left: auto;
+  text-align: right;
+}
+
+.detailMetaDatetime {
+  font-variant-numeric: tabular-nums;
+}
+
+.detailMetaViews {
+  font-variant-numeric: tabular-nums;
 }
 
 .commentLikeRow {
@@ -446,6 +516,24 @@
   margin-bottom: 8px;
 }
 
+.commentHeaderMain {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.commentAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid rgba(112, 91, 150, 0.12);
+  background: #fff;
+}
+
 .commentByline {
   flex: 1;
   min-width: 0;
@@ -455,12 +543,21 @@
 
 .commentNick {
   font-weight: 700;
-  color: #333;
+  color: #352b4a;
+  text-decoration: none;
+}
+
+a.commentNick:hover {
+  color: #6c4fbd;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .commentDate {
   font-weight: 400;
   color: #999;
+  font-size: 12px;
+  margin-top: 2px;
 }
 
 .commentDeleteBtn {

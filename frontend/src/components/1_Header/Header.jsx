@@ -7,7 +7,7 @@
  * [이 파일에서 하는 일]
  * - 로고 클릭 시 홈으로 이동
  * - 가운데 메뉴에서 이용방법 / 무료체험 / 커뮤니티 / 봇랭킹 / FAQ 이동
- * - 비회원은 로그인 / 무료체험 버튼 표시
+ * - 비회원은 로그인 / 회원가입 버튼 표시 (회원가입 → /signup)
  * - 회원은 채팅하기 / 알람 / 마이페이지 / 프로필 드롭다운 표시
  * - 관리자 계정은 "관리자 대시보드"를 프로필 드롭다운 안에서만 표시
  * - 모바일 메뉴 열기/닫기 처리
@@ -278,6 +278,8 @@ function Header() {
     );
   };
 
+  const myPageActive = isNavActive('/mypage');
+
   return (
     <header className={`matey-header ${isScrolled ? 'is-scrolled' : ''}`}>
       <div className="matey-header__shell">
@@ -348,7 +350,7 @@ function Header() {
                     className="matey-header__primary"
                     onClick={handlePrimaryAction}
                   >
-                    무료체험
+                    회원가입
                   </button>
                 </div>
               ) : (
@@ -365,7 +367,13 @@ function Header() {
                       채팅하기
                     </button>
 
-                    <Link to="/mypage" className="matey-header__text-button">
+                    <Link
+                      to="/mypage"
+                      className={`matey-header__text-button ${
+                        myPageActive ? 'is-active' : ''
+                      }`}
+                      aria-current={myPageActive ? 'page' : undefined}
+                    >
                       마이페이지
                     </Link>
                   </div>
@@ -446,7 +454,9 @@ function Header() {
                     >
                       <Link
                         to="/mypage"
-                        className="matey-header__dropdown-link"
+                        className={`matey-header__dropdown-link ${
+                          myPageActive ? 'is-active' : ''
+                        }`}
                         onClick={() => setProfileOpen(false)}
                       >
                         마이페이지
@@ -555,7 +565,7 @@ function Header() {
                 className="matey-header__mobile-primary"
                 onClick={handlePrimaryAction}
               >
-                무료체험
+                회원가입
               </button>
             </div>
           ) : (
@@ -591,7 +601,10 @@ function Header() {
 
               <Link
                 to="/mypage"
-                className="matey-header__mobile-secondary"
+                className={`matey-header__mobile-secondary ${
+                  myPageActive ? 'is-active' : ''
+                }`}
+                aria-current={myPageActive ? 'page' : undefined}
                 onClick={() => setMobileOpen(false)}
               >
                 마이페이지

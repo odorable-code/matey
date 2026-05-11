@@ -18,7 +18,7 @@
                 SELECT sa.content
                 FROM SUPPORT_ANSWER sa
                 WHERE sa.support_id = s.support_id
-                ORDER BY sa.created_at DESC
+                ORDER BY sa.created_at DESC, sa.answer_id DESC
                 LIMIT 1
             ) as answerContent,
             (
@@ -26,9 +26,16 @@
                 FROM SUPPORT_ANSWER sa
                 JOIN USER u ON u.user_id = sa.admin_user_id
                 WHERE sa.support_id = s.support_id
-                ORDER BY sa.created_at DESC
+                ORDER BY sa.created_at DESC, sa.answer_id DESC
                 LIMIT 1
             ) as answerAdminNickname,
+            (
+                SELECT sa.created_at
+                FROM SUPPORT_ANSWER sa
+                WHERE sa.support_id = s.support_id
+                ORDER BY sa.created_at DESC, sa.answer_id DESC
+                LIMIT 1
+            ) as answerCreatedAt,
             NULL as answerHandlingMethod,
             s.created_at as createdAt
         FROM SUPPORT s

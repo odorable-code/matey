@@ -181,14 +181,18 @@ function SupportHistoryContent() {
                     ) : null}
                     {row.answerContent ||
                     row.answerAdminNickname ||
-                    row.answerHandlingMethod ? (
+                    row.answerHandlingMethod ||
+                    row.answerCreatedAt ? (
                       <div className={styles.adminAnswer}>
-                        <div className={styles.adminAnswerHeading}>관리자 처리</div>
-                        {row.answerAdminNickname ? (
-                          <div className={styles.kv}>
-                            <span className={styles.k}>처리 관리자</span>
-                            <span className={styles.v}>{row.answerAdminNickname}</span>
-                          </div>
+                        {formatWhen(row.answerCreatedAt) || row.answerAdminNickname ? (
+                          <p className={styles.answerMetaLine}>
+                            {[
+                              formatWhen(row.answerCreatedAt) || null,
+                              row.answerAdminNickname || null,
+                            ]
+                              .filter(Boolean)
+                              .join(' · ')}
+                          </p>
                         ) : null}
                         {row.answerContent ? (
                           <div className={styles.kv}>

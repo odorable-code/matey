@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { communityAPI } from '../../utils/api';
+import { COMMUNITY_DEFAULT_AVATAR, resolveCommunityAvatarUrl } from './communityProfileDisplay';
 import styles from './CommunityPage.module.css';
 
 function formatDateTime(value) {
@@ -62,7 +63,6 @@ function CommunityPostList() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState('');
-  const [ownPostReactionHint, setOwnPostReactionHint] = useState('');
   const limit = 20;
 
   const chipCategories = useMemo(
@@ -144,12 +144,6 @@ function CommunityPostList() {
     };
   }, [fetchPage]);
 
-  useEffect(() => {
-    if (!ownPostReactionHint) return undefined;
-    const t = window.setTimeout(() => setOwnPostReactionHint(''), 2800);
-    return () => window.clearTimeout(t);
-  }, [ownPostReactionHint]);
-
   const handleSearch = (event) => {
     event.preventDefault();
     setAppliedKeyword(keywordInput.trim());
@@ -163,7 +157,7 @@ function CommunityPostList() {
       return;
     }
     if (myId != null && Number(p.userId) === Number(myId)) {
-      setOwnPostReactionHint('본인이 작성한 글에는 좋아요를 누를 수 없어요.');
+      window.alert('본인이 작성한 글에는 좋아요를 누를 수 없어요.');
       return;
     }
     setError('');
@@ -195,7 +189,7 @@ function CommunityPostList() {
       return;
     }
     if (myId != null && Number(p.userId) === Number(myId)) {
-      setOwnPostReactionHint('본인이 작성한 글에는 싫어요를 누를 수 없어요.');
+      window.alert('본인이 작성한 글에는 싫어요를 누를 수 없어요.');
       return;
     }
     setError('');
@@ -303,11 +297,6 @@ function CommunityPostList() {
       </div>
 
       {error ? <p className={styles.errorText}>{error}</p> : null}
-      {ownPostReactionHint ? (
-        <p className={styles.hint} role="status" aria-live="polite">
-          {ownPostReactionHint}
-        </p>
-      ) : null}
 
       {loading ? (
         <p className={styles.hint}>불러오는 중이에요…</p>
@@ -322,14 +311,27 @@ function CommunityPostList() {
               return (
                 <div key={p.postId} className={styles.postCard}>
                   <Link to={`/community/posts/${p.postId}`} className={styles.postCardLink}>
-                    <div className={styles.postMeta}>
-                      <span>{p.categoryName || '카테고리'}</span>
-                      <span>{p.userNickname || '익명'}</span>
-                      <span>조회 {p.viewCount ?? 0}</span>
-                      <span>{formatDateTime(p.createdAt)}</span>
+                    <div className={styles.postCardLinkInner}>
+                      <img
+                        src={resolveCommunityAvatarUrl(p.userProfileImage)}
+                        alt=""
+                        className={styles.postListAvatar}
+                        onError={(e) => {
+                          e.currentTarget.src = COMMUNITY_DEFAULT_AVATAR;
+                        }}
+                      />
+                      <div className={styles.postCardTextCol}>
+                        <div className={styles.postMeta}>
+                          <span>{p.categoryName || '카테고리'}</span>
+                          <span>
+                            {formatDateTime(p.createdAt)} · {p.userNickname || '익명'}
+                          </span>
+                          <span>조회 {p.viewCount ?? 0}</span>
+                        </div>
+                        <h2 className={styles.postTitle}>{p.title}</h2>
+                        <p className={styles.postExcerpt}>{excerpt(p.content)}</p>
+                      </div>
                     </div>
-                    <h2 className={styles.postTitle}>{p.title}</h2>
-                    <p className={styles.postExcerpt}>{excerpt(p.content)}</p>
                   </Link>
                   {!hideEngagement ? (
                     <div className={styles.postCardFooter}>

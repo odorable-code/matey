@@ -27,8 +27,8 @@
  * =========================================================
  */
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import React, { useCallback, useEffect, useId, useMemo, useState } from 'react';
+import { Navigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { adminAPI, getStoredToken } from '../../utils/api';
 import { displaySupportTicketTitle } from '../../utils/supportReportDisplay';
@@ -38,6 +38,7 @@ import './AdminPage.css';
    상수 / 라벨 매핑 코드
 ========================================================= */
 const ADMIN_LOG_STORAGE_KEY = 'matey_admin_activity_logs_v4';
+const VALID_ADMIN_TABS = new Set(['overview', 'users', 'supports', 'bots', 'logs']);
 
 const ROLE_LABELS = {
   ADMIN: '총 관리자',
@@ -295,12 +296,30 @@ function buildLineGeometry(series, width = 620, height = 220, paddingX = 18, pad
 ========================================================= */
 export default function AdminPage() {
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user, isAuthenticated, authLoading } = useAuth();
 
   /* =========================================================
-     탭 상태
+     탭 상태: URL ?tab= 만 사용 (다른 페이지에서 /admin 진입 시 항상 개요부터)
+     새로고침 시에도 같은 탭 유지하려면 주소에 ?tab= 이 남아 있어야 함
   ========================================================= */
-  const [activeTab, setActiveTab] = useState('overview');
+  const activeTab = useMemo(() => {
+    const t = searchParams.get('tab');
+    if (t && VALID_ADMIN_TABS.has(t)) return t;
+    return 'overview';
+  }, [searchParams]);
+
+  const setActiveTab = useCallback(
+    (key) => {
+      if (!VALID_ADMIN_TABS.has(key)) return;
+      if (key === 'overview') {
+        setSearchParams({}, { replace: true });
+      } else {
+        setSearchParams({ tab: key }, { replace: true });
+      }
+    },
+    [setSearchParams]
+  );
 
   /* =========================================================
      데이터 상태
@@ -345,6 +364,8 @@ export default function AdminPage() {
   const [supportDetailError, setSupportDetailError] = useState('');
   const [supportAnswerDraft, setSupportAnswerDraft] = useState('');
   const [supportAnswerSaving, setSupportAnswerSaving] = useState(false);
+  const [supportAnswerDoneOpen, setSupportAnswerDoneOpen] = useState(false);
+  const supportAnswerDoneTitleId = useId();
 
   /* =========================================================
      활동 로그 필터
@@ -655,6 +676,11 @@ export default function AdminPage() {
     }
   }, [filteredSupports, selectedSupportId]);
 
+  const supportDetailIsReport = useMemo(
+    () => String(supportDetail?.reasonType || '').toUpperCase() === 'REPORT',
+    [supportDetail?.reasonType]
+  );
+
   const openSupportModal = useCallback((supportId) => {
     setSelectedSupportId(supportId);
     setSupportModalOpen(true);
@@ -716,9 +742,15 @@ export default function AdminPage() {
           s.support_id === selectedSupportId ? { ...s, status: 'DONE' } : s
         )
       );
-      setSupportDetail((prev) =>
-        prev ? { ...prev, answerContent: content, status: 'DONE' } : prev
-      );
+      try {
+        const refreshed = await adminAPI.getFeedbackDetail(selectedSupportId);
+        setSupportDetail(refreshed || null);
+        setSupportAnswerDraft(String(refreshed?.answerContent || '').trim());
+      } catch {
+        setSupportDetail((prev) =>
+          prev ? { ...prev, answerContent: content, status: 'DONE' } : prev
+        );
+      }
 
       pushAdminLog(
         '문의·신고 관리',
@@ -726,6 +758,7 @@ export default function AdminPage() {
         `티켓 #${selectedSupportId}`,
         '관리자 답변을 등록했습니다.'
       );
+      setSupportAnswerDoneOpen(true);
     } catch (e) {
       window.alert(e?.message || '답변 등록에 실패했어요.');
     } finally {
@@ -928,23 +961,33 @@ export default function AdminPage() {
   /* =========================================================
      문의/신고 상태 변경
   ========================================================= */
-  const handleSupportStatusChange = (supportId, nextStatus) => {
+  const handleSupportStatusChange = async (supportId, nextStatus) => {
     const target = supports.find((s) => s.support_id === supportId);
     if (!target || target.status === nextStatus) return;
 
-    setSupports((prev) =>
-      prev.map((s) =>
-        s.support_id === supportId ? { ...s, status: nextStatus } : s
-      )
-    );
+    try {
+      await adminAPI.updateFeedbackStatus(supportId, nextStatus);
+      setSupports((prev) =>
+        prev.map((s) =>
+          s.support_id === supportId ? { ...s, status: nextStatus } : s
+        )
+      );
+      setSupportDetail((prev) =>
+        prev && selectedSupportId === supportId
+          ? { ...prev, status: nextStatus }
+          : prev
+      );
 
-    pushAdminLog(
-      '문의·신고 관리',
-      `${REASON_TYPE_LABELS[target.reason_type]} 상태 변경`,
-      `티켓 #${supportId}`,
-      `"${target.title}" 티켓 상태를 ${SUPPORT_STATUS_LABELS[nextStatus]}(으)로 변경했습니다.`,
-      [REASON_TYPE_LABELS[target.reason_type], nextStatus]
-    );
+      pushAdminLog(
+        '문의·신고 관리',
+        `${REASON_TYPE_LABELS[target.reason_type]} 상태 변경`,
+        `티켓 #${supportId}`,
+        `"${target.title}" 티켓 상태를 ${SUPPORT_STATUS_LABELS[nextStatus]}(으)로 변경했습니다.`,
+        [REASON_TYPE_LABELS[target.reason_type], nextStatus]
+      );
+    } catch (err) {
+      window.alert(err?.message || '상태 변경에 실패했어요.');
+    }
   };
 
   /* =========================================================
@@ -1036,6 +1079,39 @@ export default function AdminPage() {
 
   return (
     <div className="matey-admin-v3">
+      {supportAnswerDoneOpen ? (
+        <div
+          className="matey-admin-v3__modal-overlay"
+          role="presentation"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setSupportAnswerDoneOpen(false);
+          }}
+        >
+          <div
+            className="matey-admin-v3__modal matey-admin-v3__modal--confirm"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={supportAnswerDoneTitleId}
+          >
+            <h2 id={supportAnswerDoneTitleId} className="matey-admin-v3__modal-title">
+              답변 완료
+            </h2>
+            <p className="matey-admin-v3__panel-sub" style={{ margin: '0 0 22px', textAlign: 'center' }}>
+              답변이 등록되었어요. 이용자에게 알림이 전달됩니다.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <button
+                type="button"
+                className="matey-admin-v3__primary-button"
+                style={{ minWidth: 120 }}
+                onClick={() => setSupportAnswerDoneOpen(false)}
+              >
+                확인
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
       {loadWarning ? (
         <div
           className="matey-admin-v3__state-card"
@@ -1616,9 +1692,13 @@ export default function AdminPage() {
             <div className="matey-admin-v3__panel-head">
               <div>
                 <span className="matey-admin-v3__section-kicker">SUPPORT</span>
-                <h2>문의 · 신고 처리</h2>
+                <h2>
+                  {supportTypeFilter === 'REPORT' ? '신고 처리' : '문의 처리'}
+                </h2>
                 <p className="matey-admin-v3__panel-sub">
-                  신고와 문의를 한 곳에서 처리해요.
+                  {supportTypeFilter === 'REPORT'
+                    ? '접수된 신고를 검토하고, 처리 상태와 회신을 관리해요.'
+                    : '접수된 문의를 확인하고, 답변 등록과 처리 상태를 관리해요.'}
                 </p>
               </div>
 
@@ -1660,114 +1740,112 @@ export default function AdminPage() {
             </div>
 
             <div className="matey-admin-v3__support-grid">
-              <div className="matey-admin-v3__support-list">
-                {filteredSupports.map((item) => (
-                  <article
-                    key={item.support_id}
-                    className={`matey-admin-v3__support-card ${
-                      selectedSupport?.support_id === item.support_id ? 'is-active' : ''
-                    }`}
-                    onClick={() => openSupportModal(item.support_id)}
-                  >
-                    <div className="matey-admin-v3__support-card-head">
-                      <div>
-                        <h3>{displaySupportTicketTitle(item.title)}</h3>
-                        <p>{item.user_nickname || item.userNickname || '—'}</p>
+              {filteredSupports.length > 0 ? (
+                <div className="matey-admin-v3__support-list">
+                  {filteredSupports.map((item) => (
+                    <article
+                      key={item.support_id}
+                      className={`matey-admin-v3__support-card ${
+                        selectedSupport?.support_id === item.support_id ? 'is-active' : ''
+                      }`}
+                      onClick={() => openSupportModal(item.support_id)}
+                    >
+                      <div className="matey-admin-v3__support-card-row">
+                        <div className="matey-admin-v3__support-card-main">
+                          <h3>{displaySupportTicketTitle(item.title)}</h3>
+                          <p className="matey-admin-v3__support-card-preview">
+                            {(() => {
+                              const c = String(item.content || '');
+                              return c.length > 88 ? `${c.slice(0, 88)}…` : c;
+                            })()}
+                          </p>
+                        </div>
+                        <div className="matey-admin-v3__support-card-aside">
+                          <div className="matey-admin-v3__support-card-pills">
+                            <span
+                              className={`matey-admin-v3__pill ${
+                                item.reason_type === 'REPORT' ? 'is-high' : 'is-medium'
+                              }`}
+                            >
+                              {REASON_TYPE_LABELS[item.reason_type]}
+                            </span>
+                            <span
+                              className={`matey-admin-v3__pill ${
+                                SUPPORT_STATUS_PILL_CLASS[item.status]
+                              }`}
+                            >
+                              {SUPPORT_STATUS_LABELS[item.status]}
+                            </span>
+                          </div>
+                          <div className="matey-admin-v3__support-card-aside-meta">
+                            <span>
+                              {formatDateTime(item.created_at)} ·{' '}
+                              {item.user_nickname || item.userNickname || '—'}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      <span
-                        className={`matey-admin-v3__pill ${
-                          item.reason_type === 'REPORT' ? 'is-high' : 'is-medium'
-                        }`}
-                      >
-                        {REASON_TYPE_LABELS[item.reason_type]}
-                      </span>
-                      <span
-                        className={`matey-admin-v3__pill ${
-                          SUPPORT_STATUS_PILL_CLASS[item.status]
-                        }`}
-                      >
-                        {SUPPORT_STATUS_LABELS[item.status]}
-                      </span>
-                    </div>
-
-                    <p className="matey-admin-v3__support-card-preview">
-                      {(() => {
-                        const c = String(item.content || '');
-                        return c.length > 88 ? `${c.slice(0, 88)}…` : c;
-                      })()}
-                    </p>
-
-                    <div className="matey-admin-v3__support-card-meta">
-                      <span>#{item.support_id}</span>
-                      <span>{item.user_nickname}</span>
-                      <span>{item.reason_name}</span>
-                    </div>
-                  </article>
-                ))}
-
-                {filteredSupports.length === 0 && (
-                  <div className="matey-admin-v3__empty">
-                    {(() => {
-                      const typeLabel = supportTypeFilter === 'REPORT' ? '신고' : '문의';
-                      if (supportStatusFilter === 'PENDING') {
-                        return `대기 중인 ${typeLabel}가 없어요.`;
-                      }
-                      if (supportStatusFilter === 'DONE') {
-                        return `처리 완료된 ${typeLabel}가 없어요.`;
-                      }
-                      return `아직 들어온 ${typeLabel}가 없어요.`;
-                    })()}
-                  </div>
-                )}
-              </div>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <p className="matey-admin-v3__support-list-empty-text">
+                  {(() => {
+                    const typeLabel = supportTypeFilter === 'REPORT' ? '신고' : '문의';
+                    if (supportStatusFilter === 'PENDING') {
+                      return `대기 중인 ${typeLabel}가 없어요.`;
+                    }
+                    if (supportStatusFilter === 'DONE') {
+                      return `처리 완료된 ${typeLabel}가 없어요.`;
+                    }
+                    return `아직 들어온 ${typeLabel}가 없어요.`;
+                  })()}
+                </p>
+              )}
             </div>
 
             {supportModalOpen ? (
               <div className="matey-admin-v3__support-detail-full">
-                <div className="matey-admin-v3__support-detail-full-head">
-                  <div>
-                    <p className="matey-admin-v3__section-kicker">DETAIL</p>
-                    <h3>문의 · 신고 상세</h3>
-                  </div>
-                  <button
-                    type="button"
-                    className="matey-admin-v3__ghost-button"
-                    onClick={closeSupportModal}
-                  >
-                    닫기
-                  </button>
-                </div>
-
                 {supportDetailLoading ? (
-                  <div className="matey-admin-v3__empty">불러오는 중…</div>
+                  <>
+                    <div className="matey-admin-v3__support-detail-full-head">
+                      <button
+                        type="button"
+                        className="matey-admin-v3__ghost-button"
+                        onClick={closeSupportModal}
+                      >
+                        닫기
+                      </button>
+                    </div>
+                    <div className="matey-admin-v3__empty">불러오는 중…</div>
+                  </>
                 ) : supportDetailError ? (
-                  <div className="matey-admin-v3__empty">{supportDetailError}</div>
+                  <>
+                    <div className="matey-admin-v3__support-detail-full-head">
+                      <button
+                        type="button"
+                        className="matey-admin-v3__ghost-button"
+                        onClick={closeSupportModal}
+                      >
+                        닫기
+                      </button>
+                    </div>
+                    <div className="matey-admin-v3__empty">{supportDetailError}</div>
+                  </>
                 ) : (
                   <>
-                    <div className="matey-admin-v3__support-detail-head">
-                      <div>
-                        <h3>{displaySupportTicketTitle(supportDetail?.title)}</h3>
-                        <div className="matey-admin-v3__support-detail-info">
-                          <span className="matey-admin-v3__pill is-user">
-                            #{supportDetail?.supportId ?? selectedSupportId}
-                          </span>
-                          <span
-                            className={`matey-admin-v3__pill ${
-                              String(supportDetail?.reasonType || '').toUpperCase() === 'REPORT'
-                                ? 'is-high'
-                                : 'is-medium'
-                            }`}
-                          >
-                            {REASON_TYPE_LABELS[
-                              String(supportDetail?.reasonType || 'INQUIRY').toUpperCase() ===
-                              'REPORT'
-                                ? 'REPORT'
-                                : 'INQUIRY'
-                            ]}
-                          </span>
-                          <span className="matey-admin-v3__pill is-user">
-                            {supportDetail?.reasonName || '—'}
-                          </span>
+                    <div className="matey-admin-v3__support-detail-body">
+                      <header className="matey-admin-v3__support-detail-header">
+                        <span
+                          className={`matey-admin-v3__pill ${
+                            supportDetailIsReport ? 'is-high' : 'is-medium'
+                          }`}
+                        >
+                          {supportDetailIsReport
+                            ? REASON_TYPE_LABELS.REPORT
+                            : REASON_TYPE_LABELS.INQUIRY}
+                        </span>
+                        <div className="matey-admin-v3__support-detail-header-actions">
                           <span
                             className={`matey-admin-v3__pill ${
                               SUPPORT_STATUS_PILL_CLASS[
@@ -1785,57 +1863,92 @@ export default function AdminPage() {
                               ]
                             }
                           </span>
+                          <button
+                            type="button"
+                            className="matey-admin-v3__ghost-button matey-admin-v3__support-detail-close"
+                            onClick={closeSupportModal}
+                          >
+                            닫기
+                          </button>
+                        </div>
+                      </header>
+
+                      <div className="matey-admin-v3__support-detail-hero">
+                        <p className="matey-admin-v3__support-detail-eyebrow">제목</p>
+                        <h2 className="matey-admin-v3__support-detail-heading">
+                          {displaySupportTicketTitle(supportDetail?.title)}
+                        </h2>
+                        <div className="matey-admin-v3__support-detail-meta-row">
+                          <span className="matey-admin-v3__support-detail-meta-item matey-admin-v3__support-detail-meta-item--time">
+                            {formatDateTime(supportDetail?.createdAt)}
+                          </span>
+                          <span className="matey-admin-v3__support-detail-meta-dot" aria-hidden />
+                          <span className="matey-admin-v3__support-detail-meta-item matey-admin-v3__support-detail-meta-item--user">
+                            {supportDetail?.userNickname || '—'}
+                          </span>
                         </div>
                       </div>
 
-                      <div className="matey-admin-v3__meta-text">
-                        작성자: {supportDetail?.userNickname || '—'}
-                        <br />
-                        접수 일시: {formatDateTime(supportDetail?.createdAt)}
-                      </div>
-                    </div>
+                      <section className="matey-admin-v3__support-detail-panel matey-admin-v3__support-detail-panel--message">
+                        <div className="matey-admin-v3__support-detail-panel-head">
+                          <h4 className="matey-admin-v3__support-detail-panel-title">
+                            {supportDetailIsReport ? '신고 내용' : '문의 내용'}
+                          </h4>
+                        </div>
+                        <div className="matey-admin-v3__support-content matey-admin-v3__support-content--inset">
+                          {supportDetail?.content || ''}
+                        </div>
+                      </section>
 
-                    <div className="matey-admin-v3__support-content">
-                      {supportDetail?.content || ''}
-                    </div>
-
-                    <div className="matey-admin-v3__support-reply">
-                      <p className="matey-admin-v3__support-reply-title">관리자 답변</p>
-                      <textarea
-                        className="matey-admin-v3__support-reply-textarea"
-                        rows={5}
-                        placeholder="답변 내용을 입력해 주세요."
-                        value={supportAnswerDraft}
-                        onChange={(e) => setSupportAnswerDraft(e.target.value)}
-                        disabled={supportAnswerSaving}
-                      />
-                      <div className="matey-admin-v3__support-reply-actions">
-                        <button
-                          type="button"
-                          className="matey-admin-v3__ghost-button"
-                          onClick={() =>
-                            handleSupportStatusChange(selectedSupportId, 'PENDING')
-                          }
-                          disabled={supportAnswerSaving}
-                        >
-                          대기로 표시
-                        </button>
-                        <button
-                          type="button"
-                          className="matey-admin-v3__primary-button"
-                          onClick={handleSupportAnswerSave}
-                          disabled={
-                            supportAnswerSaving || !String(supportAnswerDraft || '').trim()
-                          }
-                        >
-                          {supportAnswerSaving ? '저장 중…' : '답변 등록'}
-                        </button>
-                        {selectedSupportId == null ? (
-                          <p className="matey-admin-v3__hint-text">
-                            먼저 목록에서 문의/신고를 클릭해 선택한 뒤 등록해 주세요.
+                      <section className="matey-admin-v3__support-detail-panel matey-admin-v3__support-detail-panel--reply">
+                        <div className="matey-admin-v3__support-detail-panel-head">
+                          <h4 className="matey-admin-v3__support-detail-panel-title">
+                            관리자 답변
+                          </h4>
+                        </div>
+                        <div className="matey-admin-v3__support-reply">
+                          <textarea
+                            className="matey-admin-v3__support-reply-textarea"
+                            rows={5}
+                            placeholder="답변 내용을 입력해 주세요."
+                            value={supportAnswerDraft}
+                            onChange={(e) => setSupportAnswerDraft(e.target.value)}
+                            disabled={supportAnswerSaving}
+                          />
+                          <p className="matey-admin-v3__support-detail-reply-footnote">
+                            {formatDateTime(supportDetail?.answerCreatedAt)} ·{' '}
+                            {supportDetail?.answerAdminNickname || '—'}
                           </p>
-                        ) : null}
-                      </div>
+                          <div className="matey-admin-v3__support-reply-actions">
+                            <button
+                              type="button"
+                              className="matey-admin-v3__ghost-button"
+                              onClick={() =>
+                                handleSupportStatusChange(selectedSupportId, 'PENDING')
+                              }
+                              disabled={supportAnswerSaving}
+                            >
+                              대기로 표시
+                            </button>
+                            <button
+                              type="button"
+                              className="matey-admin-v3__primary-button"
+                              onClick={handleSupportAnswerSave}
+                              disabled={
+                                supportAnswerSaving ||
+                                !String(supportAnswerDraft || '').trim()
+                              }
+                            >
+                              {supportAnswerSaving ? '저장 중…' : '답변 등록'}
+                            </button>
+                            {selectedSupportId == null ? (
+                              <p className="matey-admin-v3__hint-text">
+                                먼저 목록에서 문의/신고를 클릭해 선택한 뒤 등록해 주세요.
+                              </p>
+                            ) : null}
+                          </div>
+                        </div>
+                      </section>
                     </div>
                   </>
                 )}

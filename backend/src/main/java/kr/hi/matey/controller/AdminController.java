@@ -214,9 +214,12 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("답변 내용을 입력해 주세요.");
         }
 
-        Long adminUserId = user.getUser() != null ? user.getUser().getUserId() : null;
-        if (adminUserId == null) {
+        if (user.getUser() == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("관리자 정보가 없어 답변을 등록할 수 없습니다.");
+        }
+        long adminUserId = user.getUser().getUserId();
+        if (adminUserId <= 0) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("관리자 계정 식별에 실패했어요. 다시 로그인해 주세요.");
         }
 
         adminService.answerSupportTicket(supportId, content.trim(), adminUserId);
