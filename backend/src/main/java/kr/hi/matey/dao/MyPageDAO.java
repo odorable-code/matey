@@ -15,7 +15,7 @@ public interface MyPageDAO {
     // 2. Bot Menu & Interaction
     BotMenuDTO selectBotRelationInfo(long userId);
     List<BotMenuDTO.BackgroundDTO> selectUserBackgrounds(@Param("userLevel") int userLevel);
-    List<BotMenuDTO.MotionDTO> selectUserMotions(@Param("userLevel") int userLevel);
+    List<BotMenuDTO.MotionDTO> selectUserMotions(@Param("userId") long userId, @Param("userLevel") int userLevel);
     int updateBotIntimacy(@Param("userId") long userId, @Param("expGain") int expGain);
     int updateLastInteractedAt(long userId);
 

@@ -47,6 +47,13 @@
         ELSE '보유'
         END as tag
         FROM BOT_MOTION
+        WHERE bot_id = (
+            SELECT e.bot_id
+            FROM EXCLUSIVE e
+            WHERE e.user_id = #{userId}
+            ORDER BY e.exclusive_id ASC
+            LIMIT 1
+        )
         ORDER BY motion_id ASC
     </select>
 
