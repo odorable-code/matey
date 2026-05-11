@@ -398,6 +398,9 @@ export default function AdminPage() {
   const [userManageId, setUserManageId] = useState(null);
   const [userManageLoading, setUserManageLoading] = useState(false);
   const [userManageFetchError, setUserManageFetchError] = useState('');
+  const [userDrawerRoleDraft, setUserDrawerRoleDraft] = useState('USER');
+  const [userDrawerStatusDraft, setUserDrawerStatusDraft] = useState('ACTIVE');
+  const [userDrawerSaving, setUserDrawerSaving] = useState(false);
   const userDrawerTitleId = useId();
   const userDrawerRoleFieldId = useId();
   const userDrawerStatusFieldId = useId();
@@ -665,6 +668,16 @@ export default function AdminPage() {
     };
   }, [dbOverview, stats]);
 
+  const userDirectoryMetrics = useMemo(
+    () => ({
+      total: summaryStats.totalUsers,
+      active: summaryStats.activeUsers,
+      banned: summaryStats.bannedUsers,
+      staff: users.filter((u) => isAdminLike(getUserRoleCode(u))).length,
+    }),
+    [users, summaryStats]
+  );
+
   /* =========================================================
      필터링된 사용자
   ========================================================= */
@@ -883,62 +896,6 @@ export default function AdminPage() {
     [currentAdminIsSuper, user]
   );
 
-  /* =========================================================
-     단일 사용자 상태/권한 변경
-  ========================================================= */
-  const handleUserStatusChange = async (userId, nextStatus) => {
-    const target = users.find((u) => u.user_id === userId);
-    if (!target || !canManageStatus(target) || target.status === nextStatus) return;
-
-    try {
-      await adminAPI.updateUser(userId, { status: nextStatus });
-
-      setUsers((prev) =>
-        prev.map((u) => (u.user_id === userId ? { ...u, status: nextStatus } : u))
-      );
-
-      pushAdminLog(
-        '사용자 관리',
-        '사용자 상태 변경',
-        target.nickname,
-        `${target.nickname} 사용자의 상태를 ${USER_STATUS_LABELS[nextStatus]}(으)로 변경했습니다.`,
-        ['상태 변경', nextStatus]
-      );
-    } catch (err) {
-      console.error('상태 변경 실패:', err);
-      alert('상태 변경에 실패했어요.');
-    }
-  };
-
-  const handleUserRoleChange = async (userId, nextRole) => {
-    const target = users.find((u) => u.user_id === userId);
-    if (!target || !canManageRole(target) || getUserRoleCode(target) === nextRole) return;
-
-    if (isTopAdminRole(nextRole) && !isTopAdminRole(getUserRoleCode(target))) {
-      alert('총관리자 권한은 다른 계정에 부여할 수 없습니다.');
-      return;
-    }
-
-    try {
-      await adminAPI.updateUserRole(userId, nextRole);
-
-      setUsers((prev) =>
-        prev.map((u) => (u.user_id === userId ? { ...u, role_code: nextRole } : u))
-      );
-
-      pushAdminLog(
-        '권한 관리',
-        '사용자 권한 변경',
-        target.nickname,
-        `${target.nickname} 사용자의 권한을 ${ROLE_LABELS[nextRole]}(으)로 변경했습니다.`,
-        ['권한 변경', nextRole]
-      );
-    } catch (err) {
-      console.error('권한 변경 실패:', err);
-      alert(err?.message || '권한 변경에 실패했어요.');
-    }
-  };
-
   useEffect(() => {
     if (userManageId != null && !users.some((u) => u.user_id === userManageId)) {
       setUserManageId(null);
@@ -987,6 +944,106 @@ export default function AdminPage() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [userManageId]);
+
+  const userManageRowSignature = userManageRow
+    ? `${userManageRow.user_id}:${userManageRow.role_code}:${userManageRow.status}`
+    : '';
+
+  useEffect(() => {
+    if (userManageId == null || !userManageRow) return;
+    setUserDrawerRoleDraft(getUserRoleCode(userManageRow));
+    setUserDrawerStatusDraft(String(userManageRow.status || 'ACTIVE').toUpperCase());
+  }, [userManageId, userManageRowSignature]);
+
+  const userDrawerRoleEditable =
+    Boolean(userManageRow) && currentAdminIsSuper && canManageRole(userManageRow);
+  const userDrawerStatusEditable =
+    Boolean(userManageRow) && canManageStatus(userManageRow);
+  const userDrawerHasPendingChanges =
+    Boolean(userManageRow) &&
+    ((userDrawerRoleEditable &&
+      userDrawerRoleDraft !== getUserRoleCode(userManageRow)) ||
+      (userDrawerStatusEditable &&
+        userDrawerStatusDraft !== String(userManageRow.status || '').toUpperCase()));
+
+  const handleUserDrawerCancel = () => {
+    if (!userManageRow || userManageLoading) return;
+    setUserDrawerRoleDraft(getUserRoleCode(userManageRow));
+    setUserDrawerStatusDraft(String(userManageRow.status || 'ACTIVE').toUpperCase());
+  };
+
+  const handleUserDrawerSave = async () => {
+    if (!userManageRow || !userDrawerHasPendingChanges || userDrawerSaving) return;
+
+    const uid = userManageRow.user_id;
+    const curRole = getUserRoleCode(userManageRow);
+    const curStatus = String(userManageRow.status || 'ACTIVE').toUpperCase();
+    const nextRole = userDrawerRoleDraft;
+    const nextStatus = userDrawerStatusDraft;
+
+    if (
+      userDrawerRoleEditable &&
+      nextRole !== curRole &&
+      isTopAdminRole(nextRole) &&
+      !isTopAdminRole(curRole)
+    ) {
+      window.alert('총관리자 권한은 다른 계정에 부여할 수 없습니다.');
+      return;
+    }
+
+    const lines = [];
+    if (userDrawerRoleEditable && nextRole !== curRole) {
+      lines.push(
+        `${formatRoleLabelForTable(curRole)}의 권한을 ${formatRoleLabelForTable(nextRole)}(으)로 변경하시겠습니까?`
+      );
+    }
+    if (userDrawerStatusEditable && nextStatus !== curStatus) {
+      lines.push(
+        `상태를 ${USER_STATUS_LABELS[curStatus] || curStatus}에서 ${USER_STATUS_LABELS[nextStatus] || nextStatus}(으)로 변경하시겠습니까?`
+      );
+    }
+    if (lines.length === 0) return;
+
+    const emailLine = userManageRow.email?.trim() || '등록된 이메일 없음';
+    const msg = `${lines.join('\n\n')}\n\n계정: ${emailLine}\n\n저장하면 바로 반영돼요.`;
+    if (!window.confirm(msg)) return;
+
+    setUserDrawerSaving(true);
+    try {
+      if (userDrawerRoleEditable && nextRole !== curRole) {
+        await adminAPI.updateUserRole(uid, nextRole);
+        setUsers((prev) =>
+          prev.map((u) => (u.user_id === uid ? { ...u, role_code: nextRole } : u))
+        );
+        pushAdminLog(
+          '권한 관리',
+          '사용자 권한 변경',
+          userManageRow.nickname,
+          `${userManageRow.nickname} 사용자의 권한을 ${formatRoleLabelForTable(nextRole)}(으)로 변경했습니다.`,
+          ['권한 변경', nextRole]
+        );
+      }
+
+      if (userDrawerStatusEditable && nextStatus !== curStatus) {
+        await adminAPI.updateUser(uid, { status: nextStatus });
+        setUsers((prev) =>
+          prev.map((u) => (u.user_id === uid ? { ...u, status: nextStatus } : u))
+        );
+        pushAdminLog(
+          '사용자 관리',
+          '사용자 상태 변경',
+          userManageRow.nickname,
+          `${userManageRow.nickname} 사용자의 상태를 ${USER_STATUS_LABELS[nextStatus]}(으)로 변경했습니다.`,
+          ['상태 변경', nextStatus]
+        );
+      }
+    } catch (err) {
+      console.error(err);
+      window.alert(formatAdminApiFailure(err) || '저장에 실패했어요. 잠시 후 다시 시도해 주세요.');
+    } finally {
+      setUserDrawerSaving(false);
+    }
+  };
 
   /* =========================================================
      문의/신고 상태 변경
@@ -1487,9 +1544,9 @@ export default function AdminPage() {
         {activeTab === 'users' && (
           <>
             <section className="matey-admin-v3__panel matey-admin-v3__panel--users-wide matey-admin-v3__panel--users-dense">
-              <div className="matey-admin-v3__panel-head">
+              <div className="matey-admin-v3__panel-head matey-admin-v3__panel-head--users">
                 <div>
-                  <span className="matey-admin-v3__section-kicker">USER</span>
+                  <p className="matey-admin-v3__panel-breadcrumb">관리자 / 사용자</p>
                   <h2>사용자 관리</h2>
                   <p className="matey-admin-v3__panel-sub">
                     목록에서 계정을 조회한 뒤, 상세·관리 화면에서 권한과 상태를 수정할 수 있어요.
@@ -1497,7 +1554,38 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div className="matey-admin-v3__toolbar matey-admin-v3__toolbar--users matey-admin-v3__toolbar--users-one-line">
+              <div
+                className="matey-admin-v3__user-summary-strip"
+                role="region"
+                aria-label="사용자 요약 지표"
+              >
+                <div className="matey-admin-v3__user-summary-card">
+                  <span className="matey-admin-v3__user-summary-value">
+                    {Number(userDirectoryMetrics.total).toLocaleString('ko-KR')}
+                  </span>
+                  <span className="matey-admin-v3__user-summary-label">전체 사용자</span>
+                </div>
+                <div className="matey-admin-v3__user-summary-card">
+                  <span className="matey-admin-v3__user-summary-value">
+                    {Number(userDirectoryMetrics.active).toLocaleString('ko-KR')}
+                  </span>
+                  <span className="matey-admin-v3__user-summary-label">활성</span>
+                </div>
+                <div className="matey-admin-v3__user-summary-card">
+                  <span className="matey-admin-v3__user-summary-value">
+                    {Number(userDirectoryMetrics.banned).toLocaleString('ko-KR')}
+                  </span>
+                  <span className="matey-admin-v3__user-summary-label">정지</span>
+                </div>
+                <div className="matey-admin-v3__user-summary-card">
+                  <span className="matey-admin-v3__user-summary-value">
+                    {Number(userDirectoryMetrics.staff).toLocaleString('ko-KR')}
+                  </span>
+                  <span className="matey-admin-v3__user-summary-label">운영 권한</span>
+                </div>
+              </div>
+
+              <div className="matey-admin-v3__toolbar matey-admin-v3__toolbar--users matey-admin-v3__toolbar--users-inline">
                 <div className="matey-admin-v3__search-wrap">
                   <input
                     type="text"
@@ -1506,8 +1594,8 @@ export default function AdminPage() {
                     placeholder="이메일·닉네임 검색"
                   />
                 </div>
-
                 <select
+                  id="admin-users-filter-role"
                   value={userRoleFilter}
                   onChange={(e) => setUserRoleFilter(e.target.value)}
                   aria-label="권한 필터"
@@ -1517,8 +1605,8 @@ export default function AdminPage() {
                   <option value="SUBADMIN">서브 관리자</option>
                   <option value="USER">일반 사용자</option>
                 </select>
-
                 <select
+                  id="admin-users-filter-status"
                   value={userStatusFilter}
                   onChange={(e) => setUserStatusFilter(e.target.value)}
                   aria-label="상태 필터"
@@ -1578,7 +1666,11 @@ export default function AdminPage() {
                           <td className="matey-admin-v3__td-manage">
                             <button
                               type="button"
-                              className="matey-admin-v3__user-manage-btn"
+                              className={
+                                manageLabel === '상세'
+                                  ? 'matey-admin-v3__user-manage-btn matey-admin-v3__user-manage-btn--detail'
+                                  : 'matey-admin-v3__user-manage-btn matey-admin-v3__user-manage-btn--manage'
+                              }
                               onClick={() => setUserManageId(item.user_id)}
                             >
                               {manageLabel}
@@ -1650,8 +1742,8 @@ export default function AdminPage() {
                     <h4 className="matey-admin-v3__user-drawer-section-title">계정 정보</h4>
                     <dl className="matey-admin-v3__user-drawer-dl">
                       <div>
-                        <dt>사용자 ID</dt>
-                        <dd>#{userManageRow.user_id}</dd>
+                        <dt>이메일</dt>
+                        <dd>{userManageRow.email || '—'}</dd>
                       </div>
                       <div>
                         <dt>가입일</dt>
@@ -1685,19 +1777,18 @@ export default function AdminPage() {
                   </div>
 
                   <div className="matey-admin-v3__user-drawer-section">
-                    <h4 className="matey-admin-v3__user-drawer-section-title">권한 · 상태</h4>
+                    <h4 className="matey-admin-v3__user-drawer-section-title">권한·상태</h4>
                     <div className="matey-admin-v3__user-drawer-controls">
                       <div className="matey-admin-v3__user-drawer-field">
                         <label htmlFor={userDrawerRoleFieldId}>권한</label>
-                        {currentAdminIsSuper && canManageRole(userManageRow) ? (
+                        {userDrawerRoleEditable ? (
                           <select
                             id={userDrawerRoleFieldId}
                             className="matey-admin-v3__row-select"
-                            value={getUserRoleCode(userManageRow)}
-                            onChange={(e) =>
-                              handleUserRoleChange(userManageRow.user_id, e.target.value)
-                            }
+                            value={userDrawerRoleDraft}
+                            onChange={(e) => setUserDrawerRoleDraft(e.target.value)}
                             aria-label="권한 변경"
+                            disabled={userDrawerSaving}
                           >
                             {(getUserRoleCode(userManageRow) === 'ADMIN' ||
                               getUserRoleCode(userManageRow) === 'SUPER_ADMIN') && (
@@ -1717,15 +1808,14 @@ export default function AdminPage() {
 
                       <div className="matey-admin-v3__user-drawer-field">
                         <label htmlFor={userDrawerStatusFieldId}>상태</label>
-                        {canManageStatus(userManageRow) ? (
+                        {userDrawerStatusEditable ? (
                           <select
                             id={userDrawerStatusFieldId}
                             className="matey-admin-v3__row-select"
-                            value={userManageRow.status}
-                            onChange={(e) =>
-                              handleUserStatusChange(userManageRow.user_id, e.target.value)
-                            }
+                            value={userDrawerStatusDraft}
+                            onChange={(e) => setUserDrawerStatusDraft(e.target.value)}
                             aria-label="상태 변경"
+                            disabled={userDrawerSaving}
                           >
                             <option value="ACTIVE">{USER_STATUS_LABELS.ACTIVE}</option>
                             <option value="BANNED">{USER_STATUS_LABELS.BANNED}</option>
@@ -1737,6 +1827,31 @@ export default function AdminPage() {
                           </p>
                         )}
                       </div>
+
+                      {(userDrawerRoleEditable || userDrawerStatusEditable) && (
+                        <div className="matey-admin-v3__user-drawer-actions">
+                          <button
+                            type="button"
+                            className="matey-admin-v3__user-drawer-action-btn matey-admin-v3__user-drawer-action-btn--cancel"
+                            onClick={handleUserDrawerCancel}
+                            disabled={
+                              userDrawerSaving || !userDrawerHasPendingChanges
+                            }
+                          >
+                            변경 취소
+                          </button>
+                          <button
+                            type="button"
+                            className="matey-admin-v3__user-drawer-action-btn matey-admin-v3__user-drawer-action-btn--save"
+                            onClick={handleUserDrawerSave}
+                            disabled={
+                              userDrawerSaving || !userDrawerHasPendingChanges
+                            }
+                          >
+                            {userDrawerSaving ? '저장 중…' : '저장'}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </aside>

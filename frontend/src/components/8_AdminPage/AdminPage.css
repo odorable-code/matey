@@ -37,15 +37,15 @@
   --admin-v3-text-soft: #6f7893;
   --admin-v3-title: #14192a;
 
-  --admin-v3-shadow: 0 8px 22px rgba(112, 91, 150, 0.07);
-  --admin-v3-shadow-soft: 0 5px 16px rgba(112, 91, 150, 0.055);
-  --admin-v3-shadow-tiny: 0 4px 12px rgba(112, 91, 150, 0.05);
+  --admin-v3-shadow: 0 4px 14px rgba(20, 24, 40, 0.06);
+  --admin-v3-shadow-soft: 0 3px 10px rgba(20, 24, 40, 0.045);
+  --admin-v3-shadow-tiny: 0 2px 8px rgba(20, 24, 40, 0.04);
 
-  --admin-v3-radius-2xl: 32px;
-  --admin-v3-radius-xl: 26px;
-  --admin-v3-radius-lg: 20px;
-  --admin-v3-radius-md: 14px;
-  --admin-v3-radius-sm: 12px;
+  --admin-v3-radius-2xl: 18px;
+  --admin-v3-radius-xl: 16px;
+  --admin-v3-radius-lg: 12px;
+  --admin-v3-radius-md: 10px;
+  --admin-v3-radius-sm: 8px;
 
   --admin-v3-violet: #8d79ff;
   --admin-v3-violet-deep: #6b64eb;
@@ -73,7 +73,7 @@
 ========================================================= */
 .matey-admin-v3 {
   min-height: calc(100vh - 120px);
-  padding: 156px clamp(12px, 2.5vw, 28px) 48px;
+  padding: 128px clamp(12px, 2.5vw, 28px) 40px;
   color: var(--admin-v3-text);
   background: #f4f3f9;
 }
@@ -491,6 +491,27 @@
   line-height: 1.8;
 }
 
+.matey-admin-v3__panel-breadcrumb {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--admin-v3-text-soft);
+}
+
+.matey-admin-v3__panel-head--users {
+  margin-bottom: 12px;
+}
+
+.matey-admin-v3__panel-head--users h2 {
+  margin-top: 4px;
+}
+
+.matey-admin-v3__panel-head--users .matey-admin-v3__panel-sub {
+  margin-top: 6px;
+  line-height: 1.55;
+}
+
 /* =========================================================
    8. 차트 카드 / 라인 그래프 / 막대 그래프
 ========================================================= */
@@ -798,6 +819,37 @@
   grid-template-columns: minmax(260px, 1fr) minmax(140px, 160px) minmax(140px, 160px);
 }
 
+/* 사용자 관리: 검색 + 필터 한 줄 */
+.matey-admin-v3__toolbar--users-inline {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 10px;
+  grid-template-columns: unset;
+  margin-bottom: 14px;
+}
+
+.matey-admin-v3__toolbar--users-inline .matey-admin-v3__search-wrap {
+  flex: 1 1 auto;
+  min-width: 120px;
+}
+
+.matey-admin-v3__toolbar--users-inline select {
+  flex: 0 0 152px;
+  width: 152px;
+  min-width: 112px;
+}
+
+.matey-admin-v3__toolbar--users-inline input,
+.matey-admin-v3__toolbar--users-inline select {
+  min-height: 40px;
+  border-radius: 8px;
+  font-size: 13px;
+  padding: 0 12px;
+  border-color: rgba(120, 130, 170, 0.22);
+}
+
 .matey-admin-v3__search-wrap {
   position: relative;
 }
@@ -981,6 +1033,10 @@
   background: rgba(141, 121, 255, 0.04);
 }
 
+.matey-admin-v3__table--users-list-only tbody tr:hover {
+  background: #fafafd;
+}
+
 .matey-admin-v3__user-cell {
   display: flex;
   align-items: center;
@@ -1033,28 +1089,40 @@
 }
 
 .matey-admin-v3__panel--users-dense {
-  padding: 18px 14px 20px;
+  padding: 13px 14px 18px;
   box-shadow: var(--admin-v3-shadow-soft);
 }
 
-.matey-admin-v3__toolbar--users-one-line {
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: stretch;
+.matey-admin-v3__user-summary-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
-  grid-template-columns: unset;
+  margin-bottom: 14px;
 }
 
-.matey-admin-v3__toolbar--users-one-line .matey-admin-v3__search-wrap {
-  flex: 1 1 0;
-  min-width: 0;
+.matey-admin-v3__user-summary-card {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(120, 130, 170, 0.16);
+  background: rgba(255, 255, 255, 0.65);
 }
 
-.matey-admin-v3__toolbar--users-one-line select {
-  flex: 0 0 auto;
-  width: auto;
-  min-width: 118px;
-  max-width: 42vw;
+.matey-admin-v3__user-summary-value {
+  display: block;
+  font-size: 18px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--admin-v3-title);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.matey-admin-v3__user-summary-label {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--admin-v3-text-soft);
 }
 
 .matey-admin-v3__bulk-bar--one-line {
@@ -1118,7 +1186,7 @@
 }
 
 .matey-admin-v3__th-user {
-  width: 20%;
+  width: 40%;
 }
 
 .matey-admin-v3__th-narrow {
@@ -1135,11 +1203,11 @@
 }
 
 .matey-admin-v3__th-role {
-  width: 11%;
+  width: 20%;
 }
 
 .matey-admin-v3__th-status {
-  width: 10%;
+  width: 15%;
 }
 
 .matey-admin-v3__th-date-recent-only {
@@ -1148,7 +1216,7 @@
 }
 
 .matey-admin-v3__th-manage {
-  width: 76px;
+  width: 25%;
   text-align: right;
 }
 
@@ -1206,7 +1274,12 @@
 }
 
 .matey-admin-v3__user-cell--compact {
+  align-items: flex-start;
   gap: 8px;
+}
+
+.matey-admin-v3__user-cell--compact .matey-admin-v3__user-avatar--sm {
+  margin-top: 1px;
 }
 
 .matey-admin-v3__user-avatar--sm {
@@ -1216,10 +1289,15 @@
   font-size: 13px;
 }
 
+.matey-admin-v3__user-cell-text {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
 .matey-admin-v3__user-cell-text strong {
   display: block;
   font-size: 13px;
-  line-height: 1.25;
+  line-height: 1.15;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1227,9 +1305,11 @@
 
 .matey-admin-v3__user-cell-text small {
   display: block;
-  margin-top: 2px;
-  font-size: 10px;
+  margin-top: 0;
+  font-size: 13px;
   line-height: 1.2;
+  font-weight: 500;
+  color: #7d889c;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2056,9 +2136,33 @@
   }
 }
 
+@media (max-width: 900px) {
+  .matey-admin-v3__user-summary-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .matey-admin-v3__toolbar--users-inline {
+    flex-wrap: wrap;
+  }
+
+  .matey-admin-v3__toolbar--users-inline .matey-admin-v3__search-wrap {
+    flex: 1 1 100%;
+    width: 100%;
+    min-width: 100%;
+  }
+
+  .matey-admin-v3__toolbar--users-inline select {
+    flex: 1 1 calc(50% - 5px);
+    width: auto;
+    max-width: none;
+  }
+}
+
 @media (max-width: 1024px) {
   .matey-admin-v3 {
-    padding: 148px clamp(18px, 4vw, 28px) 52px;
+    padding: 122px clamp(18px, 4vw, 28px) 43px;
   }
 
   .matey-admin-v3__hero {
@@ -2077,10 +2181,6 @@
     grid-template-columns: 1fr 1fr;
   }
 
-  .matey-admin-v3__toolbar--users-one-line {
-    flex-wrap: wrap;
-  }
-
   .matey-admin-v3__panel-head {
     flex-direction: column;
     align-items: flex-start;
@@ -2089,7 +2189,7 @@
 
 @media (max-width: 768px) {
   .matey-admin-v3 {
-    padding: 128px 16px 48px;
+    padding: 106px 16px 40px;
   }
 
   .matey-admin-v3__hero-copy h1 {
@@ -2123,7 +2223,7 @@
 
 @media (max-width: 640px) {
   .matey-admin-v3 {
-    padding: 112px 14px 44px;
+    padding: 92px 14px 37px;
   }
 
   .matey-admin-v3__hero,
@@ -2172,52 +2272,100 @@
 }
 
 .matey-admin-v3__user-manage-btn {
-  padding: 6px 10px;
-  border-radius: 10px;
-  border: 1px solid transparent;
-  background: transparent;
-  font-size: 13px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  min-height: 36px;
+  height: 36px;
+  padding: 0 6px;
+  border-radius: 6px;
+  font-size: 12px;
   font-weight: 600;
-  color: #5360df;
-  text-decoration: underline;
-  text-underline-offset: 3px;
+  line-height: 1;
   cursor: pointer;
-  transition: color var(--admin-v3-transition);
+  transition:
+    background var(--admin-v3-transition),
+    color var(--admin-v3-transition),
+    border-color var(--admin-v3-transition),
+    box-shadow var(--admin-v3-transition),
+    filter var(--admin-v3-transition);
 }
 
-.matey-admin-v3__user-manage-btn:hover,
 .matey-admin-v3__user-manage-btn:focus-visible {
-  outline: none;
-  color: #3d49c4;
+  outline: 2px solid rgba(107, 100, 235, 0.45);
+  outline-offset: 2px;
+}
+
+/* 상세: 보조(outline) */
+.matey-admin-v3__user-manage-btn--detail {
+  border: 1px solid rgba(120, 130, 170, 0.45);
+  background: rgba(255, 255, 255, 0.85);
+  color: #4b5673;
+  box-shadow: none;
+}
+
+.matey-admin-v3__user-manage-btn--detail:hover {
+  border-color: rgba(90, 98, 120, 0.55);
+  background: rgba(245, 246, 250, 0.95);
+  color: #2f3548;
+}
+
+/* 관리: primary */
+.matey-admin-v3__user-manage-btn--manage {
+  border: 1px solid rgba(107, 100, 235, 0.45);
+  background: var(--admin-v3-violet-deep);
+  color: #fff;
+  box-shadow: none;
+}
+
+.matey-admin-v3__user-manage-btn--manage:hover {
+  border-color: rgba(90, 82, 210, 0.65);
+  filter: brightness(1.05);
+}
+
+.matey-admin-v3__user-manage-btn--manage:active {
+  filter: brightness(0.96);
 }
 
 .matey-admin-v3__user-status-pill {
   display: inline-flex;
   align-items: center;
-  padding: 4px 12px;
+  padding: 2px 9px 2px 7px;
   border-radius: 999px;
-  font-size: 12px;
-  font-weight: 800;
+  font-size: 11px;
+  font-weight: 700;
   letter-spacing: -0.02em;
-  border: 1px solid transparent;
+  line-height: 1.2;
+  border: none;
+  vertical-align: middle;
+}
+
+.matey-admin-v3__user-status-pill::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  margin-right: 5px;
+  flex-shrink: 0;
+  background: currentColor;
+  opacity: 0.88;
 }
 
 .matey-admin-v3__user-status-pill--active {
-  background: rgba(46, 196, 182, 0.14);
-  border-color: rgba(46, 196, 182, 0.35);
-  color: #0d6f66;
+  background: #eaf8f1;
+  color: #1f9254;
 }
 
 .matey-admin-v3__user-status-pill--banned {
-  background: rgba(239, 83, 120, 0.12);
-  border-color: rgba(239, 83, 120, 0.32);
-  color: #a61f45;
+  background: #fdecef;
+  color: #c12d4a;
 }
 
 .matey-admin-v3__user-status-pill--deleted {
-  background: rgba(120, 130, 170, 0.14);
-  border-color: rgba(120, 130, 170, 0.28);
-  color: #4b5673;
+  background: #f0f2f6;
+  color: #5a6376;
 }
 
 .matey-admin-v3__drawer-overlay {
@@ -2235,12 +2383,12 @@
   width: min(440px, 100%);
   max-height: 100%;
   overflow: auto;
-  padding: 22px 22px 28px;
-  background: rgba(255, 255, 255, 0.96);
-  border-left: 1px solid rgba(120, 130, 170, 0.2);
-  box-shadow: -24px 0 60px rgba(10, 16, 34, 0.18);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  padding: 20px 20px 24px;
+  background: rgba(252, 252, 254, 0.98);
+  border-left: 1px solid rgba(120, 130, 170, 0.22);
+  box-shadow: -8px 0 28px rgba(10, 16, 34, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .matey-admin-v3__user-drawer-head {
@@ -2276,7 +2424,7 @@
 .matey-admin-v3__user-drawer-banner {
   margin: 0 0 14px;
   padding: 10px 12px;
-  border-radius: 12px;
+  border-radius: var(--admin-v3-radius-sm);
   font-size: 13px;
   background: rgba(107, 100, 235, 0.08);
   border: 1px solid rgba(107, 100, 235, 0.18);
@@ -2353,12 +2501,67 @@
 .matey-admin-v3__user-drawer-readonly {
   margin: 0;
   padding: 10px 12px;
-  border-radius: 12px;
+  border-radius: var(--admin-v3-radius-sm);
   background: rgba(120, 130, 170, 0.06);
   border: 1px solid rgba(120, 130, 170, 0.12);
   font-size: 14px;
   font-weight: 800;
   color: var(--admin-v3-title);
+}
+
+.matey-admin-v3__user-drawer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 6px;
+  padding-top: 4px;
+}
+
+.matey-admin-v3__user-drawer-action-btn {
+  flex: 1;
+  min-width: 120px;
+  padding: 10px 14px;
+  border-radius: var(--admin-v3-radius-sm);
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    background var(--admin-v3-transition),
+    color var(--admin-v3-transition),
+    border-color var(--admin-v3-transition),
+    opacity var(--admin-v3-transition);
+}
+
+.matey-admin-v3__user-drawer-action-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.matey-admin-v3__user-drawer-action-btn--cancel {
+  border: 1px solid rgba(120, 130, 170, 0.4);
+  background: #fff;
+  color: #4b5673;
+}
+
+.matey-admin-v3__user-drawer-action-btn--cancel:hover:not(:disabled) {
+  background: rgba(245, 246, 250, 0.95);
+  border-color: rgba(90, 98, 120, 0.45);
+}
+
+.matey-admin-v3__user-drawer-action-btn--save {
+  border: 1px solid rgba(107, 100, 235, 0.4);
+  background: linear-gradient(180deg, #9a8cff 0%, var(--admin-v3-violet-deep) 100%);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(107, 100, 235, 0.2);
+}
+
+.matey-admin-v3__user-drawer-action-btn--save:hover:not(:disabled) {
+  filter: brightness(1.03);
+}
+
+.matey-admin-v3__user-drawer-action-btn:focus-visible {
+  outline: 2px solid rgba(107, 100, 235, 0.45);
+  outline-offset: 2px;
 }
 
 @media (max-width: 640px) {
