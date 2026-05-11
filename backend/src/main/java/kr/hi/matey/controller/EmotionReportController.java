@@ -50,7 +50,7 @@ public class EmotionReportController {
 
     // Read (Detail)
     @GetMapping("/{analysisId}")
-    public ResponseEntity<EmotionReportDTO> getReportDetail(@PathVariable Long analysisId) {
+    public ResponseEntity<EmotionReportDTO> getReportDetail(@PathVariable("analysisId") Long analysisId) {
         EmotionReportDTO dto = emotionReportService.getReportDetail(analysisId);
         return ResponseEntity.ok(dto);
     }
@@ -58,7 +58,7 @@ public class EmotionReportController {
     // Update
     @PutMapping("/{analysisId}")
     public ResponseEntity<String> updateReport(
-        @PathVariable Long analysisId,
+        @PathVariable("analysisId") Long analysisId,
         @RequestBody EmotionReportDTO dto
     ) {
         emotionReportService.updateReport(analysisId, dto);
@@ -67,7 +67,7 @@ public class EmotionReportController {
 
     // Delete
     @DeleteMapping("/{analysisId}")
-    public ResponseEntity<String> deleteReport(@PathVariable Long analysisId) {
+    public ResponseEntity<String> deleteReport(@PathVariable("analysisId") Long analysisId) {
         emotionReportService.deleteReport(analysisId);
         return ResponseEntity.ok("삭제되었습니다.");
     }

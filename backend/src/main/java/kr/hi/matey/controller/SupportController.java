@@ -57,7 +57,7 @@ public class SupportController {
 
     @DeleteMapping("/{supportId}")
     public ResponseEntity<Void> deleteSupportTicket(
-            @PathVariable Long supportId,
+            @PathVariable("supportId") Long supportId,
             @AuthenticationPrincipal CustomUser user
     ) {
         long userId = user.getUser().getUserId();

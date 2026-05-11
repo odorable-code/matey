@@ -4,6 +4,11 @@ import DOMPurify from 'dompurify';
 import { useAuth } from '../../contexts/AuthContext';
 import { communityAPI, supportUserAPI } from '../../utils/api';
 import CommunityReportModal from './CommunityReportModal';
+import {
+  COMMUNITY_DEFAULT_AVATAR,
+  isCommunityUserSelf,
+  resolveCommunityAvatarUrl,
+} from './communityProfileDisplay';
 import styles from './CommunityPage.module.css';
 
 function formatDateTime(value) {
@@ -78,9 +83,6 @@ function CommunityPostDetail() {
   const [reportNoticeOpen, setReportNoticeOpen] = useState(false);
   const [reportNoticeMessage, setReportNoticeMessage] = useState('');
   const reportNoticeTitleId = useId();
-  /** 본인 글/댓글 반응 시 잠깐만 보이는 안내(모달·알럿 없음) */
-  const [reactionSelfHint, setReactionSelfHint] = useState('');
-  const [commentSelfLikeHintId, setCommentSelfLikeHintId] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -100,6 +102,13 @@ function CommunityPostDetail() {
 
   useEffect(() => {
     if (!post) return undefined;
+    const isNotice =
+      post.categoryNotification === 0 || post.categoryNotification === '0';
+    if (isNotice) {
+      setReportedPost(false);
+      setReportedComments({});
+      return undefined;
+    }
     if (!isAuthenticated || myId == null) {
       setReportedPost(false);
       setReportedComments({});
@@ -137,18 +146,6 @@ function CommunityPostDetail() {
   }, [load]);
 
   useEffect(() => {
-    if (!reactionSelfHint) return undefined;
-    const t = window.setTimeout(() => setReactionSelfHint(''), 2800);
-    return () => window.clearTimeout(t);
-  }, [reactionSelfHint]);
-
-  useEffect(() => {
-    if (commentSelfLikeHintId == null) return undefined;
-    const t = window.setTimeout(() => setCommentSelfLikeHintId(null), 2800);
-    return () => window.clearTimeout(t);
-  }, [commentSelfLikeHintId]);
-
-  useEffect(() => {
     if (loading) return;
     const raw = (location.hash || '').replace(/^#/, '');
     if (!raw || !raw.startsWith('matey-comment-')) return;
@@ -184,7 +181,7 @@ function CommunityPostDetail() {
     return n === 0 || n === '0';
   }, [post]);
 
-  const showAlreadyReportedNotice = (message) => {
+  const openNoticeModal = (message) => {
     setReportNoticeMessage(message);
     setReportNoticeOpen(true);
   };
@@ -194,8 +191,12 @@ function CommunityPostDetail() {
       navigate('/login', { state: { from: `/community/posts/${postId}` } });
       return;
     }
+    if (isAuthor) {
+      openNoticeModal('본인이 작성한 글은 신고할 수 없어요.');
+      return;
+    }
     if (reportedPost) {
-      showAlreadyReportedNotice('이미 이 게시글을 신고하셨어요. 접수 내역은 마이페이지의 문의·신고함에서 확인할 수 있어요.');
+      openNoticeModal('이미 이 게시글을 신고하셨어요. 접수 내역은 마이페이지의 문의·신고함에서 확인할 수 있어요.');
       return;
     }
     setReportComment(null);
@@ -208,8 +209,14 @@ function CommunityPostDetail() {
       navigate('/login', { state: { from: `/community/posts/${postId}` } });
       return;
     }
+    const commentMine =
+      comment && myId != null && Number(comment.userId) === Number(myId);
+    if (commentMine) {
+      openNoticeModal('본인이 작성한 댓글은 신고할 수 없어요.');
+      return;
+    }
     if (comment && reportedComments[comment.commentId]) {
-      showAlreadyReportedNotice('이미 이 댓글을 신고하셨어요. 접수 내역은 마이페이지의 문의·신고함에서 확인할 수 있어요.');
+      openNoticeModal('이미 이 댓글을 신고하셨어요. 접수 내역은 마이페이지의 문의·신고함에서 확인할 수 있어요.');
       return;
     }
     setReportComment(comment);
@@ -223,7 +230,7 @@ function CommunityPostDetail() {
       return;
     }
     if (isAuthor) {
-      setReactionSelfHint('본인이 작성한 글에는 좋아요를 누를 수 없어요.');
+      window.alert('본인이 작성한 글에는 좋아요를 누를 수 없어요.');
       return;
     }
     setPostLikeBusy(true);
@@ -254,7 +261,7 @@ function CommunityPostDetail() {
       return;
     }
     if (isAuthor) {
-      setReactionSelfHint('본인이 작성한 글에는 싫어요를 누를 수 없어요.');
+      window.alert('본인이 작성한 글에는 싫어요를 누를 수 없어요.');
       return;
     }
     setPostDislikeBusy(true);
@@ -288,7 +295,7 @@ function CommunityPostDetail() {
     const isCommentAuthor =
       target && myId != null && Number(target.userId) === Number(myId);
     if (isCommentAuthor) {
-      setCommentSelfLikeHintId(commentId);
+      window.alert('본인이 작성한 댓글에는 좋아요를 누를 수 없어요.');
       return;
     }
     setCommentLikeBusyId(commentId);
@@ -440,12 +447,29 @@ function CommunityPostDetail() {
         <div className={styles.detailCategory}>{post.categoryName || '카테고리'}</div>
         <h1 className={styles.detailTitle}>{post.title}</h1>
         <div className={styles.detailByline}>
-          <strong className={styles.detailNickname}>{post.userNickname || '익명'}</strong>
-          <span className={styles.detailMetaSep} aria-hidden>
-            {' '}
-          </span>
+          <div className={styles.detailAuthorBlock}>
+            <img
+              src={resolveCommunityAvatarUrl(post.userProfileImage)}
+              alt=""
+              className={styles.detailAuthorAvatar}
+              onError={(e) => {
+                e.currentTarget.src = COMMUNITY_DEFAULT_AVATAR;
+              }}
+            />
+            <div className={styles.detailAuthorNames}>
+              {isCommunityUserSelf(myId, post.userId) ? (
+                <Link to="/mypage?section=profileInfo" className={styles.detailNickname}>
+                  {post.userNickname || '익명'}
+                </Link>
+              ) : (
+                <strong className={styles.detailNickname}>{post.userNickname || '익명'}</strong>
+              )}
+            </div>
+          </div>
           <span className={styles.detailMetaPieces}>
-            {formatDateTime(post.createdAt)} · 조회 {post.viewCount ?? 0}
+            <span className={styles.detailMetaDatetime}>{formatDateTime(post.createdAt)}</span>
+            {' · 조회 '}
+            <span className={styles.detailMetaViews}>{post.viewCount ?? 0}</span>
           </span>
         </div>
       </header>
@@ -510,108 +534,114 @@ function CommunityPostDetail() {
               </button>
             ) : null}
           </div>
-          {reactionSelfHint ? (
-            <p className={styles.hint} role="status" aria-live="polite" style={{ marginTop: 8 }}>
-              {reactionSelfHint}
-            </p>
-          ) : null}
         </div>
       ) : null}
 
-      <h2 className={styles.sectionTitle}>{interactionLabels.sectionWithCount(comments.length)}</h2>
-      {comments.length === 0 ? (
-        <p className={styles.hint}>{interactionLabels.emptyHint}</p>
-      ) : (
-        comments.map((c) => {
-          const mine = myId != null && Number(c.userId) === Number(myId);
-          return (
-            <article
-              key={c.commentId}
-              id={`matey-comment-${c.commentId}`}
-              className={styles.commentBox}
-            >
-              <div className={styles.commentHeaderRow}>
-                <div className={styles.commentByline}>
-                  <strong className={styles.commentNick}>{c.userNickname || '익명'}</strong>
-                  <span className={styles.commentDate}>
-                    {' '}
-                    · {formatDateTime(c.createdAt)}
-                  </span>
-                </div>
-                {mine ? (
-                  <button
-                    type="button"
-                    className={styles.commentDeleteBtn}
-                    onClick={() => handleDeleteComment(c)}
-                  >
-                    삭제
-                  </button>
-                ) : null}
-              </div>
-              <p className={styles.commentText}>{c.content}</p>
-              {!isNoticeCategoryPost ? (
-                <div className={styles.commentFooterBar}>
-                  <div className={styles.commentFooterInner}>
-                    <button
-                      type="button"
-                      className={`${styles.likeBtn} ${styles.likeBtnSm} ${
-                        c.likedByMe ? styles.likeBtnActive : ''
-                      }`}
-                      onClick={() => handleToggleCommentLike(c.commentId)}
-                      disabled={commentLikeBusyId === c.commentId}
-                      aria-pressed={!!c.likedByMe}
-                    >
-                      <span className={styles.likeIcon} aria-hidden>
-                        ♥
-                      </span>
-                      <span>좋아요 {c.likeCount ?? 0}</span>
-                    </button>
-                    {!mine ? (
+      {!isNoticeCategoryPost ? (
+        <>
+          <h2 className={styles.sectionTitle}>
+            {interactionLabels.sectionWithCount(comments.length)}
+          </h2>
+          {comments.length === 0 ? (
+            <p className={styles.hint}>{interactionLabels.emptyHint}</p>
+          ) : (
+            comments.map((c) => {
+              const mine = myId != null && Number(c.userId) === Number(myId);
+              return (
+                <article
+                  key={c.commentId}
+                  id={`matey-comment-${c.commentId}`}
+                  className={styles.commentBox}
+                >
+                  <div className={styles.commentHeaderRow}>
+                    <div className={styles.commentHeaderMain}>
+                      <img
+                        src={resolveCommunityAvatarUrl(c.userProfileImage)}
+                        alt=""
+                        className={styles.commentAvatar}
+                        onError={(e) => {
+                          e.currentTarget.src = COMMUNITY_DEFAULT_AVATAR;
+                        }}
+                      />
+                      <div className={styles.commentByline}>
+                        {isCommunityUserSelf(myId, c.userId) ? (
+                          <Link to="/mypage?section=profileInfo" className={styles.commentNick}>
+                            {c.userNickname || '익명'}
+                          </Link>
+                        ) : (
+                          <strong className={styles.commentNick}>{c.userNickname || '익명'}</strong>
+                        )}
+                        <div className={styles.commentDate}>{formatDateTime(c.createdAt)}</div>
+                      </div>
+                    </div>
+                    {mine ? (
                       <button
                         type="button"
-                        className={styles.inlineReportBtn}
-                        onClick={() => openCommentReport(c)}
+                        className={styles.commentDeleteBtn}
+                        onClick={() => handleDeleteComment(c)}
                       >
-                        신고
+                        삭제
                       </button>
                     ) : null}
                   </div>
-                  {commentSelfLikeHintId != null &&
-                  Number(commentSelfLikeHintId) === Number(c.commentId) ? (
-                    <p className={styles.hint} role="status" aria-live="polite" style={{ marginTop: 8 }}>
-                      본인이 작성한 댓글에는 좋아요를 누를 수 없어요.
-                    </p>
-                  ) : null}
-                </div>
-              ) : null}
-            </article>
-          );
-        })
-      )}
+                  <p className={styles.commentText}>{c.content}</p>
+                  <div className={styles.commentFooterBar}>
+                    <div className={styles.commentFooterInner}>
+                      <button
+                        type="button"
+                        className={`${styles.likeBtn} ${styles.likeBtnSm} ${
+                          c.likedByMe ? styles.likeBtnActive : ''
+                        }`}
+                        onClick={() => handleToggleCommentLike(c.commentId)}
+                        disabled={commentLikeBusyId === c.commentId}
+                        aria-pressed={!!c.likedByMe}
+                      >
+                        <span className={styles.likeIcon} aria-hidden>
+                          ♥
+                        </span>
+                        <span>좋아요 {c.likeCount ?? 0}</span>
+                      </button>
+                      {!mine ? (
+                        <button
+                          type="button"
+                          className={styles.inlineReportBtn}
+                          onClick={() => openCommentReport(c)}
+                        >
+                          신고
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+                </article>
+              );
+            })
+          )}
 
-      <h2 className={styles.sectionTitle}>{interactionLabels.composeTitle}</h2>
-      {!isAuthenticated ? (
-        <p className={styles.hint}>
-          {interactionLabels.loginHint}{' '}
-          <Link to="/login" state={{ from: `/community/posts/${postId}` }}>
-            로그인하기
-          </Link>
-        </p>
-      ) : (
-        <form onSubmit={handleCommentSubmit}>
-          <textarea
-            className={styles.textarea}
-            placeholder={interactionLabels.placeholder}
-            value={commentText}
-            onChange={(e) => setCommentText(e.target.value)}
-          />
-          <div className={styles.composeSubmitRow}>
-            <button type="submit" className={styles.primaryBtn} disabled={submitting}>
-              {submitting ? '등록 중…' : interactionLabels.submitIdle}
-            </button>
-          </div>
-        </form>
-      )}
+          <h2 className={styles.sectionTitle}>{interactionLabels.composeTitle}</h2>
+          {!isAuthenticated ? (
+            <p className={styles.hint}>
+              {interactionLabels.loginHint}{' '}
+              <Link to="/login" state={{ from: `/community/posts/${postId}` }}>
+                로그인하기
+              </Link>
+            </p>
+          ) : (
+            <form onSubmit={handleCommentSubmit}>
+              <textarea
+                className={styles.textarea}
+                placeholder={interactionLabels.placeholder}
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+              />
+              <div className={styles.composeSubmitRow}>
+                <button type="submit" className={styles.primaryBtn} disabled={submitting}>
+                  {submitting ? '등록 중…' : interactionLabels.submitIdle}
+                </button>
+              </div>
+            </form>
+          )}
+        </>
+      ) : null}
     </div>
   );
 }

@@ -18,5 +18,13 @@ public class FeedbackDTO {
     private String reasonType;
     /** SUPPORT_REASON.target_type — POST / COMMENT / null */
     private String targetType;
+
+    /** 최신 관리자 답변(있으면) */
+    private String answerContent;
+    /** 최신 답변 작성 관리자 닉네임(있으면) */
+    private String answerAdminNickname;
+    /** 최신 답변 작성 시각(있으면) */
+    private LocalDateTime answerCreatedAt;
+
     private LocalDateTime createdAt;
 }

@@ -36,6 +36,7 @@
             p.view_count as viewCount,
             p.user_id as userId,
             u.nickname as userNickname,
+            u.profile_image as userProfileImage,
             p.category_id as categoryId,
             c.name as categoryName,
             c.notification as categoryNotification,
@@ -44,12 +45,16 @@
             <choose>
                 <when test="viewerUserId != null">
                     , EXISTS(
-                        SELECT 1 FROM user_post_like upl
-                        WHERE upl.post_id = p.post_id AND upl.user_id = #{viewerUserId}
+                        SELECT 1 FROM user_post_reaction upr
+                        WHERE upr.post_id = p.post_id
+                          AND upr.user_id = #{viewerUserId}
+                          AND upr.state = 1
                     ) AS likedByMe
                     , EXISTS(
-                        SELECT 1 FROM user_post_dislike upd
-                        WHERE upd.post_id = p.post_id AND upd.user_id = #{viewerUserId}
+                        SELECT 1 FROM user_post_reaction upr
+                        WHERE upr.post_id = p.post_id
+                          AND upr.user_id = #{viewerUserId}
+                          AND upr.state = 0
                     ) AS dislikedByMe
                 </when>
                 <otherwise>
@@ -92,6 +97,7 @@
             p.view_count as viewCount,
             p.user_id as userId,
             u.nickname as userNickname,
+            u.profile_image as userProfileImage,
             p.category_id as categoryId,
             c.name as categoryName,
             c.notification as categoryNotification,
@@ -118,6 +124,7 @@
             p.view_count as viewCount,
             p.user_id as userId,
             u.nickname as userNickname,
+            u.profile_image as userProfileImage,
             p.category_id as categoryId,
             c.name as categoryName,
             c.notification as categoryNotification,
@@ -126,12 +133,16 @@
             <choose>
                 <when test="viewerUserId != null">
                     , EXISTS(
-                        SELECT 1 FROM user_post_like upl
-                        WHERE upl.post_id = p.post_id AND upl.user_id = #{viewerUserId}
+                        SELECT 1 FROM user_post_reaction upr
+                        WHERE upr.post_id = p.post_id
+                          AND upr.user_id = #{viewerUserId}
+                          AND upr.state = 1
                     ) AS likedByMe
                     , EXISTS(
-                        SELECT 1 FROM user_post_dislike upd
-                        WHERE upd.post_id = p.post_id AND upd.user_id = #{viewerUserId}
+                        SELECT 1 FROM user_post_reaction upr
+                        WHERE upr.post_id = p.post_id
+                          AND upr.user_id = #{viewerUserId}
+                          AND upr.state = 0
                     ) AS dislikedByMe
                 </when>
                 <otherwise>
@@ -190,14 +201,23 @@
           AND user_id = #{userId}
     </delete>
 
-    <insert id="insertPostLike">
-        INSERT INTO user_post_like (user_id, post_id)
-        VALUES (#{userId}, #{postId})
+    <select id="selectPostReactionState" resultType="java.lang.Integer">
+        SELECT state
+        FROM user_post_reaction
+        WHERE user_id = #{userId}
+          AND post_id = #{postId}
+    </select>
+
+    <insert id="upsertPostReaction">
+        INSERT INTO user_post_reaction (user_id, post_id, state)
+        VALUES (#{userId}, #{postId}, #{state})
+        ON DUPLICATE KEY UPDATE state = VALUES(state)
     </insert>
 
-    <delete id="deletePostLike">
-        DELETE FROM user_post_like
-        WHERE user_id = #{userId} AND post_id = #{postId}
+    <delete id="deletePostReaction">
+        DELETE FROM user_post_reaction
+        WHERE user_id = #{userId}
+          AND post_id = #{postId}
     </delete>
 
     <update id="adjustPostLikeCount">
@@ -205,16 +225,6 @@
         SET like_count = GREATEST(0, like_count + #{delta})
         WHERE post_id = #{postId}
     </update>
-
-    <insert id="insertPostDislike">
-        INSERT INTO user_post_dislike (user_id, post_id)
-        VALUES (#{userId}, #{postId})
-    </insert>
-
-    <delete id="deletePostDislike">
-        DELETE FROM user_post_dislike
-        WHERE user_id = #{userId} AND post_id = #{postId}
-    </delete>
 
     <update id="adjustPostDislikeCount">
         UPDATE POST

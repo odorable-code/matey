@@ -379,6 +379,11 @@ export const adminAPI = {
       method: 'GET',
     });
   },
+
+  getFeedbackDetail: (supportId) =>
+    request(`/api/admin/feedbacks/${encodeURIComponent(String(supportId))}`, {
+      method: 'GET',
+    }),
   
   updateFeedbackStatus: (feedbackId, status) => {
     return request(`/api/admin/feedbacks/${feedbackId}/status`, {
@@ -386,6 +391,12 @@ export const adminAPI = {
       body: { status },
     });
   },
+
+  answerFeedback: (supportId, content) =>
+    request(`/api/admin/feedbacks/${encodeURIComponent(String(supportId))}/answer`, {
+      method: 'POST',
+      body: { content },
+    }),
 
   // 활동 로그
   getLogs: (params = {}) => {

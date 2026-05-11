@@ -53,13 +53,13 @@ public class AdminController {
     }
 
     @GetMapping("/users/{userId}")
-    public ResponseEntity<UserDTO2> getUserDetail(@PathVariable Long userId) {
+    public ResponseEntity<UserDTO2> getUserDetail(@PathVariable("userId") Long userId) {
         return ResponseEntity.ok(adminService.getUserDetail(userId));
     }
 
     @PutMapping("/users/{userId}")
     public ResponseEntity<String> updateUser(
-            @PathVariable Long userId,
+            @PathVariable("userId") Long userId,
             @RequestBody Map<String, Object> body,
             @AuthenticationPrincipal CustomUser user) {
         String adminID = user.getUsername();
@@ -69,7 +69,7 @@ public class AdminController {
 
     @PatchMapping("/users/{userId}/role")
     public ResponseEntity<String> updateUserRole(
-            @PathVariable Long userId, 
+            @PathVariable("userId") Long userId, 
             @RequestBody Map<String, String> body,
             @AuthenticationPrincipal CustomUser user) {
         if (!RoleCodeHelper.isSuperAdmin(user.getUser().getRoleCode())) {
@@ -83,7 +83,7 @@ public class AdminController {
 
     @DeleteMapping("/users/{userId}")
     public ResponseEntity<String> deleteUser(
-            @PathVariable Long userId,
+            @PathVariable("userId") Long userId,
             @AuthenticationPrincipal CustomUser user
     ) {
         String adminID = user.getUsername();
@@ -128,13 +128,13 @@ public class AdminController {
     }
 
     @GetMapping("/feedbacks/{supportId}")
-    public ResponseEntity<FeedbackDTO> getFeedbackDetail(@PathVariable Long supportId) {
+    public ResponseEntity<FeedbackDTO> getFeedbackDetail(@PathVariable("supportId") Long supportId) {
         return ResponseEntity.ok(adminService.getFeedbackDetail(supportId));
     }
 
     @PatchMapping("/feedbacks/{supportId}/status")
     public ResponseEntity<String> updateFeedbackStatus(
-            @PathVariable Long supportId, 
+            @PathVariable("supportId") Long supportId, 
             @RequestBody Map<String, String> body,
             @AuthenticationPrincipal CustomUser user
     ) {
@@ -145,7 +145,7 @@ public class AdminController {
 
     @DeleteMapping("/feedbacks/{supportId}")
     public ResponseEntity<String> deleteFeedback(
-            @PathVariable Long supportId,
+            @PathVariable("supportId") Long supportId,
             @AuthenticationPrincipal CustomUser user
     ) {
         String adminID = user.getUsername();
@@ -182,7 +182,7 @@ public class AdminController {
 
     @PutMapping("/faqs/{faqId}")
     public ResponseEntity<String> updateFaq(
-            @PathVariable Long faqId,
+            @PathVariable("faqId") Long faqId,
             @RequestBody kr.hi.matey.dto.FaqDTO faqDTO,
             @AuthenticationPrincipal CustomUser user
     ) {
@@ -201,7 +201,7 @@ public class AdminController {
 
     @PostMapping("/feedbacks/{supportId}/answer")
     public ResponseEntity<String> answerFeedback(
-            @PathVariable Long supportId,
+            @PathVariable("supportId") Long supportId,
             @RequestBody Map<String, String> body,
             @AuthenticationPrincipal CustomUser user
     ) {
@@ -210,7 +210,19 @@ public class AdminController {
         }
 
         String content = body.get("content");
-        adminService.answerSupportTicket(supportId, content, user.getUser().getUserId());
+        if (content == null || content.trim().isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("답변 내용을 입력해 주세요.");
+        }
+
+        if (user.getUser() == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("관리자 정보가 없어 답변을 등록할 수 없습니다.");
+        }
+        long adminUserId = user.getUser().getUserId();
+        if (adminUserId <= 0) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("관리자 계정 식별에 실패했어요. 다시 로그인해 주세요.");
+        }
+
+        adminService.answerSupportTicket(supportId, content.trim(), adminUserId);
         return ResponseEntity.ok("답변이 등록되었습니다.");
     }
 
@@ -233,7 +245,7 @@ public class AdminController {
 
     @PutMapping("/notices/{noticeId}")
     public ResponseEntity<String> updateNotice(
-            @PathVariable Long noticeId,
+            @PathVariable("noticeId") Long noticeId,
             @RequestBody kr.hi.matey.dto.AdminNoticeDTO dto,
             @AuthenticationPrincipal CustomUser user
     ) {

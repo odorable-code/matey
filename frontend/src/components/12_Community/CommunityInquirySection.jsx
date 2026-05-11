@@ -24,6 +24,7 @@ function CommunityInquirySection({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [submitDoneOpen, setSubmitDoneOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -69,7 +70,7 @@ function CommunityInquirySection({
       setTitle('');
       setContent('');
       setSupportReasonId('');
-      navigate('/mypage', { state: { highlight: 'support' } });
+      setSubmitDoneOpen(true);
     } catch (e) {
       setError(e?.message || '접수에 실패했어요.');
     } finally {
@@ -78,10 +79,50 @@ function CommunityInquirySection({
   };
 
   return (
-    <section
-      className={showIntro ? styles.faqInquirySection : styles.inquiryFormBlock}
-      aria-labelledby={showIntro ? `${id}-inq-heading` : undefined}
-    >
+    <>
+      {submitDoneOpen ? (
+        <div
+          className={styles.modalBackdrop}
+          role="presentation"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) {
+              setSubmitDoneOpen(false);
+              navigate('/mypage', { state: { highlight: 'support' } });
+            }
+          }}
+        >
+          <div
+            className={styles.modalCard}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={`${id}-inq-done-title`}
+          >
+            <h2 id={`${id}-inq-done-title`} className={styles.modalTitle}>
+              접수 완료
+            </h2>
+            <p className={styles.hint} style={{ marginBottom: 18 }}>
+              문의가 접수되었어요. 답변은 마이페이지의 문의·신고함에서 확인할 수 있어요.
+            </p>
+            <div className={styles.composeSubmitRow}>
+              <button
+                type="button"
+                className={styles.primaryBtn}
+                onClick={() => {
+                  setSubmitDoneOpen(false);
+                  navigate('/mypage', { state: { highlight: 'support' } });
+                }}
+              >
+                확인
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      <section
+        className={showIntro ? styles.faqInquirySection : styles.inquiryFormBlock}
+        aria-labelledby={showIntro ? `${id}-inq-heading` : undefined}
+      >
       {showIntro ? (
         <>
           <h2 id={`${id}-inq-heading`} className={styles.sectionTitle}>
@@ -165,6 +206,7 @@ function CommunityInquirySection({
         </>
       ) : null}
     </section>
+    </>
   );
 }
 

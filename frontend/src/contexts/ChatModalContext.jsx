@@ -18,7 +18,7 @@
  *   * 'pick'  : 새 상담 봇 고르기 (게임 캐릭터 픽 톤)
  *
  * [수정 포인트]
- * - 데모 세션 : INITIAL_SESSIONS
+ * - 초기 대화 목록 : INITIAL_SESSIONS (기본 비움 — 메이트 지정은 시작 시에만)
  * =========================================================
  */
 
@@ -44,26 +44,9 @@ function relativeTimeString(timestamp) {
 }
 
 // ============================================================
-// 2. 데모 세션
+// 2. 초기 대화 목록 (지정된 메이트 없음 — 사용자가 고르기 전까지 비움)
 // ============================================================
-const INITIAL_SESSIONS = [
-  {
-    id: 'demo-1',
-    mateKey: 'dog',
-    title: '오늘 하루 어땠어요?',
-    createdAt: Date.now() - 1000 * 60 * 60 * 2,
-    updatedAt: Date.now() - 1000 * 60 * 12,
-    unread: 1,
-    messages: [
-      {
-        id: 'm1',
-        role: 'mate',
-        text: '안녕! 오늘 하루도 정말 수고 많았어요. 어떤 이야기든 들어줄게요.',
-        time: relativeTimeString(Date.now() - 1000 * 60 * 12),
-      },
-    ],
-  },
-];
+const INITIAL_SESSIONS = [];
 
 // ============================================================
 // 3. 우측 영역 상태
@@ -84,7 +67,7 @@ export function ChatModalProvider({ children }) {
 
   // -------- 모달 열기 --------
   // mateKey 주면 즉시 새 세션 만들고 채팅 시작
-  // 없으면 우측 빈 상태로 모달만 열림
+  // 없으면 메이트 고르기(PICK) — 빈 안내 화면 대신 바로 선택 UI
   const openChat = useCallback((mateKey = null) => {
     if (mateKey) {
       const id = `s-${Date.now()}`;
@@ -104,7 +87,7 @@ export function ChatModalProvider({ children }) {
       setRightView(RIGHT.CHAT);
     } else {
       setActiveSessionId(null);
-      setRightView(RIGHT.EMPTY);
+      setRightView(RIGHT.PICK);
     }
     setIsOpen(true);
   }, []);
@@ -113,6 +96,12 @@ export function ChatModalProvider({ children }) {
 
   // -------- 우측 영역 컨트롤 --------
   const showEmpty = useCallback(() => {
+    setActiveSessionId(null);
+    setRightView(RIGHT.EMPTY);
+  }, []);
+
+  /** 모바일 등에서 목록만 보이게 할 때 (대화 영역 닫기) */
+  const exitChatToList = useCallback(() => {
     setActiveSessionId(null);
     setRightView(RIGHT.EMPTY);
   }, []);
@@ -216,6 +205,7 @@ export function ChatModalProvider({ children }) {
     openChat,
     closeChat,
     showEmpty,
+    exitChatToList,
     showPick,
     startNewSession,
     openSession,

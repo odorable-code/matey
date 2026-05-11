@@ -23,14 +23,14 @@ public class OAuthController {
     private final AppProperties appProperties;
 
     @GetMapping("/{provider}")
-    public void redirect(@PathVariable String provider,
+    public void redirect(@PathVariable("provider") String provider,
                          HttpServletResponse response) throws IOException {
         String url = oAuthLoginService.buildAuthorizeUrl(provider);
         response.sendRedirect(url);
     }
 
     @GetMapping("/callback/{provider}")
-    public void callback(@PathVariable String provider,
+    public void callback(@PathVariable("provider") String provider,
                          @RequestParam("code") String code,
                          @RequestParam(name = "state", required = false) String state,
                          HttpServletResponse response,

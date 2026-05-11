@@ -26,7 +26,7 @@ public class NotificationController {
     @PatchMapping("/{notificationId}/read")
     public ResponseEntity<Map<String, String>> markAsRead(
             @AuthenticationPrincipal CustomUser user,
-            @PathVariable Long notificationId) {
+            @PathVariable("notificationId") Long notificationId) {
         notificationService.markAsRead(user.getUser().getUserId(), notificationId);
         return ResponseEntity.ok(Map.of("message", "읽음 처리되었습니다."));
     }
@@ -40,7 +40,7 @@ public class NotificationController {
     @DeleteMapping("/{notificationId}")
     public ResponseEntity<Map<String, String>> deleteNotification(
             @AuthenticationPrincipal CustomUser user,
-            @PathVariable Long notificationId) {
+            @PathVariable("notificationId") Long notificationId) {
         notificationService.deleteNotification(user.getUser().getUserId(), notificationId);
         return ResponseEntity.ok(Map.of("message", "알림이 삭제되었습니다."));
     }

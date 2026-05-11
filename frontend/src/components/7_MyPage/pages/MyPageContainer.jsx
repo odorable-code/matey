@@ -6,18 +6,18 @@
  * [여기서 찾을 것]
  * - 메뉴 목록 수정: menuItems
  * - 메뉴 클릭 동작: handleMenuSelect
- * - 기본으로 열리는 화면 수정: useState('dashboard')
+ * - 기본 화면: /mypage (쿼리 없음) → 대시보드; 메뉴는 ?section= 으로 동기화
  * - 각 메뉴별 화면 연결: renderContent
  * - 화면 전환 애니메이션 대상 처리: useEffect 아래 applyRevealItems
  *
  * [수정 포인트]
  * - 새 메뉴 추가: menuItems + renderContent 둘 다 수정
- * - 기본 화면 바꾸기: activeMenu 초기값 변경
+ * - 기본 화면 바꾸기: activeMenu 기본값(쿼리 없을 때) 로직
  * - Dashboard에 넘기는 값 수정: renderContent 안 DashboardContent props 수정
  */
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import layoutStyles from '../layout/MyPageLayout.module.css';
 
 import ProfileCard from '../layout/ProfileCard';
@@ -34,15 +34,31 @@ import SupportHistoryContent from '../contents/SupportHistoryContent.jsx';
 import { myPageAPI } from '../../../utils/api';
 import { useChatModal } from '../../../contexts/ChatModalContext';
 
+const VALID_MENU_KEYS = new Set([
+  'dashboard',
+  'profileInfo',
+  'emotionReport',
+  'botMenu',
+  'letterBox',
+  'settings',
+  'notiSettings',
+  'support',
+]);
+
 function MyPageContainer() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { openChat } = useChatModal();
   /* =========================
-     현재 선택된 메뉴 상태
-     - 기본값: dashboard
+     현재 선택된 메뉴: URL ?section= | ?tab= 만 사용
+     (/mypage 단독 진입 시 대시보드 — 다른 화면 갔다 와도 이전 메뉴 자동 복원 없음)
   ========================= */
-  const [activeMenu, setActiveMenu] = useState('dashboard');
+  const activeMenu = useMemo(() => {
+    const q = searchParams.get('section') || searchParams.get('tab');
+    if (q && VALID_MENU_KEYS.has(q)) return q;
+    return 'dashboard';
+  }, [searchParams]);
 
   /* =========================
      화면 전환용 key
@@ -168,15 +184,15 @@ function MyPageContainer() {
 
   useEffect(() => {
     if (location.state?.highlight === 'support') {
-      setActiveMenu('support');
+      setSearchParams({ section: 'support' }, { replace: true });
       setTransitionKey((k) => k + 1);
       navigate('.', { replace: true, state: {} });
     } else if (location.state?.highlight === 'notiSettings') {
-      setActiveMenu('notiSettings');
+      setSearchParams({ section: 'notiSettings' }, { replace: true });
       setTransitionKey((k) => k + 1);
       navigate('.', { replace: true, state: {} });
     }
-  }, [location.state, navigate]);
+  }, [location.state, navigate, setSearchParams]);
 
   /* =========================
      왼쪽 메뉴 클릭하는 코드
@@ -186,7 +202,11 @@ function MyPageContainer() {
   const handleMenuSelect = (menuKey) => {
     if (menuKey === activeMenu) return;
 
-    setActiveMenu(menuKey);
+    if (menuKey === 'dashboard') {
+      setSearchParams({}, { replace: true });
+    } else {
+      setSearchParams({ section: menuKey }, { replace: true });
+    }
     setTransitionKey((prev) => prev + 1);
   };
 
@@ -200,7 +220,7 @@ function MyPageContainer() {
       return;
     }
     if (activeMenu !== 'botMenu') {
-      setActiveMenu('botMenu');
+      setSearchParams({ section: 'botMenu' }, { replace: true });
       setTransitionKey((prev) => prev + 1);
     }
   };

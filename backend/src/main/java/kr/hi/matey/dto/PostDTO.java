@@ -21,6 +21,8 @@ public class PostDTO {
 
     private Long userId;
     private String userNickname;
+    /** USER.profile_image — 목록·상세에서 작성자 썸네일 표시용 */
+    private String userProfileImage;
 
     private Long categoryId;
     private String categoryName;

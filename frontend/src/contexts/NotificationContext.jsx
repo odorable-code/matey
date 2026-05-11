@@ -85,17 +85,25 @@ export function NotificationProvider({ children }) {
     try {
       const data = await notificationAPI.getNotifications();
       // 백엔드 데이터 -> 프론트엔드 형식 변환
-      const transformed = data.map((n) => ({
-        id: n.notificationId,
-        type: n.type,
-        typeCode: n.typeCode,
-        title: n.title,
-        message: n.message,
-        createdAt: new Date(n.createdAt).getTime(),
-        read: n.isRead,
-        targetType: n.targetType,
-        targetId: n.targetId,
-      }));
+      // Jackson은 boolean isRead를 JSON에서 `read`로 내보내는 경우가 많아 둘 다 처리
+      const transformed = data.map((n) => {
+        const rawRead = n.read ?? n.isRead ?? n.is_read;
+        const read =
+          rawRead === true ||
+          rawRead === 1 ||
+          rawRead === '1';
+        return {
+          id: n.notificationId,
+          type: n.type,
+          typeCode: n.typeCode,
+          title: n.title,
+          message: n.message,
+          createdAt: new Date(n.createdAt).getTime(),
+          read,
+          targetType: n.targetType,
+          targetId: n.targetId,
+        };
+      });
       setNotifications(transformed);
     } catch (err) {
       console.error('알림 로드 실패:', err);
@@ -119,6 +127,22 @@ export function NotificationProvider({ children }) {
     fetchNotifications();
     fetchSettings();
   }, [fetchNotifications, fetchSettings]);
+
+  // 주기·포커스 시 알림 재조회 (탭 복귀·백그라운드 반영)
+  useEffect(() => {
+    if (!isAuthenticated) return undefined;
+    const intervalId = window.setInterval(() => {
+      fetchNotifications();
+    }, 60000);
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') fetchNotifications();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [isAuthenticated, fetchNotifications]);
 
   // -------- 모달 열기 / 닫기 --------
   const openNotifications = useCallback(() => setIsOpen(true), []);
@@ -223,6 +247,7 @@ export function NotificationProvider({ children }) {
     removeNotification,
     updateSetting,
     fetchSettings,
+    fetchNotifications,
   };
 
   return (

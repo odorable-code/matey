@@ -15,6 +15,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AdminService {
     private final AdminDAO adminDAO;
+    private final NotificationService notificationService;
 
     // ==========================================
     // 실시간 운영 통계 및 지표
@@ -99,6 +100,22 @@ public class AdminService {
     public void answerSupportTicket(Long supportId, String content, Long adminUserId) {
         adminDAO.insertSupportAnswer(supportId, content, adminUserId);
         adminDAO.updateFeedbackStatus(supportId, "DONE");
+
+        Long ticketOwnerId = adminDAO.selectSupportUserId(supportId);
+        if (ticketOwnerId != null) {
+            String notiBody = "접수하신 문의·신고에 답변이 등록되었어요.";
+            try {
+                notificationService.createNotification(
+                        ticketOwnerId,
+                        "SUPPORT_ANSWER",
+                        notiBody,
+                        "SUPPORT",
+                        supportId
+                );
+            } catch (RuntimeException ignored) {
+                // 알림 실패는 답변 저장 성공과 분리
+            }
+        }
     }
 
 }

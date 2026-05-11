@@ -38,6 +38,7 @@ import { Navigate, Route, Routes, Link } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 import MainLayout from './components/3_Layout/MainLayout';
+import ScrollToTop from './components/ScrollToTop';
 import AuthPage from './components/5_Auth/AuthPage';
 import ForgotPasswordPage from './components/5_Auth/ForgotPasswordPage';
 import ForgotIdPage from './components/5_Auth/ForgotIdPage';
@@ -622,6 +623,7 @@ export default function App() {
     <AuthProvider>
       <ChatModalProvider>
         <NotificationProvider>
+          <ScrollToTop />
           <AppRoutes />
 
           {/* 채팅 모달만 전역 마운트 */}

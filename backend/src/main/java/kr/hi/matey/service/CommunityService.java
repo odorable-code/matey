@@ -297,23 +297,28 @@ public class CommunityService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "게시글을 찾을 수 없어요.");
         }
         if (Objects.equals(post.getUserId(), userId)) {
-            if (postDAO.deletePostLike(userId, postId) > 0) {
-                postDAO.adjustPostLikeCount(postId, -1);
-                return postReactionBody(postDAO.selectPostById(postId, userId));
-            }
-            if (postDAO.deletePostDislike(userId, postId) > 0) {
-                postDAO.adjustPostDislikeCount(postId, -1);
+            Integer state = postDAO.selectPostReactionState(userId, postId);
+            if (state != null) {
+                postDAO.deletePostReaction(userId, postId);
+                if (state == 1) {
+                    postDAO.adjustPostLikeCount(postId, -1);
+                } else {
+                    postDAO.adjustPostDislikeCount(postId, -1);
+                }
                 return postReactionBody(postDAO.selectPostById(postId, userId));
             }
             throw new ResponseStatusException(HttpStatus.CONFLICT, "본인이 작성한 글에는 좋아요를 누를 수 없어요.");
         }
-        if (postDAO.deletePostLike(userId, postId) > 0) {
+        Integer state = postDAO.selectPostReactionState(userId, postId);
+        if (state != null && state == 1) {
+            postDAO.deletePostReaction(userId, postId);
             postDAO.adjustPostLikeCount(postId, -1);
+        } else if (state != null && state == 0) {
+            postDAO.upsertPostReaction(userId, postId, 1);
+            postDAO.adjustPostDislikeCount(postId, -1);
+            postDAO.adjustPostLikeCount(postId, 1);
         } else {
-            if (postDAO.deletePostDislike(userId, postId) > 0) {
-                postDAO.adjustPostDislikeCount(postId, -1);
-            }
-            postDAO.insertPostLike(userId, postId);
+            postDAO.upsertPostReaction(userId, postId, 1);
             postDAO.adjustPostLikeCount(postId, 1);
         }
         return postReactionBody(postDAO.selectPostById(postId, userId));
@@ -327,23 +332,28 @@ public class CommunityService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "게시글을 찾을 수 없어요.");
         }
         if (Objects.equals(post.getUserId(), userId)) {
-            if (postDAO.deletePostDislike(userId, postId) > 0) {
-                postDAO.adjustPostDislikeCount(postId, -1);
-                return postReactionBody(postDAO.selectPostById(postId, userId));
-            }
-            if (postDAO.deletePostLike(userId, postId) > 0) {
-                postDAO.adjustPostLikeCount(postId, -1);
+            Integer state = postDAO.selectPostReactionState(userId, postId);
+            if (state != null) {
+                postDAO.deletePostReaction(userId, postId);
+                if (state == 1) {
+                    postDAO.adjustPostLikeCount(postId, -1);
+                } else {
+                    postDAO.adjustPostDislikeCount(postId, -1);
+                }
                 return postReactionBody(postDAO.selectPostById(postId, userId));
             }
             throw new ResponseStatusException(HttpStatus.CONFLICT, "본인이 작성한 글에는 싫어요를 누를 수 없어요.");
         }
-        if (postDAO.deletePostDislike(userId, postId) > 0) {
+        Integer state = postDAO.selectPostReactionState(userId, postId);
+        if (state != null && state == 0) {
+            postDAO.deletePostReaction(userId, postId);
             postDAO.adjustPostDislikeCount(postId, -1);
+        } else if (state != null && state == 1) {
+            postDAO.upsertPostReaction(userId, postId, 0);
+            postDAO.adjustPostLikeCount(postId, -1);
+            postDAO.adjustPostDislikeCount(postId, 1);
         } else {
-            if (postDAO.deletePostLike(userId, postId) > 0) {
-                postDAO.adjustPostLikeCount(postId, -1);
-            }
-            postDAO.insertPostDislike(userId, postId);
+            postDAO.upsertPostReaction(userId, postId, 0);
             postDAO.adjustPostDislikeCount(postId, 1);
         }
         return postReactionBody(postDAO.selectPostById(postId, userId));

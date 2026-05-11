@@ -34,6 +34,7 @@ function CommunityReportModal({
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [submitDone, setSubmitDone] = useState(false);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -60,7 +61,52 @@ function CommunityReportModal({
     };
   }, [open, target]);
 
+  useEffect(() => {
+    if (!open) setSubmitDone(false);
+  }, [open]);
+
   if (!open) return null;
+
+  if (submitDone) {
+    return (
+      <div
+        className={styles.modalBackdrop}
+        role="presentation"
+        onMouseDown={(e) => {
+          if (e.target === e.currentTarget) {
+            onSubmitted?.();
+            onClose();
+          }
+        }}
+      >
+        <div
+          className={styles.modalCard}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={`${uid}-report-done-title`}
+        >
+          <h2 id={`${uid}-report-done-title`} className={styles.modalTitle}>
+            접수 완료
+          </h2>
+          <p className={styles.hint} style={{ marginBottom: 18 }}>
+            신고가 접수되었어요. 처리 결과는 마이페이지의 문의·신고함에서 확인할 수 있어요.
+          </p>
+          <div className={styles.composeSubmitRow}>
+            <button
+              type="button"
+              className={styles.primaryBtn}
+              onClick={() => {
+                onSubmitted?.();
+                onClose();
+              }}
+            >
+              확인
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -121,8 +167,7 @@ function CommunityReportModal({
         content: ticketContent,
         supportReasonId: rid,
       });
-      onSubmitted?.();
-      onClose();
+      setSubmitDone(true);
     } catch (e) {
       if (e?.status === 401 || e?.status === 403) {
         setError('로그인 후 신고할 수 있어요.');

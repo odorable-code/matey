@@ -217,11 +217,14 @@
   gap: 12px;
 }
 
-.adminAnswerHeading {
+.answerMetaLine {
+  margin: 0;
   font-size: 13px;
-  font-weight: 900;
-  color: #352b4a;
-  letter-spacing: -0.02em;
+  font-weight: 600;
+  line-height: 1.45;
+  color: rgba(53, 43, 74, 0.62);
+  text-align: right;
+  word-break: break-word;
 }
 
 .authorActionRow {

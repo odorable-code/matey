@@ -389,6 +389,36 @@ CREATE TABLE `USER_NOTIFICATION_SETTING` (
     FOREIGN KEY(`type_code`) REFERENCES `NOTIFICATION_TYPE`(`type_code`)
 );
 
+-- ==================================================
+-- 커뮤니티 반응(좋아요/싫어요) 사용자 상태 테이블 (0/1)
+-- - state: 1(좋아요), 0(싫어요)
+-- - 행이 없으면 "반응 없음"
+-- ==================================================
+
+CREATE TABLE `user_post_reaction` (
+	`user_id`	BIGINT	NOT NULL,
+	`post_id`	BIGINT	NOT NULL,
+	`state`	TINYINT	NOT NULL,
+	`created_at`	TIMESTAMP	NOT NULL	DEFAULT CURRENT_TIMESTAMP,
+    
+	PRIMARY KEY (`user_id`, `post_id`),
+	KEY `idx_upr_post` (`post_id`),
+	FOREIGN KEY(`user_id`) REFERENCES `USER`(`user_id`) ON DELETE CASCADE,
+	FOREIGN KEY(`post_id`) REFERENCES `POST`(`post_id`) ON DELETE CASCADE
+);
+
+-- 댓글은 좋아요만 사용(별도 테이블)
+CREATE TABLE `user_comment_like` (
+	`user_id`	BIGINT	NOT NULL,
+	`comment_id`	BIGINT	NOT NULL,
+	`created_at`	TIMESTAMP	NOT NULL	DEFAULT CURRENT_TIMESTAMP,
+    
+	PRIMARY KEY (`user_id`, `comment_id`),
+	KEY `idx_ucl_comment` (`comment_id`),
+	FOREIGN KEY(`user_id`) REFERENCES `USER`(`user_id`) ON DELETE CASCADE,
+	FOREIGN KEY(`comment_id`) REFERENCES `COMMENT`(`comment_id`) ON DELETE CASCADE
+);
+
 CREATE TABLE `REACTION` (
 	`reaction_id`	BIGINT	NOT NULL PRIMARY KEY,
 	`user_id`	BIGINT	NOT NULL,

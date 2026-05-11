@@ -51,4 +51,6 @@ public interface AdminDAO {
             @Param("adminUserId") Long adminUserId
     );
 
+    Long selectSupportUserId(@Param("supportId") Long supportId);
+
 }

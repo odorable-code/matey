@@ -21,7 +21,8 @@ public final class RoleCodeHelper {
 
     public static boolean isAdminOrSuperAdmin(String roleCode) {
         String r = normalize(roleCode);
-        return "ADMIN".equals(r) || "SUPER_ADMIN".equals(r);
+        // 관리자 기능(예: 문의 답변 등)은 SUBADMIN도 수행 가능하도록 허용합니다.
+        return "ADMIN".equals(r) || "SUPER_ADMIN".equals(r) || "SUBADMIN".equals(r);
     }
 
     public static boolean isSuperAdmin(String roleCode) {

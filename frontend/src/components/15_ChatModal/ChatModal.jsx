@@ -49,7 +49,12 @@ const COPY = {
   pickDesc:
     "4명의 메이트는 능력치가 달라요. 마음에 드는 친구를 골라 대화를 시작해보세요.",
   pickButton: "이 친구로 시작",
+  pickIdleTitle: "메이트를 골라주세요",
+  pickIdleHint: "오른쪽 카드를 누르면 미리 볼 수 있어요.",
+  pickCtaNeedSelect: "먼저 친구를 골라주세요",
+  pickIdleChartHint: "카드를 선택하면 능력치 차트가 표시돼요.",
   chatPlaceholder: "한 줄이면 충분해요…",
+  sessionNoMate: "메이트 미지정",
 };
 
 const SAMPLE_REPLIES = {
@@ -104,14 +109,74 @@ function nowTimeString() {
    메인 모달 컴포넌트 코드
    - 좌측 사이드바 + 우측 동적 영역
 ========================================================= */
+function MateBridge({ mateKey }) {
+  if (!mateKey) return null;
+  const mate = MATES.find((m) => m.key === mateKey);
+  if (!mate) return null;
+  return (
+    <div className={`matey-chat-bridge ${mate.accent}`} aria-hidden="true">
+      <div className="matey-chat-bridge__stage">
+        <img src={MATE_IMAGES[mateKey]} alt="" className="matey-chat-bridge__img" />
+      </div>
+      <div className="matey-chat-bridge__meta">
+        <p className="matey-chat-bridge__label">{MATE_NAMES[mateKey]}</p>
+        <p className="matey-chat-bridge__role">{MATE_ROLES[mateKey]}</p>
+      </div>
+    </div>
+  );
+}
+
 function ChatModal() {
-  const { isOpen, rightView, RIGHT, closeChat } = useChatModal();
+  const {
+    isOpen,
+    rightView,
+    RIGHT,
+    closeChat,
+    activeSession,
+    activeSessionId,
+    exitChatToList,
+  } = useChatModal();
+
+  const [narrow, setNarrow] = useState(false);
+  const [mobileListHidden, setMobileListHidden] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 900px)");
+    const apply = () => setNarrow(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
+
+  useEffect(() => {
+    if (narrow && rightView === RIGHT.CHAT && activeSessionId) {
+      setMobileListHidden(true);
+    }
+    if (!narrow) setMobileListHidden(false);
+  }, [narrow, rightView, activeSessionId]);
 
   /* ---------------------------------------------
      오버레이 클릭 시 닫기 처리
   --------------------------------------------- */
   const handleOverlayClick = (e) => {
     if (e.target === e.currentTarget) closeChat();
+  };
+
+  const isChat = rightView === RIGHT.CHAT && activeSession;
+  const threeCol = Boolean(isChat && !narrow);
+  const hideSidebar = Boolean(isChat && narrow && mobileListHidden);
+
+  const panelClass = [
+    "matey-chat-modal__panel",
+    threeCol ? "matey-chat-modal__panel--three-col" : "",
+    hideSidebar ? "matey-chat-modal__panel--mobile-chat" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const handleMobileBack = () => {
+    setMobileListHidden(false);
+    exitChatToList();
   };
 
   if (!isOpen) return null;
@@ -124,7 +189,7 @@ function ChatModal() {
       aria-label="메이트 채팅"
       onMouseDown={handleOverlayClick}
     >
-      <div className="matey-chat-modal__panel">
+      <div className={panelClass}>
         {/* 닫기 버튼 (공통) */}
         <button
           type="button"
@@ -142,13 +207,18 @@ function ChatModal() {
           </svg>
         </button>
 
-        {/* 좌측 사이드바 (항상 보임) */}
-        <Sidebar />
+        {!hideSidebar ? <Sidebar /> : null}
+
+        {threeCol && activeSession ? (
+          <MateBridge mateKey={activeSession.mateKey} />
+        ) : null}
 
         {/* 우측 메인 (상태별 분기) */}
         <main className="matey-chat-modal__main">
           {rightView === RIGHT.EMPTY && <EmptyView />}
-          {rightView === RIGHT.CHAT && <ChatView />}
+          {rightView === RIGHT.CHAT && (
+            <ChatView mobileBar={hideSidebar} onMobileBack={handleMobileBack} />
+          )}
           {rightView === RIGHT.PICK && <PickView />}
         </main>
       </div>
@@ -181,8 +251,9 @@ function Sidebar() {
         ) : (
           <ul className="matey-chat-side__list">
             {sessions.map((s) => {
-              const mate = MATES.find((m) => m.key === s.mateKey);
-              if (!mate) return null;
+              const mate = s.mateKey
+                ? MATES.find((m) => m.key === s.mateKey)
+                : null;
               const lastMsg = s.messages[s.messages.length - 1];
               const preview = lastMsg
                 ? `${lastMsg.role === "user" ? "나: " : ""}${lastMsg.text}`
@@ -193,19 +264,25 @@ function Sidebar() {
                 <li key={s.id}>
                   <button
                     type="button"
-                    className={`matey-chat-side__room ${mate.accent} ${
-                      active ? "is-active" : ""
-                    }`}
+                    className={`matey-chat-side__room ${
+                      mate ? mate.accent : "is-unassigned"
+                    } ${active ? "is-active" : ""}`}
                     onClick={() => openSession(s.id)}
                   >
                     <span className="matey-chat-side__avatar">
-                      <img src={MATE_IMAGES[mate.key]} alt="" />
+                      {mate ? (
+                        <img src={MATE_IMAGES[mate.key]} alt="" />
+                      ) : (
+                        <span className="matey-chat-side__avatar-fallback" aria-hidden>
+                          ···
+                        </span>
+                      )}
                     </span>
 
                     <span className="matey-chat-side__body">
                       <span className="matey-chat-side__top">
                         <span className="matey-chat-side__name">
-                          {MATE_NAMES[mate.key]}
+                          {mate ? MATE_NAMES[mate.key] : COPY.sessionNoMate}
                         </span>
                         <span className="matey-chat-side__time">
                           {timeAgo(s.updatedAt)}
@@ -297,10 +374,10 @@ function EmptyView() {
 ========================================================= */
 function PickView() {
   const { startNewSession, showEmpty } = useChatModal();
-  const [activeKey, setActiveKey] = useState(MATES[0].key);
+  const [activeKey, setActiveKey] = useState(null);
 
   const activeMate = useMemo(
-    () => MATES.find((m) => m.key === activeKey),
+    () => (activeKey ? MATES.find((m) => m.key === activeKey) : null),
     [activeKey],
   );
 
@@ -323,43 +400,72 @@ function PickView() {
 
       <div className="matey-chat-pick__layout">
         {/* ---------- 좌측: 큰 캐릭터 + 레이더 차트 ---------- */}
-        <div className={`matey-chat-pick__hero ${activeMate.accent}`}>
+        <div
+          className={`matey-chat-pick__hero ${
+            activeMate ? activeMate.accent : "matey-chat-pick__hero--idle"
+          }`}
+        >
           {/* 1. 이름/역할 (맨 위) */}
           <div className="matey-chat-pick__hero-meta">
-            <p className="matey-chat-pick__hero-name">
-              {MATE_NAMES[activeMate.key]}
-            </p>
-            <p className="matey-chat-pick__hero-role">
-              {MATE_ROLES[activeMate.key]}
-            </p>
+            {activeMate ? (
+              <>
+                <p className="matey-chat-pick__hero-name">
+                  {MATE_NAMES[activeMate.key]}
+                </p>
+                <p className="matey-chat-pick__hero-role">
+                  {MATE_ROLES[activeMate.key]}
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="matey-chat-pick__hero-name matey-chat-pick__hero-name--idle">
+                  {COPY.pickIdleTitle}
+                </p>
+                <p className="matey-chat-pick__hero-role">{COPY.pickIdleHint}</p>
+              </>
+            )}
           </div>
 
-          {/* 2. ✅ 한마디 말풍선 — 캐릭터 머리 위 (꼬리 달린 풍선) */}
-          <p className="matey-chat-pick__hero-bubble" key={activeMate.key}>
-            {activeMate.bubble}
-          </p>
+          {activeMate ? (
+            <>
+              {/* 2. 한마디 말풍선 — 캐릭터 머리 위 */}
+              <p className="matey-chat-pick__hero-bubble" key={activeMate.key}>
+                {activeMate.bubble}
+              </p>
 
-          {/* 3. 캐릭터 무대 */}
-          <div className="matey-chat-pick__hero-stage">
-            <div className="matey-chat-pick__hero-halo" />
-            <img
-              key={activeMate.key}
-              src={MATE_IMAGES[activeMate.key]}
-              alt={MATE_NAMES[activeMate.key]}
-              className="matey-chat-pick__hero-image"
-            />
-          </div>
+              {/* 3. 캐릭터 무대 */}
+              <div className="matey-chat-pick__hero-stage">
+                <div className="matey-chat-pick__hero-halo" />
+                <img
+                  key={activeMate.key}
+                  src={MATE_IMAGES[activeMate.key]}
+                  alt={MATE_NAMES[activeMate.key]}
+                  className="matey-chat-pick__hero-image"
+                />
+              </div>
 
-          {/* 4. 레이더 차트 */}
-          <RadarChart abilities={activeMate.abilities} />
+              {/* 4. 레이더 차트 (픽 화면 전용 소형) */}
+              <RadarChart abilities={activeMate.abilities} size={168} />
+            </>
+          ) : (
+            <>
+              <div className="matey-chat-pick__hero-stage matey-chat-pick__hero-stage--idle">
+                <div className="matey-chat-pick__hero-placeholder" aria-hidden="true">
+                  ?
+                </div>
+              </div>
+              <div className="matey-chat-pick__idle-chart-hint">{COPY.pickIdleChartHint}</div>
+            </>
+          )}
 
           {/* 5. 시작 버튼 (항상 맨 아래) */}
           <button
             type="button"
             className="matey-chat-pick__hero-cta"
-            onClick={() => startNewSession(activeMate.key)}
+            disabled={!activeMate}
+            onClick={() => activeMate && startNewSession(activeMate.key)}
           >
-            {COPY.pickButton} →
+            {activeMate ? `${COPY.pickButton} →` : COPY.pickCtaNeedSelect}
           </button>
         </div>
 
@@ -440,9 +546,13 @@ function AbilityBars({ abilities, compact = false }) {
    SVG 레이더 차트 컴포넌트 코드
 ========================================================= */
 function RadarChart({ abilities, size = 220 }) {
+  const compact = size <= 180;
   const cx = size / 2;
   const cy = size / 2;
-  const radius = size / 2 - 28;
+  const radius = size / 2 - (compact ? 22 : 28);
+  const labelR = radius + (compact ? 10 : 14);
+  const labelFont = compact ? 9 : 11;
+  const dotR = compact ? 3 : 4;
   const axes = ABILITY_AXES;
 
   // 각 축의 좌표 계산 (위에서부터 시계방향)
@@ -469,10 +579,9 @@ function RadarChart({ abilities, size = 220 }) {
   // 라벨 위치 (축 끝보다 살짝 바깥)
   const getLabelPoint = (index) => {
     const angle = (Math.PI * 2 * index) / axes.length - Math.PI / 2;
-    const r = radius + 14;
     return {
-      x: cx + Math.cos(angle) * r,
-      y: cy + Math.sin(angle) * r,
+      x: cx + Math.cos(angle) * labelR,
+      y: cy + Math.sin(angle) * labelR,
     };
   };
 
@@ -535,7 +644,7 @@ function RadarChart({ abilities, size = 220 }) {
               key={axis.key}
               cx={p.x}
               cy={p.y}
-              r="4"
+              r={dotR}
               fill="#ffffff"
               stroke={axis.color}
               strokeWidth="2"
@@ -553,7 +662,7 @@ function RadarChart({ abilities, size = 220 }) {
               y={lp.y}
               textAnchor="middle"
               dominantBaseline="middle"
-              fontSize="11"
+              fontSize={labelFont}
               fontWeight="800"
               fill={axis.color}
             >
@@ -576,7 +685,7 @@ function RadarChart({ abilities, size = 220 }) {
 /* =========================================================
    우측 채팅방 화면 코드
 ========================================================= */
-function ChatView() {
+function ChatView({ mobileBar = false, onMobileBack }) {
   const { activeSession, appendMessage } = useChatModal();
   const mate = useMemo(() => {
     if (!activeSession) return null;
@@ -589,22 +698,13 @@ function ChatView() {
   const scrollRef = useRef(null);
 
   /* ---------------------------------------------
-     첫 진입 시 인사 자동 추가 + 인풋 포커스
+     방 진입 시 인풋 포커스 (인사 말풍선은 넣지 않음 — 사용자가 먼저 말을 걸 때까지 대화창 비움)
   --------------------------------------------- */
   useEffect(() => {
     if (!activeSession || !mate) return;
-    if (activeSession.messages.length === 0) {
-      appendMessage(activeSession.id, {
-        id: `greet-${Date.now()}`,
-        role: "mate",
-        text: mate.greeting,
-        time: nowTimeString(),
-      });
-    }
     const t = setTimeout(() => inputRef.current?.focus(), 200);
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeSession?.id]);
+  }, [activeSession?.id, mate]);
 
   /* ---------------------------------------------
      메시지 변경 시 스크롤 하단으로
@@ -653,17 +753,31 @@ function ChatView() {
     sendMessage(inputValue);
   };
 
-  const showChips = activeSession.messages.length <= 1;
+  const showChips = activeSession.messages.length === 0;
 
   return (
     <div className={`matey-chat-room ${mate.accent}`}>
+      {mobileBar ? (
+        <div className="matey-chat-room__mobile-nav">
+          <button
+            type="button"
+            className="matey-chat-room__mobile-back"
+            onClick={onMobileBack}
+          >
+            ← 대화 목록
+          </button>
+          <div className="matey-chat-room__mobile-float" aria-hidden="true">
+            <img src={MATE_IMAGES[mate.key]} alt="" />
+          </div>
+        </div>
+      ) : null}
       {/* 헤더 */}
       <header className="matey-chat-room__header">
         <div className="matey-chat-room__header-info">
           <span className="matey-chat-room__avatar">
             <img src={MATE_IMAGES[mate.key]} alt="" />
           </span>
-          <div>
+          <div className="matey-chat-room__header-text">
             <p className="matey-chat-room__name">{MATE_NAMES[mate.key]}</p>
             <p className="matey-chat-room__status">
               <span className="matey-chat-room__status-dot" />
