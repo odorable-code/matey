@@ -8,6 +8,7 @@ import React, {
   useState,
 } from 'react';
 import {
+  clearClientAuthSession,
   getMyProfile,
   getSocialLoginUrl,
   getStoredToken,
@@ -68,11 +69,8 @@ function setStoredUser(user) {
 }
 
 function clearStoredAuth() {
-  // if (user)가 false가 되어 else문이 실행됨
-  setStoredToken(null);
+  clearClientAuthSession();
   setStoredUser(null);
-  window.localStorage.removeItem('accessToken');
-  window.localStorage.removeItem('mateyToken');
 }
 
 function createMockToken(user) {

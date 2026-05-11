@@ -96,7 +96,9 @@ function LetterBoxContent({ letterData = defaultLetters, onRead }) {
         >
           <div className={styles.featuredTop}>
             <span className={styles.featuredBadge}>{letterData.featured.status}</span>
-            <span className={styles.featuredDate}>{letterData.featured.date}</span>
+            {letterData.featured.date ? (
+              <span className={styles.featuredDate}>{letterData.featured.date}</span>
+            ) : null}
           </div>
 
           <div className={styles.featuredBody}>

@@ -94,7 +94,7 @@ function MyPageContainer() {
               title: '도착한 편지가 없어요',
               sender: '메이티',
               preview: '메이티가 편지를 보내면 여기에 표시돼요.',
-              date: '-',
+              date: '',
               status: String(data.unreadCount || 0),
             },
             stats: [
