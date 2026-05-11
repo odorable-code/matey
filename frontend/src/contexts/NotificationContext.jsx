@@ -13,6 +13,7 @@ import {
   useMemo,
   useState,
 } from 'react';
+import { useLocation } from 'react-router-dom';
 import { notificationAPI, myPageAPI } from '../utils/api';
 import { useAuth } from './AuthContext';
 
@@ -43,6 +44,7 @@ const NotificationContext = createContext(null);
 // ============================================================
 export function NotificationProvider({ children }) {
   const { isAuthenticated, user } = useAuth();
+  const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [settings, setSettings] = useState(INITIAL_SETTINGS);
@@ -128,6 +130,12 @@ export function NotificationProvider({ children }) {
     fetchSettings();
   }, [fetchNotifications, fetchSettings]);
 
+  // 라우트 이동 시에도 1회 동기화(새 알림이 바로 뱃지에 반영되도록)
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    fetchNotifications();
+  }, [location.pathname, isAuthenticated, fetchNotifications]);
+
   // 주기·포커스 시 알림 재조회 (탭 복귀·백그라운드 반영)
   useEffect(() => {
     if (!isAuthenticated) return undefined;
@@ -137,10 +145,13 @@ export function NotificationProvider({ children }) {
     const onVisible = () => {
       if (document.visibilityState === 'visible') fetchNotifications();
     };
+    const onFocus = () => fetchNotifications();
     document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', onFocus);
     return () => {
       window.clearInterval(intervalId);
       document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', onFocus);
     };
   }, [isAuthenticated, fetchNotifications]);
 
