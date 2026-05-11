@@ -19,6 +19,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
+
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
@@ -82,6 +84,12 @@ public class SecurityConfig {
 
                         .anyRequest().authenticated()
                 )
+                // 비로그인 상태에서 authenticated() 구역 접근 시 기본 403 대신 API 클라이언트가 구분하기 쉽게 401 + JSON
+                .exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) -> {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType("application/json;charset=UTF-8");
+                    response.getWriter().write("{\"message\":\"로그인이 필요해요.\"}");
+                }))
                 .userDetailsService(userDetailsService)
                 // JWT 인증 필터를 우선순위에 배치합니다. 아이디/비밀번호 인증 필터(UsernamePasswordAuthenticationFilter)가 실행되기 전에, 들어온 요청의 JWT 토큰을 먼저 검사하여 인증 처리.
                 .addFilterBefore(

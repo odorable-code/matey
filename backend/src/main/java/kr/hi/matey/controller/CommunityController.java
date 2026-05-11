@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Map;
@@ -25,6 +26,12 @@ public class CommunityController {
 
     private final CommunityService communityService;
     private final NoticeService noticeService;
+
+    private static void requireLoginPrincipal(CustomUser user) {
+        if (user == null || user.getUser() == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요해요.");
+        }
+    }
 
     private static Long resolveViewerId(CustomUser user) {
         if (user == null || user.getUser() == null) {
@@ -60,6 +67,7 @@ public class CommunityController {
             @RequestBody PostCreateRequestDTO dto,
             @AuthenticationPrincipal CustomUser user
     ) {
+        requireLoginPrincipal(user);
         long userId = user.getUser().getUserId();
         String roleCode = user.getUser().getRoleCode();
         Long postId = communityService.createPost(dto, userId, roleCode);
@@ -74,6 +82,7 @@ public class CommunityController {
             @RequestBody PostCreateRequestDTO dto,
             @AuthenticationPrincipal CustomUser user
     ) {
+        requireLoginPrincipal(user);
         long userId = user.getUser().getUserId();
         String roleCode = user.getUser().getRoleCode();
         communityService.updatePost(postId, dto, userId, roleCode);
@@ -86,6 +95,7 @@ public class CommunityController {
             @PathVariable("postId") Long postId,
             @AuthenticationPrincipal CustomUser user
     ) {
+        requireLoginPrincipal(user);
         long userId = user.getUser().getUserId();
         communityService.deletePost(postId, userId);
         return ResponseEntity.ok("deleted");
@@ -149,6 +159,7 @@ public class CommunityController {
             @RequestBody CommentCreateRequestDTO dto,
             @AuthenticationPrincipal CustomUser user
     ) {
+        requireLoginPrincipal(user);
         long userId = user.getUser().getUserId();
         communityService.createComment(postId, dto, userId);
         return ResponseEntity.ok().build();
@@ -162,6 +173,7 @@ public class CommunityController {
             @RequestBody CommentCreateRequestDTO dto,
             @AuthenticationPrincipal CustomUser user
     ) {
+        requireLoginPrincipal(user);
         long userId = user.getUser().getUserId();
         // postId는 경로 안정성용(검증은 DAO WHERE user_id로만 처리)
         communityService.updateComment(commentId, dto, userId);
@@ -175,6 +187,7 @@ public class CommunityController {
             @PathVariable("commentId") Long commentId,
             @AuthenticationPrincipal CustomUser user
     ) {
+        requireLoginPrincipal(user);
         long userId = user.getUser().getUserId();
         communityService.deleteComment(commentId, userId);
         return ResponseEntity.ok("deleted");
