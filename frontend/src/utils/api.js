@@ -1,10 +1,37 @@
-// 주소 끝에 붙은 슬래시 제거
-// 어떤 사람은 ...api, 어떤 사람은 ...api/ 로 쓸 수도 있으니.
-export const API_BASE_URL = (
-  process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080'
-).replace(/\/$/, '');
+// 주소 끝 슬래시 제거. '' 이면 같은 출처(개발: package.json proxy → 백엔드)로 /api/... 요청.
+const rawApiBase = process.env.REACT_APP_API_BASE_URL;
+function defaultApiBaseUrl() {
+  // 개발 서버(npm start): 상대 경로 + proxy면 브라우저가 localhost/127.0.0.1 혼용 시에도 CORS 없이 동작
+  if (process.env.NODE_ENV === 'development') return '';
+  return 'http://localhost:8080';
+}
+export const API_BASE_URL =
+  rawApiBase === ''
+    ? ''
+    : String(
+        rawApiBase !== undefined && rawApiBase !== null && rawApiBase !== ''
+          ? rawApiBase
+          : defaultApiBaseUrl()
+      ).replace(/\/$/, '');
 
 const BACKEND_BASE_URL = API_BASE_URL.replace(/\/api$/, '');
+
+/**
+ * fetch 주소 조합:
+ * - base 가 비어 있으면 path 만 씀 → 개발 프록시·동일 출처 배포에 맞춤.
+ * - base 가 .../api 인데 path 도 /api/... 면 /api 가 두 번 붙지 않게 함.
+ */
+function resolveRequestUrl(path) {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  const base = API_BASE_URL.replace(/\/$/, '');
+  if (!base) {
+    return normalizedPath;
+  }
+  if (base.endsWith('/api') && normalizedPath.startsWith('/api/')) {
+    return `${base}${normalizedPath.replace(/^\/api/, '')}`;
+  }
+  return `${base}${normalizedPath}`;
+}
 const TOKEN_KEY = 'matey_access_token';
 
 function getStoredToken() {
@@ -45,6 +72,13 @@ function buildHeaders(customHeaders = {}, isJson = true) {
   return headers;
 }
 
+/** 동일 출처(개발 프록시·상대 경로)면 쿠키 불필요·CORS 단순. 절대 URL로 백엔드 직결이면 예전과 같이 include 유지 */
+function defaultFetchCredentials() {
+  const base = String(API_BASE_URL || '').trim();
+  if (!base) return 'omit';
+  return 'include';
+}
+
 async function request(
   path,
   {
@@ -52,20 +86,36 @@ async function request(
     body,
     headers = {},
     isJson = true,
-    credentials = 'include',
+    credentials = defaultFetchCredentials(),
   } = {}
 ) {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    method,
-    headers: buildHeaders(headers, isJson),
-    body:
-      body === undefined || body === null
-        ? undefined
-        : (isJson
-        ? JSON.stringify(body)
-        : body),
-    credentials,
-  });
+  const url = resolveRequestUrl(path);
+  let response;
+  try {
+    response = await fetch(url, {
+      method,
+      headers: buildHeaders(headers, isJson),
+      body:
+        body === undefined || body === null
+          ? undefined
+          : (isJson
+          ? JSON.stringify(body)
+          : body),
+      credentials,
+    });
+  } catch (networkErr) {
+    const raw = String(networkErr?.message || networkErr || '');
+    const hint =
+      raw === 'Failed to fetch' || /network/i.test(raw)
+        ? ' 서버(보통 localhost:8080)가 실행 중인지 확인하고, 주소창은 localhost와 127.0.0.1을 섞어 쓰지 마세요. 개발 시 REACT_APP_API_BASE_URL을 비우면 package.json proxy로 동일 출처 요청이 됩니다.'
+        : '';
+    const err = new Error(
+      (raw === 'Failed to fetch' ? '서버에 연결하지 못했어요.' : raw) + hint
+    );
+    err.cause = networkErr;
+    err.code = 'FETCH_NETWORK_ERROR';
+    throw err;
+  }
 
   const text = await response.text();
   // try 밖에서도 data를 사용하기 위해 try 밖에서 미리 선언.
@@ -85,12 +135,19 @@ async function request(
       window.dispatchEvent(new CustomEvent('matey:session-expired'));
     }
 
-    const message =
+    let message =
       data?.message ||
       data?.detail ||
       data?.error ||
       (typeof data === 'string' ? data : null) ||
       '요청 처리 중 오류가 발생했어요.';
+    if (response.status === 404) {
+      const t = String(message || '').trim();
+      if (t === 'Not Found' || /^No static resource\b/i.test(t)) {
+        message =
+          '요청한 API를 찾을 수 없어요. 서버 주소(REACT_APP_API_BASE_URL)에 /api 가 중복 없는지 확인해 주세요.';
+      }
+    }
     const err = new Error(message);
     // 호출부에서 401/403 등을 구분할 수 있게 상태/원문을 붙입니다.
     err.status = response.status;
@@ -435,6 +492,12 @@ export const adminAPI = {
     });
   },
 
+  /** 상담봇 관리: 누적 지표 + 전월 추천 이벤트·순위 */
+  getBotStats: () =>
+    request('/api/admin/bots/stats', {
+      method: 'GET',
+    }),
+
   /** 공지(ADMIN_NOTICE) — 백엔드에서 ADMIN·SUPER_ADMIN만 허용 */
   createNotice: (body) =>
     request('/api/admin/notices', {
@@ -451,6 +514,17 @@ export const adminAPI = {
     }),
   updateFaq: (faqId, body) =>
     request(`/api/admin/faqs/${faqId}`, {
+      method: 'PUT',
+      body,
+    }),
+
+  /** 고민 스포트라이트: 무작위 고민 글 추첨(미리보기) */
+  drawWorrySpotlightCandidate: () =>
+    request('/api/admin/community/worry-spotlight/draw', { method: 'POST' }),
+
+  /** 고민 스포트라이트: 글·운영 답변 공개 */
+  publishWorrySpotlight: (body) =>
+    request('/api/admin/community/worry-spotlight', {
       method: 'PUT',
       body,
     }),
@@ -514,6 +588,8 @@ export const communityAPI = {
     }),
   drawRandomWorryPost: () => request('/api/community/spotlight/worry-draw'),
   drawRandomStoryPost: () => request('/api/community/spotlight/story-draw'),
+  /** 관리자 지정 고민 스포트라이트 + 운영 답변 */
+  getWorryFeatured: () => request('/api/community/spotlight/worry-featured'),
   /** 전월 봇 추천 집계 순위 */
   getMonthlyBotRanking: () => request('/api/community/spotlight/bot-ranking/monthly'),
   getYearEndBotRanking: (year) =>
@@ -524,6 +600,11 @@ export const communityAPI = {
     request(`/api/community/spotlight/bots/${encodeURIComponent(String(botId))}/recommend`, {
       method: 'POST',
     }),
+  addBotDislike: (botId) =>
+    request(`/api/community/spotlight/bots/${encodeURIComponent(String(botId))}/dislike`, {
+      method: 'POST',
+    }),
+  getMyBotReactions: () => request('/api/community/spotlight/my-bot-reactions'),
 };
 
 // FAQ·문의 분류는 비로그인 조회 가능 (기획: FAQ는 관리자만 편집, 사용자는 읽기)
