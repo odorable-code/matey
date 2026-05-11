@@ -10,6 +10,8 @@ import kr.hi.matey.dto.CommentCreateRequestDTO;
 import kr.hi.matey.dto.CommentDTO;
 import kr.hi.matey.dto.PostCreateRequestDTO;
 import kr.hi.matey.dto.PostDTO;
+import kr.hi.matey.dto.UserBotReactionRow;
+import kr.hi.matey.dto.WorrySpotlightRow;
 import kr.hi.matey.util.RoleCodeHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +24,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -231,7 +234,74 @@ public class CommunityService {
     }
 
     /**
-     * 전월 기준 인기봇: BOT_RECOMMEND_EVENT 월간 합산(net). 테이블·데이터 없으면 빈 목록.
+     * 관리자 고민 스포트라이트(공개): 저장된 글 + 운영 답변.
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> getWorryFeatured(Long viewerUserId) {
+        WorrySpotlightRow row;
+        try {
+            row = communitySpotlightDAO.selectWorrySpotlightRow();
+        } catch (DataAccessException ex) {
+            log.warn("getWorryFeatured (select row): {}", ex.getMessage());
+            row = null;
+        }
+        Map<String, Object> res = new HashMap<>();
+        if (row == null || row.getPostId() == null) {
+            res.put("spotlight", null);
+            return res;
+        }
+        PostDTO post;
+        try {
+            post = postDAO.selectPostById(row.getPostId(), viewerUserId);
+        } catch (DataAccessException ex) {
+            log.warn("getWorryFeatured (load post): {}", ex.getMessage());
+            post = null;
+        }
+        Map<String, Object> spotlight = new HashMap<>();
+        spotlight.put("post", post);
+        spotlight.put("answerContent", row.getAnswerContent());
+        spotlight.put("updatedAt", row.getUpdatedAt());
+        spotlight.put("answeredByNickname", row.getAnsweredByNickname());
+        res.put("spotlight", spotlight);
+        return res;
+    }
+
+    /** 관리자가 고민 글을 지정하고 운영 답변을 저장 (커뮤니티 상단 노출). */
+    @Transactional
+    public void publishWorrySpotlight(long postId, String answerContent, long adminUserId) {
+        if (postId <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "게시글을 선택해 주세요.");
+        }
+        if (answerContent == null || answerContent.trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "운영 답변 내용을 입력해 주세요.");
+        }
+        int ok;
+        try {
+            ok = communitySpotlightDAO.countWorryCategoryPostByPostId(postId);
+        } catch (DataAccessException ex) {
+            log.warn("publishWorrySpotlight (validate category): {}", ex.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "글 정보를 확인하지 못했어요.");
+        }
+        if (ok <= 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "고민 카테고리에 속한 글만 스포트라이트로 지정할 수 있어요."
+            );
+        }
+        try {
+            communitySpotlightDAO.upsertWorrySpotlight(postId, answerContent.trim(), adminUserId);
+        } catch (DataAccessException ex) {
+            log.warn("publishWorrySpotlight (upsert): {}", ex.getMessage());
+            throw new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "저장에 실패했어요. 잠시 후 다시 시도해 주세요."
+            );
+        }
+    }
+
+    /**
+     * 전월 기준 인기봇: BOT_RECOMMEND_EVENT 월간 합산(net) 우선.
+     * 이벤트가 없으면 BOT.like_count 로 폴백 (봇 행만 넣어도 목록 가동).
      */
     @Transactional(readOnly = true)
     public Map<String, Object> getPreviousMonthBotRanking(
@@ -243,15 +313,29 @@ public class CommunityService {
         int m = ym.getMonthValue();
 
         List<BotYearRankingDTO> rows = List.of();
+        boolean usedEventAggregation = true;
         try {
             rows = communitySpotlightDAO.selectBotRankingForCalendarMonth(y, m);
         } catch (DataAccessException ex) {
-            log.warn("getPreviousMonthBotRanking: {}", ex.getMessage());
+            log.warn("getPreviousMonthBotRanking (events): {}", ex.getMessage());
             rows = List.of();
         }
         if (rows == null) {
             rows = List.of();
         }
+        if (rows.isEmpty()) {
+            usedEventAggregation = false;
+            try {
+                rows = communitySpotlightDAO.selectBotsByLikeCountMonthlyFallback(y, m);
+            } catch (DataAccessException ex) {
+                log.warn("getPreviousMonthBotRanking (bot like fallback): {}", ex.getMessage());
+                rows = List.of();
+            }
+            if (rows == null) {
+                rows = List.of();
+            }
+        }
+
         int rank = 1;
         for (BotYearRankingDTO row : rows) {
             row.setRanking(rank++);
@@ -262,21 +346,34 @@ public class CommunityService {
         res.put("periodYear", y);
         res.put("periodMonth", m);
         res.put("periodLabel", y + "년 " + m + "월");
-        res.put(
-                "description",
-                "직전 달(" + y + "년 " + m + "월) 동안 집계된 봇 추천(좋아요) 순위예요. 매월 초 기준으로 전월 데이터가 표시됩니다."
-        );
+        res.put("rankingSource", usedEventAggregation ? "BOT_RECOMMEND_EVENT_MONTHLY" : "BOT_LIKE_FALLBACK");
+
+        final String description;
+        final String source;
+        final String sourceDescription;
+        if (usedEventAggregation) {
+            description =
+                    "직전 달(" + y + "년 " + m + "월) 동안 집계된 봇 반응 순위예요. 추천은 가산·싫어요는 감산된 합계입니다. 매월 초 기준으로 전월 데이터가 표시됩니다.";
+            source = "BOT_RECOMMEND_EVENT";
+            sourceDescription =
+                    "BOT_RECOMMEND_EVENT 월간 delta 합(추천 +1, 싫어요 -1)으로 순위를 냅니다.";
+        } else {
+            description =
+                    "전월 반응 이벤트가 아직 없어요. 지금은 등록된 봇을 좋아요 수 순으로 보여 드려요. 사용자 추천이 쌓이면 전월 집계 순위로 바뀝니다.";
+            source = "BOT_LIKE_COUNT";
+            sourceDescription =
+                    "BOT 테이블의 like_count 기준 임시 순위예요. BOT_RECOMMEND_EVENT에 해당 월 데이터가 생기면 자동으로 전환됩니다.";
+        }
+        res.put("description", description);
         res.put("entries", rows);
-        String source = "BOT_RECOMMEND_EVENT";
-        String sourceDescription =
-                "BOT_RECOMMEND_EVENT 테이블의 월간 추천 이벤트를 합산해요. 마이그레이션 직후에는 데이터가 비어 있을 수 있어요.";
+
         if (!showAdminHint) {
-            sourceDescription = "";
             res.put("source", null);
+            res.put("sourceDescription", "");
         } else {
             res.put("source", source);
+            res.put("sourceDescription", sourceDescription);
         }
-        res.put("sourceDescription", sourceDescription);
         return res;
     }
 
@@ -351,26 +448,80 @@ public class CommunityService {
         return body;
     }
 
+    /**
+     * 봇 추천(좋아요): 사용자·봇당 최초 1회만. 이미 싫어요면 불가, 이미 추천했으면 변화 없음(취소 없음).
+     */
     @Transactional
-    public Map<String, Object> toggleBotRecommend(long botId, long userId) {
-        int exists = botRecommendDAO.exists(userId, botId);
-        boolean recommended;
-        if (exists > 0) {
-            botRecommendDAO.delete(userId, botId);
-            botRecommendDAO.decrementBotLike(botId);
-            botRecommendDAO.insertRecommendEvent(userId, botId, -1);
-            recommended = false;
-        } else {
-            botRecommendDAO.insert(userId, botId);
-            botRecommendDAO.incrementBotLike(botId);
-            botRecommendDAO.insertRecommendEvent(userId, botId, 1);
-            recommended = true;
+    public Map<String, Object> addBotRecommend(long botId, long userId) {
+        Integer reaction = botRecommendDAO.selectReaction(userId, botId);
+        if (reaction != null) {
+            if (reaction == 1) {
+                return botReactionSnapshot(botId, true, false);
+            }
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "이미 싫어요를 누른 봇이에요."
+            );
         }
+        botRecommendDAO.insertWithReaction(userId, botId, 1);
+        botRecommendDAO.incrementBotLike(botId);
+        botRecommendDAO.insertRecommendEvent(userId, botId, 1);
+        return botReactionSnapshot(botId, true, false);
+    }
+
+    /**
+     * 봇 싫어요: 사용자·봇당 최초 1회만. 이미 추천했으면 불가, 이미 싫어요면 변화 없음.
+     */
+    @Transactional
+    public Map<String, Object> addBotDislike(long botId, long userId) {
+        Integer reaction = botRecommendDAO.selectReaction(userId, botId);
+        if (reaction != null) {
+            if (reaction == 0) {
+                return botReactionSnapshot(botId, false, true);
+            }
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "이미 추천한 봇이에요."
+            );
+        }
+        botRecommendDAO.insertWithReaction(userId, botId, 0);
+        botRecommendDAO.incrementBotDislike(botId);
+        botRecommendDAO.insertRecommendEvent(userId, botId, -1);
+        return botReactionSnapshot(botId, false, true);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> getMyBotReactions(long userId) {
+        List<UserBotReactionRow> rows = botRecommendDAO.selectReactionsByUser(userId);
+        List<Long> likedBotIds = new ArrayList<>();
+        List<Long> dislikedBotIds = new ArrayList<>();
+        if (rows != null) {
+            for (UserBotReactionRow row : rows) {
+                if (row == null || row.getBotId() == null || row.getReaction() == null) {
+                    continue;
+                }
+                if (row.getReaction() == 1) {
+                    likedBotIds.add(row.getBotId());
+                } else if (row.getReaction() == 0) {
+                    dislikedBotIds.add(row.getBotId());
+                }
+            }
+        }
+        Map<String, Object> res = new HashMap<>();
+        res.put("likedBotIds", likedBotIds);
+        res.put("dislikedBotIds", dislikedBotIds);
+        return res;
+    }
+
+    private Map<String, Object> botReactionSnapshot(long botId, boolean recommended, boolean disliked) {
         Integer likeCount = botRecommendDAO.selectBotLikeCount(botId);
+        Integer dislikeCount = botRecommendDAO.selectBotDislikeCount(botId);
         Map<String, Object> res = new HashMap<>();
         res.put("botId", botId);
         res.put("recommended", recommended);
+        res.put("disliked", disliked);
         res.put("likeCount", likeCount != null ? likeCount : 0);
+        res.put("dislikeCount", dislikeCount != null ? dislikeCount : 0);
         return res;
     }
 
