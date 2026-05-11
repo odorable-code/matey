@@ -557,6 +557,27 @@
 }
 
 /* =========================================================
+   13-b. 홈 전용 마무리 CTA (푸터에서는 제거, 카드 스타일은 Footer.css 재사용)
+========================================================= */
+.matey-home__closing-wrap {
+  width: 100%;
+  padding: 8px var(--matey-page-gutter-desktop) 56px;
+  box-sizing: border-box;
+}
+
+.matey-home__closing-inner {
+  width: min(var(--matey-max-width), 100%);
+  margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+  .matey-home__closing-wrap {
+    padding-left: var(--matey-page-gutter-mobile, 18px);
+    padding-right: var(--matey-page-gutter-mobile, 18px);
+  }
+}
+
+/* =========================================================
    14. 모션 줄이기 옵션
 ========================================================= */
 @media (prefers-reduced-motion: reduce) {
