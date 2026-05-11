@@ -1,8 +1,7 @@
-// 주소 끝 슬래시 제거. '' 이면 같은 출처(개발: package.json proxy → 백엔드)로 /api/... 요청.
+// 주소 끝 슬래시 제거. '' 이면 브라우저가 /api 를 CRA(3000)로 보냄 → 프록시가 없거나 빗나가면 index.html 이 와서 깨짐.
 const rawApiBase = process.env.REACT_APP_API_BASE_URL;
 function defaultApiBaseUrl() {
-  // 개발 서버(npm start): 상대 경로 + proxy면 브라우저가 localhost/127.0.0.1 혼용 시에도 CORS 없이 동작
-  if (process.env.NODE_ENV === 'development') return '';
+  // 기본은 스프링(8080) 직접. CRA에 상대 /api만 보내면 index.html 이 올 수 있어 기본값은 비우지 않음. 프록시만 쓰려면 .env 에 REACT_APP_API_BASE_URL=
   return 'http://localhost:8080';
 }
 export const API_BASE_URL =
@@ -36,6 +35,12 @@ const TOKEN_KEY = 'matey_access_token';
 
 function getStoredToken() {
   return localStorage.getItem(TOKEN_KEY);
+}
+
+/** AuthContext 테스트 로그인과 동일 규칙 — mock 토큰으로는 스프링 JWT 검증을 통과하지 못함 */
+export function isMockAccessToken(tokenOpt) {
+  const t = tokenOpt !== undefined ? tokenOpt : getStoredToken();
+  return String(t || '').startsWith('mock-token-');
 }
 
 // LocalStorage의 Access Token을 지움!
@@ -89,6 +94,26 @@ async function request(
     credentials = defaultFetchCredentials(),
   } = {}
 ) {
+  const m = String(method || 'GET').toUpperCase();
+  const p = typeof path === 'string' ? path : '';
+  if (
+    m !== 'GET' &&
+    m !== 'HEAD' &&
+    m !== 'OPTIONS' &&
+    p.startsWith('/api') &&
+    !p.startsWith('/api/v1/auth/login') &&
+    !p.startsWith('/api/v1/auth/signup') &&
+    !p.startsWith('/api/v1/auth/admin/signup') &&
+    isMockAccessToken()
+  ) {
+    const err = new Error(
+      '테스트(mock) 로그인으로는 서버 API를 호출할 수 없어요. DB에 등록된 계정으로 로그인한 뒤 다시 시도해 주세요.'
+    );
+    err.status = 401;
+    err.code = 'MOCK_TOKEN_BLOCKED';
+    throw err;
+  }
+
   const url = resolveRequestUrl(path);
   let response;
   try {
@@ -107,7 +132,7 @@ async function request(
     const raw = String(networkErr?.message || networkErr || '');
     const hint =
       raw === 'Failed to fetch' || /network/i.test(raw)
-        ? ' 서버(보통 localhost:8080)가 실행 중인지 확인하고, 주소창은 localhost와 127.0.0.1을 섞어 쓰지 마세요. 개발 시 REACT_APP_API_BASE_URL을 비우면 package.json proxy로 동일 출처 요청이 됩니다.'
+        ? ' 서버(보통 localhost:8080)가 실행 중인지 확인하고, 주소창은 localhost와 127.0.0.1을 섞어 쓰지 마세요.'
         : '';
     const err = new Error(
       (raw === 'Failed to fetch' ? '서버에 연결하지 못했어요.' : raw) + hint
@@ -118,13 +143,36 @@ async function request(
   }
 
   const text = await response.text();
-  // try 밖에서도 data를 사용하기 위해 try 밖에서 미리 선언.
-  let data = null;
+  const isApiPath = typeof path === 'string' && path.startsWith('/api');
+  const contentType = String(response.headers.get('content-type') || '').toLowerCase();
 
+  // CRA 가 /api 를 못 넘기면 index.html(text/html) 이 옴. 본문만 보고 판단하면 JSON 과 충돌할 수 있어 헤더 우선.
+  const looksLikeHtmlPage =
+    contentType.includes('text/html') ||
+    (!contentType.includes('application/json') &&
+      text &&
+      text.length < 200000 &&
+      /^\s*<\s*!DOCTYPE\s+html/i.test(text.trim()));
+
+  if (response.ok && isApiPath && looksLikeHtmlPage) {
+    const err = new Error(
+      'API 대신 HTML 페이지가 왔어요. 스프링(8080) 실행 여부를 확인하고, 주소가 localhost:3000 인데 api.js 가 상대 경로만 쓰는지(.env 의 REACT_APP_API_BASE_URL) 확인해 주세요.'
+    );
+    err.status = response.status;
+    throw err;
+  }
+
+  let data = null;
   try {
-    // text를 json 객체로 변환
     data = text ? JSON.parse(text) : null;
-  } catch (error) {
+  } catch (parseErr) {
+    if (response.ok && isApiPath) {
+      const err = new Error(
+        'JSON이 아닌 응답이 왔어요. 같은 주소를 브라우저에서 직접 열었는지, 백엔드가 아닌 프런트만 응답하는지 확인해 주세요.'
+      );
+      err.status = response.status;
+      throw err;
+    }
     data = text || null;
   }
 
@@ -148,7 +196,16 @@ async function request(
           '요청한 API를 찾을 수 없어요. 서버 주소(REACT_APP_API_BASE_URL)에 /api 가 중복 없는지 확인해 주세요.';
       }
     }
-    const err = new Error(message);
+    let msgOut = message;
+    if (response.status === 403) {
+      const t = String(msgOut || '').trim();
+      if (!t || t === 'Forbidden' || t === 'Access Denied') {
+        msgOut =
+          '접근이 거부되었어요. 로그인이 만료됐거나 권한이 없을 수 있어요. 공지·이벤트 글은 운영자만 작성할 수 있어요.';
+      }
+    }
+
+    const err = new Error(msgOut);
     // 호출부에서 401/403 등을 구분할 수 있게 상태/원문을 붙입니다.
     err.status = response.status;
     err.data = data;
@@ -542,8 +599,25 @@ export const adminAPI = {
 // 커뮤니티 (게시글·공지)
 // ==========================================
 
+/** 스프링이 List 를 그대로 내보내면 JSON 배열. 가끔 래핑된 형태도 허용 */
+function normalizeJsonArray(payload) {
+  if (Array.isArray(payload)) return payload;
+  if (payload && Array.isArray(payload.data)) return payload.data;
+  if (payload && Array.isArray(payload.items)) return payload.items;
+  return null;
+}
+
 export const communityAPI = {
-  getCategories: () => request('/api/community/categories'),
+  getCategories: async () => {
+    const raw = await request('/api/community/categories');
+    const list = normalizeJsonArray(raw);
+    if (list === null) {
+      throw new Error(
+        '카테고리 응답 형식이 예상과 달라요. 개발자 도구 Network에서 GET /api/community/categories 본문이 JSON 배열인지 확인해 주세요.'
+      );
+    }
+    return list;
+  },
   getNotices: () => request('/api/community/notices'),
   getPosts: ({ categoryId, keyword, limit = 20, offset = 0, includeNotice = false } = {}) => {
     const usp = new URLSearchParams();
