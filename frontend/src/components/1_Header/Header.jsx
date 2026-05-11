@@ -291,6 +291,11 @@ function Header() {
   const myPageActive =
     location.pathname === '/mypage' || location.pathname.startsWith('/mypage/');
 
+  const adminDashboardActive =
+    location.pathname === '/admin' ||
+    (location.pathname.startsWith('/admin/') &&
+      !location.pathname.startsWith('/admin-access'));
+
   return (
     <header className={`matey-header ${isScrolled ? 'is-scrolled' : ''}`}>
       <div className="matey-header__shell">
@@ -476,7 +481,10 @@ function Header() {
                       {adminUser && (
                         <Link
                           to="/admin"
-                          className="matey-header__dropdown-link"
+                          className={`matey-header__dropdown-link ${
+                            adminDashboardActive ? 'is-active' : ''
+                          }`}
+                          aria-current={adminDashboardActive ? 'page' : undefined}
                           onClick={() => setProfileOpen(false)}
                         >
                           관리자 대시보드
@@ -624,7 +632,10 @@ function Header() {
               {adminUser && (
                 <Link
                   to="/admin"
-                  className="matey-header__mobile-soft"
+                  className={`matey-header__mobile-soft ${
+                    adminDashboardActive ? 'is-active' : ''
+                  }`}
+                  aria-current={adminDashboardActive ? 'page' : undefined}
                   onClick={() => setMobileOpen(false)}
                 >
                   관리자 대시보드
