@@ -4,6 +4,11 @@
    1. 페이지 전체 통합 배경
 ========================================================= */
 .matey-home {
+  /* 홈에서만 섹션 위아래 패딩 줄임 (봇/이용방법/FAQ에 같이 적용) */
+  --matey-section-py-desktop: 72px;
+  --matey-section-py-tablet: 56px;
+  --matey-section-py-mobile: 48px;
+
   position: relative;
   min-height: 100vh;
   background:
@@ -83,7 +88,7 @@
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 64px;
+  gap: 44px;
 }
 
 /* =========================================================
@@ -490,7 +495,7 @@
 ========================================================= */
 @media (max-width: 820px) {
   .matey-mates__inner {
-    gap: 48px;
+    gap: 36px;
   }
 
   .matey-mate-card {
@@ -525,7 +530,7 @@
   }
 
   .matey-mates__inner {
-    gap: 40px;
+    gap: 28px;
   }
 
   .matey-mates__title {
