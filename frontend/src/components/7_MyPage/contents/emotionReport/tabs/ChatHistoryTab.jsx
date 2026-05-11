@@ -25,7 +25,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import styles from './ChatHistoryTab.module.css';
-import { resolveMascotImageSrcBySituationLabel } from '../../../../../utils/botAvatar';
+import { resolveMascotImageSrcBySituationLabel } from 'utils/botAvatar';
 
 /* =========================
    공용 파일에서 가져오기
