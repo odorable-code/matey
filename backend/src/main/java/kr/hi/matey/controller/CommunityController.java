@@ -197,6 +197,14 @@ public class CommunityController {
         return ResponseEntity.ok(communityService.drawRandomWorryPost(resolveViewerId(user)));
     }
 
+    /** 관리자 지정 고민 스포트라이트 + 운영 답변 (비로그인 조회 가능) */
+    @GetMapping("/spotlight/worry-featured")
+    public ResponseEntity<Map<String, Object>> getWorryFeatured(
+            @AuthenticationPrincipal CustomUser user
+    ) {
+        return ResponseEntity.ok(communityService.getWorryFeatured(resolveViewerId(user)));
+    }
+
     /** 카테고리명에「사연」이 포함된 글 무작위 추첨 */
     @GetMapping("/spotlight/story-draw")
     public ResponseEntity<Map<String, Object>> drawRandomStoryPost(
@@ -239,9 +247,9 @@ public class CommunityController {
         );
     }
 
-    /** 봇 추천(좋아요) 토글: 로그인 필요 */
+    /** 봇 추천(좋아요): 1회만, 취소 없음. 로그인 필요 */
     @PostMapping("/spotlight/bots/{botId}/recommend")
-    public ResponseEntity<Map<String, Object>> toggleBotRecommend(
+    public ResponseEntity<Map<String, Object>> recommendBot(
             @PathVariable("botId") Long botId,
             @AuthenticationPrincipal CustomUser user
     ) {
@@ -258,7 +266,43 @@ public class CommunityController {
             );
         }
         long userId = user.getUser().getUserId();
-        return ResponseEntity.ok(communityService.toggleBotRecommend(botId, userId));
+        return ResponseEntity.ok(communityService.addBotRecommend(botId, userId));
+    }
+
+    /** 봇 싫어요: 1회만, 취소 없음. 로그인 필요 */
+    @PostMapping("/spotlight/bots/{botId}/dislike")
+    public ResponseEntity<Map<String, Object>> dislikeBot(
+            @PathVariable("botId") Long botId,
+            @AuthenticationPrincipal CustomUser user
+    ) {
+        if (user == null || user.getUser() == null) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "로그인이 필요해요."
+            );
+        }
+        if (botId == null) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "봇을 선택해 주세요."
+            );
+        }
+        long userId = user.getUser().getUserId();
+        return ResponseEntity.ok(communityService.addBotDislike(botId, userId));
+    }
+
+    /** 로그인 사용자의 봇 추천·싫어요 목록 (새로고침 후 UI 동기화용) */
+    @GetMapping("/spotlight/my-bot-reactions")
+    public ResponseEntity<Map<String, Object>> getMyBotReactions(
+            @AuthenticationPrincipal CustomUser user
+    ) {
+        if (user == null || user.getUser() == null) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "로그인이 필요해요."
+            );
+        }
+        return ResponseEntity.ok(communityService.getMyBotReactions(user.getUser().getUserId()));
     }
 }
 
