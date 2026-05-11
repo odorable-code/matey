@@ -2,7 +2,10 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { communityAPI } from '../../utils/api';
-import { COMMUNITY_DEFAULT_AVATAR, resolveCommunityAvatarUrl } from './communityProfileDisplay';
+import {
+  COMMUNITY_DEFAULT_AVATAR,
+  resolveCommunityAvatarUrl,
+} from 'components/12_Community/communityProfileDisplay';
 import styles from './CommunityPage.module.css';
 
 function formatDateTime(value) {
