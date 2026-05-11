@@ -197,6 +197,30 @@ public class CommunityController {
         return ResponseEntity.ok(communityService.drawRandomWorryPost(resolveViewerId(user)));
     }
 
+    /** 카테고리명에「사연」이 포함된 글 무작위 추첨 */
+    @GetMapping("/spotlight/story-draw")
+    public ResponseEntity<Map<String, Object>> drawRandomStoryPost(
+            @AuthenticationPrincipal CustomUser user
+    ) {
+        return ResponseEntity.ok(communityService.drawRandomStoryPost(resolveViewerId(user)));
+    }
+
+    /** 전월 봇 추천(좋아요) 이벤트 집계 순위 (BOT_RECOMMEND_EVENT) */
+    @GetMapping("/spotlight/bot-ranking/monthly")
+    public ResponseEntity<Map<String, Object>> getPreviousMonthBotRanking(
+            @AuthenticationPrincipal CustomUser user,
+            Authentication authentication
+    ) {
+        String roleCode =
+                user != null && user.getUser() != null ? user.getUser().getRoleCode() : null;
+        return ResponseEntity.ok(
+                communityService.getPreviousMonthBotRanking(
+                        roleCode,
+                        authentication != null ? authentication.getAuthorities() : null
+                )
+        );
+    }
+
     /** 연말 인기봇 순위(BOT_POPULARITY_STAT, 없으면 BOT.like_count) */
     @GetMapping("/spotlight/bot-ranking")
     public ResponseEntity<Map<String, Object>> getYearEndBotRanking(

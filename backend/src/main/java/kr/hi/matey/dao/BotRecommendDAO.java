@@ -17,5 +17,11 @@ public interface BotRecommendDAO {
     int decrementBotLike(@Param("botId") long botId);
 
     Integer selectBotLikeCount(@Param("botId") long botId);
+
+    int insertRecommendEvent(
+            @Param("userId") long userId,
+            @Param("botId") long botId,
+            @Param("delta") int delta
+    );
 }
 

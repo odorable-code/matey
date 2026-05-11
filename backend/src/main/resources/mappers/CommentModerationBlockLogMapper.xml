@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.hi.matey.dao.CommentModerationBlockLogDAO">
+
+    <insert id="insert">
+        INSERT INTO COMMENT_MODERATION_BLOCK_LOG (user_id, post_id, matched_phrase, content_snippet, created_at)
+        VALUES (#{userId}, #{postId}, #{matchedPhrase}, #{contentSnippet}, NOW())
+    </insert>
+
+</mapper>

@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -37,6 +38,7 @@ public class CommunityService {
     private final PostViewIncrementService postViewIncrementService;
     private final CommunitySpotlightDAO communitySpotlightDAO;
     private final BotRecommendDAO botRecommendDAO;
+    private final CommentModerationService commentModerationService;
 
     public List<CategoryDTO> getCategories() {
         try {
@@ -198,6 +200,86 @@ public class CommunityService {
         return res;
     }
 
+    /** 카테고리명에「사연」이 포함된 글 무작위 추첨 */
+    @Transactional(readOnly = true)
+    public Map<String, Object> drawRandomStoryPost(Long viewerUserId) {
+        Long id = null;
+        try {
+            id = communitySpotlightDAO.selectRandomStoryPostId();
+        } catch (DataAccessException ex) {
+            log.warn("drawRandomStoryPost (select id): {}", ex.getMessage());
+        }
+        Map<String, Object> res = new HashMap<>();
+        if (id == null) {
+            res.put("post", null);
+            res.put(
+                    "message",
+                    "추첨할 사연 글이 없어요. 카테고리 이름에「사연」이 들어간 카테고리에 올라온 글이 있으면 여기서 무작위로 골라요."
+            );
+            return res;
+        }
+        PostDTO post;
+        try {
+            post = postDAO.selectPostById(id, viewerUserId);
+        } catch (DataAccessException ex) {
+            log.warn("drawRandomStoryPost (load post): {}", ex.getMessage());
+            post = null;
+        }
+        res.put("post", post);
+        res.put("message", post == null ? "글을 찾을 수 없어요." : null);
+        return res;
+    }
+
+    /**
+     * 전월 기준 인기봇: BOT_RECOMMEND_EVENT 월간 합산(net). 테이블·데이터 없으면 빈 목록.
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> getPreviousMonthBotRanking(
+            String viewerRoleCode,
+            Collection<? extends GrantedAuthority> authorities
+    ) {
+        YearMonth ym = YearMonth.now().minusMonths(1);
+        int y = ym.getYear();
+        int m = ym.getMonthValue();
+
+        List<BotYearRankingDTO> rows = List.of();
+        try {
+            rows = communitySpotlightDAO.selectBotRankingForCalendarMonth(y, m);
+        } catch (DataAccessException ex) {
+            log.warn("getPreviousMonthBotRanking: {}", ex.getMessage());
+            rows = List.of();
+        }
+        if (rows == null) {
+            rows = List.of();
+        }
+        int rank = 1;
+        for (BotYearRankingDTO row : rows) {
+            row.setRanking(rank++);
+        }
+
+        boolean showAdminHint = isAdminForRankingHint(viewerRoleCode, authorities);
+        Map<String, Object> res = new HashMap<>();
+        res.put("periodYear", y);
+        res.put("periodMonth", m);
+        res.put("periodLabel", y + "년 " + m + "월");
+        res.put(
+                "description",
+                "직전 달(" + y + "년 " + m + "월) 동안 집계된 봇 추천(좋아요) 순위예요. 매월 초 기준으로 전월 데이터가 표시됩니다."
+        );
+        res.put("entries", rows);
+        String source = "BOT_RECOMMEND_EVENT";
+        String sourceDescription =
+                "BOT_RECOMMEND_EVENT 테이블의 월간 추천 이벤트를 합산해요. 마이그레이션 직후에는 데이터가 비어 있을 수 있어요.";
+        if (!showAdminHint) {
+            sourceDescription = "";
+            res.put("source", null);
+        } else {
+            res.put("source", source);
+        }
+        res.put("sourceDescription", sourceDescription);
+        return res;
+    }
+
     /**
      * 연말 인기봇: BOT_POPULARITY_STAT(stat_month=0) 우선, 없으면 BOT.like_count 기반.
      */
@@ -276,10 +358,12 @@ public class CommunityService {
         if (exists > 0) {
             botRecommendDAO.delete(userId, botId);
             botRecommendDAO.decrementBotLike(botId);
+            botRecommendDAO.insertRecommendEvent(userId, botId, -1);
             recommended = false;
         } else {
             botRecommendDAO.insert(userId, botId);
             botRecommendDAO.incrementBotLike(botId);
+            botRecommendDAO.insertRecommendEvent(userId, botId, 1);
             recommended = true;
         }
         Integer likeCount = botRecommendDAO.selectBotLikeCount(botId);
@@ -391,6 +475,7 @@ public class CommunityService {
 
     @Transactional
     public void createComment(Long postId, CommentCreateRequestDTO dto, long userId) {
+        commentModerationService.assertCommentAllowed(dto.getContent(), userId, postId);
         commentDAO.insertComment(dto, userId, postId);
     }
 
@@ -407,6 +492,15 @@ public class CommunityService {
 
     @Transactional
     public void updateComment(Long commentId, CommentCreateRequestDTO dto, long userId) {
+        CommentDTO existing = commentDAO.selectCommentById(commentId, userId);
+        if (existing == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "댓글을 찾을 수 없어요.");
+        }
+        Long pid = existing.getPostId();
+        if (pid == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "게시글 정보가 없어요.");
+        }
+        commentModerationService.assertCommentAllowed(dto.getContent(), userId, pid);
         commentDAO.updateComment(commentId, dto, userId);
     }
 

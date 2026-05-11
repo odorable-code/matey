@@ -40,5 +40,10 @@
         WHERE bot_id = #{botId}
     </select>
 
+    <insert id="insertRecommendEvent">
+        INSERT INTO BOT_RECOMMEND_EVENT (user_id, bot_id, delta, created_at)
+        VALUES (#{userId}, #{botId}, #{delta}, NOW())
+    </insert>
+
 </mapper>
 
