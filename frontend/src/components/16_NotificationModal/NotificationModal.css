@@ -140,6 +140,27 @@
   color: #2b2640;
 }
 
+.matey-noti-pop__settings {
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  border: 1px solid #ece6f8;
+  background: #ffffff;
+  color: #847ba0;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: all 0.2s ease;
+  margin-right: 4px;
+}
+
+.matey-noti-pop__settings:hover {
+  background: #f4f0ff;
+  color: #2b2640;
+  border-color: #dcd1f0;
+  transform: rotate(30deg);
+}
+
 /* ============================================================
    3. 리스트 / 아이템
 ============================================================ */

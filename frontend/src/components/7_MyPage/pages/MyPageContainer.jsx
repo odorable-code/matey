@@ -169,11 +169,6 @@ function MyPageContainer() {
         description: '알림과 서비스 옵션을 관리해요',
       },
       {
-        key: 'notiSettings',
-        label: '알림 상세 설정',
-        description: '받고 싶은 알림을 선택해요',
-      },
-      {
         key: 'support',
         label: '문의·신고 내역',
         description: '문의·신고 접수와 답변을 확인해요',
@@ -181,18 +176,6 @@ function MyPageContainer() {
     ],
     []
   );
-
-  useEffect(() => {
-    if (location.state?.highlight === 'support') {
-      setSearchParams({ section: 'support' }, { replace: true });
-      setTransitionKey((k) => k + 1);
-      navigate('.', { replace: true, state: {} });
-    } else if (location.state?.highlight === 'notiSettings') {
-      setSearchParams({ section: 'notiSettings' }, { replace: true });
-      setTransitionKey((k) => k + 1);
-      navigate('.', { replace: true, state: {} });
-    }
-  }, [location.state, navigate, setSearchParams]);
 
   /* =========================
      왼쪽 메뉴 클릭하는 코드

@@ -106,7 +106,7 @@ function NotificationModal({ anchorRef }) {
 
     // 문의/신고 답변/신고 결과 → 마이페이지 문의·신고 내역 강조
     if (typeCode === 'SUPPORT_ANSWER' || typeCode === 'REPORT_RESULT') {
-      return { path: '/mypage', state: { highlight: 'support' } };
+      return { path: '/mypage?section=support' };
     }
 
     // 기본: 이동 없음
@@ -132,7 +132,8 @@ function NotificationModal({ anchorRef }) {
   // -------- 설정 페이지 이동 --------
   const handleGoSettings = () => {
     closeNotifications();
-    navigate('/mypage', { state: { highlight: 'notiSettings' } });
+    // state 대신 쿼리 파라미터를 직접 사용하여 더 확실하게 이동 처리
+    navigate('/mypage?section=notiSettings');
   };
 
   return (
@@ -183,18 +184,6 @@ function NotificationModal({ anchorRef }) {
             className="matey-noti-pop__settings"
             onClick={handleGoSettings}
             aria-label="알림 상세 설정으로 이동"
-            style={{
-              background: 'none',
-              border: 'none',
-              padding: '4px',
-              marginRight: '8px',
-              cursor: 'pointer',
-              color: '#847ba0',
-              display: 'grid',
-              placeItems: 'center',
-              borderRadius: '6px',
-              transition: 'all 0.2s ease'
-            }}
           >
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="3"></circle>

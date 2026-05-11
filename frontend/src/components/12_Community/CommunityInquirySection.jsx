@@ -87,10 +87,9 @@ function CommunityInquirySection({
           onMouseDown={(e) => {
             if (e.target === e.currentTarget) {
               setSubmitDoneOpen(false);
-              navigate('/mypage', { state: { highlight: 'support' } });
+              navigate('/mypage?section=support');
             }
-          }}
-        >
+          }}        >
           <div
             className={styles.modalCard}
             role="dialog"
@@ -109,7 +108,7 @@ function CommunityInquirySection({
                 className={styles.primaryBtn}
                 onClick={() => {
                   setSubmitDoneOpen(false);
-                  navigate('/mypage', { state: { highlight: 'support' } });
+                  navigate('/mypage?section=support');
                 }}
               >
                 확인

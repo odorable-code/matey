@@ -140,7 +140,7 @@ function SettingsContent({ onSelectMenu }) {
                         </button>
                       </div>
 
-                      {item.key === 'pushNotice' && (
+                      {item.key === 'marketingNotice' && (
                         <div className={styles.buttonRow}>
                           <button
                             type="button"
