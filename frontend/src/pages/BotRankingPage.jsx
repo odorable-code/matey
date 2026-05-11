@@ -118,28 +118,6 @@ export default function BotRankingPage() {
               <p className={styles.rankHint}>{rankDescription}</p>
             ) : null}
 
-            <div className={styles.shortcuts}>
-              <p className={styles.shortcutsLabel}>바로가기</p>
-              <div className={styles.shortcutsRow}>
-                <Link
-                  to="/login"
-                  state={{ from: '/bot-ranking' }}
-                  className={`${styles.shortcutChip} ${styles.shortcutPrimary}`}
-                >
-                  로그인
-                </Link>
-                <Link to="/features" className={styles.shortcutChip}>
-                  이용방법
-                </Link>
-                <Link to="/community/notices" className={styles.shortcutChip}>
-                  공지·이벤트
-                </Link>
-                <Link to="/faq" className={styles.shortcutChip}>
-                  FAQ
-                </Link>
-              </div>
-            </div>
-
             {!authLoading && isAuthenticated ? (
               <p className={styles.hint}>마음에 드는 봇을 추천해 보세요.</p>
             ) : (
