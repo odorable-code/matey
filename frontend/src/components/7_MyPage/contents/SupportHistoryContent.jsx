@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useRef, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { supportUserAPI } from '../../../utils/api';
 import {
   displaySupportTicketTitle,
@@ -26,6 +26,9 @@ function isReportRow(row) {
 }
 
 function SupportHistoryContent() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const openedTicketFromUrlRef = useRef(false);
+
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -52,6 +55,33 @@ function SupportHistoryContent() {
       cancelled = true;
     };
   }, []);
+
+  /* 알림에서 ?supportId= 로 들어온 경우: 목록 로드 후 해당 티켓 탭·펼침 */
+  useEffect(() => {
+    if (openedTicketFromUrlRef.current || loading) return;
+    const raw = searchParams.get('supportId');
+    if (raw == null || raw === '') return;
+
+    openedTicketFromUrlRef.current = true;
+
+    const idNum = Number(raw);
+    if (!Number.isFinite(idNum)) {
+      const next = new URLSearchParams(searchParams);
+      next.delete('supportId');
+      setSearchParams(next, { replace: true });
+      return;
+    }
+
+    const row = items.find((r) => Number(r.supportId) === idNum);
+    if (row) {
+      setTab(isReportRow(row) ? 'REPORT' : 'INQUIRY');
+      setOpenId(idNum);
+    }
+
+    const next = new URLSearchParams(searchParams);
+    next.delete('supportId');
+    setSearchParams(next, { replace: true });
+  }, [items, loading, searchParams, setSearchParams]);
 
   const handleDelete = async (event, supportId) => {
     event.stopPropagation();

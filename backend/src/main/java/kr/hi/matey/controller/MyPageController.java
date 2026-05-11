@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @RestController
@@ -63,7 +64,17 @@ public class MyPageController {
         myPageService.deleteLetter(user.getUser().getUserId(), letterId);
         return ResponseEntity.ok(Map.of("message", "쪽지가 삭제되었습니다."));
     }
-
+    
+    @GetMapping("/generate/letters")
+    public ResponseEntity<Map<String, String>> generateLetters(@PathVariable Long counselId) {
+        String message = myPageService.letterMessage(counselId);
+        
+        Map<String, String> result = new HashMap<>();
+        result.put("message", message);
+        
+        return ResponseEntity.ok(result);
+    }
+    
     @GetMapping("/settings")
     public ResponseEntity<UserSettingsDTO> getSettings(@AuthenticationPrincipal CustomUser user) {
         return ResponseEntity.ok(myPageService.getUserSettings(user.getUser().getUserId()));

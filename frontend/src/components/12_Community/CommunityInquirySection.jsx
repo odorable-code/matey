@@ -2,7 +2,7 @@ import React, { useEffect, useId, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { supportPublicAPI, supportUserAPI } from '../../utils/api';
-import { filterInquiryReasons } from './communitySupportReasons';
+import { filterInquiryReasons, normalizeReasonsPayload } from './communitySupportReasons';
 import styles from './CommunityPage.module.css';
 
 /**
@@ -33,8 +33,7 @@ function CommunityInquirySection({
       setError('');
       try {
         const res = await supportPublicAPI.getReasons();
-        const list = res?.reasons ?? [];
-        setReasons(filterInquiryReasons(Array.isArray(list) ? list : []));
+        setReasons(filterInquiryReasons(normalizeReasonsPayload(res)));
       } catch (e) {
         if (!cancelled) setError(e?.message || '분류 목록을 불러오지 못했어요.');
       } finally {

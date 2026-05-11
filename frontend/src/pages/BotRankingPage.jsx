@@ -39,17 +39,20 @@ export default function BotRankingPage() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [year, setYear] = useState(null);
+  const [periodLabel, setPeriodLabel] = useState('');
+  const [rankDescription, setRankDescription] = useState('');
   const [sourceDescription, setSourceDescription] = useState('');
   const [entries, setEntries] = useState([]);
-  const [recommendedByMe, setRecommendedByMe] = useState(() => new Set());
+  const [likedByMe, setLikedByMe] = useState(() => new Set());
+  const [dislikedByMe, setDislikedByMe] = useState(() => new Set());
 
   const load = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      const res = await communityAPI.getYearEndBotRanking();
-      setYear(res?.year ?? null);
+      const res = await communityAPI.getMonthlyBotRanking();
+      setPeriodLabel(String(res?.periodLabel ?? '').trim());
+      setRankDescription(String(res?.description ?? '').trim());
       setSourceDescription(String(res?.sourceDescription ?? '').trim());
       setEntries(normalizeEntries(res?.entries));
     } catch (e) {
@@ -64,10 +67,44 @@ export default function BotRankingPage() {
     load();
   }, [load]);
 
+  useEffect(() => {
+    if (authLoading) return;
+    if (!isAuthenticated) {
+      setLikedByMe(new Set());
+      setDislikedByMe(new Set());
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await communityAPI.getMyBotReactions();
+        if (cancelled) return;
+        const likes = Array.isArray(res?.likedBotIds)
+          ? res.likedBotIds.map((id) => Number(id))
+          : [];
+        const dislikes = Array.isArray(res?.dislikedBotIds)
+          ? res.dislikedBotIds.map((id) => Number(id))
+          : [];
+        setLikedByMe(new Set(likes));
+        setDislikedByMe(new Set(dislikes));
+      } catch {
+        if (!cancelled) {
+          setLikedByMe(new Set());
+          setDislikedByMe(new Set());
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [authLoading, isAuthenticated]);
+
   const subtitle = useMemo(() => {
-    const y = year != null ? `${year}년` : '올해';
-    return `${y} 기준으로 인기 봇을 모아 보여드려요.`;
-  }, [year]);
+    if (periodLabel) {
+      return `${periodLabel} 기준 · 전월 추천·싫어요 반영 집계 순위예요.`;
+    }
+    return '전월 동안의 봇 반응(추천·싫어요)을 기준으로 순위를 보여 드려요.';
+  }, [periodLabel]);
 
   const handleRecommend = useCallback(
     async (botId) => {
@@ -77,16 +114,20 @@ export default function BotRankingPage() {
         return;
       }
       if (!botId) return;
+      if (dislikedByMe.has(botId)) {
+        alert('이미 싫어요를 누른 봇이에요.');
+        return;
+      }
+      if (likedByMe.has(botId)) return;
 
       try {
         const res = await communityAPI.toggleBotRecommend(botId);
-        const recommended = Boolean(res?.recommended);
         const likeCount = Number.isFinite(Number(res?.likeCount)) ? Number(res.likeCount) : null;
 
-        setRecommendedByMe((prev) => {
+        setLikedByMe((prev) => new Set(prev).add(botId));
+        setDislikedByMe((prev) => {
           const next = new Set(prev);
-          if (recommended) next.add(botId);
-          else next.delete(botId);
+          next.delete(botId);
           return next;
         });
 
@@ -99,7 +140,36 @@ export default function BotRankingPage() {
         alert(e?.message || '추천 처리에 실패했어요.');
       }
     },
-    [isAuthenticated, navigate]
+    [dislikedByMe, isAuthenticated, likedByMe, navigate]
+  );
+
+  const handleDislike = useCallback(
+    async (botId) => {
+      if (!isAuthenticated) {
+        alert('로그인이 필요해요.');
+        navigate('/login', { state: { from: '/bot-ranking' } });
+        return;
+      }
+      if (!botId) return;
+      if (likedByMe.has(botId)) {
+        alert('이미 추천한 봇이에요.');
+        return;
+      }
+      if (dislikedByMe.has(botId)) return;
+
+      try {
+        await communityAPI.addBotDislike(botId);
+        setDislikedByMe((prev) => new Set(prev).add(botId));
+        setLikedByMe((prev) => {
+          const next = new Set(prev);
+          next.delete(botId);
+          return next;
+        });
+      } catch (e) {
+        alert(e?.message || '처리에 실패했어요.');
+      }
+    },
+    [dislikedByMe, isAuthenticated, likedByMe, navigate]
   );
 
   return (
@@ -110,34 +180,13 @@ export default function BotRankingPage() {
             <p className={styles.eyebrow}>BOT RANKING</p>
             <h1 className={styles.title}>인기 봇 랭킹</h1>
             <p className={styles.subtitle}>{subtitle}</p>
+            {!loading && entries.length > 0 && rankDescription ? (
+              <p className={styles.rankHint}>{rankDescription}</p>
+            ) : null}
 
-            <div className={styles.shortcuts}>
-              <p className={styles.shortcutsLabel}>바로가기</p>
-              <div className={styles.shortcutsRow}>
-                <Link
-                  to="/login"
-                  state={{ from: '/bot-ranking' }}
-                  className={`${styles.shortcutChip} ${styles.shortcutPrimary}`}
-                >
-                  로그인
-                </Link>
-                <Link to="/features" className={styles.shortcutChip}>
-                  이용방법
-                </Link>
-                <Link to="/community/notices" className={styles.shortcutChip}>
-                  공지·이벤트
-                </Link>
-                <Link to="/faq" className={styles.shortcutChip}>
-                  FAQ
-                </Link>
-              </div>
-            </div>
-
-            {!authLoading && isAuthenticated ? (
-              <p className={styles.hint}>마음에 드는 봇을 추천해 보세요.</p>
-            ) : (
-              <p className={styles.hint}>봇 사진을 눌러 추천할 수 있어요. (로그인 필요)</p>
-            )}
+            {!authLoading && !isAuthenticated ? (
+              <p className={styles.hint}>로그인하면 추천·싫어요를 남길 수 있어요.</p>
+            ) : null}
           </div>
 
           <div className={styles.heroArt} aria-hidden="true">
@@ -182,7 +231,9 @@ export default function BotRankingPage() {
         ) : (
           <div className={styles.grid}>
             {entries.map((e) => {
-              const liked = recommendedByMe.has(e.botId);
+              const liked = likedByMe.has(e.botId);
+              const disliked = dislikedByMe.has(e.botId);
+              const chose = liked || disliked;
               const avatar = e.avatarImage || fallbackAvatarForRank(e.ranking);
               return (
                 <article key={e.botId} className={styles.card}>
@@ -196,11 +247,17 @@ export default function BotRankingPage() {
                       type="button"
                       className={styles.avatarBtn}
                       onClick={() => handleRecommend(e.botId)}
-                      title={liked ? '추천 취소' : '추천하기'}
+                      title={
+                        disliked
+                          ? '이미 싫어요를 눌렀어요'
+                          : liked
+                            ? '이미 추천했어요'
+                            : '추천하기'
+                      }
                     >
                       <img className={styles.avatarImg} src={avatar} alt={`${e.name} 사진`} />
                       <span className={styles.recoOverlay}>
-                        {liked ? '추천됨' : '추천'}
+                        {disliked ? '싫어요' : liked ? '추천됨' : '추천'}
                       </span>
                     </button>
                   </div>
@@ -211,7 +268,7 @@ export default function BotRankingPage() {
 
                     <div className={styles.metaRow}>
                       <div className={styles.metaItem}>
-                        <span className={styles.metaLabel}>추천</span>
+                        <span className={styles.metaLabel}>전월 반응</span>
                         <span className={styles.metaValue}>
                           {e.likeCount != null ? e.likeCount : '-'}
                         </span>
@@ -228,13 +285,24 @@ export default function BotRankingPage() {
                       <Link className={styles.chatLink} to="/chat">
                         채팅하러 가기
                       </Link>
-                      <button
-                        type="button"
-                        className={`${styles.recoBtn} ${liked ? styles.recoBtnOn : ''}`}
-                        onClick={() => handleRecommend(e.botId)}
-                      >
-                        {liked ? '추천 취소' : '추천하기'}
-                      </button>
+                      <div className={styles.actionBtns}>
+                        <button
+                          type="button"
+                          className={`${styles.recoBtn} ${liked ? styles.recoBtnOn : ''}`}
+                          disabled={chose}
+                          onClick={() => handleRecommend(e.botId)}
+                        >
+                          {liked ? '추천됨' : '추천하기'}
+                        </button>
+                        <button
+                          type="button"
+                          className={`${styles.dislikeBtn} ${disliked ? styles.dislikeBtnOn : ''}`}
+                          disabled={chose}
+                          onClick={() => handleDislike(e.botId)}
+                        >
+                          {disliked ? '싫어요함' : '싫어요'}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </article>

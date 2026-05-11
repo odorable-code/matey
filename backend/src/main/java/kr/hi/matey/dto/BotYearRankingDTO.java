@@ -14,4 +14,6 @@ public class BotYearRankingDTO {
     private Integer likeCount;
     private BigDecimal popularityScore;
     private Integer statYear;
+    /** 월간 랭킹 등에서 사용 (1–12) */
+    private Integer statMonth;
 }

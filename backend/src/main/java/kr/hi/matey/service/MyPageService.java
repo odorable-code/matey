@@ -3,8 +3,14 @@ package kr.hi.matey.service;
 import kr.hi.matey.dao.MyPageDAO;
 import kr.hi.matey.dto.*;
 import lombok.RequiredArgsConstructor;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 
 @Service
 @RequiredArgsConstructor
@@ -94,6 +100,24 @@ public class MyPageService {
     @Transactional
     public void deleteLetter(long userId, long letterId) {
         myPageDAO.deleteLetter(userId, letterId);
+    }
+    
+    @Transactional
+    public String letterMessage(Long counselId) {
+    	Map<String, Object> details = myPageDAO.getCounselDetail(counselId);
+    	
+    	// 상담 횟수가 1이면 첫 상담으로 판단하여 추가 정보 삽입
+    	long count = ((Number) details.get("counselCount")).longValue();
+        details.put("isFirstCounsel", count <= 1);
+
+        // Python AI 서버 호출
+        RestTemplate restTemplate = new RestTemplate();
+        String pythonUrl = "http://localhost:5000/generate-letters";
+        
+        // Map 객체를 그대로 전달하면 Jackson 라이브러리가 JSON으로 변환함
+        ResponseEntity<Map> response = restTemplate.postForEntity(pythonUrl, details, Map.class);
+        
+        return (String) response.getBody().get("aiMessage");
     }
 
     @Transactional(readOnly = true)

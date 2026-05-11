@@ -3,7 +3,9 @@ package kr.hi.matey.controller;
 import kr.hi.matey.dto.AdminBatchRequestDTO;
 import kr.hi.matey.dto.FeedbackDTO;
 import kr.hi.matey.dto.UserDTO2;
+import kr.hi.matey.dto.WorrySpotlightPublishRequest;
 import kr.hi.matey.service.AdminService;
+import kr.hi.matey.service.CommunityService;
 import kr.hi.matey.service.SupportService;
 import kr.hi.matey.service.NoticeService;
 import kr.hi.matey.util.CustomUser;
@@ -25,6 +27,7 @@ public class AdminController {
     private final AdminService adminService;
     private final SupportService supportService;
     private final NoticeService noticeService;
+    private final CommunityService communityService;
 
     // ==========================================
     // 실시간 운영 통계 및 지표
@@ -38,6 +41,20 @@ public class AdminController {
     @GetMapping("/dashboard/live")
     public ResponseEntity<List<Map<String, Object>>> getLiveMetrics() {
         return ResponseEntity.ok(adminService.getLiveMetrics());
+    }
+
+    /** 상담봇 관리 탭: 누적 좋/싫 + 전월 추천 이벤트·순위 */
+    @GetMapping("/bots/stats")
+    public ResponseEntity<Map<String, Object>> getBotManagementStats(
+            @AuthenticationPrincipal CustomUser user
+    ) {
+        if (user == null || user.getUser() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        if (!RoleCodeHelper.isAdminOrSuperAdmin(user.getUser().getRoleCode())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        return ResponseEntity.ok(adminService.getBotManagementStats());
     }
 
     // ==========================================
@@ -77,7 +94,11 @@ public class AdminController {
         }
 
         String adminID = user.getUsername();
-        adminService.updateUserRole(userId, body.get("roleCode"), adminID);
+        try {
+            adminService.updateUserRole(userId, body.get("roleCode"), adminID);
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(ex.getMessage());
+        }
         return ResponseEntity.ok("사용자 권한이 수정되었습니다.");
     }
 
@@ -113,7 +134,11 @@ public class AdminController {
         }
 
         String adminID = user.getUsername();
-        adminService.bulkUpdateUserRole(request.getUserIds(), request.getRoleCode(), adminID);
+        try {
+            adminService.bulkUpdateUserRole(request.getUserIds(), request.getRoleCode(), adminID);
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(ex.getMessage());
+        }
         return ResponseEntity.ok("일괄 권한 변경이 완료되었습니다.");
     }
 
@@ -222,8 +247,8 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("관리자 계정 식별에 실패했어요. 다시 로그인해 주세요.");
         }
 
-        adminService.answerSupportTicket(supportId, content.trim(), adminUserId);
-        return ResponseEntity.ok("답변이 등록되었습니다.");
+        boolean updated = adminService.answerSupportTicket(supportId, content.trim(), adminUserId);
+        return ResponseEntity.ok(updated ? "답변이 수정되었습니다." : "답변이 등록되었습니다.");
     }
 
     // ==========================================
@@ -256,5 +281,46 @@ public class AdminController {
         dto.setNoticeId(noticeId);
         noticeService.updateNotice(dto);
         return ResponseEntity.ok("공지사항이 수정되었습니다.");
+    }
+
+    // ==========================================
+    // 고민 스포트라이트 (커뮤니티 상단 노출)
+    // ==========================================
+
+    /** 고민 글 무작위 추첨 후 미리보기(저장 전) */
+    @PostMapping("/community/worry-spotlight/draw")
+    public ResponseEntity<Map<String, Object>> drawWorrySpotlightCandidate(
+            @AuthenticationPrincipal CustomUser user
+    ) {
+        if (user == null || user.getUser() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        if (!RoleCodeHelper.isAdminOrSuperAdmin(user.getUser().getRoleCode())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        return ResponseEntity.ok(communityService.drawRandomWorryPost(user.getUser().getUserId()));
+    }
+
+    /** 추첨 글 + 운영 답변 공개 */
+    @PutMapping("/community/worry-spotlight")
+    public ResponseEntity<Map<String, Object>> publishWorrySpotlight(
+            @RequestBody WorrySpotlightPublishRequest body,
+            @AuthenticationPrincipal CustomUser user
+    ) {
+        if (user == null || user.getUser() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        if (!RoleCodeHelper.isAdminOrSuperAdmin(user.getUser().getRoleCode())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        if (body == null || body.getPostId() == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        communityService.publishWorrySpotlight(
+                body.getPostId(),
+                body.getAnswerContent(),
+                user.getUser().getUserId()
+        );
+        return ResponseEntity.ok(communityService.getWorryFeatured(user.getUser().getUserId()));
     }
 }

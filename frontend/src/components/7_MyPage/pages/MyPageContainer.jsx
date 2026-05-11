@@ -29,7 +29,7 @@ import EmotionReportContent from '../contents/emotionReport/EmotionReportContent
 import BotMenuContent from '../contents/BotMenuContent';
 import LetterBoxContent from '../contents/letterBox/LetterBoxContent';
 import SettingsContent from '../contents/settings/SettingsContent';
-import NotificationSettingsContent from '../contents/settings/NotificationSettingsContent';
+import NotificationSettingsContent from 'components/7_MyPage/contents/settings/NotificationSettingsContent';
 import SupportHistoryContent from '../contents/SupportHistoryContent.jsx';
 import { myPageAPI } from '../../../utils/api';
 import { useChatModal } from '../../../contexts/ChatModalContext';
@@ -75,49 +75,77 @@ function MyPageContainer() {
 
   const [letterData, setLetterData] = useState(null);
 
-  const fetchLetters = () => {
-    myPageAPI.getLetters()
-      .then(data => {
-        if (data) {
-          const transformed = {
-            featured: data.items?.[0] ? {
-              id: data.items[0].id,
-              unread: data.items[0].unread,
-              title: data.items[0].title,
-              sender: data.items[0].sender || '메이티',
-              preview: data.items[0].preview,
-              date: data.items[0].date,
-              status: data.items[0].unread ? `새 편지 ${data.unreadCount}` : '읽음',
-            } : {
-              id: null,
-              unread: false,
-              title: '도착한 편지가 없어요',
-              sender: '메이티',
-              preview: '메이티가 편지를 보내면 여기에 표시돼요.',
-              date: '-',
-              status: String(data.unreadCount || 0),
-            },
-            stats: [
-              { label: '읽지 않은 편지', value: String(data.unreadCount || 0) },
-              { label: '이번 주 도착', value: String(data.weeklyCount || 0) },
-            ],
-            items: (data.items || []).map(item => ({
-              id: item.id,
-              sender: item.sender || '메이티',
-              title: item.title,
-              preview: item.preview,
-              date: item.date,
-              unread: item.unread,
-            })),
-          };
-          setLetterData(transformed);
-        }
-      })
-      .catch(console.error);
-  };
+  const fetchLetters = async () => {
+  try {
+    // 두 개의 API를 동시에 호출하고 결과를 기다림
+    const [letterResponse, generatedResponse] = await Promise.all([
+      myPageAPI.getLetters(),
+      myPageAPI.generateLetters()
+    ]);
 
-  useEffect(() => {
-  }, []);
+    // 두 데이터가 모두 유효한지 확인 (또는 letterResponse만 필수라면 그에 맞춰 수정)
+    if (letterResponse) {
+      const archiveCount = generatedResponse?.items?.length || 0;
+      // 두 곳에서 온 아이템들을 하나로 합칩니다.
+      // (기존 items와 생성된 items를 합치기)
+      const combinedItems = [
+        ...(letterResponse.items || []),
+        ...(generatedResponse?.items || [])
+      ];
+
+      // 필요하다면 날짜순 등으로 정렬 로직을 추가
+      // date가 유효하지 않은 경우(예: '-')를 대비해 기본값 처리를 추가
+      combinedItems.sort((a, b) => {
+        const dateA = new Date(a.date).getTime() || 0;
+        const dateB = new Date(b.date).getTime() || 0;
+        return dateB - dateA; // 최신순
+      });
+
+      const transformed = {
+        // 메인 피처드 카드는 기존 로직 유지 (또는 전체 합친 것 중 첫 번째)
+        featured: letterResponse.items?.[0] ? {
+          id: letterResponse.items[0].id,
+          unread: letterResponse.items[0].unread,
+          title: letterResponse.items[0].title,
+          sender: letterResponse.items[0].sender || '메이티',
+          preview: letterResponse.items[0].preview,
+          date: letterResponse.items[0].date,
+          status: letterResponse.items[0].unread ? `새 편지 ${letterResponse.unreadCount}` : '읽음',
+        } : {
+          id: null,
+          unread: false,
+          title: '도착한 편지가 없어요',
+          sender: '메이티',
+          preview: '메이티가 편지를 보내면 여기에 표시돼요.',
+          date: '-',
+          status: String(letterResponse.unreadCount || 0),
+        },
+        stats: [
+          { label: '내 쪽지 보관함', value: String(archiveCount) },
+          { label: '읽지 않은 쪽지', value: String(letterResponse.unreadCount || 0) },
+          { label: '이번 주 도착', value: String(letterResponse.weeklyCount || 0) },
+        ],
+        // 3. 합쳐진 아이템들을 mapping
+        items: combinedItems.map(item => ({
+          id: item.id,
+          sender: item.sender || '메이티',
+          title: item.title,
+          preview: item.preview,
+          date: item.date,
+          unread: item.unread,
+        })),
+      };
+
+      setLetterData(transformed);
+    }
+  } catch (error) {
+    console.error("데이터를 불러오는 중 오류 발생:", error);
+  }
+};
+
+useEffect(() => {
+  fetchLetters();
+}, []);
 
   useEffect(() => {
     if (activeMenu === 'letterBox') {
@@ -224,7 +252,7 @@ function MyPageContainer() {
         return <BotMenuContent />;
 
       case 'letterBox':
-        return <LetterBoxContent letterData={letterData || undefined} onRead={handleReadLetter} />;
+        return <LetterBoxContent letterData={letterData || undefined} onRead={handleReadLetter} onOpenArchive={() => navigate('/letterArchiveModal')} />;
 
       case 'settings':
         return <SettingsContent onSelectMenu={handleMenuSelect} />;

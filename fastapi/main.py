@@ -1,37 +1,39 @@
-from google import genai
-from google.genai import types
-from fastapi import FastAPI, Query, File, UploadFile
-from pydantic import BaseModel
-from chromadb.config import Settings
-import uvicorn
-import os
-import sys
-import pypdf
-import time
-import chromadb
-import io
-import cv2
-import numpy as np
-import json 
-import re
-import base64
+"""
+Matey AI / 분석 마이크로서비스 (FastAPI)
 
-app = FastAPI()
+실행: (저장소 루트에서)
+  cd fastapi
+  python -m venv .venv
+  .venv\\Scripts\\activate   # Windows
+  pip install -r requirements.txt
+  uvicorn main:app --reload --host 0.0.0.0 --port 8000
+"""
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
-GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
-GOOGLE_MODEL_NAME = "gemini-2.5-flash-lite"
-GOOGLE_SUMMARY_MODEL_NAME = "gemini-3.1-flash-lite-preview"
-GOOGLE_EMBED_MODEL_NAME = "gemini-embedding-2-preview"
-CHROMA_PATH = "./chroma_db"
-client = genai.Client(api_key=GOOGLE_API_KEY)
+from routers.analysis import router as analysis_router
+from routers.chat import router as chat_router
 
+app = FastAPI(title="Matey AI API", version="0.1.0")
 
-chroma_client = chromadb.PersistentClient(
-	path=CHROMA_PATH,
-	settings=Settings(
-		# 우리가 사용한 데이터를 크로마db 본사 서버에 익명으로 보낼건지 말지
-		anonymized_telemetry=False, 
-		# 명령어로 db 내용을 초기화 권한을 부여할건지 말건지. 배포할 땐 False
-		allow_reset=True)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    # allow_origins=["*"] 와 credentials=True 는 브라우저 규격상 함께 쓸 수 없음 → fetch 실패 유발
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
-collection = chroma_client.get_or_create_collection(name="class_knowledge")
+
+app.include_router(analysis_router)
+app.include_router(chat_router)
+
+
+@app.get("/")
+def root() -> dict:
+    return {
+        "service": "matey-fastapi",
+        "docs": "/docs",
+        "health": "/api/health",
+        "chat": "POST /api/chat/completions",
+    }

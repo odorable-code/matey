@@ -4,23 +4,23 @@
 
 <mapper namespace="kr.hi.matey.dao.BotRecommendDAO">
 
-    <select id="exists" resultType="int">
-        SELECT COUNT(*)
+    <select id="selectReaction" resultType="java.lang.Integer">
+        SELECT reaction
         FROM USER_BOT_RECOMMEND
         WHERE user_id = #{userId}
           AND bot_id = #{botId}
     </select>
 
-    <insert id="insert">
-        INSERT INTO USER_BOT_RECOMMEND (user_id, bot_id, created_at)
-        VALUES (#{userId}, #{botId}, NOW())
-    </insert>
-
-    <delete id="delete">
-        DELETE FROM USER_BOT_RECOMMEND
+    <select id="selectReactionsByUser" resultType="kr.hi.matey.dto.UserBotReactionRow">
+        SELECT bot_id AS botId, reaction AS reaction
+        FROM USER_BOT_RECOMMEND
         WHERE user_id = #{userId}
-          AND bot_id = #{botId}
-    </delete>
+    </select>
+
+    <insert id="insertWithReaction">
+        INSERT INTO USER_BOT_RECOMMEND (user_id, bot_id, reaction, created_at)
+        VALUES (#{userId}, #{botId}, #{reaction}, NOW())
+    </insert>
 
     <update id="incrementBotLike">
         UPDATE BOT
@@ -34,11 +34,33 @@
         WHERE bot_id = #{botId}
     </update>
 
+    <update id="incrementBotDislike">
+        UPDATE BOT
+        SET dislike_count = dislike_count + 1
+        WHERE bot_id = #{botId}
+    </update>
+
+    <update id="decrementBotDislike">
+        UPDATE BOT
+        SET dislike_count = GREATEST(0, dislike_count - 1)
+        WHERE bot_id = #{botId}
+    </update>
+
     <select id="selectBotLikeCount" resultType="java.lang.Integer">
         SELECT like_count
         FROM BOT
         WHERE bot_id = #{botId}
     </select>
 
-</mapper>
+    <select id="selectBotDislikeCount" resultType="java.lang.Integer">
+        SELECT dislike_count
+        FROM BOT
+        WHERE bot_id = #{botId}
+    </select>
 
+    <insert id="insertRecommendEvent">
+        INSERT INTO BOT_RECOMMEND_EVENT (user_id, bot_id, delta, created_at)
+        VALUES (#{userId}, #{botId}, #{delta}, NOW())
+    </insert>
+
+</mapper>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.hi.matey.dao.CommunityModerationKeywordDAO">
+
+    <select id="selectEnabledKeywords" resultType="kr.hi.matey.dto.ModerationKeywordDTO">
+        SELECT keyword_id AS keywordId, phrase AS phrase
+        FROM COMMUNITY_MODERATION_KEYWORD
+        WHERE enabled = 1
+          AND LENGTH(TRIM(phrase)) > 0
+        ORDER BY keyword_id ASC
+    </select>
+
+    <update id="incrementHit">
+        UPDATE COMMUNITY_MODERATION_KEYWORD
+        SET hit_count = hit_count + 1
+        WHERE keyword_id = #{keywordId}
+    </update>
+
+</mapper>

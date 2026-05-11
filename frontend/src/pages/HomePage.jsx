@@ -33,6 +33,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import Hero from '../components/4_Home/Hero';
 import Features from '../components/4_Home/Features';
 import FAQ from '../components/4_Home/FAQ';
+import HomeClosingCta from 'pages/HomeClosingCta';
 import { useAuth } from '../contexts/AuthContext';
 import { MATES } from '../constants/mates';
 import './HomePage.css';
@@ -217,6 +218,8 @@ function HomePage() {
            4. FAQ 섹션
         ========================================================= */}
         <FAQ />
+
+        <HomeClosingCta />
       </main>
     </div>
   );

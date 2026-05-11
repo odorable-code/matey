@@ -33,8 +33,8 @@
  * =========================================================
  */
 
-import React from 'react';
-import { Navigate, Route, Routes, Link } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Navigate, Route, Routes, Link, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 import MainLayout from './components/3_Layout/MainLayout';
@@ -77,6 +77,7 @@ import CommunityFaqView from './components/12_Community/CommunityFaqView';
 import CommunityInquiryPage from './components/12_Community/CommunityInquiryPage';
 import CommunityNoticesPage from './components/12_Community/CommunityNoticesPage';
 import CommunityNoticeWritePage from './components/12_Community/CommunityNoticeWritePage';
+import LetterArchiveModal from './components/7_MyPage/contents/letterBox/LetterArchiveModal';
 
 function AuthLoadingScreen() {
   return (
@@ -446,11 +447,36 @@ function PublicOnlyRoute({ children }) {
 }
 
 /* =========================================================
+   API 401(토큰 만료) 시 저장소는 api.js에서 비우고,
+   여기서 React 인증 상태 정리 + 로그인 화면으로 안내
+========================================================= */
+function SessionExpiredBridge() {
+  const navigate = useNavigate();
+  const { clearAuth } = useAuth();
+
+  useEffect(() => {
+    const onExpired = () => {
+      clearAuth();
+      const path = window.location.pathname;
+      if (path !== '/login' && path !== '/signup') {
+        navigate('/login', { replace: true, state: { sessionExpired: true } });
+      }
+    };
+    window.addEventListener('matey:session-expired', onExpired);
+    return () => window.removeEventListener('matey:session-expired', onExpired);
+  }, [navigate, clearAuth]);
+
+  return null;
+}
+
+/* =========================================================
    실제 페이지 주소 연결하는 부분
 ========================================================= */
 function AppRoutes() {
   return (
-    <Routes>
+    <>
+      <SessionExpiredBridge />
+      <Routes>
       <Route element={<MainLayout />}>
         {/* =====================================================
             메인 / 공개 페이지
@@ -582,6 +608,15 @@ function AppRoutes() {
           }
         />
 
+        <Route
+          path="/letterArchiveModal"
+          element={
+            <ProtectedRoute>
+              <LetterArchiveModal isOpen={true} onClose={() => window.history.back()} archivedItems={[]} />
+            </ProtectedRoute>
+          }
+        />
+
         {/* =====================================================
             관리자 전용 페이지
         ===================================================== */}
@@ -609,6 +644,7 @@ function AppRoutes() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
+    </>
   );
 }
 

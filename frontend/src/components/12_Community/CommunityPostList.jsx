@@ -2,7 +2,10 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { communityAPI } from '../../utils/api';
-import { COMMUNITY_DEFAULT_AVATAR, resolveCommunityAvatarUrl } from './communityProfileDisplay';
+import {
+  COMMUNITY_DEFAULT_AVATAR,
+  resolveCommunityAvatarUrl,
+} from 'components/12_Community/communityProfileDisplay';
 import styles from './CommunityPage.module.css';
 
 function formatDateTime(value) {
@@ -63,6 +66,7 @@ function CommunityPostList() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState('');
+  const [worrySpotlight, setWorrySpotlight] = useState(null);
   const limit = 20;
 
   const chipCategories = useMemo(
@@ -121,6 +125,21 @@ function CommunityPostList() {
       cancelled = true;
     };
   }, [loadCategories]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await communityAPI.getWorryFeatured();
+        if (!cancelled) setWorrySpotlight(res?.spotlight ?? null);
+      } catch {
+        if (!cancelled) setWorrySpotlight(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -213,6 +232,38 @@ function CommunityPostList() {
     }
   };
 
+  const handleRandomWorry = async () => {
+    setError('');
+    try {
+      const res = await communityAPI.drawRandomWorryPost();
+      const post = res?.post;
+      const pid = post?.postId ?? post?.post_id;
+      if (pid != null) {
+        navigate(`/community/posts/${pid}`);
+        return;
+      }
+      window.alert(res?.message || '추첨할 글이 없어요.');
+    } catch (e) {
+      setError(e?.message || '추첨에 실패했어요.');
+    }
+  };
+
+  const handleRandomStory = async () => {
+    setError('');
+    try {
+      const res = await communityAPI.drawRandomStoryPost();
+      const post = res?.post;
+      const pid = post?.postId ?? post?.post_id;
+      if (pid != null) {
+        navigate(`/community/posts/${pid}`);
+        return;
+      }
+      window.alert(res?.message || '추첨할 글이 없어요.');
+    } catch (e) {
+      setError(e?.message || '추첨에 실패했어요.');
+    }
+  };
+
   const handleLoadMore = async () => {
     setLoadingMore(true);
     setError('');
@@ -250,6 +301,56 @@ function CommunityPostList() {
             글쓰기
           </Link>
         )}
+      </div>
+
+      {worrySpotlight?.post &&
+      (worrySpotlight.post.postId != null || worrySpotlight.post.post_id != null) &&
+      String(worrySpotlight.answerContent || '').trim() ? (
+        <section className={styles.worrySpotlight} aria-labelledby="matey-worry-spotlight-title">
+          <div className={styles.worrySpotlightGlow} aria-hidden />
+          <div className={styles.worrySpotlightInner}>
+            <div className={styles.worrySpotlightTop}>
+              <span className={styles.worrySpotlightBadge}>고민 PICK</span>
+              <span className={styles.worrySpotlightMeta}>
+                {formatDateTime(worrySpotlight.updatedAt)} · 운영 스토리
+              </span>
+            </div>
+            <h2 id="matey-worry-spotlight-title" className={styles.worrySpotlightTitle}>
+              {worrySpotlight.post.title}
+            </h2>
+            <p className={styles.worrySpotlightExcerpt}>
+              {excerpt(worrySpotlight.post.content, 260)}
+            </p>
+            <div className={styles.worrySpotlightAnswer}>
+              <div className={styles.worrySpotlightAnswerHead}>
+                <span className={styles.worrySpotlightAnswerKicker}>메이티 운영 답변</span>
+                {worrySpotlight.answeredByNickname ? (
+                  <span className={styles.worrySpotlightAnswerAuthor}>
+                    {worrySpotlight.answeredByNickname}
+                  </span>
+                ) : null}
+              </div>
+              <div className={styles.worrySpotlightAnswerBody}>
+                {String(worrySpotlight.answerContent || '').trim()}
+              </div>
+            </div>
+            <Link
+              className={styles.worrySpotlightCta}
+              to={`/community/posts/${worrySpotlight.post.postId ?? worrySpotlight.post.post_id}`}
+            >
+              원글 전체 보기
+            </Link>
+          </div>
+        </section>
+      ) : null}
+
+      <div className={styles.randomPickRow} aria-label="랜덤 글 보기">
+        <button type="button" className={styles.randomPickBtn} onClick={handleRandomStory}>
+          사연 랜덤 추첨
+        </button>
+        <button type="button" className={styles.randomPickBtn} onClick={handleRandomWorry}>
+          고민 글 랜덤 추첨
+        </button>
       </div>
 
       <form className={styles.searchRow} onSubmit={handleSearch}>
