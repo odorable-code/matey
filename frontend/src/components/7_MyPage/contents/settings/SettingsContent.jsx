@@ -16,11 +16,15 @@
  */
 
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styles from './SettingsContent.module.css';
 import { myPageAPI } from '../../../../utils/api';
 import { useNotifications } from '../../../../contexts/NotificationContext';
+import { useAuth } from '../../../../contexts/AuthContext';
 
 function SettingsContent({ onSelectMenu }) {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
   const { settings, updateSetting } = useNotifications();
 
   /* =========================
@@ -55,6 +59,41 @@ function SettingsContent({ onSelectMenu }) {
   ========================= */
   const toggleSetting = (key) => {
     updateSetting(key, !settings[key]);
+  };
+
+  /* =========================
+     로그아웃 처리
+  ========================= */
+  const handleLogout = async () => {
+    if (window.confirm('정말 로그아웃 하시겠어요?')) {
+      try {
+        await logout();
+        navigate('/');
+      } catch (err) {
+        console.error('로그아웃 실패:', err);
+        alert('로그아웃 중 오류가 발생했습니다.');
+      }
+    }
+  };
+
+  /* =========================
+     계정 탈퇴 처리
+  ========================= */
+  const handleWithdraw = async () => {
+    const confirmed = window.confirm(
+      '정말 탈퇴하시겠어요? 모든 정보가 사라지며 복구할 수 없습니다.'
+    );
+    if (confirmed) {
+      try {
+        await myPageAPI.withdrawAccount();
+        alert('회원 탈퇴가 완료되었습니다. 그동안 이용해 주셔서 감사합니다.');
+        await logout();
+        navigate('/');
+      } catch (err) {
+        console.error('탈퇴 실패:', err);
+        alert(err.message || '탈퇴 처리 중 오류가 발생했습니다.');
+      }
+    }
   };
 
   /* =========================
@@ -218,10 +257,18 @@ function SettingsContent({ onSelectMenu }) {
           <article className={styles.dangerCard}>
             <h3 className={styles.sectionTitle}>계정 관리</h3>
             <div className={styles.actionList}>
-              <button type="button" className={styles.secondaryButton}>
+              <button
+                type="button"
+                className={styles.secondaryButton}
+                onClick={handleLogout}
+              >
                 로그아웃
               </button>
-              <button type="button" className={styles.dangerButton}>
+              <button
+                type="button"
+                className={styles.dangerButton}
+                onClick={handleWithdraw}
+              >
                 계정 탈퇴
               </button>
             </div>

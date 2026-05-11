@@ -196,4 +196,9 @@
         WHERE e.user_id = #{userId}
     </update>
 
+    <update id="withdrawUser">
+        -- DB 스키마의 ON DELETE CASCADE 설정으로 인해 USER 삭제 시 연관 데이터가 자동 삭제됩니다.
+        DELETE FROM `USER` WHERE `user_id` = #{userId}
+    </update>
+
 </mapper>

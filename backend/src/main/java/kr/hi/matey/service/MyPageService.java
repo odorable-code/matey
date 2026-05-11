@@ -105,4 +105,9 @@ public class MyPageService {
     public void updateUserSettings(long userId, SettingUpdateDTO dto) {
         myPageDAO.updateUserSettings(userId, dto.getSettingKey(), dto.isSettingValue());
     }
+
+    @Transactional
+    public void withdrawUser(long userId) {
+        myPageDAO.withdrawUser(userId);
+    }
 }

@@ -268,18 +268,11 @@ export async function forgotId(userName, nickname) {
 }
 
 export async function logout() {
-  const token = getStoredToken(); // 저장된 토큰 가져오기
-  const accessToken = normalizeToken(token);
   try {
     const payload = await request('/api/v1/auth/logout', {
       method: 'POST',
-      headers: {
-      'Content-Type': 'application/json',
-      ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
-    },
       body: {},
     });
-
 
     setStoredToken(null);
 
@@ -535,6 +528,7 @@ export const myPageAPI = {
   deleteLetter: (letterId) => request(`/api/mypage/letters/${letterId}`, { method: 'DELETE' }),
   getSettings: () => request('/api/mypage/settings'),
   updateSettings: (data) => request('/api/mypage/settings', { method: 'PATCH', body: data }),
+  withdrawAccount: () => request('/api/mypage/withdraw', { method: 'POST' }),
 };
 
 // ==========================================

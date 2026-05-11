@@ -76,4 +76,16 @@ public class MyPageController {
         myPageService.updateUserSettings(user.getUser().getUserId(), updateDTO);
         return ResponseEntity.ok(Map.of("message", "설정이 변경되었습니다."));
     }
+
+    @DeleteMapping("/profile")
+    public ResponseEntity<Map<String, String>> withdrawAccount(@AuthenticationPrincipal CustomUser user) {
+        myPageService.withdrawUser(user.getUser().getUserId());
+        return ResponseEntity.ok(Map.of("message", "회원 탈퇴가 완료되었습니다. 이용해 주셔서 감사합니다."));
+    }
+
+    @PostMapping("/withdraw")
+    public ResponseEntity<Map<String, String>> withdrawAccountPost(@AuthenticationPrincipal CustomUser user) {
+        myPageService.withdrawUser(user.getUser().getUserId());
+        return ResponseEntity.ok(Map.of("message", "회원 탈퇴가 완료되었습니다. 이용해 주셔서 감사합니다."));
+    }
 }
