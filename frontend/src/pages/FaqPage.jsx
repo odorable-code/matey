@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import styles from './FaqPage.module.css';
 import { supportPublicAPI, adminAPI } from '../utils/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -156,29 +155,13 @@ export default function FaqPage() {
               메이티 이용 중 자주 나오는 질문을 모아두었습니다. 찾는 답이 없으면 문의로 남겨 주세요.
             </p>
 
-            <div className={styles.shortcuts}>
-              <p className={styles.shortcutsLabel}>바로가기</p>
-              <div className={styles.shortcutsRow}>
-                <Link to="/community/notices" className={`${styles.shortcutChip} ${styles.shortcutPrimary}`}>
-                  공지·이벤트
-                </Link>
-                <Link to="/features" className={styles.shortcutChip}>
-                  이용방법
-                </Link>
-                <Link to="/community/inquiry" className={styles.shortcutChip}>
-                  문의
-                </Link>
-                {canEditFaq && !authLoading ? (
-                  <button
-                    type="button"
-                    className={`${styles.shortcutChip} ${styles.shortcutPrimary}`}
-                    onClick={handleOpenCreate}
-                  >
-                    + FAQ 작성
-                  </button>
-                ) : null}
+            {canEditFaq && !authLoading ? (
+              <div className={styles.heroAdminActions}>
+                <button type="button" className={styles.primaryBtn} onClick={handleOpenCreate}>
+                  FAQ 작성
+                </button>
               </div>
-            </div>
+            ) : null}
           </div>
 
           <div className={styles.heroArt} aria-hidden="true">
