@@ -77,6 +77,7 @@ import CommunityFaqView from './components/12_Community/CommunityFaqView';
 import CommunityInquiryPage from './components/12_Community/CommunityInquiryPage';
 import CommunityNoticesPage from './components/12_Community/CommunityNoticesPage';
 import CommunityNoticeWritePage from './components/12_Community/CommunityNoticeWritePage';
+import LetterArchiveModal from 'components/7_MyPage/contents/letterBox/LetterArchiveModal';
 
 function AuthLoadingScreen() {
   return (
@@ -578,6 +579,15 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <TempChatPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/letterArchiveModal"
+          element={
+            <ProtectedRoute>
+              <LetterArchiveModal isOpen={true} onClose={() => window.history.back()} archivedItems={[]} />
             </ProtectedRoute>
           }
         />

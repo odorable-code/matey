@@ -4,6 +4,7 @@ import kr.hi.matey.dto.*;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import java.util.List;
+import java.util.Map;
 
 @Mapper
 public interface MyPageDAO {
@@ -24,6 +25,8 @@ public interface MyPageDAO {
     List<LetterBoxDTO.LetterDTO> selectBotLetters(long userId);
     int updateLetterReadStatus(@Param("userId") long userId, @Param("letterId") long letterId);
     int deleteLetter(@Param("userId") long userId, @Param("letterId") long letterId);
+    Map<String, Object> getCounselDetail(@Param("counselId") long counselId);
+    
 
     // 4. Settings
     UserSettingsDTO selectUserSettings(long userId);
@@ -42,4 +45,6 @@ public interface MyPageDAO {
 
     // 4. 경험치/친밀도 점수 절대값 업데이트 (MyPageService 호환용)
     int updateBotExp(@Param("userId") long userId, @Param("exp") int exp);
+	void insertBotLetter(long userId, String title, String content);
+	
 }

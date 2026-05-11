@@ -531,6 +531,7 @@ export const myPageAPI = {
   getBotMenu: () => request('/api/mypage/bot-menu'),
   interactBot: (data) => request('/api/mypage/bot/interact', { method: 'POST', body: data }),
   getLetters: () => request('/api/mypage/letters'),
+  generateLetters: () => request('/api/mypage/generate/letters'),
   readLetter: (letterId) => request(`/api/mypage/letters/${letterId}/read`, { method: 'PATCH' }),
   deleteLetter: (letterId) => request(`/api/mypage/letters/${letterId}`, { method: 'DELETE' }),
   getSettings: () => request('/api/mypage/settings'),

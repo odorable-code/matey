@@ -12,7 +12,8 @@ const defaultLetters = {
     status: '새 편지',
   },
   stats: [
-    { label: '읽지 않은 편지', value: '3' },
+    { label: '내 쪽지 보관함', value: '3' },
+    { label: '읽지 않은 쪽지', value: '3' },
     { label: '이번 주 도착', value: '7' },
   ],
   items: [
@@ -69,7 +70,7 @@ function AnimatedStatCard({ item, index, prefersReducedMotion }) {
   );
 }
 
-function LetterBoxContent({ letterData = defaultLetters, onRead }) {
+function LetterBoxContent({ letterData = defaultLetters, onRead, onOpenArchive }) {
   const prefersReducedMotion = usePrefersReducedMotion();
 
   return (
@@ -108,12 +109,18 @@ function LetterBoxContent({ letterData = defaultLetters, onRead }) {
 
         <div className={styles.statColumn}>
           {letterData.stats.map((item, index) => (
+            <div 
+            key={item.label}
+            // '내 쪽지 보관함' 카드인 경우에만 클릭 핸들러와 스타일 적용
+            onClick={() => item.label === '내 쪽지 보관함' ? onOpenArchive?.() : null}
+            style={{ cursor: item.label === '내 쪽지 보관함' ? 'pointer' : 'default' }}
+          >
             <AnimatedStatCard
-              key={item.label}
               item={item}
               index={index}
               prefersReducedMotion={prefersReducedMotion}
             />
+          </div>
           ))}
         </div>
       </div>
