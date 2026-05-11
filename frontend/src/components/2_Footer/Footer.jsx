@@ -3,7 +3,7 @@
  * 파일명 : src/components/2_Footer/Footer.jsx
  * 역할   : 사이트 전체 공통 Footer (브랜드 / 링크 / 저작권)
  * =========================================================
- * - 홈 전용 마무리 CTA 카드는 HomeClosingCta.jsx 로 옮김
+ * - 홈 전용 마무리 CTA 카드는 pages/HomeClosingCta.jsx 로 분리
  * - 계정 링크는 로그인 여부에 따라 분기
  */
 

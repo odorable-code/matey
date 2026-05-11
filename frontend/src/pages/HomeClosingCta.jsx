@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MATE_IMAGES, MATE_NAMES } from '../../constants/mates';
-import '../2_Footer/Footer.css';
+import { MATE_IMAGES, MATE_NAMES } from '../constants/mates';
+import '../components/2_Footer/Footer.css';
 
 const COPY = {
   ctaTitle: '오늘은 가볍게 한 줄부터 시작해볼까요?',
