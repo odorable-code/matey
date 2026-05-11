@@ -57,19 +57,19 @@ export default function DashboardContent({
   const [fadeOutMode, setFadeOutMode] = useState(null);
   const [isOrbitOpen, setIsOrbitOpen] = useState(false);
   const [isGreetingVisible, setIsGreetingVisible] = useState(false);
-  const [botData, setBotData] = useState({ level: 4, remainPoint: 82, progressPercent: 68 });
+  const [botData, setBotData] = useState({ level: 1, remainPoint: 0, progressPercent: 0 });
 
   useEffect(() => {
     myPageAPI.getBotMenu().then(data => {
-      if (data) setBotData((prev) => ({ ...prev, ...data }));
+      if (data) setBotData(data);
     }).catch(console.error);
   }, []);
 
   const prefersReducedMotion = usePrefersReducedMotion();
 
   const intimacyMaxExp = 100;
-  const intimacyLevel = botData.level || 4;
-  const intimacyExp = botData.progressPercent || 18;
+  const intimacyLevel = botData.level || 1;
+  const intimacyExp = botData.progressPercent || 0;
 
   const animatedIntimacyLevel = useAnimatedNumber(intimacyLevel, 900, {
     reducedMotion: prefersReducedMotion,
@@ -80,9 +80,8 @@ export default function DashboardContent({
   });
 
   const animatedIntimacyPercent = useMemo(() => {
-    if (!intimacyMaxExp || intimacyMaxExp <= 0) return 0;
-    return Math.max(0, Math.min(100, (animatedIntimacyExp / intimacyMaxExp) * 100));
-  }, [animatedIntimacyExp, intimacyMaxExp]);
+    return Math.max(0, Math.min(100, animatedIntimacyExp));
+  }, [animatedIntimacyExp]);
 
   const interactionItems = useMemo(
     () => [
