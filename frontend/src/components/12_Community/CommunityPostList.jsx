@@ -213,6 +213,38 @@ function CommunityPostList() {
     }
   };
 
+  const handleRandomWorry = async () => {
+    setError('');
+    try {
+      const res = await communityAPI.drawRandomWorryPost();
+      const post = res?.post;
+      const pid = post?.postId ?? post?.post_id;
+      if (pid != null) {
+        navigate(`/community/posts/${pid}`);
+        return;
+      }
+      window.alert(res?.message || '추첨할 글이 없어요.');
+    } catch (e) {
+      setError(e?.message || '추첨에 실패했어요.');
+    }
+  };
+
+  const handleRandomStory = async () => {
+    setError('');
+    try {
+      const res = await communityAPI.drawRandomStoryPost();
+      const post = res?.post;
+      const pid = post?.postId ?? post?.post_id;
+      if (pid != null) {
+        navigate(`/community/posts/${pid}`);
+        return;
+      }
+      window.alert(res?.message || '추첨할 글이 없어요.');
+    } catch (e) {
+      setError(e?.message || '추첨에 실패했어요.');
+    }
+  };
+
   const handleLoadMore = async () => {
     setLoadingMore(true);
     setError('');
@@ -250,6 +282,15 @@ function CommunityPostList() {
             글쓰기
           </Link>
         )}
+      </div>
+
+      <div className={styles.randomPickRow} aria-label="랜덤 글 보기">
+        <button type="button" className={styles.randomPickBtn} onClick={handleRandomStory}>
+          사연 랜덤 추첨
+        </button>
+        <button type="button" className={styles.randomPickBtn} onClick={handleRandomWorry}>
+          고민 글 랜덤 추첨
+        </button>
       </div>
 
       <form className={styles.searchRow} onSubmit={handleSearch}>

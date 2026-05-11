@@ -54,6 +54,16 @@
   word-break: keep-all;
 }
 
+.rankHint {
+  margin: 12px 0 0;
+  max-width: 720px;
+  color: #7a8094;
+  font-size: 14px;
+  line-height: 1.65;
+  font-weight: 600;
+  word-break: keep-all;
+}
+
 .shortcuts {
   margin-top: 16px;
 }

@@ -39,7 +39,8 @@ export default function BotRankingPage() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [year, setYear] = useState(null);
+  const [periodLabel, setPeriodLabel] = useState('');
+  const [rankDescription, setRankDescription] = useState('');
   const [sourceDescription, setSourceDescription] = useState('');
   const [entries, setEntries] = useState([]);
   const [recommendedByMe, setRecommendedByMe] = useState(() => new Set());
@@ -48,8 +49,9 @@ export default function BotRankingPage() {
     setLoading(true);
     setError('');
     try {
-      const res = await communityAPI.getYearEndBotRanking();
-      setYear(res?.year ?? null);
+      const res = await communityAPI.getMonthlyBotRanking();
+      setPeriodLabel(String(res?.periodLabel ?? '').trim());
+      setRankDescription(String(res?.description ?? '').trim());
       setSourceDescription(String(res?.sourceDescription ?? '').trim());
       setEntries(normalizeEntries(res?.entries));
     } catch (e) {
@@ -65,9 +67,11 @@ export default function BotRankingPage() {
   }, [load]);
 
   const subtitle = useMemo(() => {
-    const y = year != null ? `${year}년` : '올해';
-    return `${y} 기준으로 인기 봇을 모아 보여드려요.`;
-  }, [year]);
+    if (periodLabel) {
+      return `${periodLabel} 기준 · 전월 추천(좋아요) 집계 순위예요.`;
+    }
+    return '전월 동안의 봇 추천을 기준으로 순위를 보여드려요.';
+  }, [periodLabel]);
 
   const handleRecommend = useCallback(
     async (botId) => {
@@ -110,6 +114,9 @@ export default function BotRankingPage() {
             <p className={styles.eyebrow}>BOT RANKING</p>
             <h1 className={styles.title}>인기 봇 랭킹</h1>
             <p className={styles.subtitle}>{subtitle}</p>
+            {rankDescription ? (
+              <p className={styles.rankHint}>{rankDescription}</p>
+            ) : null}
 
             <div className={styles.shortcuts}>
               <p className={styles.shortcutsLabel}>바로가기</p>
@@ -211,7 +218,7 @@ export default function BotRankingPage() {
 
                     <div className={styles.metaRow}>
                       <div className={styles.metaItem}>
-                        <span className={styles.metaLabel}>추천</span>
+                        <span className={styles.metaLabel}>전월 추천</span>
                         <span className={styles.metaValue}>
                           {e.likeCount != null ? e.likeCount : '-'}
                         </span>

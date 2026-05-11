@@ -513,6 +513,9 @@ export const communityAPI = {
       method: 'POST',
     }),
   drawRandomWorryPost: () => request('/api/community/spotlight/worry-draw'),
+  drawRandomStoryPost: () => request('/api/community/spotlight/story-draw'),
+  /** 전월 봇 추천 집계 순위 */
+  getMonthlyBotRanking: () => request('/api/community/spotlight/bot-ranking/monthly'),
   getYearEndBotRanking: (year) =>
     request(
       `/api/community/spotlight/bot-ranking${year != null && year !== '' ? `?year=${encodeURIComponent(String(year))}` : ''}`
