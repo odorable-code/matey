@@ -57,7 +57,9 @@ const COPY = {
   pickEyebrow: "CHARACTER PICK · 메이트 고르기",
   pickTitle: "오늘 너의 마음을 들어줄 친구는?",
   pickDesc:
-    "메이트마다 능력치가 달라요. 마음에 드는 친구를 골라 대화를 시작해 보세요.",
+    "메이트마다 능력치가 달라요. 마음에 드는 친구를 골라 대화를 시작해 보세요. 앞으로 다른 성격의 메이트도 순차적으로 더해질 수 있어요.",
+  pickPlaceholderNote:
+    "이 자리에는 앞으로 다른 성격의 봇이 더해질 수 있어요. 준비되면 같은 목록에서 만나실 수 있어요.",
   pickButton: "이 친구로 시작",
   pickIdleTitle: "메이트를 골라주세요",
   pickIdleHint: "오른쪽 카드를 누르면 미리 볼 수 있어요.",
@@ -539,6 +541,34 @@ function PickView() {
               </button>
             </li>
           ))}
+          {landingMates.length === 3 ? (
+            <li key="mate-pick-placeholder">
+              <div
+                className="matey-chat-pick__card matey-chat-pick__card--placeholder"
+                role="note"
+                aria-label="추후 메이트 추가 예정"
+              >
+                <div className="matey-chat-pick__card-top">
+                  <div className="matey-chat-pick__card-stage matey-chat-pick__card-stage--placeholder">
+                    <span aria-hidden="true">+</span>
+                  </div>
+                  <div className="matey-chat-pick__card-meta">
+                    <span className="matey-chat-pick__placeholder-chip">
+                      추후 추가
+                    </span>
+                    <p className="matey-chat-pick__card-name">새 메이트</p>
+                    <p className="matey-chat-pick__card-role">준비 중</p>
+                  </div>
+                </div>
+                <p className="matey-chat-pick__placeholder-note">
+                  {COPY.pickPlaceholderNote}
+                </p>
+                <p className="matey-chat-pick__placeholder-foot">
+                  추가 시 이 카드가 바뀌어요
+                </p>
+              </div>
+            </li>
+          ) : null}
         </ul>
       </div>
     </div>
