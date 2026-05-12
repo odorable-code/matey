@@ -7,7 +7,7 @@
  *
  * [이 파일에서 하는 일]
  * - 사이트 메인 페이지 전체 구조 조립 (Hero → 봇카드 → Features → FAQ)
- * - 봇 4인 카드 섹션을 페이지 내부에서 직접 렌더링
+ * - 봇 카드 섹션을 페이지 내부에서 직접 렌더링 (기본 3명 + 추후 메이트 플레이스홀더)
  * - URL 해시(#features, #faq, #mates)로 진입 시 해당 섹션으로 부드러운 스크롤
  * - 봇 카드 클릭 시 채팅 페이지 또는 회원가입 페이지로 이동
  *
@@ -35,13 +35,14 @@ import Features from '../components/4_Home/Features';
 import FAQ from '../components/4_Home/FAQ';
 import HomeClosingCta from 'pages/HomeClosingCta';
 import { useAuth } from '../contexts/AuthContext';
-import { MATES } from '../constants/mates';
+import { useChatModal } from '../contexts/ChatModalContext';
 import './HomePage.css';
 
 function HomePage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated, user } = useAuth();
+  const { landingMates } = useChatModal();
   const loggedIn = isAuthenticated || !!user;
 
   /* =========================================================
@@ -86,12 +87,12 @@ function HomePage() {
         <Hero />
 
         {/* =========================================================
-           2. 봇 4인 카드 섹션
+           2. 봇 카드 섹션 (landing API 3명 시 네 번째 칸에 추후 메이트 안내)
         ========================================================= */}
         <section
           id="mates"
           className="matey-mates"
-          aria-label="메이티 메이트 4인 소개"
+          aria-label="메이티 메이트 소개"
         >
           <div className="matey-mates__background" aria-hidden="true">
             <span className="matey-mates__glow matey-mates__glow--top" />
@@ -109,23 +110,21 @@ function HomePage() {
               <h2 className="matey-mates__title">
                 메이티 안에는
                 <br />
-                <span className="matey-mates__title-accent">
-                  성격이 다른 4명의 메이트
-                </span>
-                가 있어요
+                <span className="matey-mates__title-accent">성격이 다른 메이트들이</span> 있어요
               </h2>
 
               <p className="matey-mates__description">
-                처음 시작이 편한 타입, 차분히 정리해주는 타입, 핵심을 잘 짚는
-                타입, 마음을 다독여주는 타입까지.
+                처음 시작이 편한 타입부터 차분히 정리해 주는 타입, 핵심을 잘 짚는 타입까지.
+                앞으로는 다른 성격의 메이트도 순차적으로 더해질 수 있어요.
                 <br />
-                대화 전에 성격과 능력치를 가볍게 보고 고를 수 있어요.
+                대화 전에 성격과 능력치를 가볍게 보고 고를 수 있어요. (목록은 운영에서 등록한
+                상담봇과 동일해요.)
               </p>
             </header>
 
             {/* 봇 카드 그리드 */}
             <div className="matey-mates__grid" role="list">
-              {MATES.map((mate) => (
+              {landingMates.map((mate) => (
                 <article
                   key={mate.key}
                   className={`matey-mate-card ${mate.accent}`}
@@ -171,7 +170,7 @@ function HomePage() {
 
                   {/* 능력치 영역 (hover 시 확장) */}
                   <div className="matey-mate-card__stats">
-                    {mate.stats.map((stat) => (
+                    {(Array.isArray(mate.stats) ? mate.stats : []).map((stat) => (
                       <div key={stat.label} className="matey-mate-card__stat">
                         <div className="matey-mate-card__stat-row">
                           <span className="matey-mate-card__stat-label">
@@ -205,6 +204,35 @@ function HomePage() {
                   </div>
                 </article>
               ))}
+              {landingMates.length === 3 ? (
+                <article
+                  className="matey-mate-card matey-mate-card--placeholder"
+                  role="listitem"
+                  aria-label="추후 메이트 추가 예정"
+                >
+                  <div className="matey-mate-card__visual matey-mate-card__visual--placeholder">
+                    <span className="matey-mate-card__placeholder-mark" aria-hidden="true">
+                      +
+                    </span>
+                  </div>
+                  <div className="matey-mate-card__tags">
+                    <span className="matey-mate-card__tag">추후 추가</span>
+                  </div>
+                  <div className="matey-mate-card__headline">
+                    <span className="matey-mate-card__role">준비 중</span>
+                    <h3 className="matey-mate-card__name">새 메이트</h3>
+                    <p className="matey-mate-card__copy">
+                      이 자리에는 앞으로 다른 성격의 봇이 더해질 수 있어요. 준비되면 같은 목록에서
+                      만나실 수 있어요.
+                    </p>
+                  </div>
+                  <div className="matey-mate-card__footer matey-mate-card__footer--placeholder">
+                    <span className="matey-mate-card__cta matey-mate-card__cta--muted">
+                      추가 시 이 카드가 바뀌어요
+                    </span>
+                  </div>
+                </article>
+              ) : null}
             </div>
           </div>
         </section>
