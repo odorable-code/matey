@@ -1,12 +1,16 @@
-DROP DATABASE matey;
-CREATE DATABASE matey;
+-- =============================================================================
+-- 전체 초기화 후 스키마·시드 한 번에 적용 (이 파일만 실행하면 됨)
+-- DB·계정명은 환경에 맞게 수정 가능
+-- =============================================================================
+DROP DATABASE IF EXISTS matey;
+CREATE DATABASE matey CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE matey;
-DROP USER 'team-- user'@'%';
+
+DROP USER IF EXISTS 'team-- user'@'%';
 CREATE USER 'team-- user'@'%' IDENTIFIED BY '1234';
-
-GRANT SELECT, INSERT, UPDATE, DELETE ON MATEY.* TO 'team-- user'@'%';
-
+GRANT SELECT, INSERT, UPDATE, DELETE ON matey.* TO 'team-- user'@'%';
 FLUSH PRIVILEGES;
+
 
 CREATE TABLE `USER` (
 	`user_id`	BIGINT	NOT NULL PRIMARY KEY AUTO_INCREMENT,
@@ -30,14 +34,19 @@ CREATE TABLE `USER` (
 
 CREATE TABLE `BOT` (
 	`bot_id`	BIGINT	NOT NULL PRIMARY KEY AUTO_INCREMENT,
-	`name`	VARCHAR(50)	NOT NULL,
-	`avatar_image`	VARCHAR(500)	NULL	DEFAULT NULL,
+	`name`	VARCHAR(50)	NOT NULL	COMMENT '내부 botKey: dog|bear|cat 등 (채팅·URL 등)',
+	`display_name`	VARCHAR(50)	NULL	DEFAULT NULL	COMMENT '화면·관리자 표기: 강이·곰이·냥이 등',
+	`avatar_image`	VARCHAR(8000)	NULL	DEFAULT NULL,
 	`description`	TEXT	NULL	DEFAULT NULL,
 	`selection_preview`	TEXT	NOT NULL,
+	`card_stats_json`	VARCHAR(4000)	NULL	DEFAULT NULL	COMMENT '메인 홈 카드 막대 JSON: [{"label","value"},…]',
 	`like_count`	INT	NOT NULL	DEFAULT 0,
 	`dislike_count`	INT	NOT NULL	DEFAULT 0,
-	`reset_at`	TIMESTAMP	NOT NULL	DEFAULT CURRENT_TIMESTAMP
+	`reset_at`	TIMESTAMP	NOT NULL	DEFAULT CURRENT_TIMESTAMP,
+	KEY `idx_bot_name` (`name`)
 );
+
+-- 기존 DB: ALTER TABLE `BOT` MODIFY COLUMN `avatar_image` VARCHAR(8000) NULL DEFAULT NULL;
 
 ALTER TABLE `USER`
 	ADD CONSTRAINT `fk_user_assigned_bot`
@@ -171,7 +180,8 @@ CREATE TABLE `NOTIFICATION` (
 	`created_at`	TIMESTAMP	NULL	DEFAULT CURRENT_TIMESTAMP,
 	`target_type`	VARCHAR(50)	NULL,
 	`target_id`	BIGINT	NULL,
-    
+	KEY `idx_noti_user_read` (`user_id`, `is_read`),
+	KEY `idx_noti_user_type_target` (`user_id`, `target_type`, `target_id`),
     FOREIGN KEY (user_id) REFERENCES USER(user_id),
     FOREIGN KEY(`type_code`) REFERENCES `NOTIFICATION_TYPE`(`type_code`)
 );
@@ -181,6 +191,7 @@ CREATE TABLE `SUPPORT_ANSWER` (
 	`admin_user_id`	BIGINT	NOT NULL,
 	`support_id`	BIGINT	NOT NULL,
 	`content`	TEXT	NOT NULL,
+	`handling_method`	VARCHAR(500)	NULL	COMMENT '처리 방법',
 	`created_at`	TIMESTAMP	NOT NULL	DEFAULT CURRENT_TIMESTAMP,
     
     FOREIGN KEY(`admin_user_id`) REFERENCES `USER`(`user_id`),
@@ -316,6 +327,129 @@ CREATE TABLE `INTIMACY_LEVEL` (
 	`intimacy_standard`	int	NULL
 );
 
+INSERT INTO INTIMACY_LEVEL (intimacy_id, level_description, intimacy_standard) VALUES (1, '처음 만남', 0);
+INSERT INTO INTIMACY_LEVEL (intimacy_id, level_description, intimacy_standard) VALUES
+  (2,'단계 2',1),
+  (3,'단계 3',2),
+  (4,'단계 4',3),
+  (5,'단계 5',4),
+  (6,'단계 6',5),
+  (7,'단계 7',6),
+  (8,'단계 8',7),
+  (9,'단계 9',8),
+  (10,'단계 10',9),
+  (11,'단계 11',10),
+  (12,'단계 12',11),
+  (13,'단계 13',12),
+  (14,'단계 14',13),
+  (15,'단계 15',14),
+  (16,'단계 16',15),
+  (17,'단계 17',16),
+  (18,'단계 18',17),
+  (19,'단계 19',18),
+  (20,'단계 20',19),
+  (21,'단계 21',20),
+  (22,'단계 22',21),
+  (23,'단계 23',22),
+  (24,'단계 24',23),
+  (25,'단계 25',24),
+  (26,'단계 26',25),
+  (27,'단계 27',26),
+  (28,'단계 28',27),
+  (29,'단계 29',28),
+  (30,'단계 30',29),
+  (31,'단계 31',30),
+  (32,'단계 32',31),
+  (33,'단계 33',32),
+  (34,'단계 34',33),
+  (35,'단계 35',34),
+  (36,'단계 36',35),
+  (37,'단계 37',36),
+  (38,'단계 38',37),
+  (39,'단계 39',38),
+  (40,'단계 40',39),
+  (41,'단계 41',40),
+  (42,'단계 42',41),
+  (43,'단계 43',42),
+  (44,'단계 44',43),
+  (45,'단계 45',44),
+  (46,'단계 46',45),
+  (47,'단계 47',46),
+  (48,'단계 48',47),
+  (49,'단계 49',48),
+  (50,'단계 50',49),
+  (51,'단계 51',50),
+  (52,'단계 52',51),
+  (53,'단계 53',52),
+  (54,'단계 54',53),
+  (55,'단계 55',54),
+  (56,'단계 56',55),
+  (57,'단계 57',56),
+  (58,'단계 58',57),
+  (59,'단계 59',58),
+  (60,'단계 60',59),
+  (61,'단계 61',60),
+  (62,'단계 62',61),
+  (63,'단계 63',62),
+  (64,'단계 64',63),
+  (65,'단계 65',64),
+  (66,'단계 66',65),
+  (67,'단계 67',66),
+  (68,'단계 68',67),
+  (69,'단계 69',68),
+  (70,'단계 70',69),
+  (71,'단계 71',70),
+  (72,'단계 72',71),
+  (73,'단계 73',72),
+  (74,'단계 74',73),
+  (75,'단계 75',74),
+  (76,'단계 76',75),
+  (77,'단계 77',76),
+  (78,'단계 78',77),
+  (79,'단계 79',78),
+  (80,'단계 80',79),
+  (81,'단계 81',80),
+  (82,'단계 82',81),
+  (83,'단계 83',82),
+  (84,'단계 84',83),
+  (85,'단계 85',84),
+  (86,'단계 86',85),
+  (87,'단계 87',86),
+  (88,'단계 88',87),
+  (89,'단계 89',88),
+  (90,'단계 90',89),
+  (91,'단계 91',90),
+  (92,'단계 92',91),
+  (93,'단계 93',92),
+  (94,'단계 94',93),
+  (95,'단계 95',94),
+  (96,'단계 96',95),
+  (97,'단계 97',96),
+  (98,'단계 98',97),
+  (99,'단계 99',98),
+  (100,'단계 100',99),
+  (101,'단계 101',100),
+  (102,'단계 102',101),
+  (103,'단계 103',102),
+  (104,'단계 104',103),
+  (105,'단계 105',104),
+  (106,'단계 106',105),
+  (107,'단계 107',106),
+  (108,'단계 108',107),
+  (109,'단계 109',108),
+  (110,'단계 110',109),
+  (111,'단계 111',110),
+  (112,'단계 112',111),
+  (113,'단계 113',112),
+  (114,'단계 114',113),
+  (115,'단계 115',114),
+  (116,'단계 116',115),
+  (117,'단계 117',116),
+  (118,'단계 118',117),
+  (119,'단계 119',118),
+  (120,'단계 120',119);
+ALTER TABLE INTIMACY_LEVEL AUTO_INCREMENT = 121;
+
 CREATE TABLE `USER_INVENTORY` (
 	`inventory_id`	BIGINT	NOT NULL PRIMARY KEY AUTO_INCREMENT,
 	`user_id`	BIGINT	NOT NULL	UNIQUE,
@@ -354,6 +488,7 @@ CREATE TABLE `USER_BOT_RELATION` (
 	`exclusive_id`	BIGINT	NOT NULL,
 	`intimacy_id`	int	NOT NULL,
 	`last_fed_at`	TIMESTAMP	NULL	DEFAULT NULL,
+	`last_feed_reward_at`	TIMESTAMP	NULL	DEFAULT NULL,
 	`created_at`	TIMESTAMP	NOT NULL	DEFAULT CURRENT_TIMESTAMP,
 	`current_exp`	INT	NOT NULL,
     
@@ -611,60 +746,58 @@ VALUES (1, 1), (2, 2), (3, 3);
 -- ==================================================
 -- BOT / BOT_MOTION 시드
 -- - 프론트 에셋(frontend/public/images/mascots/*) 기준으로 BOT_MOTION을 채웁니다.
--- - BOT.name 은 코드에서 botKey 로 쓰이므로 dog/bear/cat/hamster 로 맞춥니다.
+-- - BOT.name 은 내부 키(dog/bear/cat 등). BOT.display_name 은 DB에 저장하는 표시명(강이/곰이/…).
 -- ==================================================
 
 -- 안전하게 다시 돌릴 수 있게(중복 방지) botKey 기준으로 먼저 정리합니다.
--- (BOT_MOTION에 FK가 있어서, BOT_MOTION → BOT 순서로 삭제/삽입)
-SET @botDog := (SELECT bot_id FROM BOT WHERE name = 'dog' LIMIT 1);
-SET @botBear := (SELECT bot_id FROM BOT WHERE name = 'bear' LIMIT 1);
-SET @botCat := (SELECT bot_id FROM BOT WHERE name = 'cat' LIMIT 1);
-SET @botHamster := (SELECT bot_id FROM BOT WHERE name = 'hamster' LIMIT 1);
+-- (BOT_MOTION에 FK가 있어서, BOT_MOTION → BOT 순서)
+-- Workbench Safe Updates(1175): 다중 테이블 DELETE·name 조건만으로도 막히는 경우가 있어
+-- 이 블록만 세션에서 잠시 해제합니다(스크립트 끝나면 기본값으로 복구).
 
-DELETE FROM BOT_MOTION WHERE bot_id IN (
-  COALESCE(@botDog, -1),
-  COALESCE(@botBear, -1),
-  COALESCE(@botCat, -1),
-  COALESCE(@botHamster, -1)
-);
+SET SESSION sql_safe_updates = 0;
 
-DELETE FROM BOT WHERE name IN ('dog', 'bear', 'cat', 'hamster');
+DELETE bm
+FROM BOT_MOTION bm
+INNER JOIN BOT b ON b.bot_id = bm.bot_id
+WHERE b.name IN ('dog', 'bear', 'cat', 'hamster');
 
--- 1) BOT (설명/프리뷰 문구) — 메인/채팅 문구 톤에 맞춤
-INSERT INTO BOT (name, avatar_image, description, selection_preview, like_count, dislike_count, reset_at)
+DELETE FROM BOT
+WHERE name IN ('dog', 'bear', 'cat', 'hamster');
+
+SET SESSION sql_safe_updates = 1;
+
+-- 1) BOT (표시명은 display_name 에 저장, 메인 카드 막대는 card_stats_json)
+INSERT INTO BOT (name, display_name, avatar_image, description, selection_preview, card_stats_json, like_count, dislike_count, reset_at)
 VALUES
   (
     'dog',
+    '강이',
     '/images/mascots/dog/dog.png',
     '처음 접속한 사용자가 부담 없이 대화를 시작할 수 있도록 편안하고 따뜻한 분위기로 안내해요.',
     '처음 말을 꺼내기 쉬운 다정한 시작형',
+    '[{"label":"공감력","value":92},{"label":"친근함","value":95},{"label":"시작 편안함","value":90},{"label":"부드러움","value":88}]',
     0,
     0,
     NOW()
   ),
   (
     'bear',
+    '곰이',
     '/images/mascots/bear/bear.png',
     '머릿속이 엉켜 있을 때 흐름을 차분히 풀어내고 핵심을 정돈해주는 메이트예요.',
     '복잡한 마음을 차분히 정리해주는 타입',
+    '[{"label":"공감력","value":84},{"label":"친근함","value":78},{"label":"분석력","value":91},{"label":"정리력","value":94}]',
     0,
     0,
     NOW()
   ),
   (
     'cat',
+    '냥이',
     '/images/mascots/cat/cat.png',
     '질문이 많거나 헷갈리는 게 있을 때, 중요한 포인트를 빠르게 짚어주는 메이트예요.',
     '핵심만 빠르게 짚어주는 또렷한 타입',
-    0,
-    0,
-    NOW()
-  ),
-  (
-    'hamster',
-    '/images/mascots/hamster/hamster.png',
-    '걱정이 많거나 말 꺼내기 조심스러울 때, 부드러운 낮춤 톤으로 천천히 곁에 있어줘요.',
-    '망설이는 마음을 다독여주는 안심형',
+    '[{"label":"공감력","value":76},{"label":"친근함","value":72},{"label":"분석력","value":96},{"label":"명확함","value":93}]',
     0,
     0,
     NOW()
@@ -673,7 +806,6 @@ VALUES
 SET @botDog := (SELECT bot_id FROM BOT WHERE name = 'dog' LIMIT 1);
 SET @botBear := (SELECT bot_id FROM BOT WHERE name = 'bear' LIMIT 1);
 SET @botCat := (SELECT bot_id FROM BOT WHERE name = 'cat' LIMIT 1);
-SET @botHamster := (SELECT bot_id FROM BOT WHERE name = 'hamster' LIMIT 1);
 
 -- 2) BOT_MOTION
 -- motion_group 규칙(프로젝트 MyPageMapper 기준):
@@ -682,52 +814,70 @@ SET @botHamster := (SELECT bot_id FROM BOT WHERE name = 'hamster' LIMIT 1);
 -- - SPECIAL: 특수(친밀도에 따라 잠금 해제)
 
 -- 공통 모션(기본)
+-- 냥이(cat) 모션 PNG는 수평 반전 에셋을 사용합니다(BOT_MOTION.asset_url 경로는 동일).
 INSERT INTO BOT_MOTION (bot_id, motion_code, motion_name, motion_group, asset_url, unlock_intimacy_level)
 VALUES
-  (@botDog,     'HELLO',   '인사',       'COMMON',  '/images/mascots/dog/hello.png',    0),
-  (@botDog,     'WAITING', '기다림',     'COMMON',  '/images/mascots/dog/waiting.png',  0),
-  (@botBear,    'HELLO',   '인사',       'COMMON',  '/images/mascots/bear/hello.png',   0),
-  (@botBear,    'WAITING', '기다림',     'COMMON',  '/images/mascots/bear/waiting.png', 0),
-  (@botCat,     'HELLO',   '인사',       'COMMON',  '/images/mascots/cat/hello.png',    0),
-  (@botCat,     'WAITING', '기다림',     'COMMON',  '/images/mascots/cat/waiting.png',  0),
-  (@botHamster, 'HELLO',   '인사',       'COMMON',  '/images/mascots/hamster/hello.png',   0),
-  (@botHamster, 'WAITING', '기다림',     'COMMON',  '/images/mascots/hamster/waiting.png', 0);
+  (@botDog,     'HELLO',   '인사',       'COMMON',  '/images/mascots/dog/hello.png',    1),
+  (@botDog,     'WAITING', '기다림',     'COMMON',  '/images/mascots/dog/waiting.png',  1),
+  (@botBear,    'HELLO',   '인사',       'COMMON',  '/images/mascots/bear/hello.png',   1),
+  (@botBear,    'WAITING', '기다림',     'COMMON',  '/images/mascots/bear/waiting.png', 1),
+  (@botCat,     'HELLO',   '인사',       'COMMON',  '/images/mascots/cat/hello.png',    1),
+  (@botCat,     'WAITING', '기다림',     'COMMON',  '/images/mascots/cat/waiting.png',  1);
 
 -- 감정/상황 모션
 INSERT INTO BOT_MOTION (bot_id, motion_code, motion_name, motion_group, asset_url, unlock_intimacy_level)
 VALUES
-  (@botDog,     'WORRY',       '걱정',       'EMOTION', '/images/mascots/dog/worry.png',       1),
-  (@botDog,     'TEARS',       '눈물',       'EMOTION', '/images/mascots/dog/tears.png',       1),
-  (@botDog,     'ANGER',       '화남',       'EMOTION', '/images/mascots/dog/anger.png',       1),
-  (@botDog,     'CURIOSITY',   '호기심',     'EMOTION', '/images/mascots/dog/curiosity.png',   1),
-  (@botDog,     'COMPLIMENTS', '칭찬',       'EMOTION', '/images/mascots/dog/compliments.png', 1),
-  (@botDog,     'STRETCH',     '스트레칭',   'EMOTION', '/images/mascots/dog/stretch.png',     1),
+  (@botDog,     'WORRY',       '걱정',       'EMOTION', '/images/mascots/dog/worry.png',       2),
+  (@botDog,     'TEARS',       '눈물',       'EMOTION', '/images/mascots/dog/tears.png',       2),
+  (@botDog,     'ANGER',       '화남',       'EMOTION', '/images/mascots/dog/anger.png',       2),
+  (@botDog,     'CURIOSITY',   '호기심',     'EMOTION', '/images/mascots/dog/curiosity.png',   2),
+  (@botDog,     'COMPLIMENTS', '칭찬',       'EMOTION', '/images/mascots/dog/compliments.png', 2),
+  (@botDog,     'STRETCH',     '스트레칭',   'EMOTION', '/images/mascots/dog/stretch.png',     2),
 
-  (@botBear,    'WORRY',       '걱정',       'EMOTION', '/images/mascots/bear/worry.png',       1),
-  (@botBear,    'TEARS',       '눈물',       'EMOTION', '/images/mascots/bear/tears.png',       1),
-  (@botBear,    'ANGER',       '화남',       'EMOTION', '/images/mascots/bear/anger.png',       1),
-  (@botBear,    'CURIOSITY',   '호기심',     'EMOTION', '/images/mascots/bear/curiosity.png',   1),
-  (@botBear,    'COMPLIMENTS', '칭찬',       'EMOTION', '/images/mascots/bear/compliments.png', 1),
-  (@botBear,    'STRETCH',     '스트레칭',   'EMOTION', '/images/mascots/bear/stretch.png',     1),
+  (@botBear,    'WORRY',       '걱정',       'EMOTION', '/images/mascots/bear/worry.png',       2),
+  (@botBear,    'TEARS',       '눈물',       'EMOTION', '/images/mascots/bear/tears.png',       2),
+  (@botBear,    'ANGER',       '화남',       'EMOTION', '/images/mascots/bear/anger.png',       2),
+  (@botBear,    'CURIOSITY',   '호기심',     'EMOTION', '/images/mascots/bear/curiosity.png',   2),
+  (@botBear,    'COMPLIMENTS', '칭찬',       'EMOTION', '/images/mascots/bear/compliments.png', 2),
+  (@botBear,    'STRETCH',     '스트레칭',   'EMOTION', '/images/mascots/bear/stretch.png',     2),
 
-  (@botCat,     'WORRY',       '걱정',       'EMOTION', '/images/mascots/cat/worry.png',       1),
-  (@botCat,     'TEARS',       '눈물',       'EMOTION', '/images/mascots/cat/tears.png',       1),
-  (@botCat,     'ANGER',       '화남',       'EMOTION', '/images/mascots/cat/anger.png',       1),
-  (@botCat,     'CURIOSITY',   '호기심',     'EMOTION', '/images/mascots/cat/curiosity.png',   1),
-  (@botCat,     'COMPLIMENTS', '칭찬',       'EMOTION', '/images/mascots/cat/compliments.png', 1),
-  (@botCat,     'STRETCH',     '스트레칭',   'EMOTION', '/images/mascots/cat/stretch.png',     1),
+  (@botCat,     'WORRY',       '걱정',       'EMOTION', '/images/mascots/cat/worry.png',       2),
+  (@botCat,     'TEARS',       '눈물',       'EMOTION', '/images/mascots/cat/tears.png',       2),
+  (@botCat,     'ANGER',       '화남',       'EMOTION', '/images/mascots/cat/anger.png',       2),
+  (@botCat,     'CURIOSITY',   '호기심',     'EMOTION', '/images/mascots/cat/curiosity.png',   2),
+  (@botCat,     'COMPLIMENTS', '칭찬',       'EMOTION', '/images/mascots/cat/compliments.png', 2),
+  (@botCat,     'STRETCH',     '스트레칭',   'EMOTION', '/images/mascots/cat/stretch.png',     2);
 
-  (@botHamster, 'WORRY',       '걱정',       'EMOTION', '/images/mascots/hamster/worry.png',       1),
-  (@botHamster, 'TEARS',       '눈물',       'EMOTION', '/images/mascots/hamster/tears.png',       1),
-  (@botHamster, 'ANGER',       '화남',       'EMOTION', '/images/mascots/hamster/anger.png',       1),
-  (@botHamster, 'CURIOSITY',   '호기심',     'EMOTION', '/images/mascots/hamster/curiosity.png',   1),
-  (@botHamster, 'COMPLIMENTS', '칭찬',       'EMOTION', '/images/mascots/hamster/compliments.png', 1),
-  (@botHamster, 'STRETCH',     '스트레칭',   'EMOTION', '/images/mascots/hamster/stretch.png',     1);
-
--- 특수(스페셜) 모션: ginger (친밀도 2부터 열리도록)
+-- 특수(스페셜) 모션: ginger (친밀도 3부터 열리도록)
 INSERT INTO BOT_MOTION (bot_id, motion_code, motion_name, motion_group, asset_url, unlock_intimacy_level)
 VALUES
-  (@botDog,     'GINGER', '진저', 'SPECIAL', '/images/mascots/dog/ginger.png',     2),
-  (@botBear,    'GINGER', '진저', 'SPECIAL', '/images/mascots/bear/ginger.png',    2),
-  (@botCat,     'GINGER', '진저', 'SPECIAL', '/images/mascots/cat/ginger.png',     2),
-  (@botHamster, 'GINGER', '진저', 'SPECIAL', '/images/mascots/hamster/ginger.png', 2);
+  (@botDog,     'GINGER', '진저', 'SPECIAL', '/images/mascots/dog/ginger.png',     3),
+  (@botBear,    'GINGER', '진저', 'SPECIAL', '/images/mascots/bear/ginger.png',    3),
+  (@botCat,     'GINGER', '진저', 'SPECIAL', '/images/mascots/cat/ginger.png',     3);
+
+-- ============================================================
+-- 기존 DB 마이그레이션 (이미 위 CREATE 로 display_name 이 있는 스키마는 아래 UPDATE 만 의미 있음)
+-- 컬럼이 없는 옛 DB는 한 번만 실행:
+--   ALTER TABLE `BOT` ADD COLUMN `display_name` VARCHAR(50) NULL DEFAULT NULL COMMENT '화면·관리자 표기' AFTER `name`;
+-- Workbench Safe Updates(1175): WHERE 가 인덱스를 안 타면(특히 TRIM(name)) 막힐 수 있어
+-- 이 마이그레이션 블록만 세션에서 잠시 해제합니다.
+-- ============================================================
+SET SESSION sql_safe_updates = 0;
+
+UPDATE `BOT` SET `display_name` = '강이' WHERE `name` = 'dog' AND (`display_name` IS NULL OR TRIM(`display_name`) = '') LIMIT 1;
+UPDATE `BOT` SET `display_name` = '곰이' WHERE `name` = 'bear' AND (`display_name` IS NULL OR TRIM(`display_name`) = '') LIMIT 1;
+UPDATE `BOT` SET `display_name` = '냥이' WHERE `name` = 'cat' AND (`display_name` IS NULL OR TRIM(`display_name`) = '') LIMIT 1;
+
+-- 예전에 BOT.name 에 한글만 넣었던 경우: name 을 영문 키로 되돌리고 표시명은 display_name 에 둠
+UPDATE `BOT` SET `name` = 'dog', `display_name` = COALESCE(NULLIF(TRIM(`display_name`), ''), '강이') WHERE TRIM(`name`) IN ('강이') LIMIT 1;
+UPDATE `BOT` SET `name` = 'bear', `display_name` = COALESCE(NULLIF(TRIM(`display_name`), ''), '곰이') WHERE TRIM(`name`) IN ('곰이') LIMIT 1;
+UPDATE `BOT` SET `name` = 'cat', `display_name` = COALESCE(NULLIF(TRIM(`display_name`), ''), '냥이') WHERE TRIM(`name`) IN ('냥이') LIMIT 1;
+
+-- 기존 DB 마이그레이션: 메인 홈 카드 막대 JSON (이미 CREATE 에 포함된 스키마는 아래 UPDATE 만 실행)
+--   ALTER TABLE `BOT` ADD COLUMN `card_stats_json` VARCHAR(4000) NULL DEFAULT NULL COMMENT '메인 홈 카드 막대 JSON' AFTER `selection_preview`;
+-- 백엔드 기동 시 비어 있는 행만 채우려면 matey.seed-bot-card-stats=true(application.properties 기본값) 로 SeedBotCardStatsRunner 가 동작합니다.
+UPDATE `BOT` SET `card_stats_json` = '[{"label":"공감력","value":92},{"label":"친근함","value":95},{"label":"시작 편안함","value":90},{"label":"부드러움","value":88}]' WHERE `name` = 'dog' AND (`card_stats_json` IS NULL OR TRIM(`card_stats_json`) = '') LIMIT 1;
+UPDATE `BOT` SET `card_stats_json` = '[{"label":"공감력","value":84},{"label":"친근함","value":78},{"label":"분석력","value":91},{"label":"정리력","value":94}]' WHERE `name` = 'bear' AND (`card_stats_json` IS NULL OR TRIM(`card_stats_json`) = '') LIMIT 1;
+UPDATE `BOT` SET `card_stats_json` = '[{"label":"공감력","value":76},{"label":"친근함","value":72},{"label":"분석력","value":96},{"label":"명확함","value":93}]' WHERE `name` = 'cat' AND (`card_stats_json` IS NULL OR TRIM(`card_stats_json`) = '') LIMIT 1;
+
+SET SESSION sql_safe_updates = 1;
