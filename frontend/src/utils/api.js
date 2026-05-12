@@ -4,14 +4,25 @@ function defaultApiBaseUrl() {
   // 기본은 스프링(8080) 직접. CRA에 상대 /api만 보내면 index.html 이 올 수 있어 기본값은 비우지 않음. 프록시만 쓰려면 .env 에 REACT_APP_API_BASE_URL=
   return 'http://localhost:8080';
 }
-export const API_BASE_URL =
+
+/** REACT_APP_API_BASE_URL 이 .../api/api 로 끝나면 Spring 이 404(No static resource)를 내기 쉬움 */
+function squashDuplicateApiSuffixInBase(u) {
+  let b = String(u || '').trim().replace(/\/$/, '');
+  while (/\/api\/api$/i.test(b)) {
+    b = b.replace(/\/api\/api$/i, '/api');
+  }
+  return b;
+}
+
+export const API_BASE_URL = squashDuplicateApiSuffixInBase(
   rawApiBase === ''
     ? ''
     : String(
         rawApiBase !== undefined && rawApiBase !== null && rawApiBase !== ''
           ? rawApiBase
           : defaultApiBaseUrl()
-      ).replace(/\/$/, '');
+      )
+);
 
 const BACKEND_BASE_URL = API_BASE_URL.replace(/\/api$/, '');
 
@@ -21,7 +32,8 @@ const BACKEND_BASE_URL = API_BASE_URL.replace(/\/api$/, '');
  * - base 가 .../api 인데 path 도 /api/... 면 /api 가 두 번 붙지 않게 함.
  */
 function resolveRequestUrl(path) {
-  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  const rawPath = path.startsWith('/') ? path : `/${path}`;
+  const normalizedPath = rawPath.replace(/\/+/g, '/');
   const base = API_BASE_URL.replace(/\/$/, '');
   if (!base) {
     return normalizedPath;
@@ -564,6 +576,18 @@ export const adminAPI = {
       method: 'GET',
     }),
 
+  createBot: (body) =>
+    request('/api/admin/bots', {
+      method: 'POST',
+      body,
+    }),
+
+  updateBot: (botId, body) =>
+    request(`/api/admin/bots/${encodeURIComponent(String(botId))}`, {
+      method: 'PUT',
+      body,
+    }),
+
   /** 공지(ADMIN_NOTICE) — 백엔드에서 ADMIN·SUPER_ADMIN만 허용 */
   createNotice: (body) =>
     request('/api/admin/notices', {
@@ -612,7 +636,69 @@ function normalizeJsonArray(payload) {
   return null;
 }
 
+/**
+ * 담당봇 후보 행 배열.
+ * 1) GET /api/mypage/bot-menu 본문의 assignableBots — 랜딩/assignable 전용 URL이 없거나 404여도 동일 DB 목록 사용
+ * 2) GET /api/mypage/bots/landing (인증, 커뮤니티 랜딩과 동일 목록)
+ * 3) GET /api/mypage/bots/assignable
+ * 4) GET /api/community/bots/landing (비로그인 가능)
+ */
+async function fetchAssignableBotRowsQuiet() {
+  try {
+    const menu = await request('/api/mypage/bot-menu');
+    const raw = menu?.assignableBots ?? menu?.assignable_bots;
+    if (Array.isArray(raw) && raw.length > 0) return raw;
+  } catch {
+    /* 비로그인·만료 등 → 아래 공개/전용 URL 시도 */
+  }
+
+  const paths = [
+    '/api/mypage/bots/landing',
+    '/api/mypage/bots/assignable',
+    '/api/community/bots/landing',
+  ];
+  for (const path of paths) {
+    try {
+      const payload = await request(path);
+      const list = normalizeJsonArray(payload);
+      if (list !== null && list.length > 0) return list;
+      if (Array.isArray(payload) && payload.length > 0) return payload;
+    } catch {
+      /* 다음 후보 */
+    }
+  }
+  return [];
+}
+
 export const communityAPI = {
+  /** 메인 랜딩·채팅 픽 — BOT 테이블 (관리자 상담봇과 동일 소스) */
+  getLandingBots: async () => {
+    const parseList = (raw) => {
+      const list = normalizeJsonArray(raw);
+      if (list !== null) return list;
+      return Array.isArray(raw) ? raw : [];
+    };
+    let fromCommunity = [];
+    try {
+      const raw = await request('/api/community/bots/landing');
+      fromCommunity = parseList(raw);
+    } catch (e) {
+      const s = e?.status;
+      if (s !== 404 && s !== 403 && s !== 401) throw e;
+    }
+    if (fromCommunity.length > 0) return fromCommunity;
+    /* 커뮤니티 경로가 프록시·구버전에서 404이거나 빈 배열일 때: 로그인 상태면 마이페이지 동일 목록 시도 */
+    if (getStoredToken() && !isMockAccessToken()) {
+      try {
+        const raw2 = await request('/api/mypage/bots/landing');
+        const out2 = parseList(raw2);
+        if (out2.length > 0) return out2;
+      } catch {
+        /* ignore */
+      }
+    }
+    return [];
+  },
   getCategories: async () => {
     const raw = await request('/api/community/categories');
     const list = normalizeJsonArray(raw);
@@ -712,7 +798,14 @@ export const myPageAPI = {
   getProfile: () => request('/api/mypage/profile'),
   updateProfile: (data) => request('/api/mypage/profile', { method: 'PUT', body: data }),
   getBotMenu: () => request('/api/mypage/bot-menu'),
+  /** 담당봇 후보: 여러 API 경로를 조용히 시도 (404 나도 마이페이지 로드는 깨지지 않게) */
+  getAssignableBots: () => fetchAssignableBotRowsQuiet(),
   interactBot: (data) => request('/api/mypage/bot/interact', { method: 'POST', body: data }),
+  setAssignedBot: (botId) =>
+    request('/api/mypage/bot/assigned', {
+      method: 'PATCH',
+      body: { botId },
+    }),
   getLetters: () => request('/api/mypage/letters'),
   generateLetters: () => request('/api/mypage/generate/letters'),
   readLetter: (letterId) => request(`/api/mypage/letters/${letterId}/read`, { method: 'PATCH' }),
@@ -742,6 +835,9 @@ export const notificationAPI = {
     request(`/api/notifications/${notificationId}/read`, { method: 'PATCH' }),
   markAllAsRead: () =>
     request('/api/notifications/read-all', { method: 'PATCH' }),
+  /** 마이페이지 문의·신고함에서 내 티켓과 연결된 알림 일괄 읽음 */
+  markSupportInboxRead: () =>
+    request('/api/notifications/read-support-inbox', { method: 'PATCH' }),
   deleteNotification: (notificationId) =>
     request(`/api/notifications/${notificationId}`, { method: 'DELETE' }),
 };
