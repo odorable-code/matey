@@ -9,7 +9,10 @@ import lombok.Data;
 public class AdminBotStatsRow {
     private Long botId;
     private String name;
+    private String displayName;
     private String description;
+    /** BOT.selection_preview — 봇 선택 UI 등에 쓰는 한 줄 소개 */
+    private String selectionPreview;
     private String avatarImage;
     /** BOT.like_count */
     private Integer likeCount;
@@ -21,4 +24,5 @@ public class AdminBotStatsRow {
     private Integer prevMonthRecommendCount;
     /** 해당 월 delta=-1 건수 */
     private Integer prevMonthDislikeCount;
+    private String cardStatsJson;
 }

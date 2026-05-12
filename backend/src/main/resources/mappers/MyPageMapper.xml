@@ -19,42 +19,137 @@
 
     <select id="selectBotRelationInfo" resultType="kr.hi.matey.dto.BotMenuDTO">
         SELECT
-        ubr.intimacy_id as level,
-        ubr.current_exp as remainPoint
-        FROM USER_BOT_RELATION ubr
-        JOIN EXCLUSIVE e ON ubr.exclusive_id = e.exclusive_id
-        WHERE e.user_id = #{userId}
+            ubr.intimacy_id AS level,
+            ubr.current_exp AS remainPoint,
+            b.bot_id AS botId,
+            COALESCE(NULLIF(TRIM(b.display_name), ''), b.name) AS botName,
+            b.avatar_image AS botAvatarImage,
+            ubr.last_feed_reward_at AS lastFeedRewardAt
+        FROM USER u
+        INNER JOIN EXCLUSIVE e ON e.user_id = u.user_id
+            AND e.bot_id = COALESCE(
+                (
+                    SELECT e0.bot_id
+                    FROM EXCLUSIVE e0
+                    INNER JOIN USER u0 ON u0.user_id = #{userId} AND u0.user_id = e0.user_id
+                    WHERE e0.bot_id = u0.assigned_bot_id
+                    LIMIT 1
+                ),
+                (
+                    SELECT e1.bot_id
+                    FROM EXCLUSIVE e1
+                    WHERE e1.user_id = #{userId}
+                    ORDER BY e1.exclusive_id ASC
+                    LIMIT 1
+                )
+            )
+        INNER JOIN USER_BOT_RELATION ubr ON ubr.exclusive_id = e.exclusive_id
+        INNER JOIN BOT b ON b.bot_id = e.bot_id
+        WHERE u.user_id = #{userId}
         LIMIT 1
     </select>
 
+    <!-- 마이페이지 담당봇·bot-menu.assignableBots: card_stats_json 없는 DB에서도 조회되게 제외 -->
+    <select id="selectBotsForPicker" resultType="kr.hi.matey.dto.AssignableBotOption">
+        SELECT
+            bot_id AS botId,
+            name,
+            display_name AS displayName,
+            avatar_image AS avatarImage
+        FROM BOT
+        ORDER BY bot_id ASC
+    </select>
+
+    <!-- 공개 랜딩(홈 막대): card_stats_json 포함 — 컬럼 없으면 CommunityService 에서 picker 쿼리로 폴백 -->
+    <select id="selectBotsForPublicLanding" resultType="kr.hi.matey.dto.AssignableBotOption">
+        SELECT
+            bot_id AS botId,
+            name,
+            display_name AS displayName,
+            avatar_image AS avatarImage,
+            card_stats_json AS cardStatsJson
+        FROM BOT
+        ORDER BY bot_id ASC
+    </select>
+
+    <select id="countBotById" resultType="int">
+        SELECT COUNT(*) FROM BOT WHERE bot_id = #{botId}
+    </select>
+
+    <select id="countExclusiveByUserAndBot" resultType="int">
+        SELECT COUNT(*)
+        FROM EXCLUSIVE
+        WHERE user_id = #{userId} AND bot_id = #{botId}
+    </select>
+
+    <insert id="insertExclusive">
+        INSERT INTO EXCLUSIVE (user_id, bot_id)
+        VALUES (#{userId}, #{botId})
+    </insert>
+
+    <select id="selectExclusiveIdByUserAndBot" resultType="long">
+        SELECT exclusive_id
+        FROM EXCLUSIVE
+        WHERE user_id = #{userId} AND bot_id = #{botId}
+        ORDER BY exclusive_id DESC
+        LIMIT 1
+    </select>
+
+    <insert id="insertUserBotRelation">
+        INSERT INTO USER_BOT_RELATION (exclusive_id, intimacy_id, current_exp)
+        VALUES (#{exclusiveId}, #{intimacyId}, #{currentExp})
+    </insert>
+
+    <update id="updateUserAssignedBot">
+        UPDATE USER
+        SET assigned_bot_id = #{botId}
+        WHERE user_id = #{userId}
+    </update>
+
     <select id="selectUserBackgrounds" resultType="kr.hi.matey.dto.BotMenuDTO$BackgroundDTO">
         SELECT
+        background_id AS backgroundId,
         name,
+        image_url AS imageUrl,
         CASE
         WHEN unlock_intimacy_level &gt; #{userLevel} THEN '잠금'
         ELSE '보유'
-        END as state
+        END AS state
         FROM CHAT_BACKGROUND
         ORDER BY sort_order ASC
     </select>
 
     <select id="selectUserMotions" resultType="kr.hi.matey.dto.BotMenuDTO$MotionDTO">
         SELECT
+        motion_code as motionCode,
         motion_name as name,
+        asset_url as assetUrl,
+        unlock_intimacy_level as unlockIntimacyLevel,
         CASE
         WHEN unlock_intimacy_level &gt; #{userLevel} THEN '잠금'
         WHEN motion_group = 'COMMON' THEN '기본'
         ELSE '보유'
         END as tag
         FROM BOT_MOTION
-        WHERE bot_id = (
-            SELECT e.bot_id
-            FROM EXCLUSIVE e
-            WHERE e.user_id = #{userId}
-            ORDER BY e.exclusive_id ASC
-            LIMIT 1
+        WHERE bot_id = COALESCE(
+            (
+                SELECT e0.bot_id
+                FROM EXCLUSIVE e0
+                INNER JOIN USER u0 ON u0.user_id = #{userId} AND u0.user_id = e0.user_id
+                WHERE e0.bot_id = u0.assigned_bot_id
+                LIMIT 1
+            ),
+            (
+                SELECT e1.bot_id
+                FROM EXCLUSIVE e1
+                WHERE e1.user_id = #{userId}
+                ORDER BY e1.exclusive_id ASC
+                LIMIT 1
+            )
         )
-        ORDER BY motion_id ASC
+        ORDER BY
+            CASE WHEN unlock_intimacy_level &gt; #{userLevel} THEN 1 ELSE 0 END ASC,
+            motion_id ASC
     </select>
 
     <select id="countUnreadLetters" resultType="int">
@@ -191,6 +286,22 @@
         JOIN EXCLUSIVE e ON ubr.exclusive_id = e.exclusive_id
         SET ubr.current_exp = ubr.current_exp + #{expGain}
         WHERE e.user_id = #{userId}
+          AND e.bot_id = COALESCE(
+            (
+                SELECT e0.bot_id
+                FROM EXCLUSIVE e0
+                INNER JOIN USER u0 ON u0.user_id = #{userId} AND u0.user_id = e0.user_id
+                WHERE e0.bot_id = u0.assigned_bot_id
+                LIMIT 1
+            ),
+            (
+                SELECT e1.bot_id
+                FROM EXCLUSIVE e1
+                WHERE e1.user_id = #{userId}
+                ORDER BY e1.exclusive_id ASC
+                LIMIT 1
+            )
+          )
     </update>
 
     <!-- MyPageService 호환용: intimacy_score를 절대값(exp)으로 갱신 -->
@@ -199,15 +310,49 @@
         JOIN EXCLUSIVE e ON ubr.exclusive_id = e.exclusive_id
         SET ubr.current_exp = #{exp}
         WHERE e.user_id = #{userId}
+          AND e.bot_id = COALESCE(
+            (
+                SELECT e0.bot_id
+                FROM EXCLUSIVE e0
+                INNER JOIN USER u0 ON u0.user_id = #{userId} AND u0.user_id = e0.user_id
+                WHERE e0.bot_id = u0.assigned_bot_id
+                LIMIT 1
+            ),
+            (
+                SELECT e1.bot_id
+                FROM EXCLUSIVE e1
+                WHERE e1.user_id = #{userId}
+                ORDER BY e1.exclusive_id ASC
+                LIMIT 1
+            )
+          )
     </update>
 
     <select id="getBotStatus" resultType="kr.hi.matey.dto.BotStatusDTO">
         SELECT
-        ubr.intimacy_id as level,
-        ubr.current_exp as exp
+            ubr.intimacy_id AS level,
+            ubr.current_exp AS exp,
+            ubr.last_feed_reward_at AS lastFeedRewardAt
         FROM USER_BOT_RELATION ubr
         JOIN EXCLUSIVE e ON ubr.exclusive_id = e.exclusive_id
         WHERE e.user_id = #{userId}
+          AND e.bot_id = COALESCE(
+            (
+                SELECT e0.bot_id
+                FROM EXCLUSIVE e0
+                INNER JOIN USER u0 ON u0.user_id = #{userId} AND u0.user_id = e0.user_id
+                WHERE e0.bot_id = u0.assigned_bot_id
+                LIMIT 1
+            ),
+            (
+                SELECT e1.bot_id
+                FROM EXCLUSIVE e1
+                WHERE e1.user_id = #{userId}
+                ORDER BY e1.exclusive_id ASC
+                LIMIT 1
+            )
+          )
+        LIMIT 1
     </select>
 
     <update id="updateBotLevel">
@@ -215,13 +360,45 @@
         JOIN EXCLUSIVE e ON ubr.exclusive_id = e.exclusive_id
         SET ubr.intimacy_id = #{intimacyId}
         WHERE e.user_id = #{userId}
+          AND e.bot_id = COALESCE(
+            (
+                SELECT e0.bot_id
+                FROM EXCLUSIVE e0
+                INNER JOIN USER u0 ON u0.user_id = #{userId} AND u0.user_id = e0.user_id
+                WHERE e0.bot_id = u0.assigned_bot_id
+                LIMIT 1
+            ),
+            (
+                SELECT e1.bot_id
+                FROM EXCLUSIVE e1
+                WHERE e1.user_id = #{userId}
+                ORDER BY e1.exclusive_id ASC
+                LIMIT 1
+            )
+          )
     </update>
 
-    <update id="updateLastInteractedAt">
+    <update id="updateLastFeedRewardAt">
         UPDATE USER_BOT_RELATION ubr
         JOIN EXCLUSIVE e ON ubr.exclusive_id = e.exclusive_id
-        SET ubr.last_fed_at = NOW()
+        SET ubr.last_feed_reward_at = NOW()
         WHERE e.user_id = #{userId}
+          AND e.bot_id = COALESCE(
+            (
+                SELECT e0.bot_id
+                FROM EXCLUSIVE e0
+                INNER JOIN USER u0 ON u0.user_id = #{userId} AND u0.user_id = e0.user_id
+                WHERE e0.bot_id = u0.assigned_bot_id
+                LIMIT 1
+            ),
+            (
+                SELECT e1.bot_id
+                FROM EXCLUSIVE e1
+                WHERE e1.user_id = #{userId}
+                ORDER BY e1.exclusive_id ASC
+                LIMIT 1
+            )
+          )
     </update>
 
     <update id="withdrawUser">

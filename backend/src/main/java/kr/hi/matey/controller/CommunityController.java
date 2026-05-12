@@ -3,6 +3,7 @@ package kr.hi.matey.controller;
 import kr.hi.matey.dto.CommentCreateRequestDTO;
 import kr.hi.matey.dto.PostCreateRequestDTO;
 import kr.hi.matey.dto.PostDTO;
+import kr.hi.matey.dto.AssignableBotOption;
 import kr.hi.matey.dto.CategoryDTO;
 import kr.hi.matey.dto.NoticeFeedItemDTO;
 import kr.hi.matey.service.CommunityService;
@@ -44,6 +45,12 @@ public class CommunityController {
     @GetMapping("/categories")
     public ResponseEntity<List<CategoryDTO>> getCategories() {
         return ResponseEntity.ok(communityService.getCategories());
+    }
+
+    /** 메인 랜딩·채팅 메이트 픽: BOT 테이블과 동일 (관리자 상담봇 관리와 연동) */
+    @GetMapping("/bots/landing")
+    public ResponseEntity<List<AssignableBotOption>> getLandingBots() {
+        return ResponseEntity.ok(communityService.listPublicLandingBots());
     }
 
     // 2) 게시글 목록
@@ -226,7 +233,7 @@ public class CommunityController {
         return ResponseEntity.ok(communityService.drawRandomStoryPost(resolveViewerId(user)));
     }
 
-    /** 전월 봇 추천(좋아요) 이벤트 집계 순위 (BOT_RECOMMEND_EVENT) */
+    /** 전월 봇 추천(좋아요) 이벤트 집계 순위 (BOT_RECOMMEND_EVENT, 연·월은 서버 기준 직전 달) */
     @GetMapping("/spotlight/bot-ranking/monthly")
     public ResponseEntity<Map<String, Object>> getPreviousMonthBotRanking(
             @AuthenticationPrincipal CustomUser user,
@@ -260,7 +267,7 @@ public class CommunityController {
         );
     }
 
-    /** 봇 추천(좋아요): 1회만, 취소 없음. 로그인 필요 */
+    /** 봇 추천: 없으면 좋아요, 싫어요였으면 추천으로 전환, 이미 추천이면 추천 취소. 로그인 필요 */
     @PostMapping("/spotlight/bots/{botId}/recommend")
     public ResponseEntity<Map<String, Object>> recommendBot(
             @PathVariable("botId") Long botId,
@@ -282,7 +289,7 @@ public class CommunityController {
         return ResponseEntity.ok(communityService.addBotRecommend(botId, userId));
     }
 
-    /** 봇 싫어요: 1회만, 취소 없음. 로그인 필요 */
+    /** 봇 싫어요: 없으면 싫어요, 추천이었으면 싫어요로 전환, 이미 싫어요면 싫어요 취소. 로그인 필요 */
     @PostMapping("/spotlight/bots/{botId}/dislike")
     public ResponseEntity<Map<String, Object>> dislikeBot(
             @PathVariable("botId") Long botId,

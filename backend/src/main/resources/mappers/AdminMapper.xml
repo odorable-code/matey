@@ -67,8 +67,8 @@
              WHERE e2.user_id = u.user_id) as conversationCount,
             0 as activityScore,
             COALESCE(
-                (SELECT b.name FROM BOT b WHERE b.bot_id = u.assigned_bot_id),
-                (SELECT b2.name
+                (SELECT COALESCE(NULLIF(TRIM(b.display_name), ''), b.name) FROM BOT b WHERE b.bot_id = u.assigned_bot_id),
+                (SELECT COALESCE(NULLIF(TRIM(b2.display_name), ''), b2.name)
                  FROM EXCLUSIVE e
                  INNER JOIN BOT b2 ON e.bot_id = b2.bot_id
                  WHERE e.user_id = u.user_id
@@ -114,8 +114,8 @@
              WHERE e2.user_id = u.user_id) as conversationCount,
             0 as activityScore,
             COALESCE(
-                (SELECT b.name FROM BOT b WHERE b.bot_id = u.assigned_bot_id),
-                (SELECT b2.name
+                (SELECT COALESCE(NULLIF(TRIM(b.display_name), ''), b.name) FROM BOT b WHERE b.bot_id = u.assigned_bot_id),
+                (SELECT COALESCE(NULLIF(TRIM(b2.display_name), ''), b2.name)
                  FROM EXCLUSIVE e
                  INNER JOIN BOT b2 ON e.bot_id = b2.bot_id
                  WHERE e.user_id = u.user_id
@@ -271,8 +271,11 @@
         SELECT
             b.bot_id AS botId,
             b.name AS name,
+            b.display_name AS displayName,
             b.description AS description,
+            b.selection_preview AS selectionPreview,
             b.avatar_image AS avatarImage,
+            b.card_stats_json AS cardStatsJson,
             b.like_count AS likeCount,
             b.dislike_count AS dislikeCount,
             COALESCE(s.net, 0) AS prevMonthNet,
@@ -305,5 +308,36 @@
               INTERVAL 1 MONTH
           )
     </select>
+
+    <select id="countBotById" resultType="int">
+        SELECT COUNT(*) FROM BOT WHERE bot_id = #{botId}
+    </select>
+
+    <insert id="insertBot" parameterType="kr.hi.matey.dto.AdminBotUpsertDTO" useGeneratedKeys="true" keyProperty="botId" keyColumn="bot_id">
+        INSERT INTO BOT (name, display_name, avatar_image, description, selection_preview, card_stats_json, like_count, dislike_count, reset_at)
+        VALUES (
+            #{name},
+            #{displayName},
+            #{avatarImage},
+            #{description},
+            #{selectionPreview},
+            #{cardStatsJson,jdbcType=VARCHAR},
+            0,
+            0,
+            NOW()
+        )
+    </insert>
+
+    <update id="updateBot" parameterType="kr.hi.matey.dto.AdminBotUpsertDTO">
+        UPDATE BOT
+        SET
+            name = #{name},
+            display_name = #{displayName},
+            avatar_image = #{avatarImage},
+            description = #{description},
+            selection_preview = #{selectionPreview},
+            card_stats_json = #{cardStatsJson,jdbcType=VARCHAR}
+        WHERE bot_id = #{botId}
+    </update>
 
 </mapper>

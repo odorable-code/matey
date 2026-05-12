@@ -1,9 +1,11 @@
 package kr.hi.matey.service;
 
+import kr.hi.matey.dao.BotRecommendDAO;
 import kr.hi.matey.dao.CommentDAO;
 import kr.hi.matey.dao.CommunitySpotlightDAO;
+import kr.hi.matey.dao.MyPageDAO;
 import kr.hi.matey.dao.PostDAO;
-import kr.hi.matey.dao.BotRecommendDAO;
+import kr.hi.matey.dto.AssignableBotOption;
 import kr.hi.matey.dto.BotYearRankingDTO;
 import kr.hi.matey.dto.CategoryDTO;
 import kr.hi.matey.dto.CommentCreateRequestDTO;
@@ -42,6 +44,8 @@ public class CommunityService {
     private final CommunitySpotlightDAO communitySpotlightDAO;
     private final BotRecommendDAO botRecommendDAO;
     private final CommentModerationService commentModerationService;
+    private final NotificationService notificationService;
+    private final MyPageDAO myPageDAO;
 
     public List<CategoryDTO> getCategories() {
         try {
@@ -50,6 +54,24 @@ public class CommunityService {
         } catch (DataAccessException ex) {
             log.error("getCategories: CATEGORY 조회 실패 (테이블·DB 연결 확인)", ex);
             return List.of();
+        }
+    }
+
+    /** 메인·채팅 픽 등 공개 노출용: BOT 전체 (비로그인 조회 허용). 능력치 JSON 컬럼이 없으면 picker 쿼리로 폴백 */
+    @Transactional(readOnly = true)
+    public List<AssignableBotOption> listPublicLandingBots() {
+        try {
+            List<AssignableBotOption> rows = myPageDAO.selectBotsForPublicLanding();
+            return rows != null ? rows : List.of();
+        } catch (DataAccessException ex) {
+            log.warn("listPublicLandingBots (card_stats_json 미적용 DB 등): {}", ex.getMessage());
+            try {
+                List<AssignableBotOption> rows = myPageDAO.selectBotsForPicker();
+                return rows != null ? rows : List.of();
+            } catch (DataAccessException ex2) {
+                log.warn("listPublicLandingBots fallback: {}", ex2.getMessage());
+                return List.of();
+            }
         }
     }
 
@@ -156,6 +178,14 @@ public class CommunityService {
         Map<String, Object> res = new HashMap<>();
         res.put("post", post);
         res.put("comments", comments != null ? comments : List.of());
+
+        if (viewerUserId != null && post != null) {
+            try {
+                notificationService.markReadForPostRelated(viewerUserId, postId);
+            } catch (DataAccessException ex) {
+                log.warn("markReadForPostRelated postId={}: {}", postId, ex.getMessage());
+            }
+        }
         return res;
     }
 
@@ -300,7 +330,7 @@ public class CommunityService {
     }
 
     /**
-     * 전월 기준 인기봇: BOT_RECOMMEND_EVENT 월간 합산(net) 우선.
+     * 전월(직전 달) 기준 인기봇: BOT_RECOMMEND_EVENT 월간 합산(net) 우선.
      * 이벤트가 없으면 BOT.like_count 로 폴백 (봇 행만 넣어도 목록 가동).
      */
     @Transactional(readOnly = true)
@@ -353,12 +383,13 @@ public class CommunityService {
         final String sourceDescription;
         if (usedEventAggregation) {
             description =
-                    "직전 달(" + y + "년 " + m + "월) 동안 집계된 봇 반응 순위예요. 추천은 가산·싫어요는 감산된 합계입니다. 매월 초 기준으로 전월 데이터가 표시됩니다.";
+                    "직전 달(" + y + "년 " + m + "월) 동안 모인 추천·싫어요 반응으로 순위를 만들었어요. 추천은 더하고 싫어요는 빼서 합산합니다. 매달 초에 지난달 결과가 반영돼요.";
             source = "BOT_RECOMMEND_EVENT";
             sourceDescription =
                     "BOT_RECOMMEND_EVENT 월간 delta 합(추천 +1, 싫어요 -1)으로 순위를 냅니다.";
         } else {
-            description = "지금은 봇 좋아요 많은 순으로만 보여 드려요.";
+            description =
+                    "아직 이 기준으로 모일 월별 반응이 없어서, 지금은 누적 응원 수가 많은 메이트 순으로 보여 드려요.";
             source = "BOT_LIKE_COUNT";
             sourceDescription =
                     "BOT 테이블의 like_count 기준 임시 순위예요. BOT_RECOMMEND_EVENT에 해당 월 데이터가 생기면 자동으로 전환됩니다.";
@@ -448,43 +479,53 @@ public class CommunityService {
     }
 
     /**
-     * 봇 추천(좋아요): 사용자·봇당 최초 1회만. 이미 싫어요면 불가, 이미 추천했으면 변화 없음(취소 없음).
+     * 봇 추천(좋아요): 없으면 추가, 싫어요였으면 추천으로 전환, 이미 추천이면 추천 취소(행 삭제).
      */
     @Transactional
     public Map<String, Object> addBotRecommend(long botId, long userId) {
         Integer reaction = botRecommendDAO.selectReaction(userId, botId);
-        if (reaction != null) {
-            if (reaction == 1) {
-                return botReactionSnapshot(botId, true, false);
-            }
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "이미 싫어요를 누른 봇이에요."
-            );
+        if (reaction == null) {
+            botRecommendDAO.insertWithReaction(userId, botId, 1);
+            botRecommendDAO.incrementBotLike(botId);
+            botRecommendDAO.insertRecommendEvent(userId, botId, 1);
+            return botReactionSnapshot(botId, true, false);
         }
-        botRecommendDAO.insertWithReaction(userId, botId, 1);
+        if (reaction == 1) {
+            botRecommendDAO.deleteReaction(userId, botId);
+            botRecommendDAO.decrementBotLike(botId);
+            botRecommendDAO.insertRecommendEvent(userId, botId, -1);
+            return botReactionSnapshot(botId, false, false);
+        }
+        botRecommendDAO.updateReaction(userId, botId, 1);
+        botRecommendDAO.decrementBotDislike(botId);
         botRecommendDAO.incrementBotLike(botId);
+        botRecommendDAO.insertRecommendEvent(userId, botId, 1);
         botRecommendDAO.insertRecommendEvent(userId, botId, 1);
         return botReactionSnapshot(botId, true, false);
     }
 
     /**
-     * 봇 싫어요: 사용자·봇당 최초 1회만. 이미 추천했으면 불가, 이미 싫어요면 변화 없음.
+     * 봇 싫어요: 없으면 추가, 추천이었으면 싫어요로 전환, 이미 싫어요면 싫어요 취소(행 삭제).
      */
     @Transactional
     public Map<String, Object> addBotDislike(long botId, long userId) {
         Integer reaction = botRecommendDAO.selectReaction(userId, botId);
-        if (reaction != null) {
-            if (reaction == 0) {
-                return botReactionSnapshot(botId, false, true);
-            }
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "이미 추천한 봇이에요."
-            );
+        if (reaction == null) {
+            botRecommendDAO.insertWithReaction(userId, botId, 0);
+            botRecommendDAO.incrementBotDislike(botId);
+            botRecommendDAO.insertRecommendEvent(userId, botId, -1);
+            return botReactionSnapshot(botId, false, true);
         }
-        botRecommendDAO.insertWithReaction(userId, botId, 0);
+        if (reaction == 0) {
+            botRecommendDAO.deleteReaction(userId, botId);
+            botRecommendDAO.decrementBotDislike(botId);
+            botRecommendDAO.insertRecommendEvent(userId, botId, 1);
+            return botReactionSnapshot(botId, false, false);
+        }
+        botRecommendDAO.updateReaction(userId, botId, 0);
+        botRecommendDAO.decrementBotLike(botId);
         botRecommendDAO.incrementBotDislike(botId);
+        botRecommendDAO.insertRecommendEvent(userId, botId, -1);
         botRecommendDAO.insertRecommendEvent(userId, botId, -1);
         return botReactionSnapshot(botId, false, true);
     }
