@@ -4,18 +4,25 @@ import styles from './BotRankingPage.module.css';
 import { communityAPI } from '../utils/api';
 import { useAuth } from '../contexts/AuthContext';
 import { canAccessAdminPage } from '../utils/adminAccess';
+import { resolveMateDisplayName, resolveMateKey } from '../constants/mates';
 
 function normalizeEntries(raw) {
   const rows = Array.isArray(raw) ? raw : [];
   return rows
-    .map((r, idx) => {
+    .map((r) => {
       const botId = r?.botId ?? r?.bot_id ?? null;
+      const id = botId != null ? Number(botId) : null;
+      const rawName = String(r?.name ?? '').trim();
+      const fromApi = String(r?.displayName ?? r?.display_name ?? '').trim();
+      const name = fromApi || resolveMateDisplayName(rawName, id) || rawName;
+      const mateKey = resolveMateKey(rawName) || resolveMateKey(fromApi) || resolveMateKey(name);
       return {
-        ranking: Number.isFinite(Number(r?.ranking)) ? Number(r.ranking) : idx + 1,
-        botId: botId != null ? Number(botId) : null,
-        name: String(r?.name ?? '').trim(),
+        botId: id,
+        name,
+        mateKey: mateKey || '',
         avatarImage: r?.avatarImage ?? r?.avatar_image ?? null,
         description: String(r?.description ?? '').trim(),
+        ranking: Number.isFinite(Number(r?.ranking)) ? Number(r.ranking) : null,
         likeCount: Number.isFinite(Number(r?.likeCount)) ? Number(r.likeCount) : null,
         popularityScore: r?.popularityScore ?? null,
         statYear: Number.isFinite(Number(r?.statYear)) ? Number(r.statYear) : null,
@@ -24,12 +31,11 @@ function normalizeEntries(raw) {
     .filter((r) => r.botId != null && r.name);
 }
 
-function fallbackAvatarForRank(rank) {
-  const pick = (Number(rank) || 0) % 4;
+function fallbackAvatarByIndex(index) {
+  const pick = (Number(index) || 0) % 3;
   if (pick === 1) return '/images/mascots/cat/cat.png';
   if (pick === 2) return '/images/mascots/dog/dog.png';
-  if (pick === 3) return '/images/mascots/bear/bear.png';
-  return '/images/mascots/hamster/hamster.png';
+  return '/images/mascots/bear/bear.png';
 }
 
 export default function BotRankingPage() {
@@ -45,6 +51,23 @@ export default function BotRankingPage() {
   const [entries, setEntries] = useState([]);
   const [likedByMe, setLikedByMe] = useState(() => new Set());
   const [dislikedByMe, setDislikedByMe] = useState(() => new Set());
+
+  const patchReactionSetsFromApiRes = useCallback((res, botId) => {
+    setLikedByMe((prev) => {
+      const next = new Set(prev);
+      if (Boolean(res?.recommended)) next.add(botId);
+      else next.delete(botId);
+      if (Boolean(res?.disliked)) next.delete(botId);
+      return next;
+    });
+    setDislikedByMe((prev) => {
+      const next = new Set(prev);
+      if (Boolean(res?.disliked)) next.add(botId);
+      else next.delete(botId);
+      if (Boolean(res?.recommended)) next.delete(botId);
+      return next;
+    });
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -101,9 +124,9 @@ export default function BotRankingPage() {
 
   const subtitle = useMemo(() => {
     if (periodLabel) {
-      return `${periodLabel} 기준 · 전월 추천·싫어요 반영 집계 순위예요.`;
+      return `${periodLabel} 한 달 동안 모인 메이트 응원 반응으로 순위를 정했어요.`;
     }
-    return '전월 동안의 봇 반응(추천·싫어요)을 기준으로 순위를 보여 드려요.';
+    return '메이트별 응원 반응으로 순위를 보여 드려요.';
   }, [periodLabel]);
 
   const handleRecommend = useCallback(
@@ -114,22 +137,11 @@ export default function BotRankingPage() {
         return;
       }
       if (!botId) return;
-      if (dislikedByMe.has(botId)) {
-        alert('이미 싫어요를 누른 봇이에요.');
-        return;
-      }
-      if (likedByMe.has(botId)) return;
 
       try {
         const res = await communityAPI.toggleBotRecommend(botId);
         const likeCount = Number.isFinite(Number(res?.likeCount)) ? Number(res.likeCount) : null;
-
-        setLikedByMe((prev) => new Set(prev).add(botId));
-        setDislikedByMe((prev) => {
-          const next = new Set(prev);
-          next.delete(botId);
-          return next;
-        });
+        patchReactionSetsFromApiRes(res, botId);
 
         if (likeCount != null) {
           setEntries((prev) =>
@@ -140,7 +152,7 @@ export default function BotRankingPage() {
         alert(e?.message || '추천 처리에 실패했어요.');
       }
     },
-    [dislikedByMe, isAuthenticated, likedByMe, navigate]
+    [isAuthenticated, navigate, patchReactionSetsFromApiRes]
   );
 
   const handleDislike = useCallback(
@@ -151,25 +163,22 @@ export default function BotRankingPage() {
         return;
       }
       if (!botId) return;
-      if (likedByMe.has(botId)) {
-        alert('이미 추천한 봇이에요.');
-        return;
-      }
-      if (dislikedByMe.has(botId)) return;
 
       try {
-        await communityAPI.addBotDislike(botId);
-        setDislikedByMe((prev) => new Set(prev).add(botId));
-        setLikedByMe((prev) => {
-          const next = new Set(prev);
-          next.delete(botId);
-          return next;
-        });
+        const res = await communityAPI.addBotDislike(botId);
+        const likeCount = Number.isFinite(Number(res?.likeCount)) ? Number(res.likeCount) : null;
+        patchReactionSetsFromApiRes(res, botId);
+
+        if (likeCount != null) {
+          setEntries((prev) =>
+            prev.map((e) => (e.botId === botId ? { ...e, likeCount } : e))
+          );
+        }
       } catch (e) {
         alert(e?.message || '처리에 실패했어요.');
       }
     },
-    [dislikedByMe, isAuthenticated, likedByMe, navigate]
+    [isAuthenticated, navigate, patchReactionSetsFromApiRes]
   );
 
   return (
@@ -192,10 +201,23 @@ export default function BotRankingPage() {
           <div className={styles.heroArt} aria-hidden="true">
             <div className={styles.heroBlob} />
             <div className={styles.heroMascots}>
-              <img className={`${styles.mascot} ${styles.mascotA}`} src="/images/mascots/cat/cat.png" alt="" />
-              <img className={`${styles.mascot} ${styles.mascotB}`} src="/images/mascots/dog/dog.png" alt="" />
-              <img className={`${styles.mascot} ${styles.mascotC}`} src="/images/mascots/bear/bear.png" alt="" />
-              <img className={`${styles.mascot} ${styles.mascotD}`} src="/images/mascots/hamster/hamster.png" alt="" />
+              <div className={styles.heroMascotsCluster}>
+                <img
+                  className={`${styles.mascot} ${styles.mascotClusterA}`}
+                  src="/images/mascots/cat/cat.png"
+                  alt=""
+                />
+                <img
+                  className={`${styles.mascot} ${styles.mascotClusterB}`}
+                  src="/images/mascots/dog/dog.png"
+                  alt=""
+                />
+                <img
+                  className={`${styles.mascot} ${styles.mascotClusterC}`}
+                  src="/images/mascots/bear/bear.png"
+                  alt=""
+                />
+              </div>
             </div>
             <svg className={styles.heroLines} viewBox="0 0 520 260" fill="none">
               <path
@@ -230,36 +252,16 @@ export default function BotRankingPage() {
           <p className={styles.loading}>표시할 랭킹 데이터가 아직 없습니다.</p>
         ) : (
           <div className={styles.grid}>
-            {entries.map((e) => {
+            {entries.map((e, idx) => {
               const liked = likedByMe.has(e.botId);
               const disliked = dislikedByMe.has(e.botId);
-              const chose = liked || disliked;
-              const avatar = e.avatarImage || fallbackAvatarForRank(e.ranking);
+              const avatar = e.avatarImage || fallbackAvatarByIndex(idx);
               return (
                 <article key={e.botId} className={styles.card}>
                   <div className={styles.cardHead}>
-                    <div className={styles.rankPill}>
-                      <span className={styles.rankNum}>{e.ranking}</span>
-                      <span className={styles.rankSuffix}>위</span>
+                    <div className={styles.avatarFrame}>
+                      <img className={styles.avatarImg} src={avatar} alt="" />
                     </div>
-
-                    <button
-                      type="button"
-                      className={styles.avatarBtn}
-                      onClick={() => handleRecommend(e.botId)}
-                      title={
-                        disliked
-                          ? '이미 싫어요를 눌렀어요'
-                          : liked
-                            ? '이미 추천했어요'
-                            : '추천하기'
-                      }
-                    >
-                      <img className={styles.avatarImg} src={avatar} alt={`${e.name} 사진`} />
-                      <span className={styles.recoOverlay}>
-                        {disliked ? '싫어요' : liked ? '추천됨' : '추천'}
-                      </span>
-                    </button>
                   </div>
 
                   <div className={styles.cardBody}>
@@ -268,9 +270,9 @@ export default function BotRankingPage() {
 
                     <div className={styles.metaRow}>
                       <div className={styles.metaItem}>
-                        <span className={styles.metaLabel}>전월 반응</span>
+                        <span className={styles.metaLabel}>순위</span>
                         <span className={styles.metaValue}>
-                          {e.likeCount != null ? e.likeCount : '-'}
+                          {e.ranking != null ? e.ranking : idx + 1}
                         </span>
                       </div>
                       <div className={styles.metaItem}>
@@ -282,25 +284,32 @@ export default function BotRankingPage() {
                     </div>
 
                     <div className={styles.actionsRow}>
-                      <Link className={styles.chatLink} to="/chat">
+                      <Link
+                        className={styles.chatLink}
+                        to={
+                          !authLoading && !isAuthenticated
+                            ? '/free-trial'
+                            : e.mateKey
+                              ? `/chat?mate=${encodeURIComponent(e.mateKey)}`
+                              : '/chat'
+                        }
+                      >
                         채팅하러 가기
                       </Link>
                       <div className={styles.actionBtns}>
                         <button
                           type="button"
                           className={`${styles.recoBtn} ${liked ? styles.recoBtnOn : ''}`}
-                          disabled={chose}
                           onClick={() => handleRecommend(e.botId)}
                         >
-                          {liked ? '추천됨' : '추천하기'}
+                          {liked ? '추천 취소' : '추천하기'}
                         </button>
                         <button
                           type="button"
                           className={`${styles.dislikeBtn} ${disliked ? styles.dislikeBtnOn : ''}`}
-                          disabled={chose}
                           onClick={() => handleDislike(e.botId)}
                         >
-                          {disliked ? '싫어요함' : '싫어요'}
+                          {disliked ? '싫어요 취소' : '싫어요'}
                         </button>
                       </div>
                     </div>
