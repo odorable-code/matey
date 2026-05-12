@@ -7,40 +7,54 @@
 
     <select id="findByProviderAndProviderUserId" resultType="kr.hi.matey.vo.UserVO">
         SELECT
-            id,
-            login_id,
-            password,
-            name,
-            email,
-            role,
-            provider,
-            provider_user_id,
-            profile_image
-        FROM member
-        WHERE provider = #{provider}
-          AND provider_user_id = #{providerUserId}
+            u.user_id AS userId,
+            u.email AS email,
+            u.password AS password,
+            u.nickname AS nickname,
+            u.user_name AS userName,
+            u.birth_date AS birthDateSql,
+            u.gender AS gender,
+            u.profile_image AS profile_image,
+            u.login_type AS login_type,
+            u.status AS status,
+            r.role_code AS roleCode,
+            ur.role_id AS roleId
+        FROM SOCIAL_LOGIN sl
+        JOIN USER u ON u.user_id = sl.user_id
+        LEFT JOIN USER_ROLE ur ON u.user_id = ur.user_id
+        LEFT JOIN ROLE r ON ur.role_id = r.role_id
+        WHERE sl.provider = #{provider}
+          AND sl.provider_user_id = #{providerUserId}
         LIMIT 1
     </select>
 
     <insert id="insertSocialUser" parameterType="kr.hi.matey.vo.UserVO" useGeneratedKeys="true" keyProperty="userId">
-        INSERT INTO member (
-            login_id,
-            password,
-            name,
+        INSERT INTO USER (
             email,
-            role,
-            provider,
-            provider_user_id,
-            profile_image
+            password,
+            nickname,
+            user_name,
+            birth_date,
+            gender,
+            profile_image,
+            login_type,
+            status,
+            is_terms_agreed,
+            is_privacy_agreed,
+            is_marketing_agreed
         ) VALUES (
-            #{loginId},
-            #{password},
-            #{name},
             #{email},
-            #{role.role_id},
-            #{provider},
-            #{providerUserId},
-            #{profileImage}
+            #{password},
+            #{nickname},
+            #{userName},
+            #{birthDateSql,jdbcType=DATE},
+            #{gender},
+            #{profile_image},
+            #{login_type},
+            #{status},
+            #{termsAgreed},
+            #{privacyAgreed},
+            #{marketingAgreed}
         )
     </insert>
 

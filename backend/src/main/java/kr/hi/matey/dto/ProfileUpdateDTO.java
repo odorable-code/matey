@@ -6,4 +6,5 @@ public class ProfileUpdateDTO {
     private String nickname;
     private String gender;
     private String profileImage;
+    private String birthDate;
 }

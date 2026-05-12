@@ -163,16 +163,28 @@ async function request(
   }
 
   let data = null;
-  try {
-    data = text ? JSON.parse(text) : null;
-  } catch (parseErr) {
-    if (response.ok && isApiPath) {
-      const err = new Error(
-        'JSON이 아닌 응답이 왔어요. 같은 주소를 브라우저에서 직접 열었는지, 백엔드가 아닌 프런트만 응답하는지 확인해 주세요.'
-      );
-      err.status = response.status;
-      throw err;
+  const trimmed = typeof text === 'string' ? text.trim() : '';
+  const shouldParseJson =
+    contentType.includes('application/json') ||
+    (trimmed && (trimmed.startsWith('{') || trimmed.startsWith('[')));
+
+  if (shouldParseJson) {
+    try {
+      data = text ? JSON.parse(text) : null;
+    } catch (parseErr) {
+      // content-type은 JSON인데 본문이 깨진 케이스만 에러로 취급
+      if (response.ok && isApiPath) {
+        const err = new Error(
+          'JSON 형식으로 응답을 받지 못했어요. 서버 응답 형식을 확인해 주세요.'
+        );
+        err.status = response.status;
+        err.data = text || null;
+        throw err;
+      }
+      data = text || null;
     }
+  } else {
+    // 서버가 단순 문자열(text/plain 등)로 성공 응답을 보내는 경우도 있으므로 그대로 돌려줌
     data = text || null;
   }
 
@@ -397,18 +409,11 @@ export async function forgotId(userName, nickname) {
 }
 
 export async function logout() {
-  const token = getStoredToken(); // 저장된 토큰 가져오기
-  const accessToken = normalizeToken(token);
   try {
     const payload = await request('/api/v1/auth/logout', {
       method: 'POST',
-      headers: {
-      'Content-Type': 'application/json',
-      ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
-    },
       body: {},
     });
-
 
     setStoredToken(null);
 
@@ -714,6 +719,7 @@ export const myPageAPI = {
   deleteLetter: (letterId) => request(`/api/mypage/letters/${letterId}`, { method: 'DELETE' }),
   getSettings: () => request('/api/mypage/settings'),
   updateSettings: (data) => request('/api/mypage/settings', { method: 'PATCH', body: data }),
+  withdrawAccount: () => request('/api/mypage/withdraw', { method: 'POST' }),
 };
 
 // ==========================================

@@ -42,7 +42,7 @@ public class MyPageService {
             botMenu.setRemainPoint(maxExp - currentExp);
             
             botMenu.setBackgrounds(myPageDAO.selectUserBackgrounds(botMenu.getLevel()));
-            botMenu.setMotions(myPageDAO.selectUserMotions(botMenu.getLevel()));
+            botMenu.setMotions(myPageDAO.selectUserMotions(userId, botMenu.getLevel()));
         }
         return botMenu;
     }
@@ -135,5 +135,9 @@ public class MyPageService {
     public void updateUserSettings(long userId, SettingUpdateDTO dto) {
         myPageDAO.updateUserSettings(userId, dto.getSettingKey(), dto.isSettingValue());
     }
-	
+
+    @Transactional
+    public void withdrawUser(long userId) {
+        myPageDAO.withdrawUser(userId);
+    }
 }

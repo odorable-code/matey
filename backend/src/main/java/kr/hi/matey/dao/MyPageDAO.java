@@ -15,7 +15,7 @@ public interface MyPageDAO {
     // 2. Bot Menu & Interaction
     BotMenuDTO selectBotRelationInfo(long userId);
     List<BotMenuDTO.BackgroundDTO> selectUserBackgrounds(@Param("userLevel") int userLevel);
-    List<BotMenuDTO.MotionDTO> selectUserMotions(@Param("userLevel") int userLevel);
+    List<BotMenuDTO.MotionDTO> selectUserMotions(@Param("userId") long userId, @Param("userLevel") int userLevel);
     int updateBotIntimacy(@Param("userId") long userId, @Param("expGain") int expGain);
     int updateLastInteractedAt(long userId);
 
@@ -32,6 +32,9 @@ public interface MyPageDAO {
     // 4. Settings
     UserSettingsDTO selectUserSettings(long userId);
     int updateUserSettings(@Param("userId") long userId, @Param("key") String key, @Param("value") boolean value);
+
+    // 5. Withdrawal
+    int withdrawUser(long userId);
 
     // 1. 사용자의 봇 친밀도 정보 조회 (EXCLUSIVE와 JOIN 필요)
     BotStatusDTO getBotStatus(long userId);

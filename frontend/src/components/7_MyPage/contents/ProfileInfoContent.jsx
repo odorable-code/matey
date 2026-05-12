@@ -74,7 +74,8 @@ function ProfileInfoContent() {
       nickname: draft.nickname,
       phone: draft.phone,
       gender: draft.gender,
-      profileImage: draft.profileImage
+      profileImage: draft.profileImage,
+      birthDate: draft.birthDate,
     }).then(() => {
       setProfile({ ...draft });
       setIsEditMode(false);
@@ -255,10 +256,11 @@ function ProfileInfoContent() {
               <label className={styles.field}>
                 <span className={styles.fieldLabel}>생년월일</span>
                 <input
-                  type="text"
+                  type="date"
                   value={currentProfile.birthDate}
-                  disabled
-                  className={`${styles.input} ${styles.readOnly}`}
+                  onChange={(e) => handleEditableChange('birthDate', e.target.value)}
+                  disabled={!isEditMode}
+                  className={`${styles.input}`}
                 />
               </label>
             </div>

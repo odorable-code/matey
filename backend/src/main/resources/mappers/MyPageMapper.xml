@@ -47,6 +47,13 @@
         ELSE '보유'
         END as tag
         FROM BOT_MOTION
+        WHERE bot_id = (
+            SELECT e.bot_id
+            FROM EXCLUSIVE e
+            WHERE e.user_id = #{userId}
+            ORDER BY e.exclusive_id ASC
+            LIMIT 1
+        )
         ORDER BY motion_id ASC
     </select>
 
@@ -145,6 +152,7 @@
             <if test="dto.nickname != null">nickname = #{dto.nickname},</if>
             <if test="dto.gender != null">gender = #{dto.gender},</if>
             <if test="dto.profileImage != null">profile_image = #{dto.profileImage},</if>
+            <if test="dto.birthDate != null">birth_date = DATE_FORMAT(#{dto.birthDate},"%Y-%m-%d"),</if>
             updated_at = NOW()
         </set>
         WHERE user_id = #{userId}
@@ -227,6 +235,11 @@
         JOIN EXCLUSIVE e ON ubr.exclusive_id = e.exclusive_id
         SET ubr.last_fed_at = NOW()
         WHERE e.user_id = #{userId}
+    </update>
+
+    <update id="withdrawUser">
+        -- DB 스키마의 ON DELETE CASCADE 설정으로 인해 USER 삭제 시 연관 데이터가 자동 삭제됩니다.
+        DELETE FROM `USER` WHERE `user_id` = #{userId}
     </update>
 
 </mapper>
