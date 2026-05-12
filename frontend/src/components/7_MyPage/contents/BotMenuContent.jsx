@@ -2,20 +2,17 @@ import React, { useEffect, useState, useMemo } from 'react';
 import styles from './BotMenuContent.module.css';
 import useAnimatedNumber, { usePrefersReducedMotion } from '../hooks/useAnimatedNumber';
 import { myPageAPI } from '../../../utils/api';
+import { intimacyApiLevelToDisplay } from '../../../utils/intimacyDisplay';
+import { normalizeMotionAssetUrl } from '../../../utils/motionAssets';
+import { resolveBotAvatarSrc, resolveMateDisplayName } from '../../../constants/mates';
 
 const defaultBotData = {
   level: 1,
   remainPoint: 100,
   progressPercent: 0,
-  summaryCards: [
-  ],
-  interactions: [],
-  backgrounds: [
-
-  ],
-  motions: [
-
-  ],
+  summaryCards: [],
+  backgrounds: [],
+  motions: [],
 };
 
 function extractAnimatedText(value) {
@@ -74,13 +71,20 @@ function AnimatedSummaryCard({ item, prefersReducedMotion }) {
   );
 }
 
+function backgroundStateClass(state) {
+  if (state === '사용 중') return styles.gameTileStateActive;
+  if (state === '잠금') return styles.gameTileStateLocked;
+  return styles.gameTileStateOwned;
+}
+
 function BotMenuContent() {
   const prefersReducedMotion = usePrefersReducedMotion();
   const [botData, setBotData] = useState(defaultBotData);
+  const [collectionTab, setCollectionTab] = useState('background');
 
   useEffect(() => {
     myPageAPI.getBotMenu()
-      .then(data => {
+      .then((data) => {
         if (data) {
           setBotData((prev) => ({ ...prev, ...data }));
         }
@@ -88,7 +92,17 @@ function BotMenuContent() {
       .catch(console.error);
   }, []);
 
-  const animatedLevel = useAnimatedNumber(botData.level ?? 0, 900, {
+  const botAvatarSrc = useMemo(
+    () => resolveBotAvatarSrc(botData),
+    [botData.botAvatarImage, botData.botName, botData.bot_avatar_image, botData.bot_name]
+  );
+  const botDisplayName = useMemo(
+    () => resolveMateDisplayName(botData.botName ?? botData.bot_name, botData.botId),
+    [botData.botName, botData.bot_name, botData.botId]
+  );
+
+  const displayLevel = intimacyApiLevelToDisplay(botData.level);
+  const animatedLevel = useAnimatedNumber(displayLevel, 900, {
     reducedMotion: prefersReducedMotion,
   });
 
@@ -104,6 +118,9 @@ function BotMenuContent() {
     return Math.max(0, Math.min(100, animatedProgressPercent));
   }, [animatedProgressPercent]);
 
+  const backgrounds = botData.backgrounds ?? [];
+  const motions = botData.motions ?? [];
+
   return (
     <section className={styles.page}>
       <header className={styles.header}>
@@ -116,106 +133,178 @@ function BotMenuContent() {
         </div>
       </header>
 
-      <div className={styles.overviewGrid}>
-        <article className={styles.levelCard}>
-          <div className={styles.cardHead}>
-            <h3 className={styles.cardTitle}>친밀도</h3>
-            <span className={styles.softBadge}>LEVEL</span>
-          </div>
-
-          <div className={styles.levelValueRow}>
-            <strong className={styles.levelValue}>Lv. {animatedLevel}</strong>
-            <span className={styles.levelNote}>
-              다음 레벨까지 {animatedRemainPoint} 포인트
-            </span>
-          </div>
-
-          <div
-            className={styles.progressTrack}
-            role="progressbar"
-            aria-label="친밀도 진행도"
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuenow={clampedProgressPercent}
-          >
-            <div
-              className={styles.progressFill}
-              style={{ width: `${clampedProgressPercent}%` }}
+      <div className={styles.mainGrid}>
+        <section className={styles.profileStrip} aria-label="담당 봇과 친밀도">
+          <div className={styles.profileAvatarWrap}>
+            <span className={styles.profileAvatarGlow} aria-hidden />
+            <img
+              src={botAvatarSrc}
+              alt=""
+              className={styles.profileAvatarImg}
             />
           </div>
-        </article>
-
-        {botData.summaryCards.map((item) => (
-          <AnimatedSummaryCard
-            key={item.title}
-            item={item}
-            prefersReducedMotion={prefersReducedMotion}
-          />
-        ))}
-      </div>
-
-      <div className={styles.contentGrid}>
-        <article className={styles.collectionCard}>
-          <div className={styles.cardHead}>
-            <h3 className={styles.cardTitle}>배경 컬렉션</h3>
-            <span className={styles.softBadge}>BACKGROUND</span>
+          <div className={styles.profileStats}>
+            <span className={styles.profileLabel}>INTIMACY</span>
+            <div className={styles.profileNameRow}>
+              <p className={styles.profileBotName}>{botDisplayName || '메이티'}</p>
+              <span className={styles.profileLevelBadge}>Lv. {animatedLevel}</span>
+            </div>
+            <p className={styles.profileXpNote}>
+              다음 레벨까지 <strong>{animatedRemainPoint}</strong> 포인트
+            </p>
+            <div
+              className={styles.progressTrack}
+              role="progressbar"
+              aria-label="친밀도 진행도"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={clampedProgressPercent}
+            >
+              <div
+                className={styles.progressFill}
+                style={{ width: `${clampedProgressPercent}%` }}
+              />
+            </div>
           </div>
+        </section>
 
-          <div className={styles.collectionGrid}>
-            {botData.backgrounds.map((item) => (
-              <div key={item.name} className={styles.collectionItem}>
-                <div className={styles.collectionThumb} />
-                <div className={styles.collectionMeta}>
-                  <strong className={styles.collectionName}>{item.name}</strong>
-                  <span
-                    className={`${styles.stateBadge} ${item.state === '사용 중'
-                        ? styles.stateActive
-                        : item.state === '잠금'
-                          ? styles.stateLocked
-                          : styles.stateOwned
-                      }`}
-                  >
-                    {item.state}
-                  </span>
-                </div>
-              </div>
+        {(botData.summaryCards ?? []).length > 0 ? (
+          <div className={styles.summaryRow}>
+            {(botData.summaryCards ?? []).map((item) => (
+              <AnimatedSummaryCard
+                key={item.title}
+                item={item}
+                prefersReducedMotion={prefersReducedMotion}
+              />
             ))}
           </div>
-        </article>
+        ) : null}
 
-        <div className={styles.sideStack}>
-          <article className={styles.motionCard}>
-            <div className={styles.cardHead}>
-              <h3 className={styles.cardTitle}>모션 컬렉션</h3>
-              <span className={styles.softBadge}>MOTION</span>
-            </div>
+        <section className={styles.collectionPanel} aria-label="컬렉션">
+          <div className={styles.collectionTabBar} role="tablist" aria-label="컬렉션 종류">
+            <button
+              type="button"
+              role="tab"
+              id="botmenu-tab-bg"
+              aria-selected={collectionTab === 'background'}
+              aria-controls="botmenu-panel-bg"
+              className={`${styles.collectionTab} ${collectionTab === 'background' ? styles.collectionTabActive : ''}`}
+              onClick={() => setCollectionTab('background')}
+            >
+              배경 컬렉션
+            </button>
+            <button
+              type="button"
+              role="tab"
+              id="botmenu-tab-motion"
+              aria-selected={collectionTab === 'motion'}
+              aria-controls="botmenu-panel-motion"
+              className={`${styles.collectionTab} ${collectionTab === 'motion' ? styles.collectionTabActive : ''}`}
+              onClick={() => setCollectionTab('motion')}
+            >
+              모션 컬렉션
+            </button>
+          </div>
 
-            <div className={styles.motionList}>
-              {botData.motions.map((item) => (
-                <div key={item.name} className={styles.motionItem}>
-                  <span className={styles.motionDot} />
-                  <span className={styles.motionName}>{item.name}</span>
-                  <span className={styles.motionTag}>{item.tag}</span>
-                </div>
-              ))}
+          {collectionTab === 'background' ? (
+            <div
+              id="botmenu-panel-bg"
+              role="tabpanel"
+              aria-labelledby="botmenu-tab-bg"
+              className={styles.gameInventoryGrid}
+            >
+              {backgrounds.map((item) => {
+                const locked = item.state === '잠금';
+                const imgUrl = normalizeMotionAssetUrl(item.imageUrl ?? item.image_url);
+                const key = item.backgroundId ?? item.background_id ?? item.name;
+                return (
+                  <article
+                    key={key}
+                    className={`${styles.gameTile} ${locked ? styles.gameTileLocked : ''}`}
+                  >
+                    {locked ? (
+                      <span className={styles.gameTileLockBadge} aria-hidden>🔒</span>
+                    ) : null}
+                    <div className={styles.gameTileMedia}>
+                      {imgUrl ? (
+                        <img src={imgUrl} alt="" className={styles.gameTileImg} />
+                      ) : (
+                        <div className={styles.gameTilePlaceholder} aria-hidden />
+                      )}
+                    </div>
+                    <div className={styles.gameTileFooter}>
+                      <h3 className={styles.gameTileName}>{item.name}</h3>
+                      <span className={`${styles.gameTileState} ${backgroundStateClass(item.state)}`}>
+                        {item.state}
+                      </span>
+                    </div>
+                  </article>
+                );
+              })}
             </div>
-          </article>
+          ) : null}
 
-          <article className={styles.interactionCard}>
-            <div className={styles.cardHead}>
-              <h3 className={styles.cardTitle}>상호작용</h3>
-              <span className={styles.softBadge}>ACTION</span>
+          {collectionTab === 'motion' ? (
+            <div
+              id="botmenu-panel-motion"
+              role="tabpanel"
+              aria-labelledby="botmenu-tab-motion"
+              className={`${styles.gameInventoryGrid} ${styles.motionInventoryGrid}`}
+            >
+              {motions.map((item, idx) => {
+                const tag = String(item.tag ?? '').trim();
+                const locked = tag === '잠금';
+                const showCornerPill = !locked && (tag === '기본' || tag === '보유');
+                const unlockRaw = item.unlockIntimacyLevel ?? item.unlock_intimacy_level;
+                const unlockLv = Number(unlockRaw);
+                const imgUrl = normalizeMotionAssetUrl(
+                  item.assetUrl ?? item.asset_url ?? item.AssetUrl
+                );
+                return (
+                  <article
+                    key={`${item.name}-${idx}`}
+                    className={`${styles.gameTile} ${locked ? styles.gameTileLocked : ''}`}
+                  >
+                    {locked ? (
+                      <span className={styles.gameTileLockBadge} aria-hidden>🔒</span>
+                    ) : null}
+                    {showCornerPill ? (
+                      <span
+                        className={`${styles.motionCornerPill} ${tag === '기본' ? styles.motionCornerPillDefault : styles.motionCornerPillOwned}`}
+                      >
+                        {tag}
+                      </span>
+                    ) : null}
+                    <div className={styles.gameTileMedia}>
+                      {imgUrl ? (
+                        <img
+                          src={imgUrl}
+                          alt=""
+                          className={`${styles.gameTileImg} ${styles.gameTileImgMotion}`}
+                        />
+                      ) : (
+                        <div className={styles.gameTilePlaceholder} aria-hidden />
+                      )}
+                    </div>
+                    <div className={styles.gameTileFooter}>
+                      {locked ? (
+                        <div className={styles.gameTileMotionFooterRow}>
+                          <h3 className={styles.gameTileName}>{item.name}</h3>
+                          <span className={styles.gameTileUnlockLevel}>
+                            해금레벨{' '}
+                            {Number.isFinite(unlockLv) && unlockLv > 0 ? unlockLv : '—'}
+                          </span>
+                        </div>
+                      ) : (
+                        <h3 className={styles.gameTileName}>{item.name}</h3>
+                      )}
+                    </div>
+                  </article>
+                );
+              })}
             </div>
-
-            <div className={styles.interactionList}>
-              {botData.interactions.map((item) => (
-                <span key={item} className={styles.interactionChip}>
-                  {item}
-                </span>
-              ))}
-            </div>
-          </article>
-        </div>
+          ) : null}
+        </section>
       </div>
     </section>
   );

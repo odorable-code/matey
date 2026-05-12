@@ -76,21 +76,31 @@ function MyPageContainer() {
   const [letterData, setLetterData] = useState(null);
 
   const fetchLetters = async () => {
-  try {
-    // 두 개의 API를 동시에 호출하고 결과를 기다림
-    const [letterResponse, generatedResponse] = await Promise.all([
-      myPageAPI.getLetters(),
-      myPageAPI.generateLetters()
-    ]);
+    let letterResponse = null;
+    try {
+      letterResponse = await myPageAPI.getLetters();
+    } catch (error) {
+      console.error('편지함(getLetters) 오류:', error);
+    }
 
-    // 두 데이터가 모두 유효한지 확인 (또는 letterResponse만 필수라면 그에 맞춰 수정)
-    if (letterResponse) {
+    let generatedResponse = { items: [] };
+    try {
+      generatedResponse = await myPageAPI.generateLetters();
+    } catch (error) {
+      console.warn('편지 생성(generateLetters) 건너뜀:', error);
+    }
+
+    const lr = letterResponse || {
+      unreadCount: 0,
+      weeklyCount: 0,
+      items: [],
+    };
+
+    try {
       const archiveCount = generatedResponse?.items?.length || 0;
-      // 두 곳에서 온 아이템들을 하나로 합칩니다.
-      // (기존 items와 생성된 items를 합치기)
       const combinedItems = [
-        ...(letterResponse.items || []),
-        ...(generatedResponse?.items || [])
+        ...(lr.items || []),
+        ...(generatedResponse?.items || []),
       ];
 
       // 필요하다면 날짜순 등으로 정렬 로직을 추가
@@ -103,14 +113,14 @@ function MyPageContainer() {
 
       const transformed = {
         // 메인 피처드 카드는 기존 로직 유지 (또는 전체 합친 것 중 첫 번째)
-        featured: letterResponse.items?.[0] ? {
-          id: letterResponse.items[0].id,
-          unread: letterResponse.items[0].unread,
-          title: letterResponse.items[0].title,
-          sender: letterResponse.items[0].sender || '메이티',
-          preview: letterResponse.items[0].preview,
-          date: letterResponse.items[0].date,
-          status: letterResponse.items[0].unread ? `새 편지 ${letterResponse.unreadCount}` : '읽음',
+        featured: lr.items?.[0] ? {
+          id: lr.items[0].id,
+          unread: lr.items[0].unread,
+          title: lr.items[0].title,
+          sender: lr.items[0].sender || '메이티',
+          preview: lr.items[0].preview,
+          date: lr.items[0].date,
+          status: lr.items[0].unread ? `새 편지 ${lr.unreadCount}` : '읽음',
         } : {
           id: null,
           unread: false,
@@ -118,15 +128,15 @@ function MyPageContainer() {
           sender: '메이티',
           preview: '메이티가 편지를 보내면 여기에 표시돼요.',
           date: '-',
-          status: String(letterResponse.unreadCount || 0),
+          status: String(lr.unreadCount || 0),
         },
         stats: [
           { label: '내 쪽지 보관함', value: String(archiveCount) },
-          { label: '읽지 않은 쪽지', value: String(letterResponse.unreadCount || 0) },
-          { label: '이번 주 도착', value: String(letterResponse.weeklyCount || 0) },
+          { label: '읽지 않은 쪽지', value: String(lr.unreadCount || 0) },
+          { label: '이번 주 도착', value: String(lr.weeklyCount || 0) },
         ],
         // 3. 합쳐진 아이템들을 mapping
-        items: combinedItems.map(item => ({
+        items: combinedItems.map((item) => ({
           id: item.id,
           sender: item.sender || '메이티',
           title: item.title,
@@ -137,15 +147,14 @@ function MyPageContainer() {
       };
 
       setLetterData(transformed);
+    } catch (error) {
+      console.error('편지함 데이터 가공 오류:', error);
     }
-  } catch (error) {
-    console.error("데이터를 불러오는 중 오류 발생:", error);
-  }
-};
+  };
 
-useEffect(() => {
-  fetchLetters();
-}, []);
+  useEffect(() => {
+    fetchLetters();
+  }, []);
 
   useEffect(() => {
     if (activeMenu === 'letterBox') {
@@ -222,17 +231,12 @@ useEffect(() => {
   };
 
   /* =========================
-     대시보드 안에서 "상담하기"나 "메이티 정보"로 이동시키는 코드
-     - DashboardContent 내부 버튼 등에서 사용 가능
+     대시보드 오빗 메뉴에서 "상담하기"만 처리 (채팅 열기).
+     쓰다듬기·먹이·놀아주기는 대시보드에 머무르며 URL을 바꾸지 않음.
   ========================= */
   const handleInteractionSelect = (key) => {
     if (key === 'counsel') {
       openChat();
-      return;
-    }
-    if (activeMenu !== 'botMenu') {
-      setSearchParams({ section: 'botMenu' }, { replace: true });
-      setTransitionKey((prev) => prev + 1);
     }
   };
 
@@ -275,12 +279,7 @@ useEffect(() => {
       case 'dashboard':
       default:
         return (
-          <DashboardContent
-            onInteractionSelect={handleInteractionSelect}
-            intimacyLevel={4}
-            intimacyExp={18}
-            intimacyMaxExp={100}
-          />
+          <DashboardContent onInteractionSelect={handleInteractionSelect} />
         );
     }
   };
