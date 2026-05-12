@@ -30,7 +30,7 @@ import {
   ABILITY_AXES,
 } from "../../constants/mates";
 import "./ChatModal.css";
-import { pickChatMotionUrlForSituation } from "../../utils/motionAssets";
+import { pickChatMotionUrlForSituation } from "utils/motionAssets";
 
 function resolveChatApiBase() {
   const fromEnv =

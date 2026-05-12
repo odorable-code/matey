@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { forgotId, validateEmail } from '../../utils/api';
+import { forgotId, validateEmail } from 'utils/api';
 import './ForgotIdPage.css';
 
 export default function ForgotIdPage() {

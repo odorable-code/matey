@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { communityAPI } from '../../utils/api';
+import { communityAPI } from 'utils/api';
 import {
   COMMUNITY_DEFAULT_AVATAR,
   resolveCommunityAvatarUrl,

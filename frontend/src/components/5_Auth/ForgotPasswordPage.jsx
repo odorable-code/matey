@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { forgotPassword, validateEmail } from '../../utils/api';
+import { forgotPassword, validateEmail } from 'utils/api';
 import './ForgotPasswordPage.css';
 import ResetPasswordPage from './ResetPasswordPage';
 

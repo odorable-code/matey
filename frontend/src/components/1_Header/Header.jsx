@@ -29,7 +29,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { canAccessAdminPage } from '../../utils/adminAccess';
+import { canAccessAdminPage } from 'utils/adminAccess';
 import { useChatModal } from '../../contexts/ChatModalContext';
 import { useNotifications } from '../../contexts/NotificationContext';
 import NotificationModal from '../16_NotificationModal/NotificationModal';

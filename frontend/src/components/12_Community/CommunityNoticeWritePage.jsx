@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { adminAPI } from '../../utils/api';
-import { isAdminNoticePublisher } from '../../utils/communityWriteAccess';
+import { adminAPI } from 'utils/api';
+import { isAdminNoticePublisher } from 'utils/communityWriteAccess';
 import styles from './CommunityPage.module.css';
 
 export default function CommunityNoticeWritePage() {

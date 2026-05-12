@@ -1,15 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styles from './DashboardContent.module.css';
 import useAnimatedNumber, { usePrefersReducedMotion } from '../hooks/useAnimatedNumber';
-import { myPageAPI } from '../../../utils/api';
-import { intimacyApiLevelToDisplay } from '../../../utils/intimacyDisplay';
+import { myPageAPI } from 'utils/api';
+import { intimacyApiLevelToDisplay } from 'utils/intimacyDisplay';
 import { resolveMateDisplayName, resolveMateKey, resolveMatePickerBlurb, resolveBotAvatarSrc } from '../../../constants/mates';
 import {
   collectDashboardStageMotionAssetUrls,
   filterMotionsForDashboardStage,
   normalizeMotionAssetUrl,
   pickRandomMotionAssetUrl,
-} from '../../../utils/motionAssets';
+} from 'utils/motionAssets';
 
 /** 서버·캐시 어디서 오든 한 줄로 통일 */
 function mapAssignableRow(entry) {

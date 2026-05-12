@@ -54,7 +54,7 @@ import BotRankingPage from './pages/BotRankingPage.jsx';
 import AdminAccessDeniedPage from './pages/AdminAccessDeniedPage';
 import SocialLoginSuccessPage from './pages/SocialLoginSuccessPage';
 import SocialSignupPage from './pages/SocialSignupPage';
-import { canAccessAdminPage } from './utils/adminAccess';
+import { canAccessAdminPage } from 'utils/adminAccess';
 
 import { NotificationProvider } from './contexts/NotificationContext';
 

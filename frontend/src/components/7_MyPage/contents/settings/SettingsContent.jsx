@@ -18,7 +18,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './SettingsContent.module.css';
-import { myPageAPI } from '../../../../utils/api';
+import { myPageAPI } from 'utils/api';
 import { useNotifications } from '../../../../contexts/NotificationContext';
 import { useAuth } from '../../../../contexts/AuthContext';
 

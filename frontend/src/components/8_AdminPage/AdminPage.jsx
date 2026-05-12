@@ -29,8 +29,8 @@
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Navigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { adminAPI, communityAPI, getStoredToken } from '../../utils/api';
-import { displaySupportTicketTitle } from '../../utils/supportReportDisplay';
+import { adminAPI, communityAPI, getStoredToken } from 'utils/api';
+import { displaySupportTicketTitle } from 'utils/supportReportDisplay';
 import { getDefaultCardStatsForMateKey, resolveMateDisplayName } from '../../constants/mates';
 import './AdminPage.css';
 

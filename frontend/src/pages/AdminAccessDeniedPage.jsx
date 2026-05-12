@@ -2,7 +2,7 @@
 import React from 'react';
 import { Link, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { canAccessAdminPage, getEffectiveRoleCode } from '../utils/adminAccess';
+import { canAccessAdminPage, getEffectiveRoleCode } from 'utils/adminAccess';
 import './AdminAccessDeniedPage.css';
 
 function AdminAccessDeniedPage() {

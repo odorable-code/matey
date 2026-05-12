@@ -1,5 +1,5 @@
 import React, { useLayoutEffect } from 'react';
-import { setStoredToken } from '../utils/api';
+import { setStoredToken } from 'utils/api';
 
 /**
  * 백엔드 OAuth 성공 후 리다이렉트: /login/social-success?token=...

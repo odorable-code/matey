@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { API_BASE_URL, setStoredToken } from '../utils/api';
+import { API_BASE_URL, setStoredToken } from 'utils/api';
 
 /**
  * 소셜 최초 로그인 시 백엔드 세션(PENDING_SOCIAL_USER)과 함께 추가 정보 제출

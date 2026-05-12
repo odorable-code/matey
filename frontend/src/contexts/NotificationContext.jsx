@@ -14,7 +14,7 @@ import {
   useState,
 } from 'react';
 import { useLocation } from 'react-router-dom';
-import { notificationAPI, myPageAPI } from '../utils/api';
+import { notificationAPI, myPageAPI } from 'utils/api';
 import { useAuth } from './AuthContext';
 
 const SETTINGS_BASE_KEY = 'matey_user_settings';

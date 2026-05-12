@@ -1,12 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useNotifications } from '../../../contexts/NotificationContext';
-import { notificationAPI, supportUserAPI } from '../../../utils/api';
+import { notificationAPI, supportUserAPI } from 'utils/api';
 import {
   displaySupportTicketTitle,
   getReportCardTitle,
   parseSupportReportForDisplay,
-} from '../../../utils/supportReportDisplay';
+} from 'utils/supportReportDisplay';
 import styles from './SupportHistoryContent.module.css';
 
 function formatWhen(value) {

@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import styles from './BotMenuContent.module.css';
 import useAnimatedNumber, { usePrefersReducedMotion } from '../hooks/useAnimatedNumber';
-import { myPageAPI } from '../../../utils/api';
-import { intimacyApiLevelToDisplay } from '../../../utils/intimacyDisplay';
-import { normalizeMotionAssetUrl } from '../../../utils/motionAssets';
+import { myPageAPI } from 'utils/api';
+import { intimacyApiLevelToDisplay } from 'utils/intimacyDisplay';
+import { normalizeMotionAssetUrl } from 'utils/motionAssets';
 import { resolveBotAvatarSrc, resolveMateDisplayName } from '../../../constants/mates';
 
 const defaultBotData = {

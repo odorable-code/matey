@@ -22,7 +22,7 @@
  */
 
 import React, { useEffect, useMemo } from 'react';
-import { emotionReportAPI } from '../../../../utils/api';
+import { emotionReportAPI } from 'utils/api';
 import styles from './EmotionReportContent.module.css';
 import EmotionTab from './tabs/EmotionTab';
 import ChatHistoryTab from './tabs/ChatHistoryTab';

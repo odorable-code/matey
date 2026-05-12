@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import styles from './BotRankingPage.module.css';
-import { communityAPI } from '../utils/api';
+import { communityAPI } from 'utils/api';
 import { useAuth } from '../contexts/AuthContext';
-import { canAccessAdminPage } from '../utils/adminAccess';
+import { canAccessAdminPage } from 'utils/adminAccess';
 import { resolveMateDisplayName, resolveMateKey } from '../constants/mates';
 
 function normalizeEntries(raw) {

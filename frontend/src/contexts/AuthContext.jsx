@@ -17,7 +17,7 @@ import {
   logout as logoutRequest,
   setStoredToken,
   signup as signupRequest,
-} from '../utils/api';
+} from 'utils/api';
 
 const AuthContext = createContext(null);
 

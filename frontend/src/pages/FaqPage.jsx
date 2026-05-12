@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import styles from './FaqPage.module.css';
-import { supportPublicAPI, adminAPI } from '../utils/api';
+import { supportPublicAPI, adminAPI } from 'utils/api';
 import { useAuth } from '../contexts/AuthContext';
-import { isCommunityStaffPublisher } from '../utils/communityWriteAccess';
+import { isCommunityStaffPublisher } from 'utils/communityWriteAccess';
 
 function normalizeFaqList(res) {
   const list = res?.faq ?? res?.items ?? res;

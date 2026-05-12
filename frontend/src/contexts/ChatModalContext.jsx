@@ -30,8 +30,8 @@ import {
   useMemo,
   useState,
 } from 'react';
-import { mergeLandingBotsRows } from '../utils/landingMates';
-import { communityAPI, myPageAPI } from '../utils/api';
+import { mergeLandingBotsRows } from 'utils/landingMates';
+import { communityAPI, myPageAPI } from 'utils/api';
 import { resolveMateKey } from '../constants/mates';
 
 // ============================================================

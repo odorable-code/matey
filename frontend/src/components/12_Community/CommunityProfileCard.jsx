@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { myPageAPI } from '../../utils/api';
+import { myPageAPI } from 'utils/api';
 import styles from '../7_MyPage/layout/ProfileCard.module.css';
 
 const DEFAULT_PROFILE_IMAGE = '/images/mypage/bot/matey-profile.png';

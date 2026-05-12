@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { communityAPI } from '../../utils/api';
-import { isCommunityStaffPublisher } from '../../utils/communityWriteAccess';
+import { communityAPI } from 'utils/api';
+import { isCommunityStaffPublisher } from 'utils/communityWriteAccess';
 import styles from './CommunityPage.module.css';
 
 function formatDateTime(value) {

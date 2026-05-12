@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import DOMPurify from 'dompurify';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotifications } from '../../contexts/NotificationContext';
-import { communityAPI, supportUserAPI } from '../../utils/api';
+import { communityAPI, supportUserAPI } from 'utils/api';
 import CommunityReportModal from './CommunityReportModal';
 import {
   COMMUNITY_DEFAULT_AVATAR,

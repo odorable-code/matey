@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './ProfileInfoContent.module.css';
-import { myPageAPI } from '../../../utils/api';
+import { myPageAPI } from 'utils/api';
 
 const DEFAULT_PROFILE_IMAGE = '/images/mypage/bot/matey-profile.png';
 

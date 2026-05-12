@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { validateEmail, checkEmailDuplicate, checkNickNameDuplicate } from '../../utils/api';
+import { validateEmail, checkEmailDuplicate, checkNickNameDuplicate } from 'utils/api';
 import './AuthPage.css';
 
 const LOGIN_INITIAL = {

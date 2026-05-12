@@ -31,7 +31,7 @@ import LetterBoxContent from '../contents/letterBox/LetterBoxContent';
 import SettingsContent from '../contents/settings/SettingsContent';
 import NotificationSettingsContent from 'components/7_MyPage/contents/settings/NotificationSettingsContent';
 import SupportHistoryContent from '../contents/SupportHistoryContent.jsx';
-import { myPageAPI } from '../../../utils/api';
+import { myPageAPI } from 'utils/api';
 import { useChatModal } from '../../../contexts/ChatModalContext';
 
 const VALID_MENU_KEYS = new Set([

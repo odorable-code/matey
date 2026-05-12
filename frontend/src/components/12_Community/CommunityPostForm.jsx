@@ -3,8 +3,8 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import ReactQuill, { Quill } from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { useAuth } from '../../contexts/AuthContext';
-import { communityAPI } from '../../utils/api';
-import { canSelectCategoryForWriting } from '../../utils/communityWriteAccess';
+import { communityAPI } from 'utils/api';
+import { canSelectCategoryForWriting } from 'utils/communityWriteAccess';
 import styles from './CommunityPage.module.css';
 
 function resolveUserId(user) {

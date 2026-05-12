@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { supportPublicAPI } from '../../utils/api';
+import { supportPublicAPI } from 'utils/api';
 import styles from './CommunityPage.module.css';
 
 function CommunityFaqView() {
