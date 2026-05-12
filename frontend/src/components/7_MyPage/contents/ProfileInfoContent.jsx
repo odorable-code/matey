@@ -121,8 +121,8 @@ function ProfileInfoContent() {
           <span className={styles.eyebrow}>PROFILE INFO</span>
           <h2 className={styles.title}>개인정보</h2>
           <p className={styles.description}>
-            수정 가능한 항목은 닉네임, 이메일, 프로필 사진, 휴대폰 번호, 성별만
-            남기고 나머지는 읽기 전용으로 정리했어요.
+            닉네임, 이메일, 프로필 사진, 휴대폰 번호, 성별만 직접 수정할 수 있어요. 그 밖의 항목은
+            보기만 가능합니다.
           </p>
         </div>
       </div>

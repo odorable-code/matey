@@ -11,7 +11,6 @@ import kr.hi.matey.service.NoticeService;
 import kr.hi.matey.util.CustomUser;
 import kr.hi.matey.util.RoleCodeHelper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -55,6 +54,51 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
         return ResponseEntity.ok(adminService.getBotManagementStats());
+    }
+
+    /** 상담봇 신규 등록 */
+    @PostMapping("/bots")
+    public ResponseEntity<?> createBot(
+            @RequestBody Map<String, Object> body,
+            @AuthenticationPrincipal CustomUser user
+    ) {
+        if (user == null || user.getUser() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        if (!RoleCodeHelper.isAdminOrSuperAdmin(user.getUser().getRoleCode())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", "권한이 없습니다."));
+        }
+        try {
+            long id = adminService.createBot(body);
+            return ResponseEntity.ok(Map.of("botId", id, "message", "상담봇이 등록되었습니다."));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
+        } catch (IllegalStateException ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", ex.getMessage()));
+        }
+    }
+
+    /** 상담봇 프로필 수정 */
+    @PutMapping("/bots/{botId}")
+    public ResponseEntity<?> updateBot(
+            @PathVariable("botId") long botId,
+            @RequestBody Map<String, Object> body,
+            @AuthenticationPrincipal CustomUser user
+    ) {
+        if (user == null || user.getUser() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        if (!RoleCodeHelper.isAdminOrSuperAdmin(user.getUser().getRoleCode())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", "권한이 없습니다."));
+        }
+        try {
+            adminService.updateBot(botId, body);
+            return ResponseEntity.ok(Map.of("message", "저장되었습니다."));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
+        } catch (IllegalStateException ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", ex.getMessage()));
+        }
     }
 
     // ==========================================

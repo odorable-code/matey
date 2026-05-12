@@ -99,32 +99,40 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  padding: 12px;
   pointer-events: none;
   z-index: 2;
 }
 
+.heroMascotsCluster {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+}
+
 .mascot {
-  width: 92px;
-  height: 92px;
+  width: 96px;
+  height: 96px;
   object-fit: contain;
   filter: drop-shadow(0 14px 22px rgba(106, 110, 140, 0.22));
+  flex-shrink: 0;
 }
 
-.mascotA {
-  transform: translate(-6px, 8px) rotate(-6deg);
+/* 세 마리 삼각 느낌: 가운데(강이) 살짝 위로 */
+.mascotClusterA {
+  transform: translateY(4px) rotate(-7deg);
 }
 
-.mascotB {
-  transform: translate(-2px, -2px) rotate(6deg);
+.mascotClusterB {
+  width: 104px;
+  height: 104px;
+  transform: translateY(-10px) rotate(2deg);
 }
 
-.mascotC {
-  transform: translate(2px, 10px) rotate(4deg);
-}
-
-.mascotD {
-  transform: translate(6px, 0px) rotate(-5deg);
+.mascotClusterC {
+  transform: translateY(4px) rotate(7deg);
 }
 
 .heroLines {
@@ -182,44 +190,17 @@
 .cardHead {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 12px;
   padding: 14px 14px 0;
 }
 
-.rankPill {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 6px;
-  padding: 8px 10px;
-  border-radius: 999px;
-  border: 1px solid rgba(120, 110, 255, 0.2);
-  background: linear-gradient(180deg, rgba(141, 121, 255, 0.16), rgba(121, 183, 255, 0.1));
-}
-
-.rankNum {
-  font-size: 18px;
-  font-weight: 900;
-  color: rgba(30, 28, 54, 0.88);
-  letter-spacing: -0.02em;
-}
-
-.rankSuffix {
-  font-size: 12px;
-  font-weight: 900;
-  color: rgba(30, 28, 54, 0.65);
-}
-
-.avatarBtn {
-  position: relative;
-  border: none;
-  padding: 0;
+.avatarFrame {
   width: 84px;
   height: 84px;
   border-radius: 18px;
-  background: transparent;
-  cursor: pointer;
-  outline: none;
+  overflow: hidden;
+  flex-shrink: 0;
 }
 
 .avatarImg {
@@ -229,19 +210,7 @@
   object-fit: cover;
   border: 1px solid rgba(120, 110, 255, 0.18);
   background: rgba(250, 250, 255, 0.85);
-}
-
-.recoOverlay {
-  position: absolute;
-  right: 8px;
-  bottom: 8px;
-  font-size: 12px;
-  font-weight: 900;
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: 1px solid rgba(120, 110, 255, 0.24);
-  background: rgba(255, 255, 255, 0.92);
-  color: rgba(30, 28, 54, 0.78);
+  display: block;
 }
 
 .cardBody {
@@ -305,7 +274,7 @@
   display: flex;
   gap: 8px;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .chatLink {
@@ -324,6 +293,7 @@
 }
 
 .recoBtn {
+  box-sizing: border-box;
   height: 38px;
   padding: 0 14px;
   border-radius: 12px;
@@ -333,6 +303,9 @@
   font-weight: 900;
   font-size: 13px;
   cursor: pointer;
+  flex-shrink: 0;
+  /* 추천하기 ↔ 추천 취소 전환 시 줄바꿈·카드 높이 변화 방지 */
+  min-width: 6.75rem;
 }
 
 .recoBtnOn {
@@ -340,12 +313,8 @@
   background: linear-gradient(180deg, rgba(255, 147, 183, 0.18), rgba(141, 121, 255, 0.12));
 }
 
-.recoBtn:disabled {
-  cursor: not-allowed;
-  opacity: 0.65;
-}
-
 .dislikeBtn {
+  box-sizing: border-box;
   height: 38px;
   padding: 0 14px;
   border-radius: 12px;
@@ -355,11 +324,9 @@
   font-weight: 900;
   font-size: 13px;
   cursor: pointer;
-}
-
-.dislikeBtn:disabled {
-  cursor: not-allowed;
-  opacity: 0.65;
+  flex-shrink: 0;
+  /* 싫어요 ↔ 싫어요 취소 전환 시 줄바꿈·레이아웃 밀림 방지 */
+  min-width: 7.5rem;
 }
 
 .dislikeBtnOn {
@@ -389,6 +356,26 @@
   .title {
     font-size: 30px;
   }
+
+  .heroArt {
+    min-height: 210px;
+  }
+}
+
+@media (max-width: 420px) {
+  .mascot {
+    width: 78px;
+    height: 78px;
+  }
+
+  .mascotClusterB {
+    width: 86px;
+    height: 86px;
+  }
+
+  .heroMascotsCluster {
+    gap: 8px 10px;
+  }
 }
 
 @media (max-width: 560px) {
@@ -398,6 +385,28 @@
 
   .grid {
     grid-template-columns: 1fr;
+  }
+
+  .actionsRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .chatLink {
+    justify-content: center;
+  }
+
+  .actionBtns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+    gap: 8px;
+  }
+
+  .recoBtn,
+  .dislikeBtn {
+    min-width: 0;
+    width: 100%;
   }
 }
 

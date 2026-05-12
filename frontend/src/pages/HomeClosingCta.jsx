@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MATE_IMAGES, MATE_NAMES } from '../constants/mates';
+import { MATE_BUBBLES, MATE_IMAGES, MATE_NAMES } from '../constants/mates';
 import '../components/2_Footer/Footer.css';
 
 const COPY = {
@@ -8,7 +8,6 @@ const COPY = {
   ctaDescription:
     '처음이라면 무료체험부터, 궁금한 게 남아 있다면 FAQ부터 보면 돼요.',
   primaryLabel: '대화 시작하기',
-  bubble: '여기까지 와줘서 고마워요. 천천히 다시 찾아와도 괜찮아요.',
 };
 
 /**
@@ -16,8 +15,8 @@ const COPY = {
  */
 function HomeClosingCta() {
   const navigate = useNavigate();
-  const guideImage = MATE_IMAGES.hamster;
-  const guideName = MATE_NAMES.hamster;
+  const guideImage = MATE_IMAGES.dog;
+  const guideName = MATE_NAMES.dog;
 
   const handlePrimary = () => {
     navigate('/free-trial');
@@ -54,7 +53,7 @@ function HomeClosingCta() {
 
           <div className="matey-footer__cta-mate">
             <div className="matey-footer__cta-bubble">
-              {COPY.bubble}
+              {MATE_BUBBLES.dog}
               <span className="matey-footer__cta-bubble-tail" aria-hidden="true" />
             </div>
 

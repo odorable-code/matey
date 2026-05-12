@@ -34,7 +34,6 @@ const CHARACTER_IMAGE_MAP = {
   cat: '/images/emotion-report/cat.png',
   bear: '/images/emotion-report/bear.png',
   dog: '/images/emotion-report/dog.png',
-  hamster: '/images/emotion-report/hamster.png',
 };
 
 /* =========================
@@ -107,27 +106,6 @@ const FALLBACK_HERO_BOTS = [
       '작은 계획으로 쪼개면 훨씬 덜 무겁게 시작할 수 있어.',
     ],
     chips: ['공감', '응원', '작은 실행'],
-  },
-  {
-    key: 'hamster',
-    name: '햄이',
-    typeLabel: '세심한 생활형',
-    fallbackLabel: '햄',
-    accentColor: '#C6A5FF',
-    softColor: '#F4EEFF',
-    imageUrl: '',
-    imagePath: '',
-    cardObjectPosition: 'center 12%',
-    reportObjectPosition: 'center bottom',
-    title: '햄이 리포트',
-    summary:
-      '감정이 생활 리듬하고 같이 흔들리는 패턴이 보여. 마음을 한 번에 바꾸기보다 하루 루틴 하나를 잡는 게 더 효과적일 수 있어.',
-    bullets: [
-      '수면이나 일상 리듬이 흐트러진 날 감정 반응도 더 커지는 편이야.',
-      '작은 루틴 하나만 안정돼도 전체 감정 흐름이 정돈될 수 있어.',
-      '거창한 다짐보다 생활 단위의 작은 회복이 더 중요해 보여.',
-    ],
-    chips: ['루틴', '생활 정리', '잔잔한 회복'],
   },
 ];
 

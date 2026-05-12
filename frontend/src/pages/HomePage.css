@@ -40,7 +40,7 @@
 }
 
 /* =========================================================
-   2. 봇 4인 카드 섹션 - 컨테이너
+   2. 봇 카드 섹션 - 컨테이너
 ========================================================= */
 .matey-mates {
   position: relative;
@@ -475,6 +475,60 @@
 }
 
 /* =========================================================
+   10-b. 카드 - 추후 메이트 플레이스홀더 (클릭 없음)
+========================================================= */
+.matey-mate-card--placeholder {
+  cursor: default;
+  border-style: dashed;
+  border-color: rgba(123, 139, 176, 0.35);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.92) 0%,
+    rgba(248, 249, 255, 0.96) 100%
+  );
+}
+
+.matey-mate-card--placeholder:hover,
+.matey-mate-card--placeholder:focus-visible {
+  transform: none;
+  box-shadow: 0 14px 32px rgba(130, 145, 178, 0.1);
+  border-color: rgba(123, 139, 176, 0.35);
+}
+
+.matey-mate-card--placeholder:hover::before,
+.matey-mate-card--placeholder:focus-visible::before {
+  opacity: 0;
+}
+
+.matey-mate-card__visual--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 5 / 3;
+  border-radius: 18px;
+  border: 2px dashed rgba(141, 121, 255, 0.35);
+  background: rgba(141, 121, 255, 0.06);
+}
+
+.matey-mate-card__placeholder-mark {
+  font-size: 2.5rem;
+  font-weight: 300;
+  line-height: 1;
+  color: rgba(100, 87, 179, 0.45);
+}
+
+.matey-mate-card__footer--placeholder {
+  margin-top: auto;
+  padding-top: 8px;
+}
+
+.matey-mate-card__cta--muted {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: rgba(90, 96, 120, 0.82);
+}
+
+/* =========================================================
    11. 반응형 - 노트북
 ========================================================= */
 @media (max-width: 1180px) {
@@ -650,5 +704,10 @@
   .matey-mate-card__stat-fill,
   .matey-mate-card__cta-arrow {
     transition: none !important;
+  }
+
+  .matey-mate-card--placeholder:hover,
+  .matey-mate-card--placeholder:focus-visible {
+    transform: none !important;
   }
 }

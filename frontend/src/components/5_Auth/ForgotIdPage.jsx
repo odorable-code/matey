@@ -113,8 +113,8 @@ export default function ForgotIdPage() {
 
             <div className="matey-forgot-side__image-wrap">
               <img
-                src="/images/rabbit-duo.png"
-                alt="Matey characters"
+                src="/images/mypage/bot/matey-base.png"
+                alt="메이티 캐릭터"
                 className="matey-forgot-side__image"
               />
             </div>

@@ -9,6 +9,7 @@
  * - option에서 label 꺼내기: getOptionLabel
  * - 여러 문자열 중 첫 번째 유효한 값 찾기: resolveText
  * - 날짜 문자열을 Date로 변환: parseFlexibleDate
+ * - 직전 달 1일: getFirstDayOfPreviousMonth
  * - Date를 문자열 key로 변환: formatFullDateKey, formatShortKey, formatMonthKey
  * - 두 날짜가 같은 날인지 비교: isSameDay
  * - 달력 42칸 배열 만들기: buildCalendarMatrix
@@ -24,8 +25,6 @@
  * - 이 파일은 "함수"만 있고, 상수/데이터는 없음
  * - 상수는 emotionReport.constants.js에 모아둠
  */
-
-import { CURRENT_YEAR } from './emotionReport.constants';
 
 /* =========================
    className 합칠 때 쓰는 함수
@@ -57,11 +56,36 @@ export const resolveText = (...values) =>
   values.find((value) => typeof value === 'string' && value.trim()) || '';
 
 /* =========================
+   직전 달의 1일 (로컬 타임존)
+   - 대화 히스토리 달력 앵커 등 "전월 기준" UI에 사용
+========================= */
+export const getFirstDayOfPreviousMonth = (refDate = new Date()) => {
+  const base =
+    refDate instanceof Date && !Number.isNaN(refDate.getTime()) ? refDate : new Date();
+  return new Date(base.getFullYear(), base.getMonth() - 1, 1);
+};
+
+/* =========================
+   월·일만 주어졌을 때 "직전 달"과 월이 일치할 때만 Date 생성
+   - 전월이 아닌 월이면 null (잘못된 키/라벨 방지)
+========================= */
+const parseMonthDayInPreviousCalendarMonth = (month1to12, day1to31) => {
+  const anchor = getFirstDayOfPreviousMonth();
+  const prevMonth0 = anchor.getMonth();
+  if (month1to12 - 1 !== prevMonth0) return null;
+
+  const year = anchor.getFullYear();
+  const dim = new Date(year, prevMonth0 + 1, 0).getDate();
+  const clamped = Math.min(Math.max(1, day1to31), dim);
+  return new Date(year, prevMonth0, clamped);
+};
+
+/* =========================
    날짜 문자열을 Date 객체로 변환하는 함수
    - 지원하는 형식:
      1. '2026-04-21' (연-월-일)
-     2. '04-21' (월-일, CURRENT_YEAR 기준)
-     3. '4월 21일' (한국어, CURRENT_YEAR 기준)
+     2. '04-21' (월-일, 직전 달과 월이 같을 때만 유효)
+     3. '4월 21일' (한국어, 직전 달과 월이 같을 때만 유효)
      4. 이미 Date 객체면 그대로 반환
    - 못 읽는 형식이면 null 반환
 ========================= */
@@ -84,18 +108,18 @@ export const parseFlexibleDate = (value) => {
     return new Date(year, month - 1, day);
   }
 
-  /* --- 형식 2: '04-21' --- */
+  /* --- 형식 2: '04-21' (직전 달과 월이 일치할 때만) --- */
   match = trimmed.match(/^(\d{2})-(\d{2})$/);
   if (match) {
     const [, month, day] = match.map(Number);
-    return new Date(CURRENT_YEAR, month - 1, day);
+    return parseMonthDayInPreviousCalendarMonth(month, day);
   }
 
-  /* --- 형식 3: '4월 21일' --- */
+  /* --- 형식 3: '4월 21일' (직전 달과 월이 일치할 때만) --- */
   match = trimmed.match(/^(\d{1,2})월\s*(\d{1,2})일$/);
   if (match) {
     const [, month, day] = match.map(Number);
-    return new Date(CURRENT_YEAR, month - 1, day);
+    return parseMonthDayInPreviousCalendarMonth(month, day);
   }
 
   return null;

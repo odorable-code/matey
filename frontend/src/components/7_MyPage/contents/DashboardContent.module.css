@@ -355,11 +355,14 @@
 .greetingBubble {
   position: absolute;
   left: 50%;
-  top: 50%;
-  z-index: 9;
+  right: auto;
+  top: auto;
+  bottom: 100%;
+  z-index: 12;
   width: max-content;
   max-width: 280px;
-  transform: translate(-50%, calc(-50% - 156px));
+  margin-bottom: 10px;
+  transform: translateX(-50%);
   pointer-events: none;
 }
 
@@ -415,9 +418,20 @@
   }
 }
 
+@keyframes characterFloatBob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
 .characterButton {
   position: relative;
-  z-index: 3;
+  z-index: 8;
   width: auto;
   height: auto;
   padding: 0;
@@ -441,13 +455,26 @@
   outline: none;
 }
 
+/* 인사 말풍선이 닫힌 궤도 레이어(z-index: 20) 위에 보이도록 */
+.characterButtonGreetingLift {
+  z-index: 25;
+}
+
 .characterImage {
-  width: 204px;
+  width: 176px;
   max-width: none;
   display: block;
   object-fit: contain;
   user-select: none;
   pointer-events: none;
+  animation: characterFloatBob 3.4s ease-in-out infinite;
+}
+
+/* 냥이: 무대에서 왼쪽 응시 — 부모만 미러(자식 float 애니메이션과 충돌 방지) */
+.characterFlipX {
+  display: inline-flex;
+  line-height: 0;
+  transform: scaleX(-1);
 }
 
 .characterImageDay {
@@ -479,38 +506,58 @@
   inset: 0;
   opacity: 0;
   pointer-events: none;
-  z-index: 6;
+  z-index: 20;
   transition: opacity 0.18s ease;
 }
 
 .orbitMenuOpen {
   opacity: 1;
-  pointer-events: auto;
+  pointer-events: none;
+  /* characterButtonGreetingLift(25)보다 위 — 호버/클릭으로 열린 궤도가 봇 이미지 위에 그려지게 */
+  z-index: 30;
 }
 
 .orbitCenter {
   position: absolute;
   left: 50%;
-  top: 48%;
+  top: 33%;
   width: 0;
   height: 0;
   transform: translate(-50%, -50%);
-  z-index: 6;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.orbitMenuOpen.orbitMenuMotion .orbitCenter {
+  animation: orbitCenterOpenPop 440ms cubic-bezier(0.33, 1.22, 0.52, 1) both;
+}
+
+@keyframes orbitCenterOpenPop {
+  0% {
+    opacity: 0.65;
+    transform: translate(-50%, -50%) rotate(var(--orbit-twist, 6deg)) scale(0.88);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(0deg) scale(1);
+  }
 }
 
 .orbitActionButton {
   position: absolute;
   left: 0;
   top: 0;
-  width: 164px;
-  height: 146px;
+  width: 132px;
+  height: 128px;
   padding: 0;
   border: none;
   background: transparent;
   box-shadow: none;
   cursor: pointer;
   opacity: 0;
-  z-index: 7;
+  z-index: 2;
+  pointer-events: none;
   transform: translate(
       calc(-50% + var(--orbit-x, 0px)),
       calc(-50% + var(--orbit-y, 0px))
@@ -520,10 +567,13 @@
     transform 0.26s cubic-bezier(0.22, 1, 0.36, 1),
     opacity 0.18s ease,
     filter 0.18s ease;
+  transition-delay: 0ms;
 }
 
 .orbitMenuOpen .orbitActionButton {
   opacity: 1;
+  pointer-events: auto;
+  transition-delay: var(--orbit-btn-delay, 0ms);
   transform: translate(
       calc(-50% + var(--orbit-x, 0px)),
       calc(-50% + var(--orbit-y, 0px))
@@ -532,16 +582,30 @@
 }
 
 .orbitMenuOpen .orbitActionButton:hover {
+  transition-delay: var(--orbit-btn-delay, 0ms);
   transform: translate(
       calc(-50% + var(--orbit-x, 0px)),
       calc(-50% + var(--orbit-y, 0px))
     )
-    scale(1.04);
+    scale(1.06);
   filter: brightness(1.04);
+}
+
+.orbitMenuOpen .orbitActionButton:disabled,
+.orbitMenuOpen .orbitActionButton:disabled:hover {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(0.35) brightness(0.95);
+  transform: translate(
+      calc(-50% + var(--orbit-x, 0px)),
+      calc(-50% + var(--orbit-y, 0px))
+    )
+    scale(1);
 }
 
 .orbitActionButton:focus-visible {
   outline: none;
+  transition-delay: var(--orbit-btn-delay, 0ms);
   transform: translate(
       calc(-50% + var(--orbit-x, 0px)),
       calc(-50% + var(--orbit-y, 0px))
@@ -549,24 +613,25 @@
     scale(1.03);
 }
 
+/* 위쪽 반원 호: 봇 얼굴과 겹치지 않게 바깥쪽에 배치 */
 .orbitCounsel {
-  --orbit-x: -158px;
-  --orbit-y: -24px;
+  --orbit-x: -142px;
+  --orbit-y: -34px;
 }
 
 .orbitPlay {
-  --orbit-x: -62px;
-  --orbit-y: -136px;
+  --orbit-x: -70px;
+  --orbit-y: -132px;
 }
 
 .orbitFeed {
-  --orbit-x: 62px;
-  --orbit-y: -136px;
+  --orbit-x: 70px;
+  --orbit-y: -132px;
 }
 
 .orbitTouch {
-  --orbit-x: 158px;
-  --orbit-y: -24px;
+  --orbit-x: 142px;
+  --orbit-y: -34px;
 }
 
 .orbitIconWrap {
@@ -575,69 +640,85 @@
   top: 50%;
   width: auto;
   height: auto;
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
   transform: translate(-50%, -50%);
   display: flex;
   align-items: center;
   justify-content: center;
   pointer-events: none;
+  background: none;
+  border: none;
+  box-shadow: none;
+  backdrop-filter: none;
 }
 
 .orbitIcon {
-  width: 87px;
-  height: 87px;
+  width: 52px;
+  height: 52px;
   object-fit: contain;
   display: block;
-  filter: drop-shadow(0 8px 14px rgba(98, 76, 139, 0.22));
+  filter: drop-shadow(0 3px 8px rgba(40, 28, 58, 0.35));
 }
 
 .orbitLabel {
   position: absolute;
   left: 50%;
-  top: calc(50% + 42px);
+  top: calc(50% + 40px);
   transform: translateX(-50%);
-  color: #ffffff;
-  font-size: 18px;
-  font-weight: 900;
-  line-height: 1;
-  letter-spacing: -0.03em;
+  color: #45375c;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
   white-space: nowrap;
   pointer-events: none;
-  -webkit-text-stroke: 3px rgba(26, 19, 35, 0.96);
-  paint-order: stroke fill;
   text-shadow:
-    0 2px 0 rgba(26, 19, 35, 0.92),
-    0 4px 12px rgba(26, 19, 35, 0.32);
+    0 1px 0 rgba(255, 255, 255, 0.9),
+    0 1px 2px rgba(255, 255, 255, 0.55);
+}
+
+.stageBottomDock {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  z-index: 16;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  width: min(440px, calc(100% - 32px));
+  max-width: calc(100% - 32px);
+  pointer-events: none;
 }
 
 .bondStatus {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 228px;
-  z-index: 7;
+  position: relative;
+  width: 100%;
+  z-index: 0;
   pointer-events: none;
-  transform: translate(-50%, calc(-50% + 130px));
 }
 
 .bondStatusInner {
   width: 100%;
-  padding: 10px 14px 10px;
+  padding: 8px 12px 8px 14px;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.78);
-  border: 1px solid rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.92);
   box-shadow:
-    0 12px 24px rgba(120, 95, 168, 0.16),
-    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+    0 10px 22px rgba(120, 95, 168, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.78);
   backdrop-filter: blur(12px);
   opacity: 0;
-  transform: translateY(10px);
+  transform: translateY(8px);
   animation: bondStatusFadeIn 520ms cubic-bezier(0.22, 1, 0.36, 1) 120ms forwards;
 }
 
 @keyframes bondStatusFadeIn {
   0% {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(8px);
   }
 
   100% {
@@ -646,37 +727,41 @@
   }
 }
 
-.bondSection {
-  display: grid;
-  gap: 0;
-}
-
-.bondStatusHeader {
+.bondRow {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 10px;
-  margin-bottom: 8px;
+  min-width: 0;
+}
+
+.bondLabelGroup {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
 .bondStatusTitle {
   color: #6c5c83;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.02em;
 }
 
 .bondStatusLevel {
   color: #4f4169;
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 900;
   line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 
 .bondProgress {
   position: relative;
-  width: 100%;
-  height: 8px;
+  flex: 1 1 100px;
+  min-width: 72px;
+  width: auto;
+  height: 7px;
   border-radius: 999px;
   overflow: hidden;
   background: rgba(221, 212, 239, 0.78);
@@ -695,15 +780,15 @@
   transition: width 220ms ease-out;
 }
 
-.bondStatusMeta {
-  margin-top: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  color: #74638d;
+.bondExpCapsule {
+  flex-shrink: 0;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  color: #74638d;
+  min-width: 3.2rem;
+  text-align: right;
 }
 
 @media (max-width: 1180px) {
@@ -743,9 +828,13 @@
     height: 334px;
   }
 
+  .orbitCenter {
+    top: 34%;
+  }
+
   .greetingBubble {
     max-width: 252px;
-    transform: translate(-50%, calc(-50% - 146px));
+    margin-bottom: 8px;
   }
 
   .greetingBubbleInner {
@@ -765,56 +854,72 @@
   }
 
   .characterImage {
-    width: 190px;
+    width: 162px;
+    animation-duration: 3.25s;
   }
 
   .orbitActionButton {
-    width: 152px;
-    height: 136px;
+    width: 122px;
+    height: 118px;
   }
 
   .orbitCounsel {
-    --orbit-x: -146px;
-    --orbit-y: -22px;
+    --orbit-x: -124px;
+    --orbit-y: -28px;
   }
 
   .orbitPlay {
-    --orbit-x: -56px;
-    --orbit-y: -126px;
+    --orbit-x: -62px;
+    --orbit-y: -116px;
   }
 
   .orbitFeed {
-    --orbit-x: 56px;
-    --orbit-y: -126px;
+    --orbit-x: 62px;
+    --orbit-y: -116px;
   }
 
   .orbitTouch {
-    --orbit-x: 146px;
-    --orbit-y: -22px;
+    --orbit-x: 124px;
+    --orbit-y: -28px;
+  }
+
+  .orbitIconWrap {
+    width: auto;
+    height: auto;
   }
 
   .orbitIcon {
-    width: 78px;
-    height: 78px;
+    width: 48px;
+    height: 48px;
   }
 
   .orbitLabel {
-    top: calc(50% + 38px);
-    font-size: 17px;
-    -webkit-text-stroke: 3px rgba(26, 19, 35, 0.96);
+    top: calc(50% + 34px);
+    font-size: 12px;
+    font-weight: 800;
   }
 
-  .bondStatus {
-    width: 214px;
-    transform: translate(-50%, calc(-50% + 130px));
+  .stageBottomDock {
+    left: 12px;
+    bottom: 12px;
+    width: min(400px, calc(100% - 24px));
+    gap: 9px;
   }
 
   .bondStatusInner {
-    padding: 10px 12px;
+    padding: 7px 10px 7px 12px;
+  }
+
+  .bondRow {
+    gap: 8px;
   }
 
   .bondProgress {
-    height: 7px;
+    height: 6px;
+  }
+
+  .bondStatusLevel {
+    font-size: 15px;
   }
 }
 
@@ -875,9 +980,13 @@
     height: 286px;
   }
 
+  .orbitCenter {
+    top: 35%;
+  }
+
   .greetingBubble {
     max-width: 220px;
-    transform: translate(-50%, calc(-50% - 128px));
+    margin-bottom: 6px;
   }
 
   .greetingBubbleInner {
@@ -905,75 +1014,101 @@
   }
 
   .characterImage {
-    width: 164px;
+    width: 142px;
+    animation-duration: 3.1s;
   }
 
   .orbitActionButton {
-    width: 132px;
-    height: 118px;
+    width: 112px;
+    height: 108px;
   }
 
   .orbitCounsel {
-    --orbit-x: -118px;
-    --orbit-y: -16px;
+    --orbit-x: -102px;
+    --orbit-y: -20px;
   }
 
   .orbitPlay {
-    --orbit-x: -48px;
-    --orbit-y: -102px;
+    --orbit-x: -50px;
+    --orbit-y: -96px;
   }
 
   .orbitFeed {
-    --orbit-x: 48px;
-    --orbit-y: -102px;
+    --orbit-x: 50px;
+    --orbit-y: -96px;
   }
 
   .orbitTouch {
-    --orbit-x: 118px;
-    --orbit-y: -16px;
+    --orbit-x: 102px;
+    --orbit-y: -20px;
+  }
+
+  .orbitIconWrap {
+    width: auto;
+    height: auto;
   }
 
   .orbitIcon {
-    width: 66px;
-    height: 66px;
+    width: 44px;
+    height: 44px;
   }
 
   .orbitLabel {
-    top: calc(50% + 34px);
-    font-size: 15px;
-    -webkit-text-stroke: 2.5px rgba(26, 19, 35, 0.96);
+    top: calc(50% + 30px);
+    font-size: 11px;
+    font-weight: 800;
   }
 
-  .bondStatus {
-    width: 192px;
-    transform: translate(-50%, calc(-50% + 130px));
+  .stageBottomDock {
+    left: 10px;
+    right: 10px;
+    bottom: 12px;
+    width: auto;
+    max-width: none;
+    gap: 9px;
   }
 
   .bondStatusInner {
-    padding: 9px 11px;
+    padding: 7px 10px;
     border-radius: 14px;
   }
 
   .bondStatusTitle {
-    font-size: 11px;
+    font-size: 10px;
   }
 
   .bondStatusLevel {
-    font-size: 15px;
+    font-size: 14px;
   }
 
   .bondProgress {
+    order: 3;
+    flex: 1 1 100%;
+    min-width: 0;
     height: 6px;
   }
 
-  .bondStatusMeta {
+  .bondRow {
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+
+  .bondLabelGroup {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .bondExpCapsule {
+    flex: 0 0 auto;
     font-size: 10px;
-    margin-top: 5px;
+    min-width: 2.8rem;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .orbitMenu,
+  .orbitMenuMotion,
+  .orbitCenter,
   .orbitActionButton,
   .backgroundImage,
   .backgroundImageLayer,
@@ -984,6 +1119,7 @@
   .stageFloor,
   .stageFloorLayer,
   .characterButton,
+  .characterImage,
   .bondProgressFill,
   .bondStatusInner,
   .greetingBubbleInner {
@@ -1001,9 +1137,14 @@
     transform: translateY(-6px);
   }
 
+  .characterImage {
+    transform: none;
+  }
+
   .orbitMenuOpen .orbitActionButton,
   .orbitMenuOpen .orbitActionButton:hover,
   .orbitActionButton:focus-visible {
+    transition-delay: 0ms;
     transform: translate(
         calc(-50% + var(--orbit-x, 0px)),
         calc(-50% + var(--orbit-y, 0px))
@@ -1011,4 +1152,217 @@
       scale(1);
     filter: none;
   }
+
+  .orbitMenuOpen.orbitMenuMotion .orbitCenter {
+    animation: none;
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+/* 담당 봇 선택 + 모달 */
+.stageHeaderActions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;
+  padding-top: 4px;
+}
+
+.stageAssignButton {
+  border: none;
+  cursor: pointer;
+  border-radius: 14px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #4f4169;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(243, 236, 255, 0.92));
+  border: 1px solid rgba(142, 118, 190, 0.35);
+  box-shadow: 0 8px 20px rgba(114, 93, 152, 0.12);
+  white-space: nowrap;
+}
+
+.stageAssignButton:hover {
+  transform: translateY(-1px);
+  border-color: rgba(142, 118, 190, 0.55);
+}
+
+.botPickerOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 12000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(18, 12, 32, 0.45);
+  backdrop-filter: blur(6px);
+}
+
+.botPickerDialog {
+  width: min(420px, 100%);
+  max-height: min(86vh, 520px);
+  overflow: auto;
+  border-radius: 22px;
+  padding: 18px 18px 16px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(142, 118, 190, 0.22);
+  box-shadow: 0 24px 60px rgba(40, 24, 70, 0.22);
+}
+
+.botPickerHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.botPickerTitle {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 900;
+  color: #4f4169;
+  letter-spacing: -0.02em;
+}
+
+.botPickerClose {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid rgba(120, 110, 170, 0.2);
+  background: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  font-size: 22px;
+  line-height: 1;
+  color: #5a5478;
+}
+
+.botPickerHint {
+  margin: 0 0 14px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: #7b6a94;
+}
+
+.botPickerEmpty {
+  padding: 8px 4px 4px;
+}
+
+.botPickerEmptyLead {
+  margin: 0 0 10px;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.55;
+  color: #4f4169;
+}
+
+.botPickerEmptySub {
+  margin: 0 0 16px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: #7b6a94;
+}
+
+.botPickerEmptyActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.botPickerRetry {
+  padding: 10px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(120, 110, 170, 0.35);
+  background: linear-gradient(135deg, rgba(142, 118, 190, 0.18), rgba(120, 160, 255, 0.12));
+  font-size: 13px;
+  font-weight: 800;
+  color: #4f4169;
+  cursor: pointer;
+}
+
+.botPickerRetry:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.botPickerEmptyClose {
+  padding: 10px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(120, 110, 170, 0.22);
+  background: rgba(255, 255, 255, 0.9);
+  font-size: 13px;
+  font-weight: 700;
+  color: #5a5478;
+  cursor: pointer;
+}
+
+.botPickerList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.botPickerItem {
+  margin: 0;
+}
+
+.botPickerCard {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(120, 110, 170, 0.18);
+  background: rgba(249, 244, 255, 0.65);
+  cursor: pointer;
+  text-align: left;
+}
+
+.botPickerCard:hover:not(:disabled) {
+  border-color: rgba(142, 118, 190, 0.45);
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.botPickerCard:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.botPickerThumb {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid rgba(120, 110, 170, 0.15);
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.botPickerMeta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.botPickerName {
+  font-size: 15px;
+  font-weight: 800;
+  color: #4f4169;
+}
+
+.botPickerBlurb {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: rgba(79, 65, 105, 0.68);
 }

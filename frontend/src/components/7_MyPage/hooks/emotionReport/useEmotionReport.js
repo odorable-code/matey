@@ -23,12 +23,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-
-/* =========================
-   날짜 기본 연도
-   - "04-21" 같은 값이 들어오면 2026년 기준으로 해석
-========================= */
-const CURRENT_YEAR = 2026;
+import { formatFullDateKey, formatShortKey, parseFlexibleDate } from './emotionReport.utils';
 
 /* =========================
    기본 탭 목록
@@ -54,7 +49,6 @@ const CHARACTER_IMAGE_MAP = {
   cat: '/images/emotion-report/cat.png',
   bear: '/images/emotion-report/bear.png',
   dog: '/images/emotion-report/dog.png',
-  hamster: '/images/emotion-report/hamster.png',
 };
 
 /* =========================
@@ -121,26 +115,6 @@ const FALLBACK_HERO_BOTS = [
       '작게 시작하면 훨씬 덜 무겁게 움직일 수 있어.',
     ],
     chips: ['공감', '응원', '작은 실행'],
-  },
-  {
-    key: 'hamster',
-    name: '햄이',
-    typeLabel: '세심한 생활형',
-    fallbackLabel: '햄',
-    accentColor: '#C6A5FF',
-    softColor: '#F4EEFF',
-    imageUrl: CHARACTER_IMAGE_MAP.hamster,
-    imagePath: CHARACTER_IMAGE_MAP.hamster,
-    cardObjectPosition: 'center 12%',
-    reportObjectPosition: 'center bottom',
-    title: '햄이 리포트',
-    summary: '감정이 생활 리듬과 같이 흔들리는 패턴이 보여.',
-    bullets: [
-      '수면이나 루틴이 흔들리면 감정 반응도 커져.',
-      '작은 루틴 하나만 안정돼도 흐름이 정돈될 수 있어.',
-      '거창한 다짐보다 생활 단위 회복이 중요해.',
-    ],
-    chips: ['루틴', '생활 정리', '잔잔한 회복'],
   },
 ];
 
@@ -341,7 +315,7 @@ const FALLBACK_REPORT_DATA = {
         },
       },
       '04-24': {
-        selectedBotKey: 'hamster',
+        selectedBotKey: 'bear',
         summary: {
           title: '생활 리듬이 감정에 직접 영향을 준 하루예요.',
           description: '수면과 루틴이 흔들리면서 감정 기복도 함께 커졌어요.',
@@ -445,46 +419,6 @@ const getOptionKey = (item) =>
 
 const getOptionLabel = (item) =>
   item?.label ?? item?.name ?? item?.title ?? item?.text ?? '';
-
-const parseFlexibleDate = (value) => {
-  if (!value) return null;
-  if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
-  if (typeof value !== 'string') return null;
-
-  const trimmed = value.trim();
-
-  let match = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (match) {
-    const [, year, month, day] = match.map(Number);
-    return new Date(year, month - 1, day);
-  }
-
-  match = trimmed.match(/^(\d{2})-(\d{2})$/);
-  if (match) {
-    const [, month, day] = match.map(Number);
-    return new Date(CURRENT_YEAR, month - 1, day);
-  }
-
-  match = trimmed.match(/^(\d{1,2})월\s*(\d{1,2})일$/);
-  if (match) {
-    const [, month, day] = match.map(Number);
-    return new Date(CURRENT_YEAR, month - 1, day);
-  }
-
-  return null;
-};
-
-const formatFullDateKey = (date) => {
-  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '';
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(
-    date.getDate()
-  ).padStart(2, '0')}`;
-};
-
-const formatShortKey = (date) => {
-  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '';
-  return `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-};
 
 const normalizeDateOptions = (chatHistoryData = {}) => {
   const raw =

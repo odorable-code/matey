@@ -1,6 +1,7 @@
 package kr.hi.matey.dao;
 
 import kr.hi.matey.dto.AdminBotStatsRow;
+import kr.hi.matey.dto.AdminBotUpsertDTO;
 import kr.hi.matey.dto.FeedbackDTO;
 import kr.hi.matey.dto.UserDTO2;
 import org.apache.ibatis.annotations.Mapper;
@@ -66,5 +67,11 @@ public interface AdminDAO {
     );
 
     long countRecommendEventsInMonth(@Param("year") int year, @Param("month") int month);
+
+    int countBotById(@Param("botId") long botId);
+
+    int insertBot(AdminBotUpsertDTO dto);
+
+    int updateBot(AdminBotUpsertDTO dto);
 
 }

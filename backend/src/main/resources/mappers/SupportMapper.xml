@@ -21,14 +21,7 @@
                 ORDER BY sa.created_at DESC, sa.answer_id DESC
                 LIMIT 1
             ) as answerContent,
-            (
-                SELECT u.nickname
-                FROM SUPPORT_ANSWER sa
-                JOIN USER u ON u.user_id = sa.admin_user_id
-                WHERE sa.support_id = s.support_id
-                ORDER BY sa.created_at DESC, sa.answer_id DESC
-                LIMIT 1
-            ) as answerAdminNickname,
+            NULL as answerAdminNickname,
             (
                 SELECT sa.created_at
                 FROM SUPPORT_ANSWER sa

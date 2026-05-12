@@ -63,4 +63,17 @@
         VALUES (#{userId}, #{botId}, #{delta}, NOW())
     </insert>
 
+    <update id="updateReaction">
+        UPDATE USER_BOT_RECOMMEND
+        SET reaction = #{reaction}
+        WHERE user_id = #{userId}
+          AND bot_id = #{botId}
+    </update>
+
+    <delete id="deleteReaction">
+        DELETE FROM USER_BOT_RECOMMEND
+        WHERE user_id = #{userId}
+          AND bot_id = #{botId}
+    </delete>
+
 </mapper>
