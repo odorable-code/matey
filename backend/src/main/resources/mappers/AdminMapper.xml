@@ -7,9 +7,9 @@
     <!-- ========================================== -->
     <select id="selectDashboardOverview" resultType="map">
         SELECT
-            (SELECT COUNT(*) FROM USER) as totalUsers,
-            (SELECT COUNT(*) FROM USER WHERE status = 'ACTIVE') as activeUsers,
-            (SELECT COUNT(*) FROM USER WHERE created_at >= CURDATE()) as newUsersToday,
+            (SELECT COUNT(*) FROM `USER`) as totalUsers,
+            (SELECT COUNT(*) FROM `USER` WHERE status = 'ACTIVE') as activeUsers,
+            (SELECT COUNT(*) FROM `USER` WHERE created_at >= CURDATE()) as newUsersToday,
             (SELECT COUNT(*) FROM SUPPORT WHERE status = 'PENDING') as pendingFeedbacks,
             (SELECT COUNT(*) FROM USER_ROLE ur JOIN ROLE r ON ur.role_id = r.role_id
              WHERE r.role_code IN ('ADMIN', 'SUPER_ADMIN')) as adminCount,
@@ -80,7 +80,7 @@
              INNER JOIN SUPPORT_REASON sr ON s.support_reason_id = sr.support_reason_id
              WHERE s.user_id = u.user_id AND sr.reason_type = 'REPORT') as reportCount,
             (SELECT COUNT(*) FROM SUPPORT s WHERE s.user_id = u.user_id) as supportCount
-        FROM USER u
+        FROM `USER` u
         LEFT JOIN USER_ROLE ur ON u.user_id = ur.user_id
         LEFT JOIN ROLE r ON ur.role_id = r.role_id
         <where>
@@ -127,7 +127,7 @@
              INNER JOIN SUPPORT_REASON sr ON s.support_reason_id = sr.support_reason_id
              WHERE s.user_id = u.user_id AND sr.reason_type = 'REPORT') as reportCount,
             (SELECT COUNT(*) FROM SUPPORT s WHERE s.user_id = u.user_id) as supportCount
-        FROM USER u
+        FROM `USER` u
         LEFT JOIN USER_ROLE ur ON u.user_id = ur.user_id
         LEFT JOIN ROLE r ON ur.role_id = r.role_id
         WHERE u.user_id = #{userId}
@@ -149,10 +149,10 @@
         WHERE user_id = #{userId}
     </update>
 
-    <update id="deleteUser">
+    <delete id="deleteUser">
         -- DB 스키마의 ON DELETE CASCADE 설정으로 인해 USER 삭제 시 연관 데이터가 자동 삭제됩니다.
         DELETE FROM `USER` WHERE `user_id` = #{userId}
-    </update>
+    </delete>
 
     <!-- ========================================== -->
     <!-- 일괄 작업 (Batch Operations) -->
@@ -193,7 +193,7 @@
             au.nickname as answerAdminNickname,
             sa.created_at as answerCreatedAt
         FROM SUPPORT s
-        JOIN USER u ON s.user_id = u.user_id
+        JOIN `USER` u ON s.user_id = u.user_id
         JOIN SUPPORT_REASON sr ON s.support_reason_id = sr.support_reason_id
         LEFT JOIN SUPPORT_ANSWER sa ON sa.answer_id = (
             SELECT sa2.answer_id
@@ -202,7 +202,7 @@
             ORDER BY sa2.created_at DESC, sa2.answer_id DESC
             LIMIT 1
         )
-        LEFT JOIN USER au ON sa.admin_user_id = au.user_id
+        LEFT JOIN `USER` au ON sa.admin_user_id = au.user_id
         <where>
             <if test="status != null and status != 'ALL'">
                 AND s.status = #{status}
@@ -227,7 +227,7 @@
             au.nickname as answerAdminNickname,
             sa.created_at as answerCreatedAt
         FROM SUPPORT s
-        JOIN USER u ON s.user_id = u.user_id
+        JOIN `USER` u ON s.user_id = u.user_id
         JOIN SUPPORT_REASON sr ON s.support_reason_id = sr.support_reason_id
         LEFT JOIN SUPPORT_ANSWER sa ON sa.answer_id = (
             SELECT sa2.answer_id
@@ -236,7 +236,7 @@
             ORDER BY sa2.created_at DESC, sa2.answer_id DESC
             LIMIT 1
         )
-        LEFT JOIN USER au ON sa.admin_user_id = au.user_id
+        LEFT JOIN `USER` au ON sa.admin_user_id = au.user_id
         WHERE s.support_id = #{supportId}
     </select>
 

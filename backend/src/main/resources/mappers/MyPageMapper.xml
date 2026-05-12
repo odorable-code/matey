@@ -140,6 +140,7 @@
             <if test="dto.nickname != null">nickname = #{dto.nickname},</if>
             <if test="dto.gender != null">gender = #{dto.gender},</if>
             <if test="dto.profileImage != null">profile_image = #{dto.profileImage},</if>
+            <if test="dto.birthDate != null">birth_date = DATE_FORMAT(#{dto.birthDate},"%Y-%m-%d"),</if>
             updated_at = NOW()
         </set>
         WHERE user_id = #{userId}
