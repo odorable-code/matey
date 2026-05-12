@@ -15,6 +15,7 @@ public class WebClientConfig {
     public WebClient webClient() {
         return WebClient.builder()
                 .baseUrl(fastapiBaseUrl)
+                .defaultHeader("Content-Type", "application/json")
                 .build();
     }
 }

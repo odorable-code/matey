@@ -1,5 +1,6 @@
 package kr.hi.matey.controller;
 
+import kr.hi.matey.config.WebClientConfig;
 import kr.hi.matey.dto.*;
 import kr.hi.matey.service.MyPageService;
 import kr.hi.matey.util.CustomUser; // 기존 사용하시던 시큐리티 객체 가정
@@ -9,7 +10,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.reactive.function.client.WebClient;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,7 +22,7 @@ import java.util.Map;
 public class MyPageController {
 
     private final MyPageService myPageService;
-
+    private final WebClient webClient;
     @GetMapping("/profile")
     public ResponseEntity<UserProfileDTO> getProfile(@AuthenticationPrincipal CustomUser user) {
         return ResponseEntity.ok(myPageService.getUserProfile(user.getUser().getUserId()));
@@ -68,24 +71,32 @@ public class MyPageController {
     }
     
     @GetMapping("/generate/letters")
-    public ResponseEntity<Map<String, Object>> generateLetters(@AuthenticationPrincipal CustomUser user) {
-        // 1. 유저 정보가 없는 경우 처리
-        if (user == null) {
-            System.out.println("로그인 정보가 없습니다.");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
-        // 2. ID 추출 (CustomUser 구조에 맞춰서)
-        Long loginUserId = user.getUser().getUserId(); 
-        System.out.println("현재 로그인한 유저 ID: " + loginUserId);
-        
-        // 3. 서비스 호출
-        Map<String, Object> result = myPageService.generateLetterForLatestCounsel(loginUserId);
-        
-        if (result == null) {
-            return ResponseEntity.noContent().build();
-        }
-        
+    public ResponseEntity<Map> generateLetters(@AuthenticationPrincipal CustomUser user) {
+        Map result = webClient.post().uri("/api/generate-letters")
+                .bodyValue(Map.of(
+                        "botName", "강이",
+                        "userNickname", "홀시",
+                        "isFirstCounsel", "true",
+                        "riskLevel", 1,
+                        "content", "다 달라"
+                )).retrieve().bodyToMono(Map.class).block();
+//        // 1. 유저 정보가 없는 경우 처리
+//        if (user == null) {
+//            System.out.println("로그인 정보가 없습니다.");
+//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+//        }
+//
+//        // 2. ID 추출 (CustomUser 구조에 맞춰서)
+//        Long loginUserId = user.getUser().getUserId();
+//        System.out.println("현재 로그인한 유저 ID: " + loginUserId);
+//
+//        // 3. 서비스 호출
+//        Map<String, Object> result = myPageService.generateLetterForLatestCounsel(loginUserId);
+//
+//        if (result == null) {
+//            return ResponseEntity.noContent().build();
+//        }
+//
         return ResponseEntity.ok(result);
     }
     

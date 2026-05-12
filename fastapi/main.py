@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from routers.analysis import router as analysis_router
 from routers.chat import router as chat_router
+from letter import router as letter_router
 
 app = FastAPI(title="Matey AI API", version="0.1.0")
 
@@ -27,7 +28,7 @@ app.add_middleware(
 
 app.include_router(analysis_router)
 app.include_router(chat_router)
-
+app.include_router(letter_router)
 
 @app.get("/")
 def root() -> dict:

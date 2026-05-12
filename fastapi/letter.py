@@ -7,10 +7,10 @@
 
 import random
 from datetime import datetime
-from fastapi import FastAPI
+from fastapi import APIRouter
 from pydantic import BaseModel
 
-app = FastAPI()
+router = APIRouter(prefix="/api", tags=["letter"])
 
 class CounselData(BaseModel):
     botName: str
@@ -19,7 +19,7 @@ class CounselData(BaseModel):
     riskLevel: int
     content: str  # DB에서 넘어온 상담 요약 내용
 
-@app.post("/generate-letters")
+@router.post("/generate-letters")
 async def generate_bot_message(data: CounselData):
     # 테스트용 즉시 반환 (이 return 때문에 아래 코드가 실행 안 되는 건 의도된 것)
     return {

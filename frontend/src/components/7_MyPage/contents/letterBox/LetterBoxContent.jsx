@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import styles from './LetterBoxContent.module.css';
 import useAnimatedNumber, { usePrefersReducedMotion } from '../../hooks/useAnimatedNumber';
+import { myPageAPI } from 'utils/api';
 
 const defaultLetters = {
   featured: {
@@ -72,6 +73,14 @@ function AnimatedStatCard({ item, index, prefersReducedMotion }) {
 
 function LetterBoxContent({ letterData = defaultLetters, onRead, onOpenArchive }) {
   const prefersReducedMotion = usePrefersReducedMotion();
+  useEffect(() => {
+    async function getLetters() {
+      const letters = await myPageAPI.generateLetters();
+      letterData.items = letters.items;
+    }
+    getLetters();
+  }, []);
+
 
   return (
     <section className={styles.page}>
@@ -111,18 +120,18 @@ function LetterBoxContent({ letterData = defaultLetters, onRead, onOpenArchive }
 
         <div className={styles.statColumn}>
           {letterData.stats.map((item, index) => (
-            <div 
-            key={item.label}
-            // '내 쪽지 보관함' 카드인 경우에만 클릭 핸들러와 스타일 적용
-            onClick={() => item.label === '내 쪽지 보관함' ? onOpenArchive?.() : null}
-            style={{ cursor: item.label === '내 쪽지 보관함' ? 'pointer' : 'default' }}
-          >
-            <AnimatedStatCard
-              item={item}
-              index={index}
-              prefersReducedMotion={prefersReducedMotion}
-            />
-          </div>
+            <div
+              key={item.label}
+              // '내 쪽지 보관함' 카드인 경우에만 클릭 핸들러와 스타일 적용
+              onClick={() => item.label === '내 쪽지 보관함' ? onOpenArchive?.() : null}
+              style={{ cursor: item.label === '내 쪽지 보관함' ? 'pointer' : 'default' }}
+            >
+              <AnimatedStatCard
+                item={item}
+                index={index}
+                prefersReducedMotion={prefersReducedMotion}
+              />
+            </div>
           ))}
         </div>
       </div>
