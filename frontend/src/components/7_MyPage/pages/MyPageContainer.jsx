@@ -86,7 +86,7 @@ function MyPageContainer() {
     // 두 데이터가 모두 유효한지 확인 (또는 letterResponse만 필수라면 그에 맞춰 수정)
     if (letterResponse) {
       const archiveCount = generatedResponse?.items?.length || 0;
-      // 두 곳에서 온 아이템들을 하나로 합칩니다.
+      // 두 곳에서 온 아이템들을 하나로 합치기
       // (기존 items와 생성된 items를 합치기)
       const combinedItems = [
         ...(letterResponse.items || []),
@@ -103,29 +103,31 @@ function MyPageContainer() {
 
       const transformed = {
         // 메인 피처드 카드는 기존 로직 유지 (또는 전체 합친 것 중 첫 번째)
-        featured: letterResponse.items?.[0] ? {
-          id: letterResponse.items[0].id,
-          unread: letterResponse.items[0].unread,
-          title: letterResponse.items[0].title,
-          sender: letterResponse.items[0].sender || '메이티',
-          preview: letterResponse.items[0].preview,
-          date: letterResponse.items[0].date,
-          status: letterResponse.items[0].unread ? `새 편지 ${letterResponse.unreadCount}` : '읽음',
-        } : {
-          id: null,
-          unread: false,
-          title: '도착한 편지가 없어요',
-          sender: '메이티',
+        featured: combinedItems.length > 0 ? {
+          id: combinedItems[0].id,
+          unread: combinedItems[0].unread,
+          title: combinedItems[0].title,
+          sender: combinedItems[0].sender || '메이티',
+          preview: combinedItems[0].preview,
+          date: combinedItems[0].date,
+          // 상태 표시: 안읽었으면 '새 편지', 읽었으면 '읽음'
+          status: combinedItems[0].unread ? '새 편지' : '읽음',
+        } : { 
+          /* 데이터가 없을 때의 기본값 */
+          title: '도착한 편지가 없어요', 
+          sender: '메이티', 
           preview: '메이티가 편지를 보내면 여기에 표시돼요.',
-          date: '-',
-          status: String(letterResponse.unreadCount || 0),
+          status: '0' 
         },
+
+        // 상단 통계 카드 데이터 (숫자만 추출)
         stats: [
           { label: '내 쪽지 보관함', value: String(archiveCount) },
           { label: '읽지 않은 쪽지', value: String(letterResponse.unreadCount || 0) },
           { label: '이번 주 도착', value: String(letterResponse.weeklyCount || 0) },
         ],
-        // 3. 합쳐진 아이템들을 mapping
+
+        // 아래 리스트 데이터
         items: combinedItems.map(item => ({
           id: item.id,
           sender: item.sender || '메이티',

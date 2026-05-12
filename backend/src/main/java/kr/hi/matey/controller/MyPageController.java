@@ -4,6 +4,8 @@ import kr.hi.matey.dto.*;
 import kr.hi.matey.service.MyPageService;
 import kr.hi.matey.util.CustomUser; // 기존 사용하시던 시큐리티 객체 가정
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -66,11 +68,23 @@ public class MyPageController {
     }
     
     @GetMapping("/generate/letters")
-    public ResponseEntity<Map<String, String>> generateLetters(@PathVariable Long counselId) {
-        String message = myPageService.letterMessage(counselId);
+    public ResponseEntity<Map<String, Object>> generateLetters(@AuthenticationPrincipal CustomUser user) {
+        // 1. 유저 정보가 없는 경우 처리
+        if (user == null) {
+            System.out.println("로그인 정보가 없습니다.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        // 2. ID 추출 (CustomUser 구조에 맞춰서)
+        Long loginUserId = user.getUser().getUserId(); 
+        System.out.println("현재 로그인한 유저 ID: " + loginUserId);
         
-        Map<String, String> result = new HashMap<>();
-        result.put("message", message);
+        // 3. 서비스 호출
+        Map<String, Object> result = myPageService.generateLetterForLatestCounsel(loginUserId);
+        
+        if (result == null) {
+            return ResponseEntity.noContent().build();
+        }
         
         return ResponseEntity.ok(result);
     }

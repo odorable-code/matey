@@ -86,26 +86,38 @@
         ORDER BY bl.created_at DESC
     </select>
     
-    <select id="getCounselDetail" resultType="kr.hi.matey.dto.LetterBoxDTO$LetterDTO">
-	    SELECT 
-	        b.name AS "botName",
-	        u.nickname AS "userNickname",
-	        /* 해당 사용자가 이 봇과 나눈 상담 총 횟수 */
-	        (SELECT COUNT(*) 
-	         FROM COUNSEL_SUMMARY cs2 
-	         JOIN CHAT_ROOM cr2 ON cs2.chat_room_id = cr2.chat_room_id
-	         JOIN EXCLUSIVE e2 ON cr2.exclusive_id = e2.exclusive_id
-	         WHERE e2.user_id = u.user_id AND e2.bot_id = b.bot_id) AS "counselCount",
-	        m.risk_level AS "riskLevel",
-	        cs.content AS "content"
-	    FROM COUNSEL_SUMMARY cs
-	    JOIN CHAT_ROOM cr ON cs.chat_room_id = cr.chat_room_id
-	    JOIN EXCLUSIVE e ON cr.exclusive_id = e.exclusive_id
-	    JOIN BOT b ON e.bot_id = b.bot_id
-	    JOIN USER u ON e.user_id = u.user_id
-	    JOIN MESSAGE m ON cs.end_message_id = m.message_id
-	    WHERE cs.counsel_id = #{counselId}
-	</select>
+    <select id="getLatestCounselId" resultType="Long">
+        SELECT 
+            cs.counsel_id
+        FROM COUNSEL_SUMMARY cs
+        JOIN CHAT_ROOM cr ON cs.chat_room_id = cr.chat_room_id
+        JOIN EXCLUSIVE e ON cr.exclusive_id = e.exclusive_id
+        WHERE e.user_id = #{userId}
+        ORDER BY cs.counsel_id DESC
+        LIMIT 1
+    </select>
+
+    <!-- 2. 파이썬 서버 전송을 위한 상담 상세 데이터 조회 -->
+    <select id="getCounselDetail" resultType="map">
+        SELECT 
+            b.name AS "botName",
+            u.nickname AS "userNickname",
+            /* 해당 사용자가 이 봇과 나눈 상담 총 횟수 (첫 상담 여부 판단용) */
+            (SELECT COUNT(*) 
+             FROM COUNSEL_SUMMARY cs2 
+             JOIN CHAT_ROOM cr2 ON cs2.chat_room_id = cr2.chat_room_id
+             JOIN EXCLUSIVE e2 ON cr2.exclusive_id = e2.exclusive_id
+             WHERE e2.user_id = u.user_id AND e2.bot_id = b.bot_id) AS "counselCount",
+            m.risk_level AS "riskLevel",
+            cs.content AS "content"
+        FROM COUNSEL_SUMMARY cs
+        JOIN CHAT_ROOM cr ON cs.chat_room_id = cr.chat_room_id
+        JOIN EXCLUSIVE e ON cr.exclusive_id = e.exclusive_id
+        JOIN BOT b ON e.bot_id = b.bot_id
+        JOIN USER u ON e.user_id = u.user_id
+        JOIN MESSAGE m ON cs.end_message_id = m.message_id
+        WHERE cs.counsel_id = #{counselId}
+    </select>
 
     <select id="selectUserSettings" resultType="kr.hi.matey.dto.UserSettingsDTO">
         SELECT
