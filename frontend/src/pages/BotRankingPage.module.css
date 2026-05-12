@@ -234,78 +234,98 @@
 
 .metaRow {
   display: flex;
-  gap: 12px;
+  flex-wrap: nowrap;
+  gap: 10px;
   margin-top: 12px;
+  align-items: stretch;
+  min-width: 0;
 }
 
 .metaItem {
   flex: 1;
-  padding: 10px 12px;
+  min-width: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 10px;
   border-radius: 14px;
   border: 1px solid rgba(120, 110, 255, 0.14);
   background: rgba(250, 250, 255, 0.72);
 }
 
 .metaLabel {
-  display: block;
+  flex-shrink: 0;
   font-size: 12px;
   font-weight: 900;
   color: rgba(30, 28, 54, 0.58);
+  white-space: nowrap;
+}
+
+.metaLabel::after {
+  content: ' : ';
 }
 
 .metaValue {
-  display: block;
-  margin-top: 6px;
+  margin: 0;
   font-size: 14px;
   font-weight: 900;
   color: rgba(30, 28, 54, 0.86);
+  white-space: nowrap;
 }
 
 .actionsRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr) minmax(0, 1.1fr);
+  gap: 6px;
+  align-items: stretch;
   margin-top: 14px;
-  flex-wrap: wrap;
+  width: 100%;
+  min-width: 0;
 }
 
 .actionBtns {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  flex-wrap: nowrap;
+  display: contents;
 }
 
 .chatLink {
+  box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: 100%;
+  min-width: 0;
   height: 38px;
-  padding: 0 14px;
+  padding: 0 8px;
   border-radius: 12px;
   border: 1px solid rgba(120, 110, 255, 0.18);
   background: rgba(255, 255, 255, 0.85);
   color: rgba(30, 28, 54, 0.82);
   text-decoration: none;
   font-weight: 900;
-  font-size: 13px;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .recoBtn {
   box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
   height: 38px;
-  padding: 0 14px;
+  padding: 0 8px;
   border-radius: 12px;
   border: 1px solid rgba(120, 110, 255, 0.22);
   background: linear-gradient(180deg, rgba(141, 121, 255, 0.18), rgba(121, 183, 255, 0.12));
   color: rgba(30, 28, 54, 0.86);
   font-weight: 900;
-  font-size: 13px;
+  font-size: 12px;
   cursor: pointer;
-  flex-shrink: 0;
-  /* 추천하기 ↔ 추천 취소 전환 시 줄바꿈·카드 높이 변화 방지 */
-  min-width: 6.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .recoBtnOn {
@@ -315,18 +335,20 @@
 
 .dislikeBtn {
   box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
   height: 38px;
-  padding: 0 14px;
+  padding: 0 8px;
   border-radius: 12px;
   border: 1px solid rgba(190, 140, 150, 0.28);
   background: rgba(255, 255, 255, 0.92);
   color: rgba(30, 28, 54, 0.82);
   font-weight: 900;
-  font-size: 13px;
+  font-size: 12px;
   cursor: pointer;
-  flex-shrink: 0;
-  /* 싫어요 ↔ 싫어요 취소 전환 시 줄바꿈·레이아웃 밀림 방지 */
-  min-width: 7.5rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .dislikeBtnOn {
@@ -388,25 +410,16 @@
   }
 
   .actionsRow {
-    flex-direction: column;
-    align-items: stretch;
+    gap: 4px;
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr) minmax(0, 1.05fr);
   }
 
-  .chatLink {
-    justify-content: center;
-  }
-
-  .actionBtns {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    width: 100%;
-    gap: 8px;
-  }
-
+  .chatLink,
   .recoBtn,
   .dislikeBtn {
-    min-width: 0;
-    width: 100%;
+    font-size: 11px;
+    padding: 0 5px;
+    height: 36px;
   }
 }
 

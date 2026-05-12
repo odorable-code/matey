@@ -199,6 +199,11 @@ export function ChatModalProvider({ children }) {
 
   // -------- 세션 삭제 --------
   const deleteSession = useCallback((sessionId) => {
+    if (!sessionId) return;
+    const ok = window.confirm(
+      '이 대화방을 삭제할까요?\n대화 내용이 모두 사라지며 되돌릴 수 없어요.'
+    );
+    if (!ok) return;
     setSessions((prev) => prev.filter((s) => s.id !== sessionId));
     setActiveSessionId((prev) => {
       if (prev === sessionId) {

@@ -1446,6 +1446,10 @@ export default function AdminPage() {
   ========================================================= */
   const handleClearLogs = () => {
     if (logs.length === 0) return;
+    const ok = window.confirm(
+      '저장된 활동 로그를 모두 삭제할까요?\n이 작업은 되돌릴 수 없어요.'
+    );
+    if (!ok) return;
     setLogs([]);
     saveLogs([]);
   };
