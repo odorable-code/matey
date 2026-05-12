@@ -7,8 +7,7 @@ const normalize = (v) => String(v || '').trim().toLowerCase();
 
 /**
  * 감정/상황 라벨 → 메이트 키 매핑
- * - hamster: 불안/걱정/긴장 등 "안심"이 필요한 상황
- * - bear: 지침/슬픔/회복 등 "위로/버팀"이 필요한 상황
+ * - bear: 불안/걱정/긴장·지침/슬픔/회복 등 위로·안정이 필요한 상황
  * - cat: 정리/분석/짜증/분노 등 "또렷한 정리"가 필요한 상황
  * - dog: 응원/기쁨/안정/공감 등 "가볍게 북돋기"가 필요한 상황
  */
@@ -25,7 +24,7 @@ export function resolveMateKeyBySituationLabel(label, fallbackKey = 'dog') {
     s.includes('무서') ||
     s.includes('두려')
   ) {
-    return 'hamster';
+    return 'bear';
   }
 
   // 슬픔/우울/지침/회복 류

@@ -9,7 +9,7 @@
  * - 캐릭터 이미지 경로: CHARACTER_IMAGE_MAP
  * - 캐릭터 기본 데이터: FALLBACK_HERO_BOTS
  * - 요일 라벨: WEEKDAY_LABELS
- * - 기본 연도: CURRENT_YEAR
+ * - 표시용 연도(로드 시점): CURRENT_YEAR
  *
  * [수정 포인트]
  * - 탭 이름 바꾸기: DEFAULT_TAB_OPTIONS
@@ -25,9 +25,11 @@
 
 /* =========================
    날짜 관련 기본값
-   - "04-21" 같은 값이 들어오면 이 연도 기준으로 해석
+   - 월-일/한글 월일 키는 emotionReport.utils 의 parseFlexibleDate가
+     "오늘 기준 직전 달"과 월이 맞을 때만 해석함
+   - 여기의 CURRENT_YEAR는 표시용(모듈 로드 시점 연도)으로만 둠
 ========================= */
-export const CURRENT_YEAR = 2026;
+export const CURRENT_YEAR = new Date().getFullYear();
 
 /* =========================
    달력에 표시할 요일 라벨
@@ -65,12 +67,11 @@ export const CHARACTER_IMAGE_MAP = {
   cat: '/images/emotion-report/cat.png',
   bear: '/images/emotion-report/bear.png',
   dog: '/images/emotion-report/dog.png',
-  hamster: '/images/emotion-report/hamster.png',
 };
 
 /* =========================
    대표 캐릭터 기본 데이터
-   - 감정 리포트에서 쓰이는 4마리 캐릭터 정보
+   - 감정 리포트에서 쓰이는 기본 메이트(강아지·곰이·냥이) 정보
    - 이름, 색상, 설명, 요약 문장, 키워드 칩 등 포함
    *
    * 각 필드 설명:
@@ -148,25 +149,5 @@ export const FALLBACK_HERO_BOTS = [
       '작게 시작하면 훨씬 덜 무겁게 움직일 수 있어.',
     ],
     chips: ['공감', '응원', '작은 실행'],
-  },
-  {
-    key: 'hamster',
-    name: '햄이',
-    typeLabel: '세심한 생활형',
-    fallbackLabel: '햄',
-    accentColor: '#C6A5FF',
-    softColor: '#F4EEFF',
-    imageUrl: CHARACTER_IMAGE_MAP.hamster,
-    cardObjectPosition: 'center 12%',
-    reportObjectPosition: 'center bottom',
-    title: '햄이 리포트',
-    summary:
-      '감정이 생활 리듬과 같이 흔들리는 패턴이 보여.',
-    bullets: [
-      '수면이나 루틴이 흔들리면 감정 반응도 커져.',
-      '작은 루틴 하나만 안정돼도 흐름이 정돈될 수 있어.',
-      '거창한 다짐보다 생활 단위 회복이 더 중요해.',
-    ],
-    chips: ['루틴', '생활 정리', '잔잔한 회복'],
   },
 ];

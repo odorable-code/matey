@@ -37,6 +37,13 @@ public class NotificationController {
         return ResponseEntity.ok(Map.of("message", "전체 읽음 처리되었습니다."));
     }
 
+    /** 내 문의·신고 티켓과 연결된 알림(답변·처리 결과)을 한꺼번에 읽음 처리 */
+    @PatchMapping("/read-support-inbox")
+    public ResponseEntity<Map<String, String>> markSupportInboxRelatedRead(@AuthenticationPrincipal CustomUser user) {
+        notificationService.markSupportInboxRelatedRead(user.getUser().getUserId());
+        return ResponseEntity.ok(Map.of("message", "문의·신고 관련 알림을 읽음 처리했습니다."));
+    }
+
     @DeleteMapping("/{notificationId}")
     public ResponseEntity<Map<String, String>> deleteNotification(
             @AuthenticationPrincipal CustomUser user,

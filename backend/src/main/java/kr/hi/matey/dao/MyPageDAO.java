@@ -14,10 +14,24 @@ public interface MyPageDAO {
 
     // 2. Bot Menu & Interaction
     BotMenuDTO selectBotRelationInfo(long userId);
+    List<AssignableBotOption> selectBotsForPicker();
+    /** 홈·채팅 랜딩용 — card_stats_json 포함(컬럼 없을 수 있음 → 서비스에서 폴백) */
+    List<AssignableBotOption> selectBotsForPublicLanding();
+    int countBotById(@Param("botId") long botId);
+    int countExclusiveByUserAndBot(@Param("userId") long userId, @Param("botId") long botId);
+    int insertExclusive(@Param("userId") long userId, @Param("botId") long botId);
+    Long selectExclusiveIdByUserAndBot(@Param("userId") long userId, @Param("botId") long botId);
+    int insertUserBotRelation(
+            @Param("exclusiveId") long exclusiveId,
+            @Param("intimacyId") int intimacyId,
+            @Param("currentExp") int currentExp
+    );
+    int updateUserAssignedBot(@Param("userId") long userId, @Param("botId") long botId);
+
     List<BotMenuDTO.BackgroundDTO> selectUserBackgrounds(@Param("userLevel") int userLevel);
     List<BotMenuDTO.MotionDTO> selectUserMotions(@Param("userId") long userId, @Param("userLevel") int userLevel);
     int updateBotIntimacy(@Param("userId") long userId, @Param("expGain") int expGain);
-    int updateLastInteractedAt(long userId);
+    int updateLastFeedRewardAt(long userId);
 
     // 3. Letters
     int countUnreadLetters(long userId);

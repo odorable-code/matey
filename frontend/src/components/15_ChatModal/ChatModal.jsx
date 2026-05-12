@@ -12,7 +12,7 @@
  * - 큰 캐릭터의 이름/역할을 캐릭터 위쪽으로 이동
  *   → 게임 캐릭터 ID 띠 느낌 (이름 알약 + 역할 라벨)
  *   → 이름이 캐릭터 이미지에 가려지지 않도록 z-index 분리
- * - 우측 4명 카드 구조를 위/아래로 정리
+ * - 우측 메이트 카드 그리드를 위/아래로 정리
  *   → 상단: 캐릭터 + 이름/역할
  *   → 하단: 능력치 막대 (카드 폭 전체 사용)
  *
@@ -27,14 +27,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useChatModal } from "../../contexts/ChatModalContext";
 import {
-  MATES,
-  MATE_IMAGES,
-  MATE_NAMES,
-  MATE_ROLES,
-  MATE_GREETINGS,
   ABILITY_AXES,
 } from "../../constants/mates";
 import "./ChatModal.css";
+import { pickChatMotionUrlForSituation } from "../../utils/motionAssets";
 
 function resolveChatApiBase() {
   const fromEnv =
@@ -61,7 +57,9 @@ const COPY = {
   pickEyebrow: "CHARACTER PICK · 메이트 고르기",
   pickTitle: "오늘 너의 마음을 들어줄 친구는?",
   pickDesc:
-    "4명의 메이트는 능력치가 달라요. 마음에 드는 친구를 골라 대화를 시작해보세요.",
+    "메이트마다 능력치가 달라요. 마음에 드는 친구를 골라 대화를 시작해 보세요. 앞으로 다른 성격의 메이트도 순차적으로 더해질 수 있어요.",
+  pickPlaceholderNote:
+    "이 자리에는 앞으로 다른 성격의 봇이 더해질 수 있어요. 준비되면 같은 목록에서 만나실 수 있어요.",
   pickButton: "이 친구로 시작",
   pickIdleTitle: "메이트를 골라주세요",
   pickIdleHint: "오른쪽 카드를 누르면 미리 볼 수 있어요.",
@@ -96,22 +94,68 @@ function nowTimeString() {
   return `${period} ${hh}:${m}`;
 }
 
+/** 담당봇과 메이트가 같을 때만: 친밀 해금 범위 + 대화 맥락으로 모션 PNG 선택 */
+function useMateChatDisplaySrc(mateKey, fallbackSrc, messages) {
+  const { assignedBotMotionsForChat } = useChatModal();
+  return useMemo(() => {
+    const mk = String(mateKey ?? "").trim();
+    if (!mk || !assignedBotMotionsForChat?.mateKey || assignedBotMotionsForChat.mateKey !== mk) {
+      return fallbackSrc;
+    }
+    const motions = assignedBotMotionsForChat.motions ?? [];
+    const lv = Number(assignedBotMotionsForChat.intimacyLevel);
+    const intimacyLevel = Number.isFinite(lv) && lv >= 0 ? lv : 0;
+    const arr = Array.isArray(messages) ? messages : [];
+    const last = arr[arr.length - 1];
+
+    let phase = "empty";
+    let mateReplyText = "";
+    let userMessageText = "";
+    if (!last) {
+      phase = "empty";
+    } else if (last.role === "user") {
+      phase = "awaiting_reply";
+      userMessageText = last.text || "";
+    } else if (last.role === "mate") {
+      phase = "idle";
+      mateReplyText = last.text || "";
+      const prev = arr[arr.length - 2];
+      if (prev && prev.role === "user") userMessageText = prev.text || "";
+    }
+
+    const url = pickChatMotionUrlForSituation(motions, intimacyLevel, {
+      mateReplyText,
+      userMessageText,
+      phase,
+    });
+    return url || fallbackSrc;
+  }, [mateKey, fallbackSrc, messages, assignedBotMotionsForChat]);
+}
+
 /* =========================================================
    메인 모달 컴포넌트 코드
    - 좌측 사이드바 + 우측 동적 영역
 ========================================================= */
 function MateBridge({ mateKey }) {
-  if (!mateKey) return null;
-  const mate = MATES.find((m) => m.key === mateKey);
-  if (!mate) return null;
+  const { landingMates, activeSession } = useChatModal();
+  const mate = useMemo(
+    () => (mateKey ? landingMates.find((m) => m.key === mateKey) : null),
+    [mateKey, landingMates]
+  );
+  const src = useMateChatDisplaySrc(
+    mateKey || "",
+    mate?.image || "",
+    activeSession?.messages ?? []
+  );
+  if (!mateKey || !mate) return null;
   return (
     <div className={`matey-chat-bridge ${mate.accent}`} aria-hidden="true">
       <div className="matey-chat-bridge__stage">
-        <img src={MATE_IMAGES[mateKey]} alt="" className="matey-chat-bridge__img" />
+        <img src={src} alt="" className="matey-chat-bridge__img" />
       </div>
       <div className="matey-chat-bridge__meta">
-        <p className="matey-chat-bridge__label">{MATE_NAMES[mateKey]}</p>
-        <p className="matey-chat-bridge__role">{MATE_ROLES[mateKey]}</p>
+        <p className="matey-chat-bridge__label">{mate.name}</p>
+        <p className="matey-chat-bridge__role">{mate.role}</p>
       </div>
     </div>
   );
@@ -223,7 +267,7 @@ export default ChatModal;
    좌측 사이드바 — 채팅방 목록 코드
 ========================================================= */
 function Sidebar() {
-  const { sessions, activeSessionId, openSession, deleteSession, showPick } =
+  const { sessions, activeSessionId, openSession, deleteSession, showPick, landingMates } =
     useChatModal();
 
   return (
@@ -243,7 +287,7 @@ function Sidebar() {
           <ul className="matey-chat-side__list">
             {sessions.map((s) => {
               const mate = s.mateKey
-                ? MATES.find((m) => m.key === s.mateKey)
+                ? landingMates.find((m) => m.key === s.mateKey)
                 : null;
               const lastMsg = s.messages[s.messages.length - 1];
               const preview = lastMsg
@@ -262,7 +306,7 @@ function Sidebar() {
                   >
                     <span className="matey-chat-side__avatar">
                       {mate ? (
-                        <img src={MATE_IMAGES[mate.key]} alt="" />
+                        <img src={mate.image} alt="" />
                       ) : (
                         <span className="matey-chat-side__avatar-fallback" aria-hidden>
                           ···
@@ -273,7 +317,7 @@ function Sidebar() {
                     <span className="matey-chat-side__body">
                       <span className="matey-chat-side__top">
                         <span className="matey-chat-side__name">
-                          {mate ? MATE_NAMES[mate.key] : COPY.sessionNoMate}
+                          {mate ? mate.name : COPY.sessionNoMate}
                         </span>
                         <span className="matey-chat-side__time">
                           {timeAgo(s.updatedAt)}
@@ -328,18 +372,18 @@ function Sidebar() {
    우측 빈 상태 화면 코드
 ========================================================= */
 function EmptyView() {
-  const { showPick } = useChatModal();
+  const { showPick, landingMates } = useChatModal();
 
   return (
     <div className="matey-chat-empty">
       <div className="matey-chat-empty__mascots">
-        {MATES.map((m, idx) => (
+        {landingMates.map((m, idx) => (
           <span
             key={m.key}
             className={`matey-chat-empty__mascot ${m.accent}`}
             style={{ animationDelay: `${idx * 0.12}s` }}
           >
-            <img src={MATE_IMAGES[m.key]} alt="" />
+            <img src={m.image} alt="" />
           </span>
         ))}
       </div>
@@ -361,15 +405,15 @@ function EmptyView() {
 /* =========================================================
    우측 봇 고르기 화면 (게임 캐릭터 픽 톤)
    - 좌측 큰 캐릭터 + 레이더 차트
-   - 우측 4명 카드 그리드 (능력치 막대)
+   - 우측 메이트 카드 그리드 (능력치 막대)
 ========================================================= */
 function PickView() {
-  const { startNewSession, showEmpty } = useChatModal();
+  const { startNewSession, showEmpty, landingMates } = useChatModal();
   const [activeKey, setActiveKey] = useState(null);
 
   const activeMate = useMemo(
-    () => (activeKey ? MATES.find((m) => m.key === activeKey) : null),
-    [activeKey],
+    () => (activeKey ? landingMates.find((m) => m.key === activeKey) : null),
+    [activeKey, landingMates],
   );
 
   return (
@@ -401,10 +445,10 @@ function PickView() {
             {activeMate ? (
               <>
                 <p className="matey-chat-pick__hero-name">
-                  {MATE_NAMES[activeMate.key]}
+                  {activeMate.name}
                 </p>
                 <p className="matey-chat-pick__hero-role">
-                  {MATE_ROLES[activeMate.key]}
+                  {activeMate.role}
                 </p>
               </>
             ) : (
@@ -429,8 +473,8 @@ function PickView() {
                 <div className="matey-chat-pick__hero-halo" />
                 <img
                   key={activeMate.key}
-                  src={MATE_IMAGES[activeMate.key]}
-                  alt={MATE_NAMES[activeMate.key]}
+                  src={activeMate.image}
+                  alt={activeMate.name}
                   className="matey-chat-pick__hero-image"
                 />
               </div>
@@ -460,9 +504,9 @@ function PickView() {
           </button>
         </div>
 
-        {/* ---------- 우측: 4명 카드 그리드 ---------- */}
+        {/* ---------- 우측: 메이트 카드 그리드 ---------- */}
         <ul className="matey-chat-pick__grid">
-          {MATES.map((mate) => (
+          {landingMates.map((mate) => (
             <li key={mate.key}>
               <button
                 type="button"
@@ -479,15 +523,15 @@ function PickView() {
                 {/* 카드 상단: 캐릭터 + 이름/역할 */}
                 <div className="matey-chat-pick__card-top">
                   <div className="matey-chat-pick__card-stage">
-                    <img src={MATE_IMAGES[mate.key]} alt="" />
+                    <img src={mate.image} alt="" />
                   </div>
 
                   <div className="matey-chat-pick__card-meta">
                     <p className="matey-chat-pick__card-name">
-                      {MATE_NAMES[mate.key]}
+                      {mate.name}
                     </p>
                     <p className="matey-chat-pick__card-role">
-                      {MATE_ROLES[mate.key]}
+                      {mate.role}
                     </p>
                   </div>
                 </div>
@@ -497,6 +541,34 @@ function PickView() {
               </button>
             </li>
           ))}
+          {landingMates.length === 3 ? (
+            <li key="mate-pick-placeholder">
+              <div
+                className="matey-chat-pick__card matey-chat-pick__card--placeholder"
+                role="note"
+                aria-label="추후 메이트 추가 예정"
+              >
+                <div className="matey-chat-pick__card-top">
+                  <div className="matey-chat-pick__card-stage matey-chat-pick__card-stage--placeholder">
+                    <span aria-hidden="true">+</span>
+                  </div>
+                  <div className="matey-chat-pick__card-meta">
+                    <span className="matey-chat-pick__placeholder-chip">
+                      추후 추가
+                    </span>
+                    <p className="matey-chat-pick__card-name">새 메이트</p>
+                    <p className="matey-chat-pick__card-role">준비 중</p>
+                  </div>
+                </div>
+                <p className="matey-chat-pick__placeholder-note">
+                  {COPY.pickPlaceholderNote}
+                </p>
+                <p className="matey-chat-pick__placeholder-foot">
+                  추가 시 이 카드가 바뀌어요
+                </p>
+              </div>
+            </li>
+          ) : null}
         </ul>
       </div>
     </div>
@@ -677,11 +749,11 @@ function RadarChart({ abilities, size = 220 }) {
    우측 채팅방 화면 코드
 ========================================================= */
 function ChatView({ mobileBar = false, onMobileBack }) {
-  const { activeSession, appendMessage } = useChatModal();
+  const { activeSession, appendMessage, landingMates } = useChatModal();
   const mate = useMemo(() => {
     if (!activeSession) return null;
-    return MATES.find((m) => m.key === activeSession.mateKey);
-  }, [activeSession]);
+    return landingMates.find((m) => m.key === activeSession.mateKey);
+  }, [activeSession, landingMates]);
 
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -712,6 +784,12 @@ function ChatView({ mobileBar = false, onMobileBack }) {
       behavior: "smooth",
     });
   }, [activeSession?.messages, isTyping]);
+
+  const displaySrc = useMateChatDisplaySrc(
+    mate?.key ?? "",
+    mate?.image ?? "",
+    activeSession?.messages ?? []
+  );
 
   if (!activeSession || !mate) return null;
 
@@ -746,9 +824,9 @@ function ChatView({ mobileBar = false, onMobileBack }) {
         body: JSON.stringify({
           messages: historyForApi,
           mate_key: mate.key,
-          mate_name: MATE_NAMES[mate.key],
-          mate_role: MATE_ROLES[mate.key],
-          mate_persona: MATE_GREETINGS[mate.key] ?? "",
+          mate_name: mate.name,
+          mate_role: mate.role,
+          mate_persona: mate.greeting || mate.description || '',
           speech_level: speechLevel === "casual" ? "casual" : "polite",
         }),
       });
@@ -801,7 +879,7 @@ function ChatView({ mobileBar = false, onMobileBack }) {
             ← 대화 목록
           </button>
           <div className="matey-chat-room__mobile-float" aria-hidden="true">
-            <img src={MATE_IMAGES[mate.key]} alt="" />
+            <img src={displaySrc} alt="" />
           </div>
         </div>
       ) : null}
@@ -809,13 +887,13 @@ function ChatView({ mobileBar = false, onMobileBack }) {
       <header className="matey-chat-room__header">
         <div className="matey-chat-room__header-info">
           <span className="matey-chat-room__avatar">
-            <img src={MATE_IMAGES[mate.key]} alt="" />
+            <img src={displaySrc} alt="" />
           </span>
           <div className="matey-chat-room__header-text">
-            <p className="matey-chat-room__name">{MATE_NAMES[mate.key]}</p>
+            <p className="matey-chat-room__name">{mate.name}</p>
             <p className="matey-chat-room__status">
               <span className="matey-chat-room__status-dot" />
-              지금 온라인 · {MATE_ROLES[mate.key]}
+              지금 온라인 · {mate.role}
             </p>
           </div>
         </div>
@@ -855,7 +933,7 @@ function ChatView({ mobileBar = false, onMobileBack }) {
           <div key={m.id} className={`matey-chat-room__row is-${m.role}`}>
             {m.role === "mate" && (
               <span className="matey-chat-room__row-avatar">
-                <img src={MATE_IMAGES[mate.key]} alt="" />
+                <img src={displaySrc} alt="" />
               </span>
             )}
             <div className="matey-chat-room__bubble-wrap">
@@ -870,7 +948,7 @@ function ChatView({ mobileBar = false, onMobileBack }) {
         {isTyping && (
           <div className="matey-chat-room__row is-mate">
             <span className="matey-chat-room__row-avatar">
-              <img src={MATE_IMAGES[mate.key]} alt="" />
+              <img src={displaySrc} alt="" />
             </span>
             <div className="matey-chat-room__bubble is-mate is-typing">
               <span />

@@ -1,3 +1,8 @@
+export const CHARACTER_IMAGE_MAP = {
+  cat: '/images/emotion-report/cat.png',
+  bear: '/images/emotion-report/bear.png',
+  dog: '/images/emotion-report/dog.png',
+};
 
 export const FALLBACK_HERO_BOTS = [
   {
@@ -60,31 +65,4 @@ export const FALLBACK_HERO_BOTS = [
     ],
     chips: ['공감', '응원', '작은 실행'],
   },
-  {
-    key: 'hamster',
-    name: '햄이',
-    typeLabel: '세심한 생활형',
-    fallbackLabel: '햄',
-    accentColor: '#C6A5FF',
-    softColor: '#F4EEFF',
-    imageUrl: CHARACTER_IMAGE_MAP.hamster,
-    imagePath: CHARACTER_IMAGE_MAP.hamster,
-    cardObjectPosition: 'center 12%',
-    reportObjectPosition: 'center bottom',
-    title: '햄이 리포트',
-    summary: '감정이 생활 리듬과 같이 흔들리는 패턴이 보여.',
-    bullets: [
-      '수면이나 루틴이 흔들리면 감정 반응도 커져.',
-      '작은 루틴 하나만 안정돼도 흐름이 정돈될 수 있어.',
-      '거창한 다짐보다 생활 단위 회복이 중요해.',
-    ],
-    chips: ['루틴', '생활 정리', '잔잔한 회복'],
-  },
 ];
-
-export const CHARACTER_IMAGE_MAP = {
-  cat: '/images/emotion-report/cat.png',
-  bear: '/images/emotion-report/bear.png',
-  dog: '/images/emotion-report/dog.png',
-  hamster: '/images/emotion-report/hamster.png',
-};

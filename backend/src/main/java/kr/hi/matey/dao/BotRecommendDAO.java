@@ -37,5 +37,13 @@ public interface BotRecommendDAO {
             @Param("botId") long botId,
             @Param("delta") int delta
     );
+
+    int updateReaction(
+            @Param("userId") long userId,
+            @Param("botId") long botId,
+            @Param("reaction") int reaction
+    );
+
+    int deleteReaction(@Param("userId") long userId, @Param("botId") long botId);
 }
 

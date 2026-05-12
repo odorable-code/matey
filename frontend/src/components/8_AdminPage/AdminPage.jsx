@@ -26,11 +26,12 @@
  * =========================================================
  */
 
-import React, { useCallback, useEffect, useId, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Navigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { adminAPI, communityAPI, getStoredToken } from '../../utils/api';
 import { displaySupportTicketTitle } from '../../utils/supportReportDisplay';
+import { getDefaultCardStatsForMateKey, resolveMateDisplayName } from '../../constants/mates';
 import './AdminPage.css';
 
 /* =========================================================
@@ -39,12 +40,210 @@ import './AdminPage.css';
 const ADMIN_LOG_STORAGE_KEY = 'matey_admin_activity_logs_v4';
 const VALID_ADMIN_TABS = new Set(['overview', 'users', 'supports', 'bots', 'logs']);
 
-function adminBotRankBadgeClass(rank) {
-  const r = Number(rank);
-  if (r === 1) return 'rank-1';
-  if (r === 2) return 'rank-2';
-  if (r === 3) return 'rank-3';
-  return '';
+/** 목록·카드 제목: DB display_name → 알려진 키면 한글 기본명 → 그 외 name */
+function adminBotListDisplayTitle(bot) {
+  const id = bot?.botId ?? bot?.bot_id;
+  const fromApi = String(bot?.displayName ?? bot?.display_name ?? '').trim();
+  if (fromApi) return fromApi;
+  return resolveMateDisplayName(bot?.name ?? '', id) || String(bot?.name ?? '').trim() || '상담봇';
+}
+
+/** 상담봇 관리 카드용 프로필 이미지 (API avatarImage 우선, 없으면 name 기반 public 경로) */
+function resolveAdminBotAvatarUrl(bot) {
+  const raw = String(bot?.avatarImage ?? bot?.avatar_image ?? '').trim();
+  if (raw) {
+    if (raw.startsWith('data:')) return raw;
+    if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
+    return raw.startsWith('/') ? raw : `/${raw}`;
+  }
+  const key = String(bot?.name ?? '').trim().toLowerCase();
+  const byKey = {
+    dog: '/images/mascots/dog/dog.png',
+    bear: '/images/mascots/bear/bear.png',
+    cat: '/images/mascots/cat/cat.png',
+  };
+  return byKey[key] || '/images/mascots/dog/dog.png';
+}
+
+const ADMIN_BOT_MASCOT_NAMES = new Set(['dog', 'bear', 'cat']);
+
+const ADMIN_BOT_FORM_NEUTRAL_PREVIEW = '/images/mypage/bot/matey-base.png';
+
+/** 봇 수정 폼 기본 능력치 라벨 */
+const DEFAULT_ADMIN_CARD_STATS_TEMPLATE = [
+  { label: '공감력', value: 80 },
+  { label: '친근함', value: 80 },
+  { label: '분석력', value: 80 },
+  { label: '명확함', value: 80 },
+];
+
+function parseCardStatsJsonFromAdminApi(raw) {
+  const s = String(raw ?? '').trim();
+  if (!s) return null;
+  try {
+    const arr = JSON.parse(s);
+    if (!Array.isArray(arr)) return null;
+    const out = [];
+    for (const x of arr.slice(0, 8)) {
+      if (!x || typeof x !== 'object') continue;
+      const label = String(x.label ?? '').trim();
+      let v = Number(x.value);
+      if (!label || !Number.isFinite(v)) continue;
+      v = Math.max(0, Math.min(100, Math.round(v)));
+      out.push({ label: label.slice(0, 30), value: v });
+    }
+    return out.length ? out : null;
+  } catch {
+    return null;
+  }
+}
+
+/** 상담봇 카드 미리보기용 능력치 — DB JSON 우선, 없으면 dog/bear 등 기본 상수 */
+function getAdminBotCardStatsPreview(bot) {
+  const fromDb = parseCardStatsJsonFromAdminApi(bot?.cardStatsJson ?? bot?.card_stats_json);
+  if (fromDb && fromDb.length) return fromDb.slice(0, 8);
+  const fb = getDefaultCardStatsForMateKey(String(bot?.name ?? '').trim());
+  if (fb.length) return fb.slice(0, 4);
+  return normalizeAdminBotCardStats(DEFAULT_ADMIN_CARD_STATS_TEMPLATE);
+}
+
+/** 상담봇 수정 폼: 능력치 4슬롯 — 항목명은 고정, 수치만 편집 */
+function normalizeAdminBotCardStats(source) {
+  const labels = ['공감력', '친근함', '분석력', '명확함'];
+  const base = Array.isArray(source) && source.length ? source : DEFAULT_ADMIN_CARD_STATS_TEMPLATE;
+  const out = [];
+  for (let i = 0; i < 4; i++) {
+    const x = base[i] || {};
+    let v = Number(x.value);
+    if (!Number.isFinite(v)) v = 80;
+    v = Math.max(0, Math.min(100, Math.round(v)));
+    out.push({ label: labels[i], value: v });
+  }
+  return out;
+}
+
+/**
+ * 상담봇 카드 나열 순서: 강이·곰이·냥이(bot.name) 우선,
+ * 냥이 카드 바로 다음에「봇 추가」슬롯, 나머지는 bot_id 오름차순.
+ */
+function buildAdminBotCarouselItems(botList) {
+  const list = Array.isArray(botList) ? [...botList] : [];
+  const idOf = (b) => Number(b?.botId ?? b?.bot_id);
+  const nameOf = (b) => String(b?.name ?? '').trim().toLowerCase();
+  const byKey = new Map();
+  for (const b of list) {
+    const k = nameOf(b);
+    if (k) byKey.set(k, b);
+  }
+  const primaryKeys = ['dog', 'bear', 'cat'];
+  const primary = [];
+  const used = new Set();
+  for (const key of primaryKeys) {
+    const b = byKey.get(key);
+    if (b) {
+      primary.push(b);
+      used.add(idOf(b));
+    }
+  }
+  const rest = list
+    .filter((b) => !used.has(idOf(b)))
+    .sort((a, b) => idOf(a) - idOf(b));
+
+  const items = [];
+  let addAfterCat = false;
+  for (const b of primary) {
+    items.push({ kind: 'bot', bot: b });
+    if (nameOf(b) === 'cat') {
+      items.push({ kind: 'add' });
+      addAfterCat = true;
+    }
+  }
+  if (!addAfterCat) {
+    items.push({ kind: 'add' });
+  }
+  for (const b of rest) {
+    items.push({ kind: 'bot', bot: b });
+  }
+  return items;
+}
+
+/** 상담봇 모달 미리보기: 신규 추가에서 아직 정해지지 않은 상태는 중립 이미지로 표시 */
+function resolveBotFormAvatarPreview(form, formMode) {
+  const raw = String(form?.avatarImage ?? '').trim();
+  if (raw) {
+    return resolveAdminBotAvatarUrl(form);
+  }
+  if (formMode === 'create') {
+    const name = String(form?.name ?? '').trim().toLowerCase();
+    if (!name || !ADMIN_BOT_MASCOT_NAMES.has(name)) {
+      return ADMIN_BOT_FORM_NEUTRAL_PREVIEW;
+    }
+  }
+  return resolveAdminBotAvatarUrl(form);
+}
+
+/** 상담봇 아바타: 파일 → JPEG data URL (DB·서버 clamp 길이 이하). */
+function compressImageFileToDataUrl(file, maxLen = 7800) {
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => {
+      const dataUrlIn = fr.result;
+      if (typeof dataUrlIn !== 'string') {
+        reject(new Error('read failed'));
+        return;
+      }
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          const iw = img.naturalWidth || img.width;
+          const ih = img.naturalHeight || img.height;
+          if (!iw || !ih) {
+            resolve(null);
+            return;
+          }
+          let maxSide = Math.min(512, Math.max(iw, ih));
+          for (let attempt = 0; attempt < 32; attempt += 1) {
+            let cw = iw >= ih ? maxSide : Math.max(1, Math.round((iw / ih) * maxSide));
+            let ch = ih >= iw ? maxSide : Math.max(1, Math.round((ih / iw) * maxSide));
+            cw = Math.max(1, cw);
+            ch = Math.max(1, ch);
+            canvas.width = cw;
+            canvas.height = ch;
+            ctx.clearRect(0, 0, cw, ch);
+            ctx.drawImage(img, 0, 0, cw, ch);
+            for (let q = 0.85; q >= 0.1; q -= 0.05) {
+              const out = canvas.toDataURL('image/jpeg', q);
+              if (out.length <= maxLen) {
+                resolve(out);
+                return;
+              }
+            }
+            maxSide = Math.max(24, Math.floor(maxSide * 0.84));
+          }
+          resolve(null);
+        } catch (e) {
+          reject(e);
+        }
+      };
+      img.onerror = () => reject(new Error('image decode'));
+      img.src = dataUrlIn;
+    };
+    fr.onerror = () => reject(fr.error || new Error('read'));
+    fr.readAsDataURL(file);
+  });
+}
+
+function emptyBotFormState() {
+  return {
+    name: '',
+    displayName: '',
+    avatarImage: '',
+    description: '',
+    selectionPreview: '',
+    cardStats: normalizeAdminBotCardStats(DEFAULT_ADMIN_CARD_STATS_TEMPLATE),
+  };
 }
 
 const ROLE_LABELS = {
@@ -118,7 +317,11 @@ function normalizeAdminUser(raw) {
     chat_count: raw.conversationCount ?? raw.chat_count ?? 0,
     report_count: raw.reportCount ?? raw.report_count ?? 0,
     support_count: raw.supportCount ?? raw.support_count ?? 0,
-    assigned_bot_name: raw.assignedBotName ?? raw.assigned_bot_name ?? '',
+    assigned_bot_name: (() => {
+      const s = String(raw.assignedBotName ?? raw.assigned_bot_name ?? '').trim();
+      if (!s) return '';
+      return resolveMateDisplayName(s, null) || s;
+    })(),
   };
 }
 
@@ -322,9 +525,10 @@ export default function AdminPage() {
   const [users, setUsers] = useState([]);
   const [supports, setSupports] = useState([]);
   const [bots, setBots] = useState([]);
-  /** 상담봇 탭 API 메타(전월 라벨·순위 산정 방식) */
+  /** 상담봇 탭 API 메타(집계 기간 라벨 등) */
   const [botStatsMeta, setBotStatsMeta] = useState(null);
   const [botsLoading, setBotsLoading] = useState(false);
+  const botCarouselItems = useMemo(() => buildAdminBotCarouselItems(bots), [bots]);
   const [logs, setLogs] = useState([]);
   const [dbOverview, setDbOverview] = useState(null);
 
@@ -379,6 +583,15 @@ export default function AdminPage() {
   const [supportAnswerDoneWasEdit, setSupportAnswerDoneWasEdit] = useState(false);
   const supportAnswerDoneTitleId = useId();
 
+  const [botFormOpen, setBotFormOpen] = useState(false);
+  const [botFormMode, setBotFormMode] = useState('create');
+  const [botFormBotId, setBotFormBotId] = useState(null);
+  const [botForm, setBotForm] = useState(() => emptyBotFormState());
+  const [botFormSaving, setBotFormSaving] = useState(false);
+  const botAvatarFileInputRef = useRef(null);
+  const [botAvatarCompressing, setBotAvatarCompressing] = useState(false);
+  const botFormTitleId = useId();
+
   /* =========================================================
      활동 로그 필터
   ========================================================= */
@@ -425,6 +638,113 @@ export default function AdminPage() {
       });
     },
     [adminName, adminRole]
+  );
+
+  const openBotFormCreate = useCallback(() => {
+    setBotFormMode('create');
+    setBotFormBotId(null);
+    setBotForm(emptyBotFormState());
+    setBotFormOpen(true);
+  }, []);
+
+  const openBotFormEdit = useCallback((bot) => {
+    const id = bot?.botId ?? bot?.bot_id;
+    if (id == null || Number.isNaN(Number(id))) return;
+    setBotFormMode('edit');
+    setBotFormBotId(Number(id));
+    const rawJson = bot?.cardStatsJson ?? bot?.card_stats_json ?? '';
+    const parsed = parseCardStatsJsonFromAdminApi(rawJson);
+    const fromMate = getDefaultCardStatsForMateKey(bot?.name);
+    const merged = parsed && parsed.length ? parsed : fromMate.length ? fromMate : null;
+    setBotForm({
+      name: String(bot?.name ?? ''),
+      displayName: String(bot?.displayName ?? bot?.display_name ?? ''),
+      avatarImage: String(bot?.avatarImage ?? bot?.avatar_image ?? ''),
+      description: String(bot?.description ?? ''),
+      selectionPreview: String(bot?.selectionPreview ?? bot?.selection_preview ?? ''),
+      cardStats: normalizeAdminBotCardStats(merged),
+    });
+    setBotFormOpen(true);
+  }, []);
+
+  const closeBotForm = useCallback(() => {
+    if (botFormSaving) return;
+    setBotFormOpen(false);
+  }, [botFormSaving]);
+
+  const handleBotAvatarFileChange = useCallback(async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!String(file.type || '').startsWith('image/')) {
+      window.alert('이미지 파일만 선택할 수 있어요.');
+      return;
+    }
+    setBotAvatarCompressing(true);
+    try {
+      const dataUrl = await compressImageFileToDataUrl(file, 7800);
+      if (!dataUrl) {
+        window.alert(
+          '이미지를 저장할 수 있을 만큼 줄이지 못했어요. 다른 사진을 선택해 주세요.'
+        );
+        return;
+      }
+      setBotForm((p) => ({ ...p, avatarImage: dataUrl }));
+    } catch (err) {
+      console.error(err);
+      window.alert('이미지를 불러오지 못했어요.');
+    } finally {
+      setBotAvatarCompressing(false);
+    }
+  }, []);
+
+  const handleBotAvatarClear = useCallback(() => {
+    setBotForm((p) => ({ ...p, avatarImage: '' }));
+  }, []);
+
+  const handleBotFormSubmit = useCallback(
+    async (e) => {
+      e.preventDefault();
+      const name = String(botForm.name || '').trim();
+      if (!name) {
+        window.alert('시스템 키(영문 식별자)를 입력해 주세요. 예: dog, bear');
+        return;
+      }
+      setBotFormSaving(true);
+      try {
+        const payload = {
+          name,
+          displayName: String(botForm.displayName || '').trim() || undefined,
+          avatarImage: String(botForm.avatarImage || '').trim() || undefined,
+          description: String(botForm.description || '').trim() || undefined,
+          selectionPreview: String(botForm.selectionPreview || '').trim() || undefined,
+          cardStatsJson: JSON.stringify(normalizeAdminBotCardStats(botForm.cardStats)),
+        };
+        if (botFormMode === 'create') {
+          await adminAPI.createBot(payload);
+          pushAdminLog('상담봇', '등록', payload.displayName || name, 'BOT 테이블에 신규 행을 추가했습니다.', ['bot']);
+        } else {
+          await adminAPI.updateBot(botFormBotId, payload);
+          pushAdminLog('상담봇', '수정', String(botFormBotId), payload.displayName || name, ['bot']);
+        }
+        setBotFormOpen(false);
+        setBotsLoading(true);
+        try {
+          const data = await adminAPI.getBotStats();
+          setBots(Array.isArray(data?.bots) ? data.bots : []);
+          setBotStatsMeta({ periodLabel: data?.periodLabel ?? '' });
+        } catch (err) {
+          console.error('상담봇 통계 재로드 실패:', err);
+        } finally {
+          setBotsLoading(false);
+        }
+      } catch (err) {
+        window.alert(err?.message || '처리에 실패했어요.');
+      } finally {
+        setBotFormSaving(false);
+      }
+    },
+    [botForm, botFormMode, botFormBotId, pushAdminLog]
   );
 
   /* =========================================================
@@ -530,14 +850,6 @@ export default function AdminPage() {
       if (dashboardData.overview) {
         setDbOverview(dashboardData.overview);
       }
-      
-      pushAdminLog(
-        '대시보드',
-        '실시간 지표 새로고침',
-        '운영 대시보드',
-        'DB 데이터를 기반으로 활성 사용자 / 채팅 세션 지표를 새로고침했습니다.',
-        ['실시간 통계']
-      );
     } catch (err) {
       console.error('실시간 지표 갱신 실패:', err);
     }
@@ -582,7 +894,6 @@ export default function AdminPage() {
         setBots(list);
         setBotStatsMeta({
           periodLabel: data?.periodLabel ?? '',
-          rankingSource: data?.rankingSource ?? '',
         });
       } catch (e) {
         console.error('상담봇 통계 로드 실패:', e);
@@ -636,6 +947,16 @@ export default function AdminPage() {
         answerContent: ans,
       });
       setWorrySpotlightPublished(res?.spotlight ?? null);
+      const publishedTitle =
+        String(worrySpotlightDraft?.title || res?.spotlight?.post?.title || '').trim() ||
+        '(제목 없음)';
+      pushAdminLog(
+        '커뮤니티',
+        '고민 PICK 공개',
+        `게시글 #${Number(pid)} · ${publishedTitle}`,
+        '커뮤니티 상단 고민 PICK에 게시글과 운영 답변을 공개했습니다.',
+        ['고민 PICK', '커뮤니티']
+      );
       setWorrySpotlightDraft(null);
       setWorrySpotlightAnswer('');
       window.alert('커뮤니티 상단에 공개했어요.');
@@ -644,7 +965,7 @@ export default function AdminPage() {
     } finally {
       setWorrySpotlightBusy(false);
     }
-  }, [worrySpotlightAnswer, worrySpotlightDraft]);
+  }, [worrySpotlightAnswer, worrySpotlightDraft, pushAdminLog]);
 
   /* =========================================================
      운영 통계 요약 (DB 컬럼 기반)
@@ -856,13 +1177,21 @@ export default function AdminPage() {
         )
       );
 
+      const reasonKey =
+        String(supportDetail?.reasonType ?? supportDetail?.reason_type ?? '')
+          .toUpperCase() === 'REPORT'
+          ? 'REPORT'
+          : 'INQUIRY';
+      const reasonLabel = REASON_TYPE_LABELS[reasonKey] || '문의';
+      const titleShown =
+        displaySupportTicketTitle(String(supportDetail?.title || '').trim()) ||
+        '(제목 없음)';
       pushAdminLog(
         '문의·신고 관리',
         wasEdit ? '답변 수정' : '답변 등록',
-        `티켓 #${ticketId}`,
-        wasEdit
-          ? '관리자 답변을 수정했습니다.'
-          : '관리자 답변을 등록했습니다.'
+        `#${ticketId} · ${titleShown}`,
+        `${reasonLabel} 티켓에 ${wasEdit ? '답변을 수정' : '답변을 등록'}했습니다.`,
+        [reasonLabel, wasEdit ? '답변 수정' : '답변 등록']
       );
 
       setSupportAnswerDoneWasEdit(wasEdit);
@@ -1098,11 +1427,13 @@ export default function AdminPage() {
           : prev
       );
 
+      const titleShown =
+        displaySupportTicketTitle(String(target.title || '').trim()) || '(제목 없음)';
       pushAdminLog(
         '문의·신고 관리',
         `${REASON_TYPE_LABELS[target.reason_type]} 상태 변경`,
-        `티켓 #${supportId}`,
-        `"${target.title}" 티켓 상태를 ${SUPPORT_STATUS_LABELS[nextStatus]}(으)로 변경했습니다.`,
+        `#${supportId} · ${titleShown}`,
+        `${REASON_TYPE_LABELS[target.reason_type]} 티켓 상태를 ${SUPPORT_STATUS_LABELS[nextStatus]}(으)로 변경했습니다.`,
         [REASON_TYPE_LABELS[target.reason_type], nextStatus]
       );
     } catch (err) {
@@ -1115,6 +1446,10 @@ export default function AdminPage() {
   ========================================================= */
   const handleClearLogs = () => {
     if (logs.length === 0) return;
+    const ok = window.confirm(
+      '저장된 활동 로그를 모두 삭제할까요?\n이 작업은 되돌릴 수 없어요.'
+    );
+    if (!ok) return;
     setLogs([]);
     saveLogs([]);
   };
@@ -1220,6 +1555,210 @@ export default function AdminPage() {
                 확인
               </button>
             </div>
+          </div>
+        </div>
+      ) : null}
+      {botFormOpen ? (
+        <div
+          className="matey-admin-v3__modal-overlay"
+          role="presentation"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) closeBotForm();
+          }}
+        >
+          <div
+            className="matey-admin-v3__modal matey-admin-v3__modal--bot-form"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={botFormTitleId}
+          >
+            <div className="matey-admin-v3__modal-head">
+              <div>
+                <p className="matey-admin-v3__modal-eyebrow">BOT</p>
+                <h2 id={botFormTitleId} className="matey-admin-v3__modal-title">
+                  {botFormMode === 'create' ? '상담봇 추가' : '상담봇 수정'}
+                </h2>
+              </div>
+              <button
+                type="button"
+                className="matey-admin-v3__modal-close"
+                onClick={closeBotForm}
+                disabled={botFormSaving}
+                aria-label="닫기"
+              >
+                ×
+              </button>
+            </div>
+            <form className="matey-admin-v3__bot-form" onSubmit={handleBotFormSubmit}>
+              <label className="matey-admin-v3__bot-form-field">
+                <span className="matey-admin-v3__bot-form-label">시스템 키 (영문)</span>
+                <input
+                  type="text"
+                  className="matey-admin-v3__bot-form-input"
+                  value={botForm.name}
+                  onChange={(e) => setBotForm((p) => ({ ...p, name: e.target.value }))}
+                  maxLength={50}
+                  autoComplete="off"
+                  disabled={botFormSaving}
+                  required
+                  placeholder={botFormMode === 'create' ? '예: dog, bear, cat' : ''}
+                />
+                <span className="matey-admin-v3__bot-form-hint">
+                  채팅·URL 등에서 쓰는 내부 식별자예요. 기본 메이트는 dog / bear / cat 로 맞추면 채팅·마이페이지와 연결돼요. 이후 추가되는 봇은 자유로운 키를 쓸 수 있어요.
+                </span>
+              </label>
+              <label className="matey-admin-v3__bot-form-field">
+                <span className="matey-admin-v3__bot-form-label">화면에 보일 이름</span>
+                <input
+                  type="text"
+                  className="matey-admin-v3__bot-form-input"
+                  value={botForm.displayName}
+                  onChange={(e) => setBotForm((p) => ({ ...p, displayName: e.target.value }))}
+                  maxLength={50}
+                  autoComplete="off"
+                  disabled={botFormSaving}
+                  placeholder="예: 강이, 곰이, 냥이"
+                />
+                <span className="matey-admin-v3__bot-form-hint">
+                  관리자 목록·마이페이지 담당봇 선택 등에 보이는 이름이에요. 비우면 dog→강이 처럼 기본 표시명이 들어가요.
+                </span>
+              </label>
+              <label className="matey-admin-v3__bot-form-field">
+                <span className="matey-admin-v3__bot-form-label">프로필 이미지</span>
+                <div className="matey-admin-v3__bot-avatar-row">
+                  <div className="matey-admin-v3__bot-avatar-frame">
+                    <img
+                      src={resolveBotFormAvatarPreview(botForm, botFormMode)}
+                      alt=""
+                      decoding="async"
+                      onError={(ev) => {
+                        ev.currentTarget.onerror = null;
+                        ev.currentTarget.src = ADMIN_BOT_FORM_NEUTRAL_PREVIEW;
+                      }}
+                    />
+                  </div>
+                  <div className="matey-admin-v3__bot-avatar-actions">
+                    <input
+                      ref={botAvatarFileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="matey-admin-v3__visually-hidden"
+                      onChange={handleBotAvatarFileChange}
+                      disabled={botFormSaving || botAvatarCompressing}
+                      aria-label="상담봇 프로필 이미지 파일 선택"
+                    />
+                    <button
+                      type="button"
+                      className="matey-admin-v3__primary-button"
+                      onClick={() => botAvatarFileInputRef.current?.click()}
+                      disabled={botFormSaving || botAvatarCompressing}
+                    >
+                      {botAvatarCompressing ? '이미지 처리 중…' : '이미지 선택'}
+                    </button>
+                    <button
+                      type="button"
+                      className="matey-admin-v3__ghost-button"
+                      onClick={handleBotAvatarClear}
+                      disabled={botFormSaving || botAvatarCompressing || !String(botForm.avatarImage || '').trim()}
+                    >
+                      기본 이미지 사용
+                    </button>
+                    <p className="matey-admin-v3__bot-form-hint matey-admin-v3__bot-avatar-hint">
+                      이미지 선택으로 봇 프로필 사진을 넣을 수 있어요.
+                    </p>
+                  </div>
+                </div>
+              </label>
+              <label className="matey-admin-v3__bot-form-field">
+                <span className="matey-admin-v3__bot-form-label">소개 문구 (설명)</span>
+                <textarea
+                  className="matey-admin-v3__bot-form-textarea"
+                  value={botForm.description}
+                  onChange={(e) => setBotForm((p) => ({ ...p, description: e.target.value }))}
+                  rows={4}
+                  disabled={botFormSaving}
+                  placeholder={
+                    botFormMode === 'create'
+                      ? '이 봇이 어떤 성격·역할인지 짧게 적어 주세요'
+                      : ''
+                  }
+                />
+              </label>
+              <label className="matey-admin-v3__bot-form-field">
+                <span className="matey-admin-v3__bot-form-label">능력치 (4항목)</span>
+                <span className="matey-admin-v3__bot-form-hint">
+                  공감력·친근함·분석력·명확함 네 가지는 이름이 고정이에요. 슬라이더로 0~100만 조절하면 돼요.
+                </span>
+                <div className="matey-admin-v3__bot-card-stat-rows">
+                  {normalizeAdminBotCardStats(botForm.cardStats).map((row, idx) => (
+                    <div className="matey-admin-v3__bot-card-stat-row" key={`card-stat-${idx}`}>
+                      <span className="matey-admin-v3__bot-card-stat-label-fixed" id={`bot-card-stat-lbl-${idx}`}>
+                        {row.label}
+                      </span>
+                      <div className="matey-admin-v3__bot-card-stat-slider-row">
+                        <input
+                          type="range"
+                          className="matey-admin-v3__bot-form-range"
+                          min={0}
+                          max={100}
+                          step={1}
+                          value={row.value}
+                          onChange={(e) => {
+                            const num = Math.max(
+                              0,
+                              Math.min(100, Math.round(Number(e.target.value)))
+                            );
+                            setBotForm((p) => {
+                              const next = normalizeAdminBotCardStats(p.cardStats);
+                              next[idx] = { ...next[idx], value: num };
+                              return { ...p, cardStats: next };
+                            });
+                          }}
+                          disabled={botFormSaving}
+                          aria-labelledby={`bot-card-stat-lbl-${idx}`}
+                          aria-valuemin={0}
+                          aria-valuemax={100}
+                          aria-valuenow={row.value}
+                          aria-valuetext={`${row.value}점`}
+                        />
+                        <span className="matey-admin-v3__bot-card-stat-value" title="현재 수치">
+                          {row.value}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </label>
+              <label className="matey-admin-v3__bot-form-field">
+                <span className="matey-admin-v3__bot-form-label">선택 화면 한 줄 소개</span>
+                <input
+                  type="text"
+                  className="matey-admin-v3__bot-form-input"
+                  value={botForm.selectionPreview}
+                  onChange={(e) => setBotForm((p) => ({ ...p, selectionPreview: e.target.value }))}
+                  autoComplete="off"
+                  disabled={botFormSaving}
+                  placeholder={
+                    botFormMode === 'create'
+                      ? '비워 두면 저장 시 이름·소개에서 한 줄이 자동으로 채워져요'
+                      : ''
+                  }
+                />
+              </label>
+              <div className="matey-admin-v3__bot-form-actions">
+                <button
+                  type="button"
+                  className="matey-admin-v3__ghost-button"
+                  onClick={closeBotForm}
+                  disabled={botFormSaving}
+                >
+                  취소
+                </button>
+                <button type="submit" className="matey-admin-v3__primary-button" disabled={botFormSaving}>
+                  {botFormSaving ? '저장 중…' : '저장'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       ) : null}
@@ -2123,80 +2662,133 @@ export default function AdminPage() {
                 <h2>상담봇 운영 현황</h2>
                 <p className="matey-admin-v3__panel-sub">
                   {botStatsMeta?.periodLabel
-                    ? `${botStatsMeta.periodLabel} 기준 순위와 전월 추천 이벤트 건수예요.`
-                    : '누적 좋아요·싫어요와 전월 랭킹 지표를 확인해요.'}
+                    ? `${botStatsMeta.periodLabel} 동안의 인기 순위와, 그 달에 모인 좋아요·싫어요(이벤트 누적)를 함께 볼 수 있어요. 여기서 저장한 내용은 마이페이지 담당 메이트·채팅 목록에 바로 반영돼요.`
+                    : '직전 달 인기 순위와 봇별 좋아요·싫어요(월간 누적)를 확인할 수 있어요. 저장한 설정은 마이페이지와 채팅에서 같은 목록으로 이어져요.'}
                 </p>
-                {botStatsMeta?.rankingSource ? (
-                  <p className="matey-admin-v3__hint-text" style={{ marginTop: 6 }}>
-                    {botStatsMeta.rankingSource === 'BOT_RECOMMEND_EVENT_MONTHLY'
-                      ? '순위는 해당 월 커뮤니티 추천 이벤트 순이득(추천 − 싫어요)과 동일한 규칙이에요.'
-                      : '해당 월 추천 이벤트가 없어, 공개 랭킹과 같이 누적 좋아요 수로 순위를 매겼어요.'}
-                  </p>
-                ) : null}
               </div>
             </div>
 
             {botsLoading && bots.length === 0 ? (
               <div className="matey-admin-v3__empty">상담봇 통계를 불러오는 중이에요…</div>
             ) : (
-              <div className="matey-admin-v3__bot-grid">
-                {bots.map((bot) => (
+              <div className="matey-admin-v3__bot-carousel">
+                {bots.length === 0 && !botsLoading ? (
+                  <p className="matey-admin-v3__bot-carousel-hint">
+                    등록된 상담봇이 없어요. 옆 카드에서 새 봇을 추가할 수 있어요.
+                  </p>
+                ) : null}
+                <div className="matey-admin-v3__bot-carousel-track">
+                {botCarouselItems.map((entry) => {
+                  if (entry.kind === 'add') {
+                    return (
+                      <button
+                        key="admin-bot-add-card"
+                        type="button"
+                        className="matey-admin-v3__bot-card matey-admin-v3__bot-card--add"
+                        onClick={openBotFormCreate}
+                      >
+                        <span className="matey-admin-v3__bot-card-add-icon" aria-hidden="true">
+                          +
+                        </span>
+                        <span className="matey-admin-v3__bot-card-add-title">봇 추가</span>
+                        <p className="matey-admin-v3__bot-card-add-copy">
+                          새 상담봇을 등록하면 메인·채팅·마이페이지 목록에 바로 반영돼요.
+                        </p>
+                        <span className="matey-admin-v3__bot-card-add-cta">등록하기</span>
+                      </button>
+                    );
+                  }
+                  const bot = entry.bot;
+                  const abilityRows = getAdminBotCardStatsPreview(bot);
+                  return (
                   <article
                     className="matey-admin-v3__bot-card"
                     key={bot.botId ?? bot.bot_id}
                   >
                     <div className="matey-admin-v3__bot-card-head">
-                      <span
-                        className={`matey-admin-v3__bot-rank-badge ${adminBotRankBadgeClass(
-                          bot.prevMonthRank
-                        )}`}
-                      >
-                        #{bot.prevMonthRank ?? '-'}
-                      </span>
-                      <strong>{bot.name}</strong>
+                      <img
+                        className="matey-admin-v3__bot-avatar"
+                        src={resolveAdminBotAvatarUrl(bot)}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = '/images/mascots/dog/dog.png';
+                        }}
+                      />
+                      <div className="matey-admin-v3__bot-card-head-main">
+                        <strong>{adminBotListDisplayTitle(bot)}</strong>
+                      </div>
                     </div>
 
                     <p className="matey-admin-v3__bot-desc">{bot.description}</p>
 
-                    <p className="matey-admin-v3__bot-section-label">누적 (BOT)</p>
+                    {abilityRows.length > 0 ? (
+                      <div className="matey-admin-v3__bot-card-abilities">
+                        <p className="matey-admin-v3__bot-section-label">능력치</p>
+                        <ul className="matey-admin-v3__bot-card-ability-list">
+                          {abilityRows.slice(0, 4).map((row, idx) => (
+                            <li key={`${bot.botId ?? bot.bot_id}-ab-${idx}`} className="matey-admin-v3__bot-card-ability-row">
+                              <span className="matey-admin-v3__bot-card-ability-label">{row.label}</span>
+                              <div className="matey-admin-v3__bot-card-ability-track" aria-hidden>
+                                <div
+                                  className="matey-admin-v3__bot-card-ability-fill"
+                                  style={{ width: `${Math.max(0, Math.min(100, row.value))}%` }}
+                                />
+                              </div>
+                              <span className="matey-admin-v3__bot-card-ability-value">{row.value}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+
+                    <p className="matey-admin-v3__bot-section-label">누적 (BOT 테이블)</p>
                     <div className="matey-admin-v3__bot-stat-row matey-admin-v3__bot-stat-row--two">
                       <div className="matey-admin-v3__bot-stat">
                         <span>좋아요</span>
-                        <strong>👍 {bot.cumulativeLikeCount ?? 0}</strong>
+                        <strong>
+                          👍{' '}
+                          {Number(bot.cumulativeLikeCount ?? bot.cumulative_like_count ?? 0) || 0}
+                        </strong>
                       </div>
                       <div className="matey-admin-v3__bot-stat">
                         <span>싫어요</span>
-                        <strong>👎 {bot.cumulativeDislikeCount ?? 0}</strong>
-                      </div>
-                    </div>
-
-                    <p className="matey-admin-v3__bot-section-label">
-                      전월 이벤트 ({bot.prevMonthYear ?? '—'}년 {bot.prevMonthMonth ?? '—'}월)
-                    </p>
-                    <div className="matey-admin-v3__bot-stat-row matey-admin-v3__bot-stat-row--wrap">
-                      <div className="matey-admin-v3__bot-stat">
-                        <span>추천 이벤트</span>
-                        <strong>{bot.prevMonthRecommendEvents ?? 0}건</strong>
-                      </div>
-                      <div className="matey-admin-v3__bot-stat">
-                        <span>싫어요 이벤트</span>
-                        <strong>{bot.prevMonthDislikeEvents ?? 0}건</strong>
-                      </div>
-                      <div className="matey-admin-v3__bot-stat">
-                        <span>순이득</span>
                         <strong>
-                          {bot.prevMonthNetScore != null ? bot.prevMonthNetScore : 0}
+                          👎{' '}
+                          {Number(bot.cumulativeDislikeCount ?? bot.cumulative_dislike_count ?? 0) || 0}
                         </strong>
                       </div>
                     </div>
-                  </article>
-                ))}
 
-                {!botsLoading && bots.length === 0 ? (
-                  <div className="matey-admin-v3__empty">
-                    등록된 상담봇이 없어요.
-                  </div>
-                ) : null}
+                    <div className="matey-admin-v3__bot-prev-month">
+                      <p className="matey-admin-v3__bot-prev-rank-line">
+                        전월 인기순위{' '}
+                        <strong>
+                          {bot.prevMonthRank != null && Number.isFinite(Number(bot.prevMonthRank))
+                            ? `${Number(bot.prevMonthRank)}위`
+                            : '—'}
+                        </strong>
+                      </p>
+                      <p className="matey-admin-v3__bot-prev-month-counts">
+                        좋아요 <strong>{bot.prevMonthRecommendEvents ?? 0}</strong>개 · 싫어요{' '}
+                        <strong>{bot.prevMonthDislikeEvents ?? 0}</strong>개
+                      </p>
+                    </div>
+                    <div className="matey-admin-v3__bot-card-actions">
+                      <button
+                        type="button"
+                        className="matey-admin-v3__ghost-button"
+                        onClick={() => openBotFormEdit(bot)}
+                      >
+                        내용 수정
+                      </button>
+                    </div>
+                  </article>
+                  );
+                })}
+                </div>
               </div>
             )}
           </section>

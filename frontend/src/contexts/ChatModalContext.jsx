@@ -30,6 +30,9 @@ import {
   useMemo,
   useState,
 } from 'react';
+import { mergeLandingBotsRows } from '../utils/landingMates';
+import { communityAPI, myPageAPI } from '../utils/api';
+import { resolveMateKey } from '../constants/mates';
 
 // ============================================================
 // 1. 시간 포맷
@@ -64,17 +67,69 @@ export function ChatModalProvider({ children }) {
   const [rightView, setRightView] = useState(RIGHT.EMPTY);
   const [activeSessionId, setActiveSessionId] = useState(null);
   const [sessions, setSessions] = useState(INITIAL_SESSIONS);
+  const [landingMates, setLandingMates] = useState(() => mergeLandingBotsRows([]));
+  /** 담당봇 bot-menu: 채팅은 친밀 레벨로 해금된 모션만, 맥락에 맞게 선택 */
+  const [assignedBotMotionsForChat, setAssignedBotMotionsForChat] = useState(null);
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    let cancelled = false;
+    myPageAPI
+      .getBotMenu()
+      .then((menu) => {
+        if (cancelled || !menu) return;
+        const mk = resolveMateKey(menu.botName ?? menu.bot_name ?? '');
+        if (!mk) {
+          setAssignedBotMotionsForChat(null);
+          return;
+        }
+        const motions = menu.motions ?? menu.motions_list ?? [];
+        const lv = Number(menu.level);
+        const intimacyLevel = Number.isFinite(lv) && lv >= 0 ? lv : 0;
+        setAssignedBotMotionsForChat({
+          mateKey: mk,
+          intimacyLevel,
+          motions: Array.isArray(motions) ? motions : [],
+        });
+      })
+      .catch(() => {
+        if (!cancelled) setAssignedBotMotionsForChat(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    let cancelled = false;
+    communityAPI
+      .getLandingBots()
+      .then((rows) => {
+        if (cancelled) return;
+        setLandingMates(mergeLandingBotsRows(Array.isArray(rows) ? rows : []));
+      })
+      .catch(() => {
+        if (!cancelled) setLandingMates(mergeLandingBotsRows([]));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // -------- 모달 열기 --------
   // mateKey 주면 즉시 새 세션 만들고 채팅 시작
   // 없으면 메이트 고르기(PICK) — 빈 안내 화면 대신 바로 선택 UI
   const openChat = useCallback((mateKey = null) => {
-    if (mateKey) {
+    const normalized =
+      mateKey != null && String(mateKey).trim() !== ''
+        ? String(mateKey).trim().toLowerCase()
+        : null;
+    if (normalized) {
       const id = `s-${Date.now()}`;
       setSessions((prev) => [
         {
           id,
-          mateKey,
+          mateKey: normalized,
           title: '새로운 대화',
           createdAt: Date.now(),
           updatedAt: Date.now(),
@@ -113,10 +168,15 @@ export function ChatModalProvider({ children }) {
 
   // -------- 새 세션 시작 --------
   const startNewSession = useCallback((mateKey) => {
+    const normalized =
+      mateKey != null && String(mateKey).trim() !== ''
+        ? String(mateKey).trim().toLowerCase()
+        : null;
+    if (!normalized) return;
     const id = `s-${Date.now()}`;
     const newSession = {
       id,
-      mateKey,
+      mateKey: normalized,
       title: '새로운 대화',
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -139,6 +199,11 @@ export function ChatModalProvider({ children }) {
 
   // -------- 세션 삭제 --------
   const deleteSession = useCallback((sessionId) => {
+    if (!sessionId) return;
+    const ok = window.confirm(
+      '이 대화방을 삭제할까요?\n대화 내용이 모두 사라지며 되돌릴 수 없어요.'
+    );
+    if (!ok) return;
     setSessions((prev) => prev.filter((s) => s.id !== sessionId));
     setActiveSessionId((prev) => {
       if (prev === sessionId) {
@@ -202,6 +267,8 @@ export function ChatModalProvider({ children }) {
     activeSession,
     activeSessionId,
     RIGHT,
+    landingMates,
+    assignedBotMotionsForChat,
     openChat,
     closeChat,
     showEmpty,

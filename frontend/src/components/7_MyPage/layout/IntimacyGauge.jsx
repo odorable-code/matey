@@ -3,7 +3,7 @@ import styles from './IntimacyGauge.module.css';
 import useAnimatedNumber, { usePrefersReducedMotion } from '../hooks/useAnimatedNumber';
 
 export default function IntimacyGauge({
-  level = 4,
+  level = 1,
   currentExp = 18,
   maxExp = 100,
   className = '',

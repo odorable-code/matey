@@ -41,4 +41,34 @@ public class NotificationService {
         notificationDAO.insertNotification(userId, typeCode, content, targetType, targetId);
         notificationEmailService.sendIfEnabled(userId, typeCode, content);
     }
+
+    /**
+     * 답변 최초 등록은 새 알림 행을 추가하고, 관리자가 답변을 수정한 경우에는
+     * 동일 티켓의 기존 SUPPORT_ANSWER 알림을 갱신해 중복 알림을 줄입니다.
+     */
+    @Transactional
+    public void notifySupportAnswer(Long ticketOwnerId, Long supportId, String content, boolean isUpdate) {
+        if (isUpdate) {
+            Long existingId = notificationDAO.selectLatestSupportAnswerNotificationId(ticketOwnerId, supportId);
+            if (existingId != null) {
+                notificationDAO.updateSupportAnswerNotification(ticketOwnerId, existingId, content);
+                notificationEmailService.sendIfEnabled(ticketOwnerId, "SUPPORT_ANSWER", content);
+                return;
+            }
+        }
+        createNotification(ticketOwnerId, "SUPPORT_ANSWER", content, "SUPPORT", supportId);
+    }
+
+    @Transactional
+    public void markSupportInboxRelatedRead(Long userId) {
+        notificationDAO.markReadSupportInboxRelated(userId);
+    }
+
+    @Transactional
+    public void markReadForPostRelated(Long userId, Long postId) {
+        if (userId == null || postId == null) {
+            return;
+        }
+        notificationDAO.markReadForPostRelated(userId, postId);
+    }
 }

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { supportUserAPI } from '../../../utils/api';
+import { useNotifications } from '../../../contexts/NotificationContext';
+import { notificationAPI, supportUserAPI } from '../../../utils/api';
 import {
   displaySupportTicketTitle,
   getReportCardTitle,
@@ -28,6 +29,7 @@ function isReportRow(row) {
 function SupportHistoryContent() {
   const [searchParams, setSearchParams] = useSearchParams();
   const openedTicketFromUrlRef = useRef(false);
+  const { fetchNotifications } = useNotifications();
 
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -55,6 +57,22 @@ function SupportHistoryContent() {
       cancelled = true;
     };
   }, []);
+
+  /* 문의·신고함에 들어오면 내 티켓과 연결된 답변 알림을 읽음 처리(알림만 누르지 않고 바로 와도 뱃지가 사라지도록) */
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        await notificationAPI.markSupportInboxRead();
+        if (!cancelled) await fetchNotifications();
+      } catch (e) {
+        console.error('문의·신고 관련 알림 읽음 처리 실패:', e);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchNotifications]);
 
   /* 알림에서 ?supportId= 로 들어온 경우: 목록 로드 후 해당 티켓 탭·펼침 */
   useEffect(() => {
@@ -210,18 +228,12 @@ function SupportHistoryContent() {
                       <p className={styles.body}>{row.content}</p>
                     ) : null}
                     {row.answerContent ||
-                    row.answerAdminNickname ||
                     row.answerHandlingMethod ||
                     row.answerCreatedAt ? (
                       <div className={styles.adminAnswer}>
-                        {formatWhen(row.answerCreatedAt) || row.answerAdminNickname ? (
+                        {formatWhen(row.answerCreatedAt) ? (
                           <p className={styles.answerMetaLine}>
-                            {[
-                              formatWhen(row.answerCreatedAt) || null,
-                              row.answerAdminNickname || null,
-                            ]
-                              .filter(Boolean)
-                              .join(' · ')}
+                            {formatWhen(row.answerCreatedAt)}
                           </p>
                         ) : null}
                         {row.answerContent ? (

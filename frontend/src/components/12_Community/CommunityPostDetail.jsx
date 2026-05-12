@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import DOMPurify from 'dompurify';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNotifications } from '../../contexts/NotificationContext';
 import { communityAPI, supportUserAPI } from '../../utils/api';
 import CommunityReportModal from './CommunityReportModal';
 import {
@@ -64,6 +65,7 @@ function CommunityPostDetail() {
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
+  const { fetchNotifications } = useNotifications();
   const myId = useMemo(() => resolveUserId(user), [user]);
 
   const [post, setPost] = useState(null);
@@ -91,6 +93,9 @@ function CommunityPostDetail() {
       const data = await communityAPI.getPostDetail(postId);
       setPost(data?.post || null);
       setComments(Array.isArray(data?.comments) ? data.comments : []);
+      if (isAuthenticated) {
+        void fetchNotifications();
+      }
     } catch (e) {
       setError(e?.message || '글을 불러오지 못했어요.');
       setPost(null);
@@ -98,7 +103,7 @@ function CommunityPostDetail() {
     } finally {
       setLoading(false);
     }
-  }, [postId]);
+  }, [postId, isAuthenticated, fetchNotifications]);
 
   useEffect(() => {
     if (!post) return undefined;

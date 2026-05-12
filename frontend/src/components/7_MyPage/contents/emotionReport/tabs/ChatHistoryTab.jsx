@@ -30,11 +30,7 @@ import { resolveMascotImageSrcBySituationLabel } from 'utils/botAvatar';
 /* =========================
    공용 파일에서 가져오기
 ========================= */
-import {
-  CHARACTER_IMAGE_MAP,
-  CURRENT_YEAR,
-  WEEKDAY_LABELS,
-} from '../../../hooks/emotionReport/emotionReport.constants';
+import { CHARACTER_IMAGE_MAP, WEEKDAY_LABELS } from '../../../hooks/emotionReport/emotionReport.constants';
 
 import {
   cx,
@@ -47,6 +43,7 @@ import {
   formatMonthKey,
   isSameDay,
   buildCalendarMatrix,
+  getFirstDayOfPreviousMonth,
   splitAnimatedValue,
 } from '../../../hooks/emotionReport/emotionReport.utils';
 
@@ -383,7 +380,7 @@ function ChatHistoryTab({
     ) || dateOptions[0];
 
   const currentDateLabel = currentDateOption?.label || currentDateKey;
-  const anchorDate = currentDateOption?.date || new Date(CURRENT_YEAR, 3, 1);
+  const anchorDate = currentDateOption?.date || getFirstDayOfPreviousMonth();
 
   /* =========================
      달력 그리기용 데이터

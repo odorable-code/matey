@@ -33,8 +33,8 @@
  * =========================================================
  */
 
-import React, { useEffect } from 'react';
-import { Navigate, Route, Routes, Link, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Navigate, Route, Routes, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 import MainLayout from './components/3_Layout/MainLayout';
@@ -63,7 +63,7 @@ import { NotificationProvider } from './contexts/NotificationContext';
    - ChatModalProvider : 전역 모달 컨트롤러
    - ChatModal         : 실제 모달 UI (라우트 밖에서 한 번만 마운트)
 ========================================================= */
-import { ChatModalProvider } from './contexts/ChatModalContext';
+import { ChatModalProvider, useChatModal } from './contexts/ChatModalContext';
 import ChatModal from './components/15_ChatModal/ChatModal';
 
 /* =========================================================
@@ -252,6 +252,24 @@ function TempInfoPage({
    - 모달 방식 채팅으로 전환되면 이 페이지는 거의 안 쓰일 수 있어요
 ========================================================= */
 function TempChatPage() {
+  const [searchParams] = useSearchParams();
+  const { openChat } = useChatModal();
+  const navigate = useNavigate();
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const raw = searchParams.get('mate');
+    if (raw != null && String(raw).trim() !== '') {
+      openChat(String(raw).trim().toLowerCase());
+    } else {
+      openChat();
+    }
+    navigate('/', { replace: true });
+    setReady(true);
+  }, [searchParams, openChat, navigate]);
+
+  if (ready) return null;
+
   return (
     <main
       style={{
@@ -263,130 +281,7 @@ function TempChatPage() {
           'linear-gradient(180deg, #fdfaff 0%, #f7f9ff 48%, #fff8fc 100%)',
       }}
     >
-      <section
-        style={{
-          width: '100%',
-          maxWidth: '760px',
-          padding: '36px 28px',
-          borderRadius: '28px',
-          background: 'rgba(255,255,255,0.9)',
-          border: '1px solid rgba(123, 139, 176, 0.12)',
-          boxShadow: '0 20px 40px rgba(120, 130, 170, 0.12)',
-          textAlign: 'center',
-        }}
-      >
-        <div
-          style={{
-            width: '72px',
-            height: '72px',
-            margin: '0 auto 18px',
-            borderRadius: '22px',
-            display: 'grid',
-            placeItems: 'center',
-            background:
-              'linear-gradient(135deg, #79b7ff 0%, #8d79ff 48%, #ff93b7 100%)',
-            color: '#fff',
-            fontSize: '28px',
-            fontWeight: 900,
-            boxShadow: '0 16px 28px rgba(128, 117, 241, 0.22)',
-          }}
-        >
-          M
-        </div>
-
-        <p
-          style={{
-            margin: '0 0 8px',
-            color: '#7a7391',
-            fontSize: '13px',
-            fontWeight: 800,
-            letterSpacing: '0.04em',
-          }}
-        >
-          TEMP CHAT PAGE
-        </p>
-
-        <h1
-          style={{
-            margin: '0 0 14px',
-            fontSize: '32px',
-            lineHeight: 1.25,
-            fontWeight: 900,
-            color: '#2f3550',
-          }}
-        >
-          채팅 페이지는 지금
-          <br />
-          임시 화면으로 연결되어 있어요
-        </h1>
-
-        <p
-          style={{
-            margin: '0 auto 24px',
-            maxWidth: '520px',
-            color: '#626d86',
-            fontSize: '16px',
-            lineHeight: 1.7,
-            fontWeight: 600,
-          }}
-        >
-          헤더의 <strong>채팅하기</strong> 버튼은 모달 방식으로 전환되며
-          이 라우트는 백업 용도예요.
-          <br />
-          나중에 풀스크린 채팅 화면이 필요하면 이 부분만 교체하면 됩니다.
-        </p>
-
-        <div
-          style={{
-            display: 'flex',
-            gap: '12px',
-            justifyContent: 'center',
-            flexWrap: 'wrap',
-          }}
-        >
-          <Link
-            to="/mypage"
-            style={{
-              minHeight: '48px',
-              padding: '0 18px',
-              borderRadius: '999px',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              textDecoration: 'none',
-              fontSize: '15px',
-              fontWeight: 800,
-              color: '#4b5873',
-              background: '#fff',
-              border: '1px solid rgba(123, 139, 176, 0.14)',
-            }}
-          >
-            마이페이지로 이동
-          </Link>
-
-          <Link
-            to="/"
-            style={{
-              minHeight: '48px',
-              padding: '0 18px',
-              borderRadius: '999px',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              textDecoration: 'none',
-              fontSize: '15px',
-              fontWeight: 800,
-              color: '#fff',
-              background:
-                'linear-gradient(135deg, #79b7ff 0%, #8d79ff 48%, #ff93b7 100%)',
-              border: 'none',
-              boxShadow: '0 16px 28px rgba(128, 117, 241, 0.22)',
-            }}
-          >
-            홈으로 이동
-          </Link>
-        </div>
-      </section>
+      <p style={{ margin: 0, fontWeight: 700, color: '#626d86' }}>채팅을 여는 중…</p>
     </main>
   );
 }
