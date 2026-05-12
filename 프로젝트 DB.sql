@@ -46,8 +46,6 @@ CREATE TABLE `BOT` (
 	KEY `idx_bot_name` (`name`)
 );
 
--- 기존 DB: ALTER TABLE `BOT` MODIFY COLUMN `avatar_image` VARCHAR(8000) NULL DEFAULT NULL;
-
 ALTER TABLE `USER`
 	ADD CONSTRAINT `fk_user_assigned_bot`
 	FOREIGN KEY (`assigned_bot_id`) REFERENCES `BOT`(`bot_id`);
@@ -92,7 +90,7 @@ CREATE TABLE `CHAT_BACKGROUND` (
 	`background_id`	BIGINT	NOT NULL PRIMARY KEY AUTO_INCREMENT,
 	`name`	VARCHAR(100)	NOT NULL,
 	`image_url`	VARCHAR(500)	NOT NULL,
-	`unlock_intimacy_level`	INT	NOT NULL	DEFAULT 0,
+	`unlock_intimacy_level`	INT	NOT NULL	DEFAULT 1,
 	`sort_order`	INT	NOT NULL	DEFAULT 0
 );
 
@@ -182,7 +180,7 @@ CREATE TABLE `NOTIFICATION` (
 	`target_id`	BIGINT	NULL,
 	KEY `idx_noti_user_read` (`user_id`, `is_read`),
 	KEY `idx_noti_user_type_target` (`user_id`, `target_type`, `target_id`),
-    FOREIGN KEY (user_id) REFERENCES USER(user_id),
+    FOREIGN KEY (`user_id`) REFERENCES USER(`user_id`),
     FOREIGN KEY(`type_code`) REFERENCES `NOTIFICATION_TYPE`(`type_code`)
 );
 
@@ -266,7 +264,7 @@ CREATE TABLE `USER_ROLE` (
     FOREIGN KEY(`user_id`) REFERENCES `USER`(`user_id`),
     FOREIGN KEY(`role_id`) REFERENCES `ROLE`(`role_id`)
 );
-
+-- 여기서부터　확인
 CREATE TABLE `BOT_MOTION` (
 	`motion_id`	BIGINT	NOT NULL PRIMARY KEY AUTO_INCREMENT,
 	`bot_id`	BIGINT	NOT NULL,
