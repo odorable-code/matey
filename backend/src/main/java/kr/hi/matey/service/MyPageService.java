@@ -103,21 +103,27 @@ public class MyPageService {
     }
     
     @Transactional
-    public String letterMessage(Long counselId) {
-    	Map<String, Object> details = myPageDAO.getCounselDetail(counselId);
-    	
-    	// 상담 횟수가 1이면 첫 상담으로 판단하여 추가 정보 삽입
-    	long count = ((Number) details.get("counselCount")).longValue();
+    public Map<String, Object> generateLetterForLatestCounsel(Long userId) {
+        // 1. 해당 유저의 가장 최신 상담 ID 조회
+        Long latestId = myPageDAO.getLatestCounselId(userId);
+        
+        if (latestId == null) {
+            return null; // 상담 내역이 없으면 처리 안 함
+        }
+
+        // 2. 기존에 만든 상담 상세 정보 가져오기 로직 호출
+        Map<String, Object> details = myPageDAO.getCounselDetail(latestId);
+        
+        // 3. 첫 상담 여부 계산
+        long count = ((Number) details.get("counselCount")).longValue();
         details.put("isFirstCounsel", count <= 1);
 
-        // Python AI 서버 호출
+        // 4. Python AI 서버 호출
         RestTemplate restTemplate = new RestTemplate();
-        String pythonUrl = "http://localhost:5000/generate-letters";
-        
-        // Map 객체를 그대로 전달하면 Jackson 라이브러리가 JSON으로 변환함
+        String pythonUrl = "http://localhost:8000/generate-letters";
         ResponseEntity<Map> response = restTemplate.postForEntity(pythonUrl, details, Map.class);
         
-        return (String) response.getBody().get("aiMessage");
+        return response.getBody();
     }
 
     @Transactional(readOnly = true)

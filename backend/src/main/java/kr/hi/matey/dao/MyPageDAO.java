@@ -25,6 +25,7 @@ public interface MyPageDAO {
     List<LetterBoxDTO.LetterDTO> selectBotLetters(long userId);
     int updateLetterReadStatus(@Param("userId") long userId, @Param("letterId") long letterId);
     int deleteLetter(@Param("userId") long userId, @Param("letterId") long letterId);
+    Long getLatestCounselId(@Param("userId") long userId);
     Map<String, Object> getCounselDetail(@Param("counselId") long counselId);
     
 
