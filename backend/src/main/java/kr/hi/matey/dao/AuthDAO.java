@@ -23,6 +23,8 @@ public interface AuthDAO {
 
 	int insertUserRole(@Param("userId") Long userId, @Param("roleId") int roleId);
 
+	int insertUserSetting(@Param("userId") Long userId);
+
 	UserVO findByEmail(String email);
 
 	String findId(UserDTO user);

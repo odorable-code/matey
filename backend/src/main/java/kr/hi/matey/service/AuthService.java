@@ -76,6 +76,7 @@ public class AuthService {
             
             if(result) {
                 authDAO.insertUserRole(userVO.getUserId(), 1);
+                authDAO.insertUserSetting(userVO.getUserId());
             }
             
             return result;

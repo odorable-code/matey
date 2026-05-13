@@ -31,6 +31,7 @@ import {
 } from "../../constants/mates";
 import "./ChatModal.css";
 import { pickChatMotionUrlForSituation } from "utils/motionAssets";
+import { useNotifications } from "../../contexts/NotificationContext";
 
 function resolveChatApiBase() {
   const fromEnv =
@@ -755,6 +756,7 @@ function ChatView({ mobileBar = false, onMobileBack }) {
     return landingMates.find((m) => m.key === activeSession.mateKey);
   }, [activeSession, landingMates]);
 
+  const { settings } = useNotifications();
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   /** 봇 응답 말투 — API 요청마다 speech_level 로 전달 (학습 데이터 톤 분리 대신 즉시 지시) */
@@ -763,8 +765,8 @@ function ChatView({ mobileBar = false, onMobileBack }) {
   const scrollRef = useRef(null);
 
   useEffect(() => {
-    setSpeechLevel("polite");
-  }, [activeSession?.id]);
+    setSpeechLevel(settings?.casualTone ? "casual" : "polite");
+  }, [activeSession?.id, settings?.casualTone]);
 
   /* ---------------------------------------------
      방 진입 시 인풋 포커스 (인사 말풍선은 넣지 않음 — 사용자가 먼저 말을 걸 때까지 대화창 비움)

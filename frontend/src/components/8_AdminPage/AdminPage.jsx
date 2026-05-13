@@ -537,11 +537,6 @@ export default function AdminPage() {
   /** 일부 API만 실패했을 때(데이터는 일부 표시) 상단 안내 */
   const [loadWarning, setLoadWarning] = useState(null);
 
-  /** 커뮤니티 고민 스포트라이트 (관리자 추첨 + 운영 답변 공개) */
-  const [worrySpotlightDraft, setWorrySpotlightDraft] = useState(null);
-  const [worrySpotlightAnswer, setWorrySpotlightAnswer] = useState('');
-  const [worrySpotlightBusy, setWorrySpotlightBusy] = useState(false);
-  const [worrySpotlightPublished, setWorrySpotlightPublished] = useState(null);
 
   /* =========================================================
      실시간 차트 데이터
@@ -867,22 +862,6 @@ export default function AdminPage() {
   }, []);
 
   useEffect(() => {
-    if (activeTab !== 'overview') return undefined;
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await communityAPI.getWorryFeatured();
-        if (!cancelled) setWorrySpotlightPublished(res?.spotlight ?? null);
-      } catch {
-        if (!cancelled) setWorrySpotlightPublished(null);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [activeTab]);
-
-  useEffect(() => {
     if (activeTab !== 'bots' || !isAuthenticated || authLoading) return undefined;
     let cancelled = false;
     (async () => {
@@ -909,63 +888,6 @@ export default function AdminPage() {
       cancelled = true;
     };
   }, [activeTab, isAuthenticated, authLoading]);
-
-  const handleWorrySpotlightDraw = useCallback(async () => {
-    setWorrySpotlightBusy(true);
-    try {
-      const res = await adminAPI.drawWorrySpotlightCandidate();
-      const post = res?.post;
-      const pid = post?.postId ?? post?.post_id;
-      if (pid != null) {
-        setWorrySpotlightDraft(post);
-        setWorrySpotlightAnswer('');
-      } else {
-        window.alert(res?.message || '추첨할 고민 글이 없어요.');
-      }
-    } catch (e) {
-      window.alert(e?.message || '추첨에 실패했어요.');
-    } finally {
-      setWorrySpotlightBusy(false);
-    }
-  }, []);
-
-  const handleWorrySpotlightPublish = useCallback(async () => {
-    const pid = worrySpotlightDraft?.postId ?? worrySpotlightDraft?.post_id;
-    if (pid == null) {
-      window.alert('먼저 「고민 글 무작위 추첨」으로 글을 골라 주세요.');
-      return;
-    }
-    const ans = worrySpotlightAnswer.trim();
-    if (!ans) {
-      window.alert('운영 답변을 입력해 주세요.');
-      return;
-    }
-    setWorrySpotlightBusy(true);
-    try {
-      const res = await adminAPI.publishWorrySpotlight({
-        postId: Number(pid),
-        answerContent: ans,
-      });
-      setWorrySpotlightPublished(res?.spotlight ?? null);
-      const publishedTitle =
-        String(worrySpotlightDraft?.title || res?.spotlight?.post?.title || '').trim() ||
-        '(제목 없음)';
-      pushAdminLog(
-        '커뮤니티',
-        '고민 PICK 공개',
-        `게시글 #${Number(pid)} · ${publishedTitle}`,
-        '커뮤니티 상단 고민 PICK에 게시글과 운영 답변을 공개했습니다.',
-        ['고민 PICK', '커뮤니티']
-      );
-      setWorrySpotlightDraft(null);
-      setWorrySpotlightAnswer('');
-      window.alert('커뮤니티 상단에 공개했어요.');
-    } catch (e) {
-      window.alert(e?.message || '저장에 실패했어요.');
-    } finally {
-      setWorrySpotlightBusy(false);
-    }
-  }, [worrySpotlightAnswer, worrySpotlightDraft, pushAdminLog]);
 
   /* =========================================================
      운영 통계 요약 (DB 컬럼 기반)
@@ -1886,77 +1808,6 @@ export default function AdminPage() {
         {/* ----------------- 개요 탭 ----------------- */}
         {activeTab === 'overview' && (
           <div className="matey-admin-v3__section-stack">
-            <section className="matey-admin-v3__panel">
-              <div className="matey-admin-v3__panel-head">
-                <div>
-                  <span className="matey-admin-v3__section-kicker">COMMUNITY</span>
-                  <h2>고민 스포트라이트</h2>
-                  <p className="matey-admin-v3__panel-sub">
-                    고민 글을 추첨하고 운영 답변을 저장하면 커뮤니티 목록 맨 위에 크게 보여요.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  className="matey-admin-v3__ghost-button"
-                  disabled={worrySpotlightBusy}
-                  onClick={handleWorrySpotlightDraw}
-                >
-                  고민 글 무작위 추첨
-                </button>
-              </div>
-
-              {worrySpotlightPublished?.post?.title ? (
-                <p className="matey-admin-v3__panel-sub" style={{ marginTop: 0 }}>
-                  지금 공개 중인 글:{' '}
-                  <strong>{worrySpotlightPublished.post.title}</strong>
-                </p>
-              ) : (
-                <p className="matey-admin-v3__panel-sub" style={{ marginTop: 0 }}>
-                  아직 공개된 스포트라이트가 없어요. 추첨 후 답변을 입력하고 공개해 보세요.
-                </p>
-              )}
-
-              {worrySpotlightDraft ? (
-                <div style={{ marginTop: 18 }}>
-                  <p style={{ margin: '0 0 6px', fontSize: 13, fontWeight: 800, color: '#5b5470' }}>
-                    추첨된 고민 글
-                  </p>
-                  <p style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 900, color: '#2a2238' }}>
-                    {worrySpotlightDraft.title}
-                  </p>
-                  <p style={{ margin: '0 0 14px', fontSize: 13, lineHeight: 1.55, color: '#6b6285' }}>
-                    {String(worrySpotlightDraft.content || '')
-                      .replace(/<[^>]*>/g, ' ')
-                      .replace(/\s+/g, ' ')
-                      .trim()
-                      .slice(0, 260)}
-                    {String(worrySpotlightDraft.content || '').length > 260 ? '…' : ''}
-                  </p>
-                  <label className="matey-admin-v3__panel-sub" style={{ display: 'block', marginBottom: 8 }}>
-                    운영 답변 (전체 회원에게 공개)
-                  </label>
-                  <textarea
-                    className="matey-admin-v3__support-reply-textarea"
-                    rows={7}
-                    placeholder="따뜻하고 명확한 답변을 남겨 주세요. 글 본문과 함께 커뮤니티 상단에 크게 표시돼요."
-                    value={worrySpotlightAnswer}
-                    onChange={(e) => setWorrySpotlightAnswer(e.target.value)}
-                    disabled={worrySpotlightBusy}
-                  />
-                  <div style={{ marginTop: 12 }}>
-                    <button
-                      type="button"
-                      className="matey-admin-v3__primary-button"
-                      disabled={worrySpotlightBusy}
-                      onClick={handleWorrySpotlightPublish}
-                    >
-                      커뮤니티에 공개하기
-                    </button>
-                  </div>
-                </div>
-              ) : null}
-            </section>
-
             <section className="matey-admin-v3__panel">
               <div className="matey-admin-v3__panel-head">
                 <div>

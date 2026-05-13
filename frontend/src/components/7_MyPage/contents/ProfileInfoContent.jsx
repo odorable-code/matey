@@ -17,6 +17,58 @@ const initialProfile = {
   profileImage: DEFAULT_PROFILE_IMAGE,
 };
 
+function compressImageFileToDataUrl(file, maxLen = 65000) {
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => {
+      const dataUrlIn = fr.result;
+      if (typeof dataUrlIn !== 'string') {
+        reject(new Error('read failed'));
+        return;
+      }
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          const iw = img.naturalWidth || img.width;
+          const ih = img.naturalHeight || img.height;
+          if (!iw || !ih) {
+            resolve(null);
+            return;
+          }
+          let maxSide = Math.min(1024, Math.max(iw, ih));
+          for (let attempt = 0; attempt < 32; attempt += 1) {
+            let cw = iw >= ih ? maxSide : Math.max(1, Math.round((iw / ih) * maxSide));
+            let ch = ih >= iw ? maxSide : Math.max(1, Math.round((ih / iw) * maxSide));
+            cw = Math.max(1, cw);
+            ch = Math.max(1, ch);
+            canvas.width = cw;
+            canvas.height = ch;
+            ctx.clearRect(0, 0, cw, ch);
+            ctx.drawImage(img, 0, 0, cw, ch);
+            for (let q = 0.85; q >= 0.1; q -= 0.05) {
+              const out = canvas.toDataURL('image/jpeg', q);
+              if (out.length <= maxLen) {
+                resolve(out);
+                return;
+              }
+            }
+            maxSide = Math.max(24, Math.floor(maxSide * 0.84));
+          }
+          resolve(null);
+        } catch (e) {
+          reject(e);
+        }
+      };
+      img.onerror = () => reject(new Error('image decode'));
+      img.src = dataUrlIn;
+    };
+    fr.onerror = () => reject(fr.error || new Error('read'));
+    fr.readAsDataURL(file);
+  });
+}
+
 function ProfileInfoContent() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
@@ -79,6 +131,7 @@ function ProfileInfoContent() {
     }).then(() => {
       setProfile({ ...draft });
       setIsEditMode(false);
+      window.dispatchEvent(new Event('profileUpdated'));
     }).catch(console.error);
   };
 
@@ -94,20 +147,29 @@ function ProfileInfoContent() {
     fileInputRef.current?.click();
   };
 
-  const handleProfileImageChange = (event) => {
+  const handleProfileImageChange = async (event) => {
     const selectedFile = event.target.files?.[0];
     if (!selectedFile) return;
 
-    const previewUrl = URL.createObjectURL(selectedFile);
-
-    if (draft.profileImage?.startsWith('blob:')) {
-      URL.revokeObjectURL(draft.profileImage);
+    if (!String(selectedFile.type || '').startsWith('image/')) {
+      window.alert('이미지 파일만 선택할 수 있어요.');
+      return;
     }
 
-    setDraft((prev) => ({
-      ...prev,
-      profileImage: previewUrl,
-    }));
+    try {
+      const dataUrl = await compressImageFileToDataUrl(selectedFile, 65000);
+      if (!dataUrl) {
+        window.alert('이미지를 적절한 크기로 저장하지 못했어요. 다른 이미지를 선택해 주세요.');
+        return;
+      }
+      setDraft((prev) => ({
+        ...prev,
+        profileImage: dataUrl,
+      }));
+    } catch (e) {
+      console.error(e);
+      window.alert('이미지를 불러오지 못했어요.');
+    }
   };
 
   const handleImageError = (event) => {

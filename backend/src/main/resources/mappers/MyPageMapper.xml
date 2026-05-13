@@ -228,6 +228,7 @@
             us.bot_letter_enabled as pushNotice,
             us.satisfaction_popup_enabled as satisfactionPopup,
             u.is_marketing_agreed as marketingNotice,
+            us.casual_mode_enabled as casualTone,
             COALESCE((SELECT is_enabled FROM USER_NOTIFICATION_SETTING WHERE user_id = #{userId} AND type_code = 'BOT_MESSAGE'), 1) as noti_BOT_MESSAGE,
             COALESCE((SELECT is_enabled FROM USER_NOTIFICATION_SETTING WHERE user_id = #{userId} AND type_code = 'CHAT_REMINDER'), 1) as noti_CHAT_REMINDER,
             COALESCE((SELECT is_enabled FROM USER_NOTIFICATION_SETTING WHERE user_id = #{userId} AND type_code = 'COMMENT_REPLY'), 1) as noti_COMMENT_REPLY,
@@ -273,6 +274,7 @@
                     <choose>
                         <when test="key == 'pushNotice'">bot_letter_enabled = #{value},</when>
                         <when test="key == 'satisfactionPopup'">satisfaction_popup_enabled = #{value},</when>
+                        <when test="key == 'casualTone'">casual_mode_enabled = #{value},</when>
                     </choose>
                     updated_at = NOW()
                 </set>

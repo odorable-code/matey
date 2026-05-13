@@ -28,8 +28,6 @@ const MASCOT_BASE_PATH = '/images/mascots';
 
 export const MATE_IMAGES = {
   dog: `${MASCOT_BASE_PATH}/dog/dog.png`,
-  bear: `${MASCOT_BASE_PATH}/bear/bear.png`,
-  cat: `${MASCOT_BASE_PATH}/cat/cat.png`,
 };
 
 // ============================================================
@@ -39,26 +37,18 @@ export const MATE_NAMES = {
   // 앱 전반에서 보이는 메이트 이름 (Home, ChatModal, Footer 등 공통)
   // 감정 리포트·마이페이지 등과 동일한 표기로 맞춰 통일감 유지
   dog: '강이', // 메이트 A
-  bear: '곰이', // 메이트 B
-  cat: '냥이', // 메이트 C
 };
 
 export const MATE_ROLES = {
   dog: '다정한 시작형',
-  bear: '차분한 정리형',
-  cat: '또렷한 분석형',
 };
 
 export const MATE_HEADLINES = {
   dog: '처음 말을 꺼내기 쉬운 다정한 시작형',
-  bear: '복잡한 마음을 차분히 정리해주는 타입',
-  cat: '핵심만 빠르게 짚어주는 또렷한 타입',
 };
 
 export const MATE_DESCRIPTIONS = {
   dog: '처음 접속한 사용자가 부담 없이 대화를 시작할 수 있도록 편안하고 따뜻한 분위기로 안내해요.',
-  bear: '머릿속이 엉켜 있을 때 흐름을 차분히 풀어내고 핵심을 정돈해주는 메이트예요.',
-  cat: '질문이 많거나 헷갈리는 게 있을 때, 중요한 포인트를 빠르게 짚어주는 메이트예요.',
 };
 
 // ============================================================
@@ -66,20 +56,14 @@ export const MATE_DESCRIPTIONS = {
 // ============================================================
 export const MATE_BUBBLES = {
   dog: '안녕! 어떤 하루였어요?',
-  bear: '복잡한 마음, 같이 정리해볼까요?',
-  cat: '핵심만 또렷하게 짚어줄게요.',
 };
 
 export const MATE_GREETINGS = {
   dog: '저는 가볍게 말 걸기 좋은 다정한 시작형이에요. 오늘 어떤 이야기든 편하게 들려줘요.',
-  bear: '머릿속을 차근히 풀어주는 차분한 정리형이에요. 엉킨 생각, 같이 정돈해봐요.',
-  cat: '필요한 것만 또렷하게 짚어드리는 분석형이에요. 무엇이 가장 궁금한가요?',
 };
 
 export const MATE_QUICK_CHIPS = {
   dog: ['오늘 하루 어땠는지 듣고 싶어요', '그냥 수다 떨어요', '응원이 필요해요'],
-  bear: ['생각 정리 도와줘요', '결정이 어려워요', '한 가지 고민이 있어요'],
-  cat: ['핵심만 빠르게 정리해줘요', '뭐부터 해야 할지 모르겠어요', '요약해줘요'],
 };
 
 // ============================================================
@@ -89,20 +73,14 @@ export const MATE_RECOMMEND_KEY = 'dog';
 
 export const MATE_TAGLINES = {
   dog: '가볍게 시작하기 좋아요.',
-  bear: '천천히 정리해봐요.',
-  cat: '핵심부터 짚어줄게요.',
 };
 
 export const MATE_ACCENTS = {
   dog: 'is-dog',
-  bear: 'is-bear',
-  cat: 'is-cat',
 };
 
 export const MATE_TAGS = {
   dog: ['친근함', '가벼운 시작', '초보자 추천'],
-  bear: ['차분함', '정리형', '설명력'],
-  cat: ['핵심 요약', '또렷함', '빠른 이해'],
 };
 
 // ============================================================
@@ -115,18 +93,6 @@ export const MATE_STATS = {
     { label: '친근함', value: 95 },
     { label: '시작 편안함', value: 90 },
     { label: '부드러움', value: 88 },
-  ],
-  bear: [
-    { label: '공감력', value: 84 },
-    { label: '친근함', value: 78 },
-    { label: '분석력', value: 91 },
-    { label: '정리력', value: 94 },
-  ],
-  cat: [
-    { label: '공감력', value: 76 },
-    { label: '친근함', value: 72 },
-    { label: '분석력', value: 96 },
-    { label: '명확함', value: 93 },
   ],
 };
 
@@ -153,20 +119,16 @@ export const ABILITY_AXES = [
 
 export const MATE_ABILITIES = {
   dog:  { empathy: 88, realistic: 60, cheer: 92, safe: 78 },
-  bear: { empathy: 80, realistic: 92, cheer: 70, safe: 76 },
-  cat:  { empathy: 62, realistic: 96, cheer: 70, safe: 60 },
 };
 
 // ============================================================
 // 7. 키 배열 / MATES 배열
 // ============================================================
-export const MATE_KEYS = ['dog', 'bear', 'cat'];
+export const MATE_KEYS = ['dog'];
 
 /** DB에 한글 표기만 넣은 경우 → 채팅·메인에서 쓰는 영문 botKey */
 export const DISPLAY_NAME_TO_MATE_KEY = {
   강이: 'dog',
-  곰이: 'bear',
-  냥이: 'cat',
 };
 
 /**
@@ -215,8 +177,6 @@ export function resolveBotAvatarSrc(botLike) {
   const key = resolveMateKey(botLike.botName ?? botLike.bot_name ?? '');
   const byKey = {
     dog: '/images/mascots/dog/dog.png',
-    bear: '/images/mascots/bear/bear.png',
-    cat: '/images/mascots/cat/cat.png',
   };
   return byKey[key] || '/images/mypage/bot/matey-base.png';
 }

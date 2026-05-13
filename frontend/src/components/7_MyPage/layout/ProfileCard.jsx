@@ -13,14 +13,23 @@ function ProfileCard() {
   });
 
   useEffect(() => {
-    myPageAPI.getProfile().then(data => {
-      setProfileData({
-        greeting: data.greeting || '',
-        nickname: data.nickname || '',
-        email: data.email || '',
-        profileImage: data.profileImage || DEFAULT_PROFILE_IMAGE,
-      });
-    }).catch(console.error);
+    const fetchProfile = () => {
+      myPageAPI.getProfile().then(data => {
+        setProfileData({
+          greeting: data.greeting || '',
+          nickname: data.nickname || '',
+          email: data.email || '',
+          profileImage: data.profileImage || DEFAULT_PROFILE_IMAGE,
+        });
+      }).catch(console.error);
+    };
+
+    fetchProfile();
+    window.addEventListener('profileUpdated', fetchProfile);
+
+    return () => {
+      window.removeEventListener('profileUpdated', fetchProfile);
+    };
   }, []);
 
   const handleImageError = (event) => {

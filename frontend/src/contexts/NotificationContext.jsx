@@ -185,7 +185,7 @@ export function NotificationProvider({ children }) {
   const updateSetting = useCallback(async (key, value) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
     try {
-      if (key === 'pushNotice' || key === 'marketingNotice' || key.startsWith('noti_')) {
+      if (key === 'pushNotice' || key === 'marketingNotice' || key === 'casualTone' || key.startsWith('noti_')) {
         await myPageAPI.updateSettings({ settingKey: key, settingValue: value });
       }
     } catch (err) {

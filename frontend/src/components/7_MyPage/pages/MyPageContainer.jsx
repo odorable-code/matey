@@ -25,8 +25,6 @@ import SideMenu from '../layout/SideMenu';
 
 import DashboardContent from '../contents/DashboardContent';
 import ProfileInfoContent from '../contents/ProfileInfoContent';
-import EmotionReportContent from '../contents/emotionReport/EmotionReportContent';
-import BotMenuContent from '../contents/BotMenuContent';
 import LetterBoxContent from '../contents/letterBox/LetterBoxContent';
 import SettingsContent from '../contents/settings/SettingsContent';
 import NotificationSettingsContent from 'components/7_MyPage/contents/settings/NotificationSettingsContent';
@@ -37,8 +35,6 @@ import { useChatModal } from '../../../contexts/ChatModalContext';
 const VALID_MENU_KEYS = new Set([
   'dashboard',
   'profileInfo',
-  'emotionReport',
-  'botMenu',
   'letterBox',
   'settings',
   'notiSettings',
@@ -190,16 +186,6 @@ function MyPageContainer() {
         description: '내 프로필과 계정 정보를 수정해요',
       },
       {
-        key: 'emotionReport',
-        label: '감정 리포트',
-        description: '대화 기반 감정 흐름을 확인해요',
-      },
-      {
-        key: 'botMenu',
-        label: '메이티 정보',
-        description: '레벨, 포인트, 수집 현황을 살펴봐요',
-      },
-      {
         key: 'letterBox',
         label: '편지함',
         description: '도착한 편지와 읽지 않은 편지를 봐요',
@@ -252,12 +238,6 @@ function MyPageContainer() {
     switch (activeMenu) {
       case 'profileInfo':
         return <ProfileInfoContent />;
-
-      case 'emotionReport':
-        return <EmotionReportContent />;
-
-      case 'botMenu':
-        return <BotMenuContent />;
 
       case 'letterBox':
         return <LetterBoxContent letterData={letterData || undefined} onRead={handleReadLetter} onOpenArchive={() => navigate('/letterArchiveModal')} />;
