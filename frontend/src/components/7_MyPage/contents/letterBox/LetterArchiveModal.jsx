@@ -1,9 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import styles from './LetterArchiveModal.module.css';
 
 function LetterArchiveModal({ isOpen, onClose, archivedItems = [] }) {
   const [currentPage, setCurrentPage] = useState(1);
+  const [expandedId, setExpandedId] = useState(null);
   const itemsPerPage = 6; // 한 페이지에 보여줄 개수
+
+  // 모달이 열려있을 때 배경 스크롤 방지
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -13,7 +27,7 @@ function LetterArchiveModal({ isOpen, onClose, archivedItems = [] }) {
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = archivedItems.slice(indexOfFirstItem, indexOfLastItem);
 
-  return (
+  const modalContent = (
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <header className={styles.header}>
@@ -28,13 +42,20 @@ function LetterArchiveModal({ isOpen, onClose, archivedItems = [] }) {
           {archivedItems.length > 0 ? (
             <div className={styles.list}>
               {currentItems.map((item) => (
-                <div key={item.id} className={styles.archiveItem}>
+                <div
+                  key={item.id}
+                  className={styles.archiveItem}
+                  onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}
+                  style={{ cursor: 'pointer' }}
+                >
                   <div className={styles.itemMain}>
                     <span className={styles.itemSender}>{item.sender}</span>
                     <span className={styles.itemDate}>{item.date}</span>
                   </div>
                   <h4 className={styles.itemTitle}>{item.title}</h4>
-                  <p className={styles.itemPreview}>{item.preview}</p>
+                  <p className={styles.itemPreview}>
+                    {expandedId === item.id && item.content ? item.content : item.preview}
+                  </p>
                 </div>
               ))}
             </div>
@@ -45,13 +66,13 @@ function LetterArchiveModal({ isOpen, onClose, archivedItems = [] }) {
 
         {totalPages > 1 && (
           <footer className={styles.footer}>
-            <button 
+            <button
               className={styles.pageBtn}
               disabled={currentPage === 1}
               onClick={() => setCurrentPage(p => p - 1)}
             >이전</button>
             <span className={styles.pageInfo}><b>{currentPage}</b> / {totalPages}</span>
-            <button 
+            <button
               className={styles.pageBtn}
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage(p => p + 1)}
@@ -61,6 +82,8 @@ function LetterArchiveModal({ isOpen, onClose, archivedItems = [] }) {
       </div>
     </div>
   );
+
+  return ReactDOM.createPortal(modalContent, document.body);
 }
 
 export default LetterArchiveModal;

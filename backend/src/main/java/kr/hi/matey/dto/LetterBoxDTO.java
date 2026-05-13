@@ -15,6 +15,7 @@ public class LetterBoxDTO {
         private String sender;
         private String title;
         private String preview;
+        private String content;
         private String date;
         private boolean unread;
     }

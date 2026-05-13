@@ -122,36 +122,37 @@ public class MyPageController {
     /**
      * 상담 ID가 있으면 AI 편지 문구 생성(파이썬 서버). 없으면 빈 응답 — 프론트는 쿼리 없이 호출함.
      */
-    @GetMapping("/generate/letters")
-    public ResponseEntity<Map> generateLetters(@AuthenticationPrincipal CustomUser user) {
-        Map result = webClient.post().uri("/api/generate-letters")
-                .bodyValue(Map.of(
-                        "botName", "강이",
-                        "userNickname", "홀시",
-                        "isFirstCounsel", "true",
-                        "riskLevel", 1,
-                        "content", "다 달라"))
-                .retrieve().bodyToMono(Map.class).block();
-        // // 1. 유저 정보가 없는 경우 처리
-        // if (user == null) {
-        // System.out.println("로그인 정보가 없습니다.");
-        // return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        // }
-        //
-        // // 2. ID 추출 (CustomUser 구조에 맞춰서)
-        // Long loginUserId = user.getUser().getUserId();
-        // System.out.println("현재 로그인한 유저 ID: " + loginUserId);
-        //
-        // // 3. 서비스 호출
-        // Map<String, Object> result =
-        // myPageService.generateLetterForLatestCounsel(loginUserId);
-        //
-        // if (result == null) {
-        // return ResponseEntity.noContent().build();
-        // }
-        //
-        return ResponseEntity.ok(result);
-    }
+    // @GetMapping("/generate/letters")
+    // public ResponseEntity<Map> generateLetters(@AuthenticationPrincipal
+    // CustomUser user) {
+    // Map result = webClient.post().uri("/api/generate-letters")
+    // .bodyValue(Map.of(
+    // "botName", "강이",
+    // "userNickname", "홀시",
+    // "isFirstCounsel", "true",
+    // "riskLevel", 1,
+    // "content", "다 달라"))
+    // .retrieve().bodyToMono(Map.class).block();
+    // // 1. 유저 정보가 없는 경우 처리
+    // if (user == null) {
+    // System.out.println("로그인 정보가 없습니다.");
+    // return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    // }
+    //
+    // // 2. ID 추출 (CustomUser 구조에 맞춰서)
+    // Long loginUserId = user.getUser().getUserId();
+    // System.out.println("현재 로그인한 유저 ID: " + loginUserId);
+    //
+    // // 3. 서비스 호출
+    // Map<String, Object> result =
+    // myPageService.generateLetterForLatestCounsel(loginUserId);
+    //
+    // if (result == null) {
+    // return ResponseEntity.noContent().build();
+    // }
+    //
+    // return ResponseEntity.ok(result);
+    // }
 
     @GetMapping("/settings")
     public ResponseEntity<UserSettingsDTO> getSettings(@AuthenticationPrincipal CustomUser user) {

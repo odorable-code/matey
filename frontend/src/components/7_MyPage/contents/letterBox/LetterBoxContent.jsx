@@ -1,7 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import styles from './LetterBoxContent.module.css';
 import useAnimatedNumber, { usePrefersReducedMotion } from '../../hooks/useAnimatedNumber';
 import { myPageAPI } from 'utils/api';
+import LetterArchiveModal from './LetterArchiveModal';
+import LetterDetailModal from './LetterDetailModal';
 
 const defaultLetters = {
   featured: {
@@ -73,14 +75,24 @@ function AnimatedStatCard({ item, index, prefersReducedMotion }) {
 
 function LetterBoxContent({ letterData = defaultLetters, onRead, onOpenArchive }) {
   const prefersReducedMotion = usePrefersReducedMotion();
-  useEffect(() => {
-    async function getLetters() {
-      const letters = await myPageAPI.generateLetters();
-      letterData.items = letters.items;
-    }
-    getLetters();
-  }, []);
+  console.log(letterData);
+  const [expandedId, setExpandedId] = useState(null);
+  const [isArchiveOpen, setIsArchiveOpen] = useState(false);
+  const [isFeaturedModalOpen, setIsFeaturedModalOpen] = useState(false);
 
+  const handleLetterClick = (id, unread) => {
+    if (expandedId === id) {
+      setExpandedId(null);
+    } else {
+      setExpandedId(id);
+      if (unread && onRead) {
+        onRead(id);
+      }
+    }
+  };
+
+  const visibleItems = letterData.items.filter(item => item.unread || expandedId === item.id);
+  const readItems = letterData.items.filter(item => !item.unread && expandedId !== item.id);
 
   return (
     <section className={styles.page}>
@@ -98,11 +110,14 @@ function LetterBoxContent({ letterData = defaultLetters, onRead, onOpenArchive }
         <article
           className={styles.featuredCard}
           onClick={() => {
-            if (letterData.featured.id && onRead && letterData.featured.unread) {
-              onRead(letterData.featured.id);
+            if (letterData.featured.id) {
+              setIsFeaturedModalOpen(true);
+              if (letterData.featured.unread && onRead) {
+                onRead(letterData.featured.id);
+              }
             }
           }}
-          style={{ cursor: onRead && letterData.featured.unread ? 'pointer' : 'default' }}
+          style={{ cursor: letterData.featured.id ? 'pointer' : 'default' }}
         >
           <div className={styles.featuredTop}>
             <span className={styles.featuredBadge}>{letterData.featured.status}</span>
@@ -114,7 +129,9 @@ function LetterBoxContent({ letterData = defaultLetters, onRead, onOpenArchive }
           <div className={styles.featuredBody}>
             <span className={styles.featuredSender}>{letterData.featured.sender}</span>
             <h3 className={styles.featuredTitle}>{letterData.featured.title}</h3>
-            <p className={styles.featuredPreview}>{letterData.featured.preview}</p>
+            <p className={styles.featuredPreview}>
+              {letterData.featured.preview}
+            </p>
           </div>
         </article>
 
@@ -123,7 +140,11 @@ function LetterBoxContent({ letterData = defaultLetters, onRead, onOpenArchive }
             <div
               key={item.label}
               // '내 쪽지 보관함' 카드인 경우에만 클릭 핸들러와 스타일 적용
-              onClick={() => item.label === '내 쪽지 보관함' ? onOpenArchive?.() : null}
+              onClick={() => {
+                if (item.label === '내 쪽지 보관함') {
+                  setIsArchiveOpen(true);
+                }
+              }}
               style={{ cursor: item.label === '내 쪽지 보관함' ? 'pointer' : 'default' }}
             >
               <AnimatedStatCard
@@ -137,16 +158,12 @@ function LetterBoxContent({ letterData = defaultLetters, onRead, onOpenArchive }
       </div>
 
       <div className={styles.listGrid}>
-        {letterData.items.map((item) => (
+        {visibleItems.map((item) => (
           <article
             key={item.id}
             className={`${styles.letterCard} ${item.unread ? styles.unreadCard : ''}`}
-            onClick={() => {
-              if (onRead && item.unread) {
-                onRead(item.id);
-              }
-            }}
-            style={{ cursor: onRead && item.unread ? 'pointer' : 'default' }}
+            onClick={() => handleLetterClick(item.id, item.unread)}
+            style={{ cursor: 'pointer' }}
           >
             <div className={styles.letterTop}>
               <span className={styles.letterSender}>{item.sender}</span>
@@ -154,7 +171,9 @@ function LetterBoxContent({ letterData = defaultLetters, onRead, onOpenArchive }
             </div>
 
             <h3 className={styles.letterTitle}>{item.title}</h3>
-            <p className={styles.letterPreview}>{item.preview}</p>
+            <p className={styles.letterPreview}>
+              {expandedId === item.id && item.content ? item.content : item.preview}
+            </p>
 
             <div className={styles.letterBottom}>
               {item.unread ? (
@@ -166,6 +185,22 @@ function LetterBoxContent({ letterData = defaultLetters, onRead, onOpenArchive }
           </article>
         ))}
       </div>
+
+      {isArchiveOpen && (
+        <LetterArchiveModal
+          isOpen={isArchiveOpen}
+          onClose={() => setIsArchiveOpen(false)}
+          archivedItems={readItems}
+        />
+      )}
+
+      {isFeaturedModalOpen && (
+        <LetterDetailModal
+          isOpen={isFeaturedModalOpen}
+          onClose={() => setIsFeaturedModalOpen(false)}
+          letter={letterData.featured}
+        />
+      )}
     </section>
   );
 }

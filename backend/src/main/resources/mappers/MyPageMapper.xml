@@ -175,10 +175,12 @@
         '메이티' as sender,
         bl.title,
         bl.content as preview,
+        bl.content as content,
         CASE
         WHEN DATE(bl.created_at) = CURDATE() THEN '오늘'
         WHEN DATE(bl.created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) THEN '어제'
-        ELSE DATE_FORMAT(bl.created_at, '%Y-%m-%d')
+        WHEN DATEDIFF(CURDATE(), DATE(bl.created_at)) &lt; 7 THEN CONCAT(DATEDIFF(CURDATE(), DATE(bl.created_at)), '일 전')
+        ELSE CONCAT(FLOOR(DATEDIFF(CURDATE(), DATE(bl.created_at)) / 7), '주 전')
         END as date,
         NOT bl.is_read as unread
         FROM BOT_LETTER bl

@@ -79,6 +79,8 @@ function MyPageContainer() {
     let letterResponse = null;
     try {
       letterResponse = await myPageAPI.getLetters();
+      console.log(letterResponse);
+      
     } catch (error) {
       console.error('편지함(getLetters) 오류:', error);
     }
@@ -100,17 +102,15 @@ function MyPageContainer() {
       const archiveCount = generatedResponse?.items?.length || 0;
       // 서버 편지 + 생성(items) 합치기
       const combinedItems = [
-        ...(lr.items || []),
         ...(generatedResponse?.items || []),
+        ...(lr.items || []),
       ];
+      console.log("combinedItems:" + combinedItems);
+      
 
-      // 필요하다면 날짜순 등으로 정렬 로직을 추가
-      // date가 유효하지 않은 경우(예: '-')를 대비해 기본값 처리를 추가
-      combinedItems.sort((a, b) => {
-        const dateA = new Date(a.date).getTime() || 0;
-        const dateB = new Date(b.date).getTime() || 0;
-        return dateB - dateA; // 최신순
-      });
+      const readItems = combinedItems.filter(item => !item.unread);
+      const unreadItems = combinedItems.filter(item => item.unread);
+      const totalArchiveCount = readItems.length;
 
       const transformed = {
         featured: combinedItems.length > 0 ? {
@@ -135,7 +135,7 @@ function MyPageContainer() {
 
         // 상단 통계 카드 데이터 (숫자만 추출)
         stats: [
-          { label: '내 쪽지 보관함', value: String(archiveCount) },
+          { label: '내 쪽지 보관함', value: String(totalArchiveCount) },
           { label: '읽지 않은 쪽지', value: String(lr.unreadCount || 0) },
           { label: '이번 주 도착', value: String(lr.weeklyCount || 0) },
         ],
@@ -144,6 +144,7 @@ function MyPageContainer() {
           sender: item.sender || '메이티',
           title: item.title,
           preview: item.preview,
+          content: item.content,
           date: item.date,
           unread: item.unread,
         })),
