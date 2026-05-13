@@ -38,8 +38,18 @@ public class NotificationService {
     @Transactional
     public void createNotification(Long userId, String typeCode, String content,
                                    String targetType, Long targetId) {
+        // 사용자가 해당 알림 타입을 꺼놓았으면 알림을 생성하지 않음
+        if (!notificationDAO.selectIsTypeEnabled(userId, typeCode)) {
+            return;
+        }
         notificationDAO.insertNotification(userId, typeCode, content, targetType, targetId);
         notificationEmailService.sendIfEnabled(userId, typeCode, content);
+    }
+
+    /** 안 읽은 알림 수 조회 (헤더 뱃지용) */
+    @Transactional(readOnly = true)
+    public int getUnreadCount(Long userId) {
+        return notificationDAO.selectUnreadCount(userId);
     }
 
     /**
@@ -70,5 +80,19 @@ public class NotificationService {
             return;
         }
         notificationDAO.markReadForPostRelated(userId, postId);
+    }
+
+    /**
+     * 관리자가 이메일로 알림을 전송합니다.
+     * 관리자 발송이므로 사용자 개별 타입 설정 검사를 건너뜁니다.
+     */
+    @Transactional
+    public void sendNotificationByEmail(String email, String typeCode, String content) {
+        Long userId = notificationDAO.selectUserIdByEmail(email);
+        if (userId == null) {
+            throw new IllegalArgumentException("해당 이메일의 사용자를 찾을 수 없습니다: " + email);
+        }
+        notificationDAO.insertNotification(userId, typeCode, content, null, null);
+        notificationEmailService.sendIfEnabled(userId, typeCode, content);
     }
 }

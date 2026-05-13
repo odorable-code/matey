@@ -3,9 +3,15 @@
  * 파일명 : src/components/16_NotificationModal/NotificationModal.jsx
  * 역할   : 헤더 알람 아이콘 아래에 펼쳐지는 알람 Popover (드롭다운)
  * =========================================================
+ *
+ * [주요 기능]
+ * - 알림 목록을 타입별 필터 탭(전체/시스템/메이트/업데이트)으로 분류
+ * - 알림 클릭 시 읽음 처리 + 관련 페이지로 이동
+ * - 개별 삭제 / 전체 읽음 처리
+ * - 설정 페이지로 바로가기
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '../../contexts/NotificationContext';
 import './NotificationModal.css';
@@ -38,7 +44,17 @@ const TYPE_META = {
 };
 
 // ============================================================
-// 3. 빈 상태 카피
+// 3. 필터 탭 정의
+// ============================================================
+const FILTER_TABS = [
+  { key: 'all', label: '전체' },
+  { key: 'system', label: '시스템' },
+  { key: 'mate', label: '메이트' },
+  { key: 'update', label: '업데이트' },
+];
+
+// ============================================================
+// 4. 빈 상태 카피
 // ============================================================
 const EMPTY_COPY = {
   title: '아직 새로운 알림이 없어요',
@@ -46,7 +62,7 @@ const EMPTY_COPY = {
 };
 
 // ============================================================
-// 4. Popover 컴포넌트 (anchorRef 기반)
+// 5. Popover 컴포넌트 (anchorRef 기반)
 // ============================================================
 function NotificationModal({ anchorRef }) {
   const navigate = useNavigate();
@@ -61,6 +77,30 @@ function NotificationModal({ anchorRef }) {
   } = useNotifications();
 
   const popoverRef = useRef(null);
+  const [activeFilter, setActiveFilter] = useState('all');
+
+  // 필터 탭에 맞게 알림 필터링
+  const filteredNotifications = useMemo(() => {
+    if (activeFilter === 'all') return notifications;
+    return notifications.filter((n) => n.type === activeFilter);
+  }, [notifications, activeFilter]);
+
+  // 탭별 안 읽은 수 계산
+  const filterCounts = useMemo(() => {
+    const counts = { all: 0, system: 0, mate: 0, update: 0 };
+    for (const n of notifications) {
+      if (!n.read) {
+        counts.all += 1;
+        if (counts[n.type] != null) counts[n.type] += 1;
+      }
+    }
+    return counts;
+  }, [notifications]);
+
+  // 모달 열릴 때 필터 리셋
+  useEffect(() => {
+    if (isOpen) setActiveFilter('all');
+  }, [isOpen]);
 
   // -------- 바깥 클릭으로 닫기 --------
   useEffect(() => {
@@ -101,7 +141,7 @@ function NotificationModal({ anchorRef }) {
       return { path: '/community' };
     }
 
-    // 댓글/대댓글 알림: target이 POST면 상세로, COMMENT만 있으면 목록으로(추후 postId 확장 가능)
+    // 댓글/대댓글 알림: target이 POST면 상세로, COMMENT만 있으면 목록으로
     if (typeCode === 'POST_COMMENT' || typeCode === 'COMMENT_REPLY') {
       if (targetType === 'POST' && targetId != null) {
         return { path: `/community/posts/${targetId}` };
@@ -109,7 +149,7 @@ function NotificationModal({ anchorRef }) {
       return { path: '/community' };
     }
 
-    // 문의/신고 답변·신고 처리 결과 → 마이페이지 문의·신고 내역 (?section= 직접 지정 — state만 쓰면 첫 화면이 대시보드로 뜰 수 있음)
+    // 문의/신고 답변·신고 처리 결과 → 마이페이지 문의·신고 내역
     if (typeCode === 'SUPPORT_ANSWER' || typeCode === 'REPORT_RESULT') {
       const qs = new URLSearchParams();
       qs.set('section', 'support');
@@ -117,6 +157,16 @@ function NotificationModal({ anchorRef }) {
         qs.set('supportId', String(targetId));
       }
       return { path: `/mypage?${qs.toString()}` };
+    }
+
+    // 포인트 → 마이페이지
+    if (typeCode === 'POINT_REWARD') {
+      return { path: '/mypage' };
+    }
+
+    // 상담 리마인드 → 채팅
+    if (typeCode === 'CHAT_REMINDER') {
+      return { path: '/chat' };
     }
 
     // 기본: 이동 없음
@@ -157,7 +207,7 @@ function NotificationModal({ anchorRef }) {
       <span className="matey-noti-pop__arrow" aria-hidden="true" />
 
       {/* ========================================
-          4-1. 헤더
+          5-1. 헤더
       ======================================== */}
       <header className="matey-noti-pop__header">
         <div className="matey-noti-pop__header-left">
@@ -228,10 +278,33 @@ function NotificationModal({ anchorRef }) {
       </header>
 
       {/* ========================================
-          4-2. 리스트 / 빈 상태
+          5-2. 필터 탭
+      ======================================== */}
+      <div className="matey-noti-pop__tabs" role="tablist" aria-label="알림 필터">
+        {FILTER_TABS.map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            role="tab"
+            aria-selected={activeFilter === tab.key}
+            className={`matey-noti-pop__tab ${activeFilter === tab.key ? 'is-active' : ''}`}
+            onClick={() => setActiveFilter(tab.key)}
+          >
+            {tab.label}
+            {filterCounts[tab.key] > 0 && (
+              <span className="matey-noti-pop__tab-badge">
+                {filterCounts[tab.key]}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* ========================================
+          5-3. 리스트 / 빈 상태
       ======================================== */}
       <div className="matey-noti-pop__body">
-        {notifications.length === 0 ? (
+        {filteredNotifications.length === 0 ? (
           <div className="matey-noti-pop__empty">
             <div className="matey-noti-pop__empty-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" width="32" height="32">
@@ -246,7 +319,7 @@ function NotificationModal({ anchorRef }) {
           </div>
         ) : (
           <ul className="matey-noti-pop__list">
-            {notifications.map((n) => {
+            {filteredNotifications.map((n) => {
               const meta = TYPE_META[n.type] ?? TYPE_META.system;
               return (
                 <li key={n.id}>

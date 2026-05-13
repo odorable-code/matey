@@ -1,3 +1,126 @@
+/* =========================================================
+   알림 상세 설정 컨텐츠 스타일
+   - 독립 페이지 / 모달 재사용 가능
+========================================================= */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+/* 섹션 그룹 */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sectionHeader {
+  padding: 0 4px;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+  color: #2b2640;
+  letter-spacing: -0.02em;
+}
+
+.sectionDesc {
+  margin: 4px 0 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: #8a85a0;
+  line-height: 1.5;
+}
+
+/* 아이템 리스트 */
+.itemList {
+  display: grid;
+  gap: 10px;
+}
+
+.itemRow {
+  padding: 16px 20px;
+  border-radius: 20px;
+  background: #fcfaff;
+  border: 1px solid #efeaf8;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  transition: all 0.2s ease;
+}
+
+.itemRow:hover {
+  background: #ffffff;
+  border-color: #dcd1ff;
+  box-shadow: 0 8px 16px rgba(141, 121, 255, 0.08);
+}
+
+.itemText {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.itemLabel {
+  font-size: 15px;
+  font-weight: 700;
+  color: #4f4169;
+}
+
+.itemDesc {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #847ba0;
+  line-height: 1.4;
+}
+
+/* Toggle Styles */
+.toggle {
+  position: relative;
+  width: 54px;
+  height: 32px;
+  border: none;
+  border-radius: 999px;
+  padding: 0;
+  cursor: pointer;
+  transition: background 0.18s ease, box-shadow 0.18s ease;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.toggleOn {
+  background: linear-gradient(90deg, #cab6ff 0%, #f2bfd8 100%);
+  box-shadow: 0 6px 12px rgba(150, 120, 194, 0.2);
+}
+
+.toggleOff {
+  background: #e8e0f3;
+}
+
+.toggleThumb {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 4px 8px rgba(96, 79, 130, 0.14);
+  transition: transform 0.18s ease;
+}
+
+.toggleOn .toggleThumb {
+  transform: translateX(22px);
+}
+
+/* =========================================================
+   기존 모달 레이아웃 (이전 호환)
+========================================================= */
 .overlay {
   position: fixed;
   top: 0;
@@ -9,7 +132,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10000; /* 전역 채팅 모달(9999)보다 위 */
+  z-index: 10000;
   padding: 20px;
 }
 
@@ -78,85 +201,12 @@
   overflow-y: auto;
 }
 
-.itemList {
-  display: grid;
-  gap: 12px;
-}
-
-.itemRow {
-  padding: 16px 20px;
-  border-radius: 20px;
-  background: #fcfaff;
-  border: 1px solid #efeaf8;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  transition: all 0.2s ease;
-}
-
-.itemRow:hover {
-  background: #ffffff;
-  border-color: #dcd1ff;
-  box-shadow: 0 8px 16px rgba(141, 121, 255, 0.08);
-}
-
-.itemText {
-  min-width: 0;
-  display: grid;
-  gap: 4px;
-}
-
-.itemLabel {
-  font-size: 15px;
-  font-weight: 700;
-  color: #4f4169;
-}
-
 .itemNote {
   margin: 0;
   font-size: 12.5px;
   font-weight: 500;
   color: #847ba0;
   line-height: 1.4;
-}
-
-/* Toggle Styles - Reusing existing patterns */
-.toggle {
-  position: relative;
-  width: 54px;
-  height: 32px;
-  border: none;
-  border-radius: 999px;
-  padding: 0;
-  cursor: pointer;
-  transition: background 0.18s ease, box-shadow 0.18s ease;
-  flex-shrink: 0;
-}
-
-.toggleOn {
-  background: linear-gradient(90deg, #cab6ff 0%, #f2bfd8 100%);
-  box-shadow: 0 6px 12px rgba(150, 120, 194, 0.2);
-}
-
-.toggleOff {
-  background: #e8e0f3;
-}
-
-.toggleThumb {
-  position: absolute;
-  top: 4px;
-  left: 4px;
-  width: 24px;
-  height: 24px;
-  border-radius: 999px;
-  background: #ffffff;
-  box-shadow: 0 4px 8px rgba(96, 79, 130, 0.14);
-  transition: transform 0.18s ease;
-}
-
-.toggleOn .toggleThumb {
-  transform: translateX(22px);
 }
 
 .footer {

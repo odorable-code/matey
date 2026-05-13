@@ -162,6 +162,59 @@
 }
 
 /* ============================================================
+   2-b. 필터 탭
+============================================================ */
+.matey-noti-pop__tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 14px;
+  border-bottom: 1px solid #efeaf8;
+  background: #fdfcff;
+}
+
+.matey-noti-pop__tab {
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #8a85a0;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 160ms ease;
+}
+
+.matey-noti-pop__tab:hover {
+  background: #f4f0ff;
+  color: #6f5ed1;
+}
+
+.matey-noti-pop__tab.is-active {
+  background: linear-gradient(135deg, rgba(141, 121, 255, 0.12) 0%, rgba(108, 158, 255, 0.1) 100%);
+  border-color: rgba(141, 121, 255, 0.2);
+  color: #5a49b8;
+  font-weight: 800;
+}
+
+.matey-noti-pop__tab-badge {
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #ff6e7f 0%, #ff4d6d 100%);
+  color: #ffffff;
+  font-size: 9.5px;
+  font-weight: 900;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ============================================================
    3. 리스트 / 아이템
 ============================================================ */
 .matey-noti-pop__body {

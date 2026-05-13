@@ -51,4 +51,11 @@ public class NotificationController {
         notificationService.deleteNotification(user.getUser().getUserId(), notificationId);
         return ResponseEntity.ok(Map.of("message", "알림이 삭제되었습니다."));
     }
+
+    /** 안 읽은 알림 수만 경량 조회 (헤더 뱃지 폴링용) */
+    @GetMapping("/unread-count")
+    public ResponseEntity<Map<String, Integer>> getUnreadCount(@AuthenticationPrincipal CustomUser user) {
+        int count = notificationService.getUnreadCount(user.getUser().getUserId());
+        return ResponseEntity.ok(Map.of("count", count));
+    }
 }

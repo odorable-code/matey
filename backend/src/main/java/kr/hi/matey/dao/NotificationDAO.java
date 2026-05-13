@@ -30,4 +30,13 @@ public interface NotificationDAO {
     int markReadForPostRelated(@Param("userId") Long userId, @Param("postId") Long postId);
 
     UserEmailDTO selectUserEmail(@Param("userId") Long userId);
+
+    /** 해당 사용자가 특정 알림 타입을 활성화했는지 확인 (행이 없으면 기본 true) */
+    boolean selectIsTypeEnabled(@Param("userId") Long userId, @Param("typeCode") String typeCode);
+
+    /** 안 읽은 알림 수 조회 (뱃지용 경량 API) */
+    int selectUnreadCount(@Param("userId") Long userId);
+
+    /** 이메일로 user_id 조회 (관리자 알림 전송용) */
+    Long selectUserIdByEmail(@Param("email") String email);
 }
