@@ -31,7 +31,11 @@ import { Navigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { adminAPI, communityAPI, getStoredToken } from 'utils/api';
 import { displaySupportTicketTitle } from 'utils/supportReportDisplay';
-import { getDefaultCardStatsForMateKey, resolveMateDisplayName } from '../../constants/mates';
+import {
+  getDefaultCardStatsForMateKey,
+  resolveMateDisplayName,
+  MATE_KEYS,
+} from '../../constants/mates';
 import './AdminPage.css';
 
 /* =========================================================
@@ -59,13 +63,11 @@ function resolveAdminBotAvatarUrl(bot) {
   const key = String(bot?.name ?? '').trim().toLowerCase();
   const byKey = {
     dog: '/images/mascots/dog/dog.png',
-    bear: '/images/mascots/bear/bear.png',
-    cat: '/images/mascots/cat/cat.png',
   };
   return byKey[key] || '/images/mascots/dog/dog.png';
 }
 
-const ADMIN_BOT_MASCOT_NAMES = new Set(['dog', 'bear', 'cat']);
+const ADMIN_BOT_MASCOT_NAMES = new Set(MATE_KEYS);
 
 const ADMIN_BOT_FORM_NEUTRAL_PREVIEW = '/images/mypage/bot/matey-base.png';
 
@@ -135,7 +137,7 @@ function buildAdminBotCarouselItems(botList) {
     const k = nameOf(b);
     if (k) byKey.set(k, b);
   }
-  const primaryKeys = ['dog', 'bear', 'cat'];
+  const primaryKeys = MATE_KEYS;
   const primary = [];
   const used = new Set();
   for (const key of primaryKeys) {
@@ -146,7 +148,7 @@ function buildAdminBotCarouselItems(botList) {
     }
   }
   const rest = list
-    .filter((b) => !used.has(idOf(b)))
+    .filter((b) => !used.has(idOf(b)) && MATE_KEYS.includes(nameOf(b)))
     .sort((a, b) => idOf(a) - idOf(b));
 
   const items = [];

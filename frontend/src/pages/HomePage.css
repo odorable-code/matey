@@ -511,10 +511,24 @@
 }
 
 .matey-mate-card__placeholder-mark {
+  position: absolute;
+  z-index: 2;
   font-size: 2.5rem;
   font-weight: 300;
   line-height: 1;
   color: rgba(100, 87, 179, 0.45);
+}
+
+.matey-mate-card__placeholder-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 15%;
+  opacity: 0.15;
+  filter: grayscale(1) blur(2px);
+  z-index: 1;
 }
 
 .matey-mate-card__footer--placeholder {

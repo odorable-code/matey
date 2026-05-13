@@ -937,11 +937,33 @@
   box-shadow: none;
 }
 .matey-chat-pick__card-stage--placeholder {
+  position: relative;
   background: #ece8f8 !important;
   color: #9489c4;
   font-size: 22px;
   font-weight: 300;
   line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.matey-chat-pick__card-stage--placeholder span {
+  position: relative;
+  z-index: 2;
+}
+
+.matey-chat-pick__placeholder-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center bottom;
+  opacity: 0.1;
+  filter: grayscale(1) blur(1px);
+  z-index: 1;
 }
 .matey-chat-pick__placeholder-chip {
   align-self: flex-start;

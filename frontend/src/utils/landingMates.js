@@ -7,6 +7,7 @@ import {
   resolveMateKey,
   MATE_NAMES,
   getDefaultCardStatsForMateKey,
+  MATE_KEYS,
 } from '../constants/mates';
 
 /** BOT.card_stats_json 만 파싱해 홈 카드 막대용 stats 로 씁니다. 없거나 잘못되면 빈 배열 */
@@ -75,7 +76,7 @@ export function mergeLandingBotsRows(rows) {
   const out = rows
     .map((row, idx) => {
       const key = resolveMateKey(row.name ?? '');
-      if (!key || key === 'hamster') return null;
+      if (!key || key === 'hamster' || !MATE_KEYS.includes(key)) return null;
       const base = MATES.find((m) => m.key === key);
       const image = resolveLandingBotAvatarUrl(row.avatarImage ?? row.avatar_image, key);
       const roleSrc = String(row.selectionPreview ?? row.selection_preview ?? '').trim();

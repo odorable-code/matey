@@ -4,7 +4,7 @@ import styles from './BotRankingPage.module.css';
 import { communityAPI } from 'utils/api';
 import { useAuth } from '../contexts/AuthContext';
 import { canAccessAdminPage } from 'utils/adminAccess';
-import { resolveMateDisplayName, resolveMateKey } from '../constants/mates';
+import { resolveMateDisplayName, resolveMateKey, MATE_KEYS } from '../constants/mates';
 
 function normalizeEntries(raw) {
   const rows = Array.isArray(raw) ? raw : [];
@@ -28,14 +28,11 @@ function normalizeEntries(raw) {
         statYear: Number.isFinite(Number(r?.statYear)) ? Number(r.statYear) : null,
       };
     })
-    .filter((r) => r.botId != null && r.name);
+    .filter((r) => r.botId != null && r.name && MATE_KEYS.includes(r.mateKey));
 }
 
 function fallbackAvatarByIndex(index) {
-  const pick = (Number(index) || 0) % 3;
-  if (pick === 1) return '/images/mascots/cat/cat.png';
-  if (pick === 2) return '/images/mascots/dog/dog.png';
-  return '/images/mascots/bear/bear.png';
+  return '/images/mascots/dog/dog.png';
 }
 
 export default function BotRankingPage() {
@@ -204,7 +201,7 @@ export default function BotRankingPage() {
               <div className={styles.heroMascotsCluster}>
                 <img
                   className={`${styles.mascot} ${styles.mascotClusterA}`}
-                  src="/images/mascots/cat/cat.png"
+                  src="/images/mascots/dog/dog.png"
                   alt=""
                 />
                 <img
@@ -214,7 +211,7 @@ export default function BotRankingPage() {
                 />
                 <img
                   className={`${styles.mascot} ${styles.mascotClusterC}`}
-                  src="/images/mascots/bear/bear.png"
+                  src="/images/mascots/dog/dog.png"
                   alt=""
                 />
               </div>

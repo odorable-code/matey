@@ -126,7 +126,7 @@ export default function HowToUsePage() {
               <div className={styles.heroMascotsCluster}>
                 <img
                   className={`${styles.mascot} ${styles.mascotClusterA}`}
-                  src="/images/mascots/cat/cat.png"
+                  src="/images/mascots/dog/dog.png"
                   alt=""
                 />
                 <img
@@ -136,7 +136,7 @@ export default function HowToUsePage() {
                 />
                 <img
                   className={`${styles.mascot} ${styles.mascotClusterC}`}
-                  src="/images/mascots/bear/bear.png"
+                  src="/images/mascots/dog/dog.png"
                   alt=""
                 />
               </div>

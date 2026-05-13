@@ -3,7 +3,13 @@ import styles from './DashboardContent.module.css';
 import useAnimatedNumber, { usePrefersReducedMotion } from '../hooks/useAnimatedNumber';
 import { myPageAPI } from 'utils/api';
 import { intimacyApiLevelToDisplay } from 'utils/intimacyDisplay';
-import { resolveMateDisplayName, resolveMateKey, resolveMatePickerBlurb, resolveBotAvatarSrc } from '../../../constants/mates';
+import {
+  resolveMateDisplayName,
+  resolveMateKey,
+  resolveMatePickerBlurb,
+  resolveBotAvatarSrc,
+  MATE_KEYS,
+} from '../../../constants/mates';
 import {
   collectDashboardStageMotionAssetUrls,
   filterMotionsForDashboardStage,
@@ -302,7 +308,9 @@ export default function DashboardContent({
   const assignableBotsList = useMemo(() => {
     const raw = botData.assignableBots ?? botData.assignable_bots;
     if (!Array.isArray(raw)) return [];
-    return raw.map(mapAssignableRow).filter(Boolean);
+    return raw
+      .map(mapAssignableRow)
+      .filter((b) => b && MATE_KEYS.includes(resolveMateKey(b.name)));
   }, [botData]);
 
   const clearOrbitHoverCloseTimer = useCallback(() => {
@@ -372,18 +380,7 @@ export default function DashboardContent({
     return resolveBotAvatarSrc(botData);
   }, [interactionMotionSrc, randomOwnedMotionSrc, botData]);
 
-  /** 냥이 + cat 정적 에셋 — 무대에서 왼쪽 보도록 미러. 호기심·스트레칭은 에셋 방향이 달라 안쪽에서 한 번 더 미러해 맞춤 */
-  const catDashboardFaceLeft = useMemo(() => {
-    if (resolveMateKey(botData.botName ?? botData.bot_name) !== 'cat') return false;
-    const src = normalizeMotionAssetUrl(characterImageSrc);
-    return src.includes('/mascots/cat/');
-  }, [botData.botName, botData.bot_name, characterImageSrc]);
 
-  const catCuriosityStretchDoubleUnmirror = useMemo(() => {
-    if (!catDashboardFaceLeft) return false;
-    const path = normalizeMotionAssetUrl(characterImageSrc).split('?')[0];
-    return path.endsWith('/curiosity.png') || path.endsWith('/stretch.png');
-  }, [catDashboardFaceLeft, characterImageSrc]);
 
   const handlePickAssignedBot = (botId) => {
     if (botId == null || botAssignSaving) return;
@@ -807,34 +804,12 @@ export default function DashboardContent({
                     </div>
                   </div>
                 )}
-                {catDashboardFaceLeft ? (
-                  <span className={styles.characterFlipX}>
-                    {catCuriosityStretchDoubleUnmirror ? (
-                      <span className={styles.characterFlipX}>
-                        <img
-                          key={characterImageSrc}
-                          src={characterImageSrc}
-                          alt="담당 상담봇"
-                          className={`${styles.characterImage} ${currentModeClasses.character}`}
-                        />
-                      </span>
-                    ) : (
-                      <img
-                        key={characterImageSrc}
-                        src={characterImageSrc}
-                        alt="담당 상담봇"
-                        className={`${styles.characterImage} ${currentModeClasses.character}`}
-                      />
-                    )}
-                  </span>
-                ) : (
-                  <img
-                    key={characterImageSrc}
-                    src={characterImageSrc}
-                    alt="담당 상담봇"
-                    className={`${styles.characterImage} ${currentModeClasses.character}`}
-                  />
-                )}
+                <img
+                  key={characterImageSrc}
+                  src={characterImageSrc}
+                  alt="담당 상담봇"
+                  className={`${styles.characterImage} ${currentModeClasses.character}`}
+                />
               </button>
             </div>
           </div>

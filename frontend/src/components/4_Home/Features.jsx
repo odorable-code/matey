@@ -147,8 +147,8 @@ function Features() {
      가이드 캐릭터(곰 = bear) 데이터 가져오기
      - src/constants/mates.js 의 MATE_IMAGES / MATE_NAMES 사용
   ========================================================= */
-  const guideImage = MATE_IMAGES.bear;
-  const guideName = MATE_NAMES.bear;
+  const guideImage = MATE_IMAGES.dog;
+  const guideName = MATE_NAMES.dog;
 
   return (
     <section

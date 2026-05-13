@@ -36,6 +36,7 @@ import FAQ from '../components/4_Home/FAQ';
 import HomeClosingCta from 'pages/HomeClosingCta';
 import { useAuth } from '../contexts/AuthContext';
 import { useChatModal } from '../contexts/ChatModalContext';
+import { MATE_IMAGES } from '../constants/mates';
 import './HomePage.css';
 
 function HomePage() {
@@ -204,14 +205,22 @@ function HomePage() {
                   </div>
                 </article>
               ))}
-              {landingMates.length === 3 ? (
+              {landingMates.length < 3 && (
                 <article
                   className="matey-mate-card matey-mate-card--placeholder"
                   role="listitem"
                   aria-label="추후 메이트 추가 예정"
                 >
                   <div className="matey-mate-card__visual matey-mate-card__visual--placeholder">
-                    <span className="matey-mate-card__placeholder-mark" aria-hidden="true">
+                    <img
+                      src={MATE_IMAGES.dog}
+                      alt=""
+                      className="matey-mate-card__placeholder-image"
+                    />
+                    <span
+                      className="matey-mate-card__placeholder-mark"
+                      aria-hidden="true"
+                    >
                       +
                     </span>
                   </div>
@@ -222,8 +231,8 @@ function HomePage() {
                     <span className="matey-mate-card__role">준비 중</span>
                     <h3 className="matey-mate-card__name">새 메이트</h3>
                     <p className="matey-mate-card__copy">
-                      이 자리에는 앞으로 다른 성격의 봇이 더해질 수 있어요. 준비되면 같은 목록에서
-                      만나실 수 있어요.
+                      이 자리에는 앞으로 다른 성격의 봇이 더해질 수 있어요.
+                      준비되면 같은 목록에서 만나실 수 있어요.
                     </p>
                   </div>
                   <div className="matey-mate-card__footer matey-mate-card__footer--placeholder">
@@ -232,7 +241,7 @@ function HomePage() {
                     </span>
                   </div>
                 </article>
-              ) : null}
+              )}
             </div>
           </div>
         </section>

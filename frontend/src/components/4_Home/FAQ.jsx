@@ -165,8 +165,8 @@ function FAQ() {
      가이드 캐릭터(고양이 = cat) 데이터 가져오기
      - src/constants/mates.js 의 MATE_IMAGES / MATE_NAMES 사용
   ========================================================= */
-  const guideImage = MATE_IMAGES.cat;
-  const guideName = MATE_NAMES.cat;
+  const guideImage = MATE_IMAGES.dog;
+  const guideName = MATE_NAMES.dog;
 
   return (
     <section id="faq" className="matey-faq" aria-label="자주 묻는 질문">

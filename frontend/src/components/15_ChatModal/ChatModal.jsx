@@ -28,6 +28,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useChatModal } from "../../contexts/ChatModalContext";
 import {
   ABILITY_AXES,
+  MATE_IMAGES,
 } from "../../constants/mates";
 import "./ChatModal.css";
 import { pickChatMotionUrlForSituation } from "utils/motionAssets";
@@ -542,7 +543,7 @@ function PickView() {
               </button>
             </li>
           ))}
-          {landingMates.length === 3 ? (
+          {landingMates.length < 3 && (
             <li key="mate-pick-placeholder">
               <div
                 className="matey-chat-pick__card matey-chat-pick__card--placeholder"
@@ -551,6 +552,11 @@ function PickView() {
               >
                 <div className="matey-chat-pick__card-top">
                   <div className="matey-chat-pick__card-stage matey-chat-pick__card-stage--placeholder">
+                    <img
+                      src={MATE_IMAGES.dog}
+                      alt=""
+                      className="matey-chat-pick__placeholder-image"
+                    />
                     <span aria-hidden="true">+</span>
                   </div>
                   <div className="matey-chat-pick__card-meta">
@@ -569,7 +575,7 @@ function PickView() {
                 </p>
               </div>
             </li>
-          ) : null}
+          )}
         </ul>
       </div>
     </div>
