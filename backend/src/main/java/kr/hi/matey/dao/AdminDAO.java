@@ -19,6 +19,10 @@ public interface AdminDAO {
     List<Map<String, Object>> selectLiveMetrics();
     List<Map<String, Object>> selectEmotionDistribution();
     List<Map<String, Object>> selectConcernDistribution();
+    /** 활성 사용자 추이: 최근 12시간을 1시간 단위로 집계 */
+    List<Map<String, Object>> selectActiveUserTrend();
+    /** 채팅 세션 추이: 최근 12시간을 1시간 단위로 집계 */
+    List<Map<String, Object>> selectChatSessionTrend();
 
     // ==========================================
     // 사용자 관리 (CRUD + 필터/검색)

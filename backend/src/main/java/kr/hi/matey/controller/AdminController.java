@@ -8,6 +8,7 @@ import kr.hi.matey.service.AdminService;
 import kr.hi.matey.service.CommunityService;
 import kr.hi.matey.service.SupportService;
 import kr.hi.matey.service.NoticeService;
+import kr.hi.matey.service.NotificationService;
 import kr.hi.matey.util.CustomUser;
 import kr.hi.matey.util.RoleCodeHelper;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,7 @@ public class AdminController {
     private final SupportService supportService;
     private final NoticeService noticeService;
     private final CommunityService communityService;
+    private final NotificationService notificationService;
 
     // ==========================================
     // 실시간 운영 통계 및 지표
@@ -40,6 +42,11 @@ public class AdminController {
     @GetMapping("/dashboard/live")
     public ResponseEntity<List<Map<String, Object>>> getLiveMetrics() {
         return ResponseEntity.ok(adminService.getLiveMetrics());
+    }
+
+    @GetMapping("/dashboard/trends")
+    public ResponseEntity<Map<String, Object>> getDashboardTrends() {
+        return ResponseEntity.ok(adminService.getDashboardTrends());
     }
 
     /** 상담봇 관리 탭: 누적 좋/싫 + 전월 추천 이벤트·순위 */
@@ -366,5 +373,41 @@ public class AdminController {
                 user.getUser().getUserId()
         );
         return ResponseEntity.ok(communityService.getWorryFeatured(user.getUser().getUserId()));
+    }
+
+    // ==========================================
+    // 관리자 알림 전송 (이메일 기반)
+    // ==========================================
+
+    /** 관리자가 특정 사용자에게 알림을 전송합니다 (이메일로 대상 지정) */
+    @PostMapping("/notifications/send")
+    public ResponseEntity<?> sendNotification(
+            @RequestBody Map<String, String> body,
+            @AuthenticationPrincipal CustomUser user
+    ) {
+        if (user == null || user.getUser() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        if (!RoleCodeHelper.isAdminOrSuperAdmin(user.getUser().getRoleCode())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", "권한이 없습니다."));
+        }
+
+        String email = body.get("email");
+        String typeCode = body.getOrDefault("typeCode", "SYSTEM_NOTICE");
+        String content = body.get("content");
+
+        if (email == null || email.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "이메일을 입력해 주세요."));
+        }
+        if (content == null || content.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "알림 내용을 입력해 주세요."));
+        }
+
+        try {
+            notificationService.sendNotificationByEmail(email.trim(), typeCode.trim(), content.trim());
+            return ResponseEntity.ok(Map.of("message", email + " 에게 알림을 전송했습니다."));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
+        }
     }
 }

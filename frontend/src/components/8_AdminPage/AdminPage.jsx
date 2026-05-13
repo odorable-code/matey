@@ -470,6 +470,61 @@ function createInitialRealtimeSeries(count = 12) {
   });
 }
 
+function AdminSparkLine({ series, blue = false }) {
+  const n = series.length;
+  if (n < 2) return <div className="matey-admin-v3__line-chart" />;
+
+  const W = 600, H = 160;
+  const PL = 10, PR = 10, PT = 20, PB = 20;
+  const plotW = W - PL - PR;
+  const plotH = H - PT - PB;
+
+  const vals = series.map((p) => Number(p.value) || 0);
+  const maxVal = Math.max(...vals, 1);
+
+  const pts = vals.map((v, i) => ({
+    x: +(PL + (i / (n - 1)) * plotW).toFixed(1),
+    y: +(PT + (1 - v / maxVal) * plotH).toFixed(1),
+  }));
+
+  const lineD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
+  const areaD = `${lineD} L${pts[n - 1].x},${H - PB} L${PL},${H - PB} Z`;
+
+  const labelStep = Math.ceil(n / 6);
+  const labels = series.filter((_, i) => i % labelStep === 0 || i === n - 1).slice(0, 6);
+
+  const strokeClass = `matey-admin-v3__line-stroke${blue ? ' matey-admin-v3__line-stroke--blue' : ''}`;
+  const areaClass = `matey-admin-v3__line-area${blue ? ' matey-admin-v3__line-area--blue' : ''}`;
+  const dotClass = `matey-admin-v3__line-dot${blue ? ' matey-admin-v3__line-dot--blue' : ''}`;
+
+  return (
+    <>
+      <div className="matey-admin-v3__line-chart">
+        <svg
+          className="matey-admin-v3__line-svg"
+          viewBox={`0 0 ${W} ${H}`}
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <path className={areaClass} d={areaD} />
+          <path className={strokeClass} d={lineD} />
+          {pts.map((p, i) => (
+            <circle key={i} cx={p.x} cy={p.y} r={4} className={dotClass} />
+          ))}
+        </svg>
+      </div>
+      <div
+        className="matey-admin-v3__chart-labels"
+        style={{ gridTemplateColumns: `repeat(${labels.length}, 1fr)` }}
+      >
+        {labels.map((p) => (
+          <span key={p.label}>{p.label}</span>
+        ))}
+      </div>
+    </>
+  );
+}
+
 /* =========================================================
    활동 로그 저장 코드 (localStorage)
 ========================================================= */
@@ -766,6 +821,7 @@ export default function AdminPage() {
           adminAPI.getUsers(),
           adminAPI.getFeedbacks({ status: 'ALL' }),
           adminAPI.getDashboardOverview(),
+          adminAPI.getDashboardTrends(),
         ]);
 
         const failed = settled
@@ -775,6 +831,7 @@ export default function AdminPage() {
         const usersData = settled[0].status === 'fulfilled' ? settled[0].value : [];
         const feedbacksData = settled[1].status === 'fulfilled' ? settled[1].value : [];
         const dashboardData = settled[2].status === 'fulfilled' ? settled[2].value : {};
+        const trendsData = settled[3].status === 'fulfilled' ? settled[3].value : {};
 
         const usersArr = Array.isArray(usersData) ? usersData : [];
         const feedbacksArr = Array.isArray(feedbacksData) ? feedbacksData : [];
@@ -786,32 +843,35 @@ export default function AdminPage() {
           setDbOverview(dashboardData.overview);
         }
 
-        if (dashboardData.liveMetrics) {
-          setLiveChatSeries(
-            dashboardData.liveMetrics.map((m) => ({
+        if (Array.isArray(trendsData.activeUserTrend) && trendsData.activeUserTrend.length) {
+          setLiveUserSeries(
+            trendsData.activeUserTrend.map((m) => ({
               label: m.label,
               value: Number(m.value) || 0,
             }))
           );
-          setLiveUserSeries(
-            dashboardData.liveMetrics.map((m) => ({
+        }
+        if (Array.isArray(trendsData.chatSessionTrend) && trendsData.chatSessionTrend.length) {
+          setLiveChatSeries(
+            trendsData.chatSessionTrend.map((m) => ({
               label: m.label,
-              value: Math.floor((Number(m.value) || 0) * 1.5),
+              value: Number(m.value) || 0,
             }))
           );
         }
 
         setLogs(loadLogs());
 
-        if (failed.length > 0) {
-          const hint = formatAdminApiFailure(failed[0].reason);
-          if (failed.length >= 3) {
+        const coreFailed = failed.filter((f) => f.idx < 3);
+        if (coreFailed.length > 0) {
+          const hint = formatAdminApiFailure(coreFailed[0].reason);
+          if (coreFailed.length >= 3) {
             setError(hint);
           } else {
             setLoadWarning(
-              failed.length === 1
+              coreFailed.length === 1
                 ? hint
-                : `일부 데이터만 불러왔어요. (${failed.length}건 요청 실패) ${hint}`
+                : `일부 데이터만 불러왔어요. (${coreFailed.length}건 요청 실패) ${hint}`
             );
           }
         }
@@ -833,16 +893,19 @@ export default function AdminPage() {
   ========================================================= */
   const handleRefreshRealtime = async () => {
     try {
-      const dashboardData = await adminAPI.getDashboardOverview();
-      if (dashboardData.liveMetrics) {
-        setLiveChatSeries(dashboardData.liveMetrics.map(m => ({
-          label: m.label,
-          value: Number(m.value) || 0
-        })));
-        setLiveUserSeries(dashboardData.liveMetrics.map(m => ({
-          label: m.label,
-          value: Math.floor((Number(m.value) || 0) * 1.5)
-        })));
+      const [dashboardData, trendsData] = await Promise.all([
+        adminAPI.getDashboardOverview(),
+        adminAPI.getDashboardTrends(),
+      ]);
+      if (Array.isArray(trendsData.activeUserTrend) && trendsData.activeUserTrend.length) {
+        setLiveUserSeries(
+          trendsData.activeUserTrend.map((m) => ({ label: m.label, value: Number(m.value) || 0 }))
+        );
+      }
+      if (Array.isArray(trendsData.chatSessionTrend) && trendsData.chatSessionTrend.length) {
+        setLiveChatSeries(
+          trendsData.chatSessionTrend.map((m) => ({ label: m.label, value: Number(m.value) || 0 }))
+        );
       }
       if (dashboardData.overview) {
         setDbOverview(dashboardData.overview);
@@ -1834,20 +1897,22 @@ export default function AdminPage() {
                   <div className="matey-admin-v3__chart-head">
                     <div>
                       <h3>활성 사용자 추이</h3>
-                      <p>최근 구간별 동시 접속 사용자</p>
+                      <p>최근 12시간 시간대별 로그인 사용자</p>
                     </div>
                     <strong>{userLast}</strong>
                   </div>
+                  <AdminSparkLine series={liveUserSeries} />
                 </article>
 
                 <article className="matey-admin-v3__chart-card">
                   <div className="matey-admin-v3__chart-head">
                     <div>
                       <h3>채팅 세션 추이</h3>
-                      <p>활성 세션 수</p>
+                      <p>최근 12시간 시간대별 채팅 생성</p>
                     </div>
                     <strong>{chatLast}</strong>
                   </div>
+                  <AdminSparkLine series={liveChatSeries} blue />
                 </article>
               </div>
             </section>

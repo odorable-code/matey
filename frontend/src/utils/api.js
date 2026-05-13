@@ -570,6 +570,12 @@ export const adminAPI = {
     });
   },
 
+  getDashboardTrends: () => {
+    return request('/api/admin/dashboard/trends', {
+      method: 'GET',
+    });
+  },
+
   /** 상담봇 관리: 누적 지표 + 전월 추천 이벤트·순위 */
   getBotStats: () =>
     request('/api/admin/bots/stats', {
@@ -840,5 +846,7 @@ export const notificationAPI = {
     request('/api/notifications/read-support-inbox', { method: 'PATCH' }),
   deleteNotification: (notificationId) =>
     request(`/api/notifications/${notificationId}`, { method: 'DELETE' }),
+  /** 안 읽은 알림 수 경량 조회 (뱃지 폴링용) */
+  getUnreadCount: () => request('/api/notifications/unread-count'),
 };
 

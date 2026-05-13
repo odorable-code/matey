@@ -50,6 +50,17 @@ public class AdminService {
     }
 
     /**
+     * 대시보드 트렌드: 활성 사용자 추이 + 채팅 세션 추이.
+     * 각 시리즈는 label(시각) + value(건수) 맵 리스트로 반환됩니다.
+     */
+    public Map<String, Object> getDashboardTrends() {
+        Map<String, Object> result = new HashMap<>();
+        result.put("activeUserTrend", adminDAO.selectActiveUserTrend());
+        result.put("chatSessionTrend", adminDAO.selectChatSessionTrend());
+        return result;
+    }
+
+    /**
      * 상담봇 관리 탭: 전월(직전 달) 기준 순위 + 누적 좋/싫 + 전월 추천·싫어요 이벤트 건수.
      * 공개 랭킹과 동일하게, 그 달 이벤트가 하나도 없으면 순위는 BOT.like_count 기준입니다.
      */

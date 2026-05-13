@@ -28,6 +28,47 @@
         ORDER BY label ASC
     </select>
 
+    <!-- 활성 사용자 추이: 최근 24시간, 1시간 단위로 로그인한 USER 수 집계 -->
+    <select id="selectActiveUserTrend" resultType="map">
+        SELECT
+            DATE_FORMAT(h.slot, '%H:00') AS label,
+            COALESCE(COUNT(DISTINCT u.user_id), 0) AS value
+        FROM (
+            SELECT DATE_SUB(DATE_FORMAT(NOW(), '%Y-%m-%d %H:00:00'), INTERVAL n HOUR) AS slot
+            FROM (
+                SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3
+                UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7
+                UNION ALL SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10 UNION ALL SELECT 11
+            ) nums
+        ) h
+        LEFT JOIN `USER` u
+            ON u.last_login_at >= h.slot
+            AND u.last_login_at  &lt;  DATE_ADD(h.slot, INTERVAL 1 HOUR)
+            AND u.status = 'ACTIVE'
+        GROUP BY h.slot
+        ORDER BY h.slot ASC
+    </select>
+
+    <!-- 채팅 세션 추이: 최근 24시간, 1시간 단위로 생성된 CHAT_ROOM 수 집계 -->
+    <select id="selectChatSessionTrend" resultType="map">
+        SELECT
+            DATE_FORMAT(h.slot, '%H:00') AS label,
+            COALESCE(COUNT(cr.chat_room_id), 0) AS value
+        FROM (
+            SELECT DATE_SUB(DATE_FORMAT(NOW(), '%Y-%m-%d %H:00:00'), INTERVAL n HOUR) AS slot
+            FROM (
+                SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3
+                UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7
+                UNION ALL SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10 UNION ALL SELECT 11
+            ) nums
+        ) h
+        LEFT JOIN CHAT_ROOM cr
+            ON cr.created_at >= h.slot
+            AND cr.created_at  &lt;  DATE_ADD(h.slot, INTERVAL 1 HOUR)
+        GROUP BY h.slot
+        ORDER BY h.slot ASC
+    </select>
+
     <select id="selectEmotionDistribution" resultType="map">
         SELECT
             ec.emotion_name as label,
