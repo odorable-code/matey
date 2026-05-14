@@ -21,8 +21,8 @@ public class UserDTO {
     private String password;
     private String nickname;
     private String userName;
-    private Long birthDate;
-    private Long gender;
+    private String birthDate;
+    private String gender;
     private String profileImage;
     private String role;
     private String loginType;

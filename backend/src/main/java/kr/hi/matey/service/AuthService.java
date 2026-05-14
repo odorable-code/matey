@@ -57,7 +57,7 @@ public class AuthService {
 	public boolean signup(UserDTO user) {
 		String encodedPw = encoder.encode(user.getPassword());
 		UserVO userVO = new UserVO();
-		
+
 		userVO.setUserName(user.getUserName());
 		userVO.setEmail(user.getEmail());
 	    userVO.setNickname(user.getNickname());
@@ -65,7 +65,12 @@ public class AuthService {
 	    userVO.setTermsAgreed(user.isTermsAgreed() ? 1 : 0);
 	    userVO.setPrivacyAgreed(user.isPrivacyAgreed() ? 1 : 0);
 	    userVO.setMarketingAgreed(user.isMarketingAgreed() ? 1 : 0);
-		userVO.setPassword(encodedPw);
+	    if (user.getBirthDate() != null && !user.getBirthDate().isBlank()) {
+	        userVO.setBirthDateSql(java.sql.Date.valueOf(user.getBirthDate()));
+	    }
+	    if (user.getGender() != null && !user.getGender().isBlank()) {
+	        userVO.setGender(user.getGender());
+	    }
 		RoleVO roleVO = new RoleVO();
 	    roleVO.setRole_code("USER");
 	    userVO.setRole(roleVO);

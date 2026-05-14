@@ -19,24 +19,28 @@
 	    WHERE nickname = #{nickname}
 	</select>
 
-	<insert id="insertUser"  parameterType="kr.hi.matey.vo.UserVO" useGeneratedKeys="true" keyProperty="userId">
+	<insert id="insertUser" parameterType="kr.hi.matey.vo.UserVO" useGeneratedKeys="true" keyProperty="userId">
 	    INSERT INTO USER (
 	    	user_name,
-	        email, 
-	        password, 
+	        email,
+	        password,
 	        nickname,
+	        birth_date,
+	        gender,
 	        is_terms_agreed,
 	        is_privacy_agreed,
-	        is_marketing_agreed		)
-    	VALUES (
-    		#{userName},
+	        is_marketing_agreed
+	    ) VALUES (
+	    	#{userName},
 	        #{email},
 	        #{password},
 	        #{nickname},
+	        #{birthDateSql},
+	        #{gender},
 	        #{termsAgreed},
 	        #{privacyAgreed},
-	        #{marketingAgreed}	);
-	        
+	        #{marketingAgreed}
+	    );
 	</insert>
 	
 	<insert id="insertUserRole">
@@ -45,8 +49,8 @@
 	</insert>
 
 	<insert id="insertUserSetting">
-	    INSERT INTO USER_SETTING (user_id)
-	    VALUES (#{userId})
+	    INSERT INTO USER_SETTING (user_id, bot_letter_enabled, satisfaction_popup_enabled, casual_mode_enabled)
+	    VALUES (#{userId}, TRUE, TRUE, FALSE)
 	</insert>
 	
 	<select id="findByEmail" parameterType="string" resultType="kr.hi.matey.vo.UserVO">

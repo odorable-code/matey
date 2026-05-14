@@ -13,12 +13,14 @@ const LOGIN_INITIAL = {
 const SIGNUP_INITIAL = {
   userName: '',
   nickname: '',
+  birthDate: '',
+  gender: '',
   email: '',
   password: '',
   confirmPassword: '',
-  termsAgreed: false,    // 이용약관(필수)
-  privacyAgreed: false,  // 개인정보(필수)
-  marketingAgreed: false // 마케팅(선택)
+  termsAgreed: false,
+  privacyAgreed: false,
+  marketingAgreed: false
 };
 
 const TAB_COPY = {
@@ -316,6 +318,8 @@ export default function AuthPage() {
       const result = await signup({
         userName: signupForm.userName.trim(),
         nickname: signupForm.nickname.trim(),
+        birthDate: signupForm.birthDate || null,
+        gender: signupForm.gender || null,
         email: signupForm.email.trim(),
         password: signupForm.password,
         termsAgreed: signupForm.termsAgreed,
@@ -630,6 +634,44 @@ export default function AuthPage() {
                       {signupErrors.confirmPassword}
                     </p>
                   )}
+                </div>
+
+                <div className="matey-auth-field">
+                  <label htmlFor="signup-birthdate" className="matey-auth-field__label">
+                    생년월일 <span className="matey-auth-field__optional">선택</span>
+                  </label>
+                  <input
+                    id="signup-birthdate"
+                    name="birthDate"
+                    type="date"
+                    className="matey-auth-field__input matey-auth-field__input--date"
+                    max={new Date().toISOString().split('T')[0]}
+                    value={signupForm.birthDate}
+                    onChange={handleSignupChange}
+                  />
+                </div>
+
+                <div className="matey-auth-field">
+                  <label className="matey-auth-field__label">
+                    성별 <span className="matey-auth-field__optional">선택</span>
+                  </label>
+                  <div className="matey-auth-gender">
+                    {[{ value: 'MALE', label: '남성' }, { value: 'FEMALE', label: '여성' }].map(({ value, label }) => (
+                      <label
+                        key={value}
+                        className={`matey-auth-gender__option ${signupForm.gender === value ? 'is-selected' : ''}`}
+                      >
+                        <input
+                          type="radio"
+                          name="gender"
+                          value={value}
+                          checked={signupForm.gender === value}
+                          onChange={handleSignupChange}
+                        />
+                        {label}
+                      </label>
+                    ))}
+                  </div>
                 </div>
 
                 <label className="matey-auth-check matey-auth-check--full">

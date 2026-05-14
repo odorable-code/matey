@@ -336,6 +336,60 @@
   font-weight: 700;
 }
 
+.matey-auth-field__optional {
+  margin-left: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #a39ab8;
+}
+
+.matey-auth-field__input--date {
+  color: var(--matey-auth-text);
+  cursor: pointer;
+}
+
+.matey-auth-field__input--date::-webkit-calendar-picker-indicator {
+  opacity: 0.5;
+  cursor: pointer;
+}
+
+.matey-auth-gender {
+  display: flex;
+  gap: 10px;
+}
+
+.matey-auth-gender__option {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 54px;
+  border-radius: 16px;
+  border: 1px solid rgba(125, 108, 243, 0.14);
+  background: #ffffff;
+  color: #6c6581;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.matey-auth-gender__option input[type="radio"] {
+  display: none;
+}
+
+.matey-auth-gender__option.is-selected {
+  border-color: rgba(125, 108, 243, 0.5);
+  background: rgba(125, 108, 243, 0.07);
+  color: #7d6cf3;
+  box-shadow: 0 0 0 4px rgba(125, 108, 243, 0.1);
+}
+
 .matey-auth-row {
   display: flex;
   align-items: center;
