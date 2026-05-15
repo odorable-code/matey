@@ -17,9 +17,11 @@ module.exports = function setupProxy(app) {
     logLevel: 'warn',
   });
 
-  app.use('/api/chat', fastapi);
+  // FastAPI 경로만 명시적으로 지정 (prefix 매칭 때문에 /api/chat/rooms가 FastAPI로 가지 않게)
+  app.use(['/api/chat/gemini', '/api/chat/completions'], fastapi);
   app.use('/api/analysis', fastapi);
   app.use('/api/health', fastapi);
+  app.use('/api/preparing', fastapi);
 
   app.use('/api', spring);
   app.use('/oauth2', spring);
