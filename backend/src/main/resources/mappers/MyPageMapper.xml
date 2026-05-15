@@ -229,16 +229,16 @@
             COALESCE(us.satisfaction_popup_enabled, 1) as satisfactionPopup,
             COALESCE(u.is_marketing_agreed, 1) as marketingNotice,
             COALESCE(us.casual_mode_enabled, 0) as casualTone,
-            COALESCE((SELECT is_enabled FROM USER_NOTIFICATION_SETTING WHERE user_id = #{userId} AND type_code = 'BOT_MESSAGE'), 1) as noti_BOT_MESSAGE,
-            COALESCE((SELECT is_enabled FROM USER_NOTIFICATION_SETTING WHERE user_id = #{userId} AND type_code = 'CHAT_REMINDER'), 1) as noti_CHAT_REMINDER,
-            COALESCE((SELECT is_enabled FROM USER_NOTIFICATION_SETTING WHERE user_id = #{userId} AND type_code = 'COMMENT_REPLY'), 1) as noti_COMMENT_REPLY,
-            COALESCE((SELECT is_enabled FROM USER_NOTIFICATION_SETTING WHERE user_id = #{userId} AND type_code = 'COMMUNITY_HOT'), 1) as noti_COMMUNITY_HOT,
-            COALESCE((SELECT is_enabled FROM USER_NOTIFICATION_SETTING WHERE user_id = #{userId} AND type_code = 'EVENT_NOTICE'), 1) as noti_EVENT_NOTICE,
-            COALESCE((SELECT is_enabled FROM USER_NOTIFICATION_SETTING WHERE user_id = #{userId} AND type_code = 'POINT_REWARD'), 1) as noti_POINT_REWARD,
-            COALESCE((SELECT is_enabled FROM USER_NOTIFICATION_SETTING WHERE user_id = #{userId} AND type_code = 'POST_COMMENT'), 1) as noti_POST_COMMENT,
-            COALESCE((SELECT is_enabled FROM USER_NOTIFICATION_SETTING WHERE user_id = #{userId} AND type_code = 'REPORT_RESULT'), 1) as noti_REPORT_RESULT,
-            COALESCE((SELECT is_enabled FROM USER_NOTIFICATION_SETTING WHERE user_id = #{userId} AND type_code = 'SUPPORT_ANSWER'), 1) as noti_SUPPORT_ANSWER,
-            COALESCE((SELECT is_enabled FROM USER_NOTIFICATION_SETTING WHERE user_id = #{userId} AND type_code = 'SYSTEM_NOTICE'), 1) as noti_SYSTEM_NOTICE
+            COALESCE((SELECT is_enabled FROM USER_NOTIFICATION_SETTING WHERE user_id = #{userId} AND type_code = 'BOT_MESSAGE'), 1) as noti_bot_message,
+            COALESCE((SELECT is_enabled FROM USER_NOTIFICATION_SETTING WHERE user_id = #{userId} AND type_code = 'CHAT_REMINDER'), 1) as noti_chat_reminder,
+            COALESCE((SELECT is_enabled FROM USER_NOTIFICATION_SETTING WHERE user_id = #{userId} AND type_code = 'COMMENT_REPLY'), 1) as noti_comment_reply,
+            COALESCE((SELECT is_enabled FROM USER_NOTIFICATION_SETTING WHERE user_id = #{userId} AND type_code = 'COMMUNITY_HOT'), 1) as noti_community_hot,
+            COALESCE((SELECT is_enabled FROM USER_NOTIFICATION_SETTING WHERE user_id = #{userId} AND type_code = 'EVENT_NOTICE'), 1) as noti_event_notice,
+            COALESCE((SELECT is_enabled FROM USER_NOTIFICATION_SETTING WHERE user_id = #{userId} AND type_code = 'POINT_REWARD'), 1) as noti_point_reward,
+            COALESCE((SELECT is_enabled FROM USER_NOTIFICATION_SETTING WHERE user_id = #{userId} AND type_code = 'POST_COMMENT'), 1) as noti_post_comment,
+            COALESCE((SELECT is_enabled FROM USER_NOTIFICATION_SETTING WHERE user_id = #{userId} AND type_code = 'REPORT_RESULT'), 1) as noti_report_result,
+            COALESCE((SELECT is_enabled FROM USER_NOTIFICATION_SETTING WHERE user_id = #{userId} AND type_code = 'SUPPORT_ANSWER'), 1) as noti_support_answer,
+            COALESCE((SELECT is_enabled FROM USER_NOTIFICATION_SETTING WHERE user_id = #{userId} AND type_code = 'SYSTEM_NOTICE'), 1) as noti_system_notice
         FROM USER u
         LEFT JOIN USER_SETTING us ON us.user_id = u.user_id
         WHERE u.user_id = #{userId}

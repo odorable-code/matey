@@ -850,3 +850,20 @@ export const notificationAPI = {
   getUnreadCount: () => request('/api/notifications/unread-count'),
 };
 
+// ==========================================
+// Chat Room API (Spring Boot → DB 저장)
+// ==========================================
+export const chatRoomAPI = {
+  getRooms: () => request('/api/chat/rooms'),
+  createRoom: (mateKey, title) =>
+    request('/api/chat/rooms', { method: 'POST', body: { mateKey, title } }),
+  getMessages: (chatRoomId) => request(`/api/chat/rooms/${chatRoomId}/messages`),
+  saveMessage: (chatRoomId, content, senderType) =>
+    request(`/api/chat/rooms/${chatRoomId}/messages`, {
+      method: 'POST',
+      body: { content, senderType },
+    }),
+  deleteRoom: (chatRoomId) =>
+    request(`/api/chat/rooms/${chatRoomId}`, { method: 'DELETE' }),
+};
+

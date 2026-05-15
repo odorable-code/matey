@@ -52,6 +52,20 @@
 	    INSERT INTO USER_SETTING (user_id, bot_letter_enabled, satisfaction_popup_enabled, casual_mode_enabled)
 	    VALUES (#{userId}, TRUE, TRUE, FALSE)
 	</insert>
+
+	<insert id="insertDefaultNotificationSettings">
+	    INSERT INTO USER_NOTIFICATION_SETTING (user_id, type_code, is_enabled) VALUES
+	        (#{userId}, 'BOT_MESSAGE',    TRUE),
+	        (#{userId}, 'CHAT_REMINDER',  TRUE),
+	        (#{userId}, 'COMMENT_REPLY',  TRUE),
+	        (#{userId}, 'COMMUNITY_HOT',  TRUE),
+	        (#{userId}, 'EVENT_NOTICE',   TRUE),
+	        (#{userId}, 'POINT_REWARD',   TRUE),
+	        (#{userId}, 'POST_COMMENT',   TRUE),
+	        (#{userId}, 'REPORT_RESULT',  TRUE),
+	        (#{userId}, 'SUPPORT_ANSWER', TRUE),
+	        (#{userId}, 'SYSTEM_NOTICE',  TRUE)
+	</insert>
 	
 	<select id="findByEmail" parameterType="string" resultType="kr.hi.matey.vo.UserVO">
 	    SELECT 

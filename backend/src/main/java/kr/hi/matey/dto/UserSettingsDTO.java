@@ -11,32 +11,32 @@ public class UserSettingsDTO {
 
     // 상세 알림 설정 (USER_NOTIFICATION_SETTING)
     @JsonProperty("noti_BOT_MESSAGE")
-    private boolean noti_BOT_MESSAGE;
-    
+    private boolean notiBotMessage;
+
     @JsonProperty("noti_CHAT_REMINDER")
-    private boolean noti_CHAT_REMINDER;
-    
+    private boolean notiChatReminder;
+
     @JsonProperty("noti_COMMENT_REPLY")
-    private boolean noti_COMMENT_REPLY;
-    
+    private boolean notiCommentReply;
+
     @JsonProperty("noti_COMMUNITY_HOT")
-    private boolean noti_COMMUNITY_HOT;
-    
+    private boolean notiCommunityHot;
+
     @JsonProperty("noti_EVENT_NOTICE")
-    private boolean noti_EVENT_NOTICE;
-    
+    private boolean notiEventNotice;
+
     @JsonProperty("noti_POINT_REWARD")
-    private boolean noti_POINT_REWARD;
-    
+    private boolean notiPointReward;
+
     @JsonProperty("noti_POST_COMMENT")
-    private boolean noti_POST_COMMENT;
-    
+    private boolean notiPostComment;
+
     @JsonProperty("noti_REPORT_RESULT")
-    private boolean noti_REPORT_RESULT;
-    
+    private boolean notiReportResult;
+
     @JsonProperty("noti_SUPPORT_ANSWER")
-    private boolean noti_SUPPORT_ANSWER;
-    
+    private boolean notiSupportAnswer;
+
     @JsonProperty("noti_SYSTEM_NOTICE")
-    private boolean noti_SYSTEM_NOTICE;
+    private boolean notiSystemNotice;
 }

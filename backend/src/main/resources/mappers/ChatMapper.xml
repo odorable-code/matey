@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.hi.matey.dao.ChatDAO">
+
+    <select id="selectBotIdByName" resultType="Long">
+        SELECT bot_id FROM BOT WHERE name = #{botName} LIMIT 1
+    </select>
+
+    <select id="selectFirstBackgroundId" resultType="Long">
+        SELECT background_id FROM CHAT_BACKGROUND ORDER BY background_id ASC LIMIT 1
+    </select>
+
+    <insert id="insertDefaultBackground">
+        INSERT INTO CHAT_BACKGROUND (name, image_url, unlock_intimacy_level, sort_order)
+        VALUES ('기본 배경', '', 0, 0)
+    </insert>
+
+    <select id="countExclusiveByUserAndBot" resultType="int">
+        SELECT COUNT(*) FROM EXCLUSIVE WHERE user_id = #{userId} AND bot_id = #{botId}
+    </select>
+
+    <insert id="insertExclusive">
+        INSERT INTO EXCLUSIVE (user_id, bot_id) VALUES (#{userId}, #{botId})
+    </insert>
+
+    <select id="selectExclusiveIdByUserAndBot" resultType="Long">
+        SELECT exclusive_id FROM EXCLUSIVE WHERE user_id = #{userId} AND bot_id = #{botId} LIMIT 1
+    </select>
+
+    <insert id="insertUserBotRelation">
+        INSERT INTO USER_BOT_RELATION (exclusive_id, intimacy_id, current_exp)
+        VALUES (#{exclusiveId}, 1, 0)
+    </insert>
+
+    <insert id="insertChatRoom" useGeneratedKeys="true" keyProperty="chatRoomId">
+        INSERT INTO CHAT_ROOM (background_id, exclusive_id, title, last_message, status)
+        VALUES (#{backgroundId}, #{exclusiveId}, #{title}, '', 'ACTIVE')
+    </insert>
+
+    <insert id="insertMessage" useGeneratedKeys="true" keyProperty="messageId">
+        INSERT INTO MESSAGE (chat_room_id, content, sender_type)
+        VALUES (#{chatRoomId}, #{content}, #{senderType})
+    </insert>
+
+    <update id="updateChatRoomLastMessage">
+        UPDATE CHAT_ROOM
+        SET last_message = #{lastMessage}, last_message_at = NOW()
+        WHERE chat_room_id = #{chatRoomId}
+    </update>
+
+    <update id="updateChatRoomStatus">
+        UPDATE CHAT_ROOM cr
+        INNER JOIN EXCLUSIVE e ON e.exclusive_id = cr.exclusive_id
+        SET cr.status = #{status}
+        WHERE cr.chat_room_id = #{chatRoomId} AND e.user_id = #{userId}
+    </update>
+
+    <select id="selectChatRooms" resultType="kr.hi.matey.dto.ChatRoomDTO">
+        SELECT
+            cr.chat_room_id AS chatRoomId,
+            b.name AS mateKey,
+            COALESCE(NULLIF(TRIM(b.display_name), ''), b.name) AS mateName,
+            cr.title,
+            cr.last_message AS lastMessage,
+            DATE_FORMAT(cr.last_message_at, '%Y-%m-%dT%H:%i:%s') AS lastMessageAt,
+            cr.status
+        FROM CHAT_ROOM cr
+        INNER JOIN EXCLUSIVE e ON e.exclusive_id = cr.exclusive_id
+        INNER JOIN BOT b ON b.bot_id = e.bot_id
+        WHERE e.user_id = #{userId}
+          AND cr.status != 'DELETED'
+        ORDER BY COALESCE(cr.last_message_at, cr.created_at) DESC
+    </select>
+
+    <select id="selectMessages" resultType="kr.hi.matey.dto.ChatMessageDTO">
+        SELECT
+            message_id AS messageId,
+            chat_room_id AS chatRoomId,
+            content,
+            sender_type AS senderType,
+            DATE_FORMAT(created_at, '%Y-%m-%dT%H:%i:%s') AS createdAt
+        FROM MESSAGE
+        WHERE chat_room_id = #{chatRoomId}
+        ORDER BY created_at ASC
+    </select>
+
+    <select id="countChatRoomByUserAndId" resultType="int">
+        SELECT COUNT(*)
+        FROM CHAT_ROOM cr
+        INNER JOIN EXCLUSIVE e ON e.exclusive_id = cr.exclusive_id
+        WHERE cr.chat_room_id = #{chatRoomId} AND e.user_id = #{userId}
+    </select>
+
+</mapper>

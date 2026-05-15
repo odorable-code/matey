@@ -24,10 +24,11 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 public class AuthService {
-	
+
 	private final AuthDAO authDAO;
 	private final BCryptPasswordEncoder encoder;
 	private final JavaMailSender mailSender;
+	private final NotificationService notificationService;
 
 	@Value("${app.frontend-url:http://localhost:3000}")
 	private String frontendBaseUrl;
@@ -82,8 +83,15 @@ public class AuthService {
             if(result) {
                 authDAO.insertUserRole(userVO.getUserId(), 1);
                 authDAO.insertUserSetting(userVO.getUserId());
+                authDAO.insertDefaultNotificationSettings(userVO.getUserId());
+                notificationService.createNotification(
+                    userVO.getUserId(),
+                    "SYSTEM_NOTICE",
+                    userVO.getNickname() + "님, 메이트에 오신 걸 환영해요! 함께 즐거운 시간을 보내봐요 🎉",
+                    null, null
+                );
             }
-            
+
             return result;
             
         } catch (Exception e) {

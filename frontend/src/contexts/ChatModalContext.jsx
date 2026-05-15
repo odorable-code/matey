@@ -31,7 +31,7 @@ import {
   useState,
 } from 'react';
 import { mergeLandingBotsRows } from 'utils/landingMates';
-import { communityAPI, myPageAPI } from 'utils/api';
+import { communityAPI, myPageAPI, chatRoomAPI } from 'utils/api';
 import { resolveMateKey } from '../constants/mates';
 
 // ============================================================
@@ -70,6 +70,38 @@ export function ChatModalProvider({ children }) {
   const [landingMates, setLandingMates] = useState(() => mergeLandingBotsRows([]));
   /** 담당봇 bot-menu: 채팅은 친밀 레벨로 해금된 모션만, 맥락에 맞게 선택 */
   const [assignedBotMotionsForChat, setAssignedBotMotionsForChat] = useState(null);
+
+  // 모달 열릴 때 DB에서 채팅방 목록 로드
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    let cancelled = false;
+    chatRoomAPI
+      .getRooms()
+      .then((rooms) => {
+        if (cancelled || !Array.isArray(rooms) || rooms.length === 0) return;
+        setSessions((prev) => {
+          const existingIds = new Set(prev.map((s) => String(s.chatRoomId)));
+          const newFromDb = rooms
+            .filter((r) => !existingIds.has(String(r.chatRoomId)))
+            .map((r) => ({
+              id: `db-${r.chatRoomId}`,
+              chatRoomId: r.chatRoomId,
+              mateKey: resolveMateKey(r.mateKey ?? '') || r.mateKey,
+              title: r.title || '대화',
+              lastMessage: r.lastMessage || '',
+              createdAt: r.lastMessageAt ? new Date(r.lastMessageAt).getTime() : Date.now(),
+              updatedAt: r.lastMessageAt ? new Date(r.lastMessageAt).getTime() : Date.now(),
+              unread: 0,
+              messages: [],
+              loadedFromDb: true,
+            }));
+          if (newFromDb.length === 0) return prev;
+          return [...prev, ...newFromDb].sort((a, b) => b.updatedAt - a.updatedAt);
+        });
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -129,6 +161,7 @@ export function ChatModalProvider({ children }) {
       setSessions((prev) => [
         {
           id,
+          chatRoomId: null,
           mateKey: normalized,
           title: '새로운 대화',
           createdAt: Date.now(),
@@ -140,6 +173,18 @@ export function ChatModalProvider({ children }) {
       ]);
       setActiveSessionId(id);
       setRightView(RIGHT.CHAT);
+
+      chatRoomAPI
+        .createRoom(normalized, '새로운 대화')
+        .then((data) => {
+          if (!data?.chatRoomId) return;
+          setSessions((prev) =>
+            prev.map((s) =>
+              s.id === id ? { ...s, chatRoomId: data.chatRoomId } : s,
+            ),
+          );
+        })
+        .catch(() => {});
     } else {
       setActiveSessionId(null);
       setRightView(RIGHT.PICK);
@@ -176,6 +221,7 @@ export function ChatModalProvider({ children }) {
     const id = `s-${Date.now()}`;
     const newSession = {
       id,
+      chatRoomId: null, // DB 저장 후 채워짐
       mateKey: normalized,
       title: '새로운 대화',
       createdAt: Date.now(),
@@ -186,14 +232,56 @@ export function ChatModalProvider({ children }) {
     setSessions((prev) => [newSession, ...prev]);
     setActiveSessionId(id);
     setRightView(RIGHT.CHAT);
+
+    // DB에 채팅방 생성 (비동기, 실패해도 UI는 유지)
+    chatRoomAPI
+      .createRoom(normalized, '새로운 대화')
+      .then((data) => {
+        if (!data?.chatRoomId) return;
+        setSessions((prev) =>
+          prev.map((s) =>
+            s.id === id ? { ...s, chatRoomId: data.chatRoomId } : s,
+          ),
+        );
+      })
+      .catch(() => {});
   }, []);
 
   // -------- 기존 방 열기 --------
   const openSession = useCallback((sessionId) => {
     setActiveSessionId(sessionId);
-    setSessions((prev) =>
-      prev.map((s) => (s.id === sessionId ? { ...s, unread: 0 } : s)),
-    );
+    setSessions((prev) => {
+      const session = prev.find((s) => s.id === sessionId);
+      // DB에서 로드된 방이고 메시지가 없으면 메시지 조회
+      if (session?.chatRoomId && session.messages.length === 0) {
+        chatRoomAPI
+          .getMessages(session.chatRoomId)
+          .then((msgs) => {
+            if (!Array.isArray(msgs) || msgs.length === 0) return;
+            const mapped = msgs.map((m) => ({
+              id: `db-msg-${m.messageId}`,
+              role: m.senderType === 'USER' ? 'user' : 'mate',
+              text: m.content,
+              time: m.createdAt
+                ? (() => {
+                    const d = new Date(m.createdAt);
+                    const h = d.getHours();
+                    const mi = d.getMinutes().toString().padStart(2, '0');
+                    const p = h < 12 ? '오전' : '오후';
+                    return `${p} ${h % 12 === 0 ? 12 : h % 12}:${mi}`;
+                  })()
+                : '',
+            }));
+            setSessions((cur) =>
+              cur.map((s) =>
+                s.id === sessionId ? { ...s, messages: mapped } : s,
+              ),
+            );
+          })
+          .catch(() => {});
+      }
+      return prev.map((s) => (s.id === sessionId ? { ...s, unread: 0 } : s));
+    });
     setRightView(RIGHT.CHAT);
   }, []);
 
@@ -204,7 +292,16 @@ export function ChatModalProvider({ children }) {
       '이 대화방을 삭제할까요?\n대화 내용이 모두 사라지며 되돌릴 수 없어요.'
     );
     if (!ok) return;
-    setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+
+    // DB soft-delete (chatRoomId 있을 때)
+    setSessions((prev) => {
+      const session = prev.find((s) => s.id === sessionId);
+      if (session?.chatRoomId) {
+        chatRoomAPI.deleteRoom(session.chatRoomId).catch(() => {});
+      }
+      return prev.filter((s) => s.id !== sessionId);
+    });
+
     setActiveSessionId((prev) => {
       if (prev === sessionId) {
         setRightView(RIGHT.EMPTY);
@@ -214,10 +311,20 @@ export function ChatModalProvider({ children }) {
     });
   }, []);
 
-  // -------- 메시지 추가 --------
+  // -------- 메시지 추가 + DB 저장 --------
   const appendMessage = useCallback((sessionId, message) => {
-    setSessions((prev) =>
-      prev.map((s) => {
+    setSessions((prev) => {
+      const session = prev.find((s) => s.id === sessionId);
+
+      // DB 저장 (chatRoomId 있고 db-msg가 아닌 새 메시지만)
+      if (session?.chatRoomId && !String(message.id).startsWith('db-msg-')) {
+        const senderType = message.role === 'user' ? 'USER' : 'BOT';
+        chatRoomAPI
+          .saveMessage(session.chatRoomId, message.text, senderType)
+          .catch(() => {});
+      }
+
+      return prev.map((s) => {
         if (s.id !== sessionId) return s;
         return {
           ...s,
@@ -228,8 +335,8 @@ export function ChatModalProvider({ children }) {
               ? message.text.slice(0, 20)
               : s.title,
         };
-      }),
-    );
+      });
+    });
   }, []);
 
   // -------- ESC / body lock --------

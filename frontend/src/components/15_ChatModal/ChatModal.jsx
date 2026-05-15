@@ -769,16 +769,38 @@ function ChatView({ mobileBar = false, onMobileBack }) {
   const [speechLevel, setSpeechLevel] = useState("polite");
   const inputRef = useRef(null);
   const scrollRef = useRef(null);
+  const geminiInitializedFor = useRef(null);
 
   useEffect(() => {
     setSpeechLevel(settings?.casualTone ? "casual" : "polite");
   }, [activeSession?.id, settings?.casualTone]);
 
   /* ---------------------------------------------
-     방 진입 시 인풋 포커스 (인사 말풍선은 넣지 않음 — 사용자가 먼저 말을 걸 때까지 대화창 비움)
+     방 진입 시 Gemini 세션 초기화 + 인사 메시지 + 인풋 포커스
   --------------------------------------------- */
   useEffect(() => {
     if (!activeSession || !mate) return;
+
+    if (geminiInitializedFor.current !== activeSession.id) {
+      geminiInitializedFor.current = activeSession.id;
+      const isNew = activeSession.messages.length === 0;
+      if (isNew) setIsTyping(true);
+      fetch(`${CHAT_API_BASE}/api/preparing?name=사용자&session_id=${encodeURIComponent(activeSession.id)}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (isNew) {
+            appendMessage(activeSession.id, {
+              id: `mate-${Date.now()}`,
+              role: "mate",
+              text: data.message || `안녕하세요! 저는 ${mate.name}이에요.`,
+              time: nowTimeString(),
+            });
+          }
+        })
+        .catch(console.error)
+        .finally(() => { if (isNew) setIsTyping(false); });
+    }
+
     const t = setTimeout(() => inputRef.current?.focus(), 200);
     return () => clearTimeout(t);
   }, [activeSession?.id, mate]);
@@ -802,9 +824,9 @@ function ChatView({ mobileBar = false, onMobileBack }) {
   if (!activeSession || !mate) return null;
 
   /* ---------------------------------------------
-     메시지 전송 → FastAPI(/api/chat/completions)로 봇 응답
-     - ANTHROPIC_API_KEY 설정 시 Claude가 사이트 안내·대화 생성
-     - 미설정 시 서버 쪽 규칙 기반 폴백(fastapi/services/matey_chat.py)
+     메시지 전송 → FastAPI(/api/chat/gemini)로 봇 응답
+     - GOOGLE_API_KEY 설정 시 Gemini가 응답 생성
+     - 세션이 없으면 서버에서 안내 메시지 반환
   --------------------------------------------- */
   const sendMessage = async (text) => {
     const trimmed = text.trim();
@@ -820,33 +842,17 @@ function ChatView({ mobileBar = false, onMobileBack }) {
     setInputValue("");
     setIsTyping(true);
 
-    const historyForApi = [...activeSession.messages, userMsg].map((m) => ({
-      role: m.role === "mate" ? "assistant" : "user",
-      content: m.text,
-    }));
-
     try {
-      const res = await fetch(`${CHAT_API_BASE}/api/chat/completions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: historyForApi,
-          mate_key: mate.key,
-          mate_name: mate.name,
-          mate_role: mate.role,
-          mate_persona: mate.greeting || mate.description || '',
-          speech_level: speechLevel === "casual" ? "casual" : "polite",
-        }),
-      });
+      const res = await fetch(
+        `${CHAT_API_BASE}/api/chat/gemini?user_message=${encodeURIComponent(trimmed)}&session_id=${encodeURIComponent(activeSession.id)}`,
+        { method: "POST" }
+      );
       const raw = await res.text();
       if (!res.ok) {
         throw new Error(raw || res.statusText);
       }
       const data = raw ? JSON.parse(raw) : {};
-      const reply =
-        data.reply ||
-        data.message ||
-        "잠시만, 다시 한 번 말해줄래?";
+      const reply = data.message || data.reply || "잠시만, 다시 한 번 말해줄래?";
 
       appendMessage(activeSession.id, {
         id: `mate-${Date.now()}`,

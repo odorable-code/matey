@@ -190,11 +190,18 @@
         )
     </select>
 
-    <!-- 안 읽은 알림 수 조회 (뱃지용 경량 쿼리) -->
+    <!-- 안 읽은 알림 수 조회 (뱃지용 경량 쿼리) — 비활성화된 타입 제외 -->
     <select id="selectUnreadCount" resultType="int">
         SELECT COUNT(*)
-        FROM NOTIFICATION
-        WHERE user_id = #{userId} AND is_read = 0
+        FROM NOTIFICATION n
+        WHERE n.user_id = #{userId}
+          AND n.is_read = 0
+          AND COALESCE(
+              (SELECT uns.is_enabled
+               FROM USER_NOTIFICATION_SETTING uns
+               WHERE uns.user_id = #{userId} AND uns.type_code = n.type_code),
+              1
+          ) = 1
     </select>
 
     <!-- 이메일로 user_id 조회 (관리자 알림 전송용) -->

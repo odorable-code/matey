@@ -219,7 +219,6 @@ export function NotificationProvider({ children }) {
       }
 
       setNotifications(transformed);
-      setUnreadCount(transformed.filter((n) => !n.read).length);
     } catch (err) {
       console.error('알림 로드 실패:', err);
     }
@@ -231,7 +230,6 @@ export function NotificationProvider({ children }) {
     try {
       const data = await notificationAPI.getUnreadCount();
       const count = data?.count ?? 0;
-      setUnreadCount(count);
       return count;
     } catch (err) {
       return null;
@@ -316,7 +314,6 @@ export function NotificationProvider({ children }) {
       setNotifications((prev) =>
         prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
       );
-      setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch (err) {
       console.error('알림 읽음 처리 실패:', err);
     }
@@ -327,7 +324,6 @@ export function NotificationProvider({ children }) {
     try {
       await notificationAPI.markAllAsRead();
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-      setUnreadCount(0);
     } catch (err) {
       console.error('전체 알림 읽음 처리 실패:', err);
     }
@@ -363,7 +359,6 @@ export function NotificationProvider({ children }) {
       ...payload,
     };
     setNotifications((prev) => [newItem, ...prev]);
-    setUnreadCount((prev) => prev + 1);
 
     // 브라우저 알림도 발송
     if (settingsRef.current.pushNotice) {
@@ -379,13 +374,7 @@ export function NotificationProvider({ children }) {
   const removeNotification = useCallback(async (id) => {
     try {
       await notificationAPI.deleteNotification(id);
-      setNotifications((prev) => {
-        const target = prev.find((n) => n.id === id);
-        if (target && !target.read) {
-          setUnreadCount((c) => Math.max(0, c - 1));
-        }
-        return prev.filter((n) => n.id !== id);
-      });
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
     } catch (err) {
       console.error('알림 삭제 실패:', err);
     }
@@ -409,6 +398,11 @@ export function NotificationProvider({ children }) {
       return settings[settingKey] !== false;
     });
   }, [notifications, settings]);
+
+  // filteredNotifications 기준으로 뱃지 카운트 동기화 — 비활성 타입은 카운트에서 제외
+  useEffect(() => {
+    setUnreadCount(filteredNotifications.filter((n) => !n.read).length);
+  }, [filteredNotifications]);
 
   const value = {
     isOpen,

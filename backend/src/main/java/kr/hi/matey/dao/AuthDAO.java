@@ -25,6 +25,8 @@ public interface AuthDAO {
 
 	int insertUserSetting(@Param("userId") Long userId);
 
+	int insertDefaultNotificationSettings(@Param("userId") Long userId);
+
 	UserVO findByEmail(String email);
 
 	String findId(UserDTO user);
