@@ -18,7 +18,7 @@
  *
  * [여기서 주로 수정하면 되는 곳]
  * 1) COPY              : 화면 카피 모음
- * 2) AI 답변          : FastAPI POST /api/chat/completions (환경변수 REACT_APP_CHAT_API_URL)
+ * 2) AI 답변          : FastAPI POST /api/chat (환경변수 REACT_APP_CHAT_API_URL)
  * 3) PickView          : 봇 고르기 화면
  * 4) ChatView          : 1:1 채팅방
  * =========================================================
@@ -776,7 +776,7 @@ function ChatView({ mobileBar = false, onMobileBack }) {
   }, [activeSession?.id, settings?.casualTone]);
 
   /* ---------------------------------------------
-     방 진입 시 Gemini 세션 초기화 + 인사 메시지 + 인풋 포커스
+     방 진입 시 인사 메시지 + 인풋 포커스
   --------------------------------------------- */
   useEffect(() => {
     if (!activeSession || !mate) return;
@@ -784,21 +784,15 @@ function ChatView({ mobileBar = false, onMobileBack }) {
     if (geminiInitializedFor.current !== activeSession.id) {
       geminiInitializedFor.current = activeSession.id;
       const isNew = activeSession.messages.length === 0;
-      if (isNew) setIsTyping(true);
-      fetch(`${CHAT_API_BASE}/api/preparing?name=사용자&session_id=${encodeURIComponent(activeSession.id)}`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (isNew) {
-            appendMessage(activeSession.id, {
-              id: `mate-${Date.now()}`,
-              role: "mate",
-              text: data.message || `안녕하세요! 저는 ${mate.name}이에요.`,
-              time: nowTimeString(),
-            });
-          }
-        })
-        .catch(console.error)
-        .finally(() => { if (isNew) setIsTyping(false); });
+      if (isNew) {
+        // 새로 생긴 방이면 메이트의 기본 인사말을 로컬에서 추가
+        appendMessage(activeSession.id, {
+          id: `mate-${Date.now()}`,
+          role: "mate",
+          text: `안녕하세요! 저는 ${mate.name}이에요. 무엇을 도와드릴까요?`,
+          time: nowTimeString(),
+        });
+      }
     }
 
     const t = setTimeout(() => inputRef.current?.focus(), 200);
@@ -824,9 +818,7 @@ function ChatView({ mobileBar = false, onMobileBack }) {
   if (!activeSession || !mate) return null;
 
   /* ---------------------------------------------
-     메시지 전송 → FastAPI(/api/chat/gemini)로 봇 응답
-     - GOOGLE_API_KEY 설정 시 Gemini가 응답 생성
-     - 세션이 없으면 서버에서 안내 메시지 반환
+     메시지 전송 → FastAPI(/api/chat)로 봇 응답 (RAG)
   --------------------------------------------- */
   const sendMessage = async (text) => {
     const trimmed = text.trim();
@@ -843,16 +835,17 @@ function ChatView({ mobileBar = false, onMobileBack }) {
     setIsTyping(true);
 
     try {
-      const res = await fetch(
-        `${CHAT_API_BASE}/api/chat/gemini?user_message=${encodeURIComponent(trimmed)}&session_id=${encodeURIComponent(activeSession.id)}`,
-        { method: "POST" }
-      );
-      const raw = await res.text();
+      const res = await fetch(`${CHAT_API_BASE}/api/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: trimmed }),
+      });
       if (!res.ok) {
-        throw new Error(raw || res.statusText);
+        const errText = await res.text();
+        throw new Error(errText || res.statusText);
       }
-      const data = raw ? JSON.parse(raw) : {};
-      const reply = data.message || data.reply || "잠시만, 다시 한 번 말해줄래?";
+      const data = await res.json();
+      const reply = data.reply || "잠시만, 다시 한 번 말해줄래?";
 
       appendMessage(activeSession.id, {
         id: `mate-${Date.now()}`,

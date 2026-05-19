@@ -1,114 +1,222 @@
-"""
-Matey AI / 분석 마이크로서비스 (FastAPI)
+#!/usr/bin/env python3
+"""멍이 RAG 챗봇 CLI"""
 
-실행: (저장소 루트에서)
-  cd fastapi
-  python -m venv .venv
-  .venv\\Scripts\\activate   # Windows
-  pip install -r requirements.txt
-  uvicorn main:app --reload --host 0.0.0.0 --port 8000
-"""
-from collections import OrderedDict
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
+import argparse
+import sys
+from pathlib import Path
 
-from routers.analysis import router as analysis_router
-from routers.chat import router as chat_router
-from letter import router as letter_router
+from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table
+from rich import print as rprint
 
-from dotenv import load_dotenv
-import os
-import google.generativeai as genai
+from config import config
+from document_loader import load_file
+from vector_store import VectorStore
+from rag_chatbot import RAGChatbot
 
-import uvicorn
-
-load_dotenv()
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-
-if GOOGLE_API_KEY:
-    genai.configure(api_key=GOOGLE_API_KEY)
-
-app = FastAPI(title="Matey AI API", version="0.1.0")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-app.include_router(analysis_router)
-app.include_router(chat_router)
-app.include_router(letter_router)
-
-@app.get("/")
-def root() -> dict:
-    return {
-        "service": "matey-fastapi",
-        "docs": "/docs",
-        "health": "/api/health",
-        "chat": "POST /api/chat/completions",
-    }
-
-@app.get("/api/health")
-def health() -> dict:
-    return {"status": "ok"}
-
-MAX_GEMINI_SESSIONS = 200
-# session_id → Gemini ChatSession (OrderedDict으로 LRU 방출)
-gemini_sessions: OrderedDict = OrderedDict()
+console = Console()
 
 
-def _get_session(session_id: str):
-    """세션 조회 + 최근 사용 순서 갱신."""
-    if session_id not in gemini_sessions:
-        return None
-    gemini_sessions.move_to_end(session_id)
-    return gemini_sessions[session_id]
+# ------------------------------------------------------------------
+# 서브커맨드: index
+# ------------------------------------------------------------------
+
+def cmd_index(args: argparse.Namespace) -> None:
+    """문서를 벡터 DB에 인덱싱합니다."""
+    store = VectorStore()
+
+    if args.reset:
+        store.reset()
+        console.print("[yellow]기존 컬렉션을 초기화했습니다.[/yellow]")
+
+    kwargs = {}
+    if args.text_columns:
+        kwargs["text_columns"] = [c.strip() for c in args.text_columns.split(",")]
+
+    total = 0
+    for file_path in args.files:
+        if not Path(file_path).exists():
+            console.print(f"[red]파일을 찾을 수 없습니다: {file_path}[/red]")
+            continue
+        with console.status(f"[cyan]로딩 중: {file_path}[/cyan]"):
+            docs = load_file(file_path, **kwargs)
+        with console.status(f"[cyan]인덱싱 중: {len(docs)}개 청크...[/cyan]"):
+            added = store.add_documents(docs)
+        total += added
+        console.print(f"[green]✓[/green] {file_path} → {added}개 청크 추가")
+
+    console.print(f"\n[bold green]총 {total}개 청크 인덱싱 완료. DB 전체: {store.count()}개[/bold green]")
 
 
-def _put_session(session_id: str, session) -> None:
-    """세션 저장 + MAX 초과 시 오래된 항목 방출."""
-    gemini_sessions[session_id] = session
-    gemini_sessions.move_to_end(session_id)
-    while len(gemini_sessions) > MAX_GEMINI_SESSIONS:
-        gemini_sessions.popitem(last=False)
+# ------------------------------------------------------------------
+# 서브커맨드: chat
+# ------------------------------------------------------------------
+
+def cmd_chat(args: argparse.Namespace) -> None:
+    """대화형 RAG 챗봇을 시작합니다."""
+    store = VectorStore()
+    if store.count() == 0:
+        console.print("[red]벡터 DB가 비어 있습니다. 먼저 `python main.py index <파일>` 을 실행하세요.[/red]")
+        sys.exit(1)
+
+    bot = RAGChatbot(store=store)
+    console.print(Panel(
+        f"[bold cyan]🐾 멍이 RAG 챗봇[/bold cyan]\n"
+        f"모델: {config.CHAT_MODEL} | 임베딩: {config.EMBEDDING_MODEL}\n"
+        f"DB 청크 수: {store.count()} | Top-K: {args.top_k}\n"
+        "[dim]종료: exit / quit | 히스토리 초기화: /clear | 참조 보기: /refs on|off[/dim]",
+        border_style="cyan",
+    ))
+
+    show_refs = args.show_refs
+
+    while True:
+        try:
+            question = console.input("[bold blue]You:[/bold blue] ").strip()
+        except (EOFError, KeyboardInterrupt):
+            console.print("\n[dim]종료합니다.[/dim]")
+            break
+
+        if not question:
+            continue
+        if question.lower() in ("exit", "quit"):
+            break
+        if question.lower() == "/clear":
+            bot.clear_history()
+            console.print("[yellow]대화 히스토리를 초기화했습니다.[/yellow]")
+            continue
+        if question.lower().startswith("/refs"):
+            parts = question.split()
+            show_refs = parts[1].lower() == "on" if len(parts) > 1 else not show_refs
+            console.print(f"[yellow]참조 표시: {'on' if show_refs else 'off'}[/yellow]")
+            continue
+
+        console.print("[bold green]Bot:[/bold green] ", end="")
+        chunks: list[dict] = []
+
+        # 스트리밍 출력
+        answer_parts = []
+        for token in bot.stream_chat(question, top_k=args.top_k):
+            console.print(token, end="", markup=False)
+            answer_parts.append(token)
+
+        # stream_chat은 내부적으로 chunks를 저장하지 않으므로 non-streaming로 refs 확인
+        # refs가 필요할 때만 별도 query
+        console.print()
+
+        if show_refs:
+            ref_chunks = store.query(question, top_k=args.top_k)
+            table = Table(title="참조 문서", show_lines=True, title_style="dim")
+            table.add_column("순위", style="dim", width=4)
+            table.add_column("출처", style="cyan")
+            table.add_column("유사도", style="green", width=8)
+            table.add_column("내용 (일부)", style="white")
+            for rank, chunk in enumerate(ref_chunks, 1):
+                meta = chunk["metadata"]
+                source = meta.get("source", "?")
+                loc = f"행 {meta['row']}" if "row" in meta else f"#{meta.get('index', '?')}"
+                preview = chunk["content"][:80].replace("\n", " ") + ("…" if len(chunk["content"]) > 80 else "")
+                table.add_row(str(rank), f"{source}\n{loc}", f"{chunk['score']:.3f}", preview)
+            console.print(table)
+
+        console.print()
 
 
-@app.get("/api/preparing")
-async def prepare_chat(name: str, session_id: str) -> dict:
-    if not GOOGLE_API_KEY:
-        return {"message": f"안녕하세요, {name}님! 지금은 AI 준비 중이에요."}
-    # 세션이 이미 살아있으면 재초기화하지 않음 (대화 맥락 보존)
-    if _get_session(session_id) is not None:
-        return {"message": f"환영해 멍멍! 나는 강이라고 해. {name}아 반가워! 멍!"}
-    system_instruction = f"""
-    당신은 '강이'라는 이름의 귀여운 강아지 상담사입니다.
-    {name}이라는 사용자에게 상담을 제공할 예정입니다
-    당신은 따뜻하고 공감 능력이 뛰어나며, 사용자에게 위로와 격려를 건네는 것이 목표입니다.
-    말투는 친근하고 귀여워야 하며, 말끝에 '멍!' 또는 '멍멍!' 같은 강아지 소리를 가끔 섞어주세요.
-    사용자의 고민을 진지하게 들어주되, 항상 긍정적인 에너지를 전달하세요.
-    한국어로 대화하세요.
-    """
-    model = genai.GenerativeModel(
-        model_name="gemini-3-flash-preview",
-        system_instruction=system_instruction,
+# ------------------------------------------------------------------
+# 서브커맨드: setup
+# ------------------------------------------------------------------
+
+def cmd_setup(args: argparse.Namespace) -> None:
+    """data_rag.jsonl을 인덱싱하고 바로 챗봇을 시작합니다."""
+    data_file = args.data_file
+    if not Path(data_file).exists():
+        console.print(f"[red]파일을 찾을 수 없습니다: {data_file}[/red]")
+        sys.exit(1)
+
+    store = VectorStore()
+
+    if args.reset or store.count() == 0:
+        if store.count() > 0:
+            store.reset()
+            console.print("[yellow]기존 컬렉션을 초기화했습니다.[/yellow]")
+
+        with console.status(f"[cyan]로딩 중: {data_file}[/cyan]"):
+            docs = load_file(data_file)
+        with console.status(f"[cyan]인덱싱 중: {len(docs)}개 청크...[/cyan]"):
+            added = store.add_documents(docs)
+        console.print(f"[bold green]✓ {added}개 청크 인덱싱 완료 (DB 전체: {store.count()}개)[/bold green]")
+    else:
+        console.print(f"[dim]기존 DB 사용 중 (청크 수: {store.count()}). 재인덱싱하려면 --reset 옵션을 사용하세요.[/dim]")
+
+    # 바로 챗 시작
+    args.top_k = config.TOP_K
+    args.show_refs = False
+    cmd_chat(args)
+
+
+# ------------------------------------------------------------------
+# 서브커맨드: info
+# ------------------------------------------------------------------
+
+def cmd_info(_args: argparse.Namespace) -> None:
+    store = VectorStore()
+    console.print(Panel(
+        f"[bold]설정 정보[/bold]\n"
+        f"채팅 모델: {config.CHAT_MODEL}\n"
+        f"임베딩 모델: {config.EMBEDDING_MODEL}\n"
+        f"컬렉션: {config.COLLECTION_NAME}\n"
+        f"DB 경로: {config.CHROMA_PERSIST_DIR}\n"
+        f"청크 크기: {config.CHUNK_SIZE} | 오버랩: {config.CHUNK_OVERLAP}\n"
+        f"Top-K: {config.TOP_K}\n"
+        f"[bold green]저장된 청크 수: {store.count()}[/bold green]",
+        title="RAG 챗봇 정보",
+        border_style="blue",
+    ))
+
+
+# ------------------------------------------------------------------
+# 진입점
+# ------------------------------------------------------------------
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="멍이 RAG 챗봇 🐾")
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    # setup (권장: 인덱싱 + 챗 한 번에)
+    p_setup = subparsers.add_parser("setup", help="counseling_data_merged.jsonl 인덱싱 후 바로 챗봇 시작 (권장)")
+    p_setup.add_argument(
+        "data_file",
+        nargs="?",
+        default="counseling_data_merged.json",
+        help="인덱싱할 JSONL 파일 (기본:  counseling_data_merged.json)",
     )
-    _put_session(session_id, model.start_chat(history=[]))
-    return {"message": f"환영해 멍멍! 나는 강이라고 해. {name}아 반가워! 멍!"}
+    p_setup.add_argument("--reset", action="store_true", help="기존 DB를 초기화하고 재인덱싱")
+    p_setup.set_defaults(func=cmd_setup)
+
+    # index
+    p_index = subparsers.add_parser("index", help="JSON/CSV 파일을 벡터 DB에 인덱싱")
+    p_index.add_argument("files", nargs="+", help="인덱싱할 파일 경로 (.json, .jsonl, .csv)")
+    p_index.add_argument("--reset", action="store_true", help="기존 컬렉션을 삭제 후 재생성")
+    p_index.add_argument(
+        "--text-columns",
+        help="CSV 전용: 본문으로 사용할 열 이름 (쉼표 구분, 기본: 전체 열)",
+    )
+    p_index.set_defaults(func=cmd_index)
+
+    # chat
+    p_chat = subparsers.add_parser("chat", help="대화형 RAG 챗봇 시작")
+    p_chat.add_argument("--top-k", type=int, default=config.TOP_K, help="검색할 청크 수")
+    p_chat.add_argument("--show-refs", action="store_true", default=False, help="참조 문서를 항상 표시")
+    p_chat.set_defaults(func=cmd_chat)
+
+    # info
+    p_info = subparsers.add_parser("info", help="현재 설정 및 DB 상태 확인")
+    p_info.set_defaults(func=cmd_info)
+
+    args = parser.parse_args()
+    args.func(args)
 
 
-@app.post("/api/chat/gemini")
-async def gemini_chat(user_message: str, session_id: str) -> dict:
-    session = _get_session(session_id)
-    if session is None:
-        raise HTTPException(status_code=404, detail="세션을 찾을 수 없어요. 먼저 /api/preparing 을 호출해 주세요.")
-    if user_message.strip().lower() in ["종료", "exit"]:
-        gemini_sessions.pop(session_id, None)
-        return {"message": "다음에 또 고민이 생기면 언제든 찾아와멍! 잘 가멍! 멍멍!"}
-    response = session.send_message(user_message)
-    return {"message": response.text}
-
-if __name__ == '__main__':
-    uvicorn.run("main:app", host="0.0.0.0", port=8000)
+if __name__ == "__main__":
+    main()

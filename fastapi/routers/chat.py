@@ -8,9 +8,14 @@ from pydantic import BaseModel, Field
 
 from services.llm_client import run_chat_completion
 from services.matey_chat import build_system_prompt
+from rag_chatbot import RAGChatbot
+from vector_store import VectorStore
 
 router = APIRouter(prefix="/api", tags=["chat"])
 
+# RAG 챗봇 인스턴스 초기화 (싱글톤처럼 사용)
+store = VectorStore()
+bot = RAGChatbot(store=store)
 
 class ChatMessage(BaseModel):
     role: str
@@ -27,6 +32,11 @@ class ChatCompletionRequest(BaseModel):
     mate_persona: Optional[str] = None
     # polite: 친구 같은 존댓말 / casual: 반말 (응답 생성 시 system에만 반영)
     speech_level: str = Field(default="polite", description="polite | casual")
+
+
+class RAGChatRequest(BaseModel):
+    question: str
+    top_k: Optional[int] = Field(default=5, ge=1, le=20)
 
 
 @router.post("/chat/completions")
@@ -54,3 +64,23 @@ def chat_completions(body: ChatCompletionRequest) -> Dict[str, Any]:
         speech_level=body.speech_level,
     )
     return {"reply": text}
+
+
+@router.post("/chat")
+def chat_rag(body: RAGChatRequest) -> Dict[str, Any]:
+    """
+    RAG 기반 챗봇 엔드포인트. 
+    ChromaDB에서 유사한 문서를 찾아 답변을 생성합니다.
+    """
+    answer, chunks = bot.chat(body.question, top_k=body.top_k)
+    return {
+        "reply": answer,
+        "references": [
+            {
+                "content": c["content"],
+                "metadata": c["metadata"],
+                "score": float(c["score"]) if "score" in c else 0.0
+            } for c in chunks
+        ]
+    }
+

@@ -18,7 +18,8 @@ module.exports = function setupProxy(app) {
   });
 
   // FastAPI 경로만 명시적으로 지정 (prefix 매칭 때문에 /api/chat/rooms가 FastAPI로 가지 않게)
-  app.use(['/api/chat/gemini', '/api/chat/completions'], fastapi);
+  app.use('/api/chat/rooms', spring); 
+  app.use(['/api/chat/gemini', '/api/chat/completions', '/api/chat'], fastapi);
   app.use('/api/analysis', fastapi);
   app.use('/api/health', fastapi);
   app.use('/api/preparing', fastapi);

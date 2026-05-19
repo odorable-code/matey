@@ -4,7 +4,11 @@ uvicorn[standard]>=0.27.0
 python-dotenv>=1.0.0
 pydantic>=2.0.0
 google-generativeai
-python-dotenv
+chromadb
+rich
+konlpy
+pandas
+numpy
 
 # LLM 호출 시 (선택)
 # anthropic>=0.18.0
