@@ -1,23 +1,32 @@
 package kr.hi.matey.service;
 
 import kr.hi.matey.dao.ChatDAO;
+import kr.hi.matey.dao.MyPageDAO;
 import kr.hi.matey.dto.ChatRoomDTO;
 import kr.hi.matey.dto.ChatMessageDTO;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ChatService {
 
+    private static final String FASTAPI_URL = "http://localhost:8000/api/generate-chat-letter";
+    private static final long COUNSEL_LETTER_TYPE_ID = 1L; // RECONNECT 타입 재활용
+
     private final ChatDAO chatDAO;
+    private final MyPageDAO myPageDAO;
 
     @Transactional
     public Long createChatRoom(long userId, String mateKey, String title) {
@@ -87,5 +96,51 @@ public class ChatService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "접근 권한이 없습니다.");
         }
         chatDAO.updateChatRoomStatus(userId, chatRoomId, "DELETED");
+    }
+
+    /**
+     * 채팅 종료: 대화를 ARCHIVED 상태로 바꾸고, 내용 요약 + 감정 관찰 쪽지를 생성해 BOT_LETTER에 저장합니다.
+     */
+    @Transactional
+    public void endChatRoomWithLetter(long userId, long chatRoomId) {
+        if (chatDAO.countChatRoomByUserAndId(userId, chatRoomId) == 0) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "접근 권한이 없습니다.");
+        }
+
+        List<ChatMessageDTO> messages = chatDAO.selectMessages(chatRoomId);
+        Map<String, Object> context = chatDAO.selectChatContextForLetter(chatRoomId);
+
+        chatDAO.updateChatRoomStatus(userId, chatRoomId, "ARCHIVED");
+
+        if (context == null || messages.isEmpty()) {
+            return;
+        }
+
+        String botName = (String) context.get("botName");
+        String userNickname = (String) context.get("userNickname");
+        long chatCount = ((Number) context.get("chatCount")).longValue();
+
+        List<Map<String, String>> msgList = messages.stream()
+                .map(m -> Map.of("role", m.getSenderType(), "content", m.getContent()))
+                .collect(Collectors.toList());
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("botName", botName);
+        payload.put("userNickname", userNickname);
+        payload.put("isFirstCounsel", chatCount <= 1);
+        payload.put("messages", msgList);
+
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+            @SuppressWarnings("unchecked")
+            Map<String, Object> result = restTemplate.postForObject(FASTAPI_URL, payload, Map.class);
+            if (result != null) {
+                String title = (String) result.get("title");
+                String content = (String) result.get("content");
+                myPageDAO.insertBotLetter(userId, COUNSEL_LETTER_TYPE_ID, title, content);
+            }
+        } catch (Exception e) {
+            log.warn("[ChatService] 채팅 쪽지 생성 실패 chatRoomId={}", chatRoomId, e);
+        }
     }
 }

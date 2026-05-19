@@ -311,6 +311,31 @@ export function ChatModalProvider({ children }) {
     });
   }, []);
 
+  // -------- 대화 종료 (요약 쪽지 발송 + ARCHIVED) --------
+  const endSession = useCallback((sessionId) => {
+    if (!sessionId) return;
+    const ok = window.confirm(
+      '대화를 마칠까요?\n요약 쪽지가 쪽지함에 도착할 거예요.'
+    );
+    if (!ok) return;
+
+    setSessions((prev) => {
+      const session = prev.find((s) => s.id === sessionId);
+      if (session?.chatRoomId) {
+        chatRoomAPI.endRoom(session.chatRoomId).catch(() => {});
+      }
+      return prev.filter((s) => s.id !== sessionId);
+    });
+
+    setActiveSessionId((prev) => {
+      if (prev === sessionId) {
+        setRightView(RIGHT.EMPTY);
+        return null;
+      }
+      return prev;
+    });
+  }, []);
+
   // -------- 메시지 추가 + DB 저장 --------
   const appendMessage = useCallback((sessionId, message) => {
     setSessions((prev) => {
@@ -384,6 +409,7 @@ export function ChatModalProvider({ children }) {
     startNewSession,
     openSession,
     deleteSession,
+    endSession,
     appendMessage,
     relativeTimeString,
   };

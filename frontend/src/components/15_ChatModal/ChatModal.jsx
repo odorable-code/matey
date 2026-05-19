@@ -756,7 +756,7 @@ function RadarChart({ abilities, size = 220 }) {
    우측 채팅방 화면 코드
 ========================================================= */
 function ChatView({ mobileBar = false, onMobileBack }) {
-  const { activeSession, appendMessage, landingMates } = useChatModal();
+  const { activeSession, appendMessage, landingMates, endSession } = useChatModal();
   const mate = useMemo(() => {
     if (!activeSession) return null;
     return landingMates.find((m) => m.key === activeSession.mateKey);
@@ -932,6 +932,14 @@ function ChatView({ mobileBar = false, onMobileBack }) {
             반말
           </button>
         </div>
+        <button
+          type="button"
+          className="matey-chat-room__end-btn"
+          onClick={() => endSession(activeSession.id)}
+          aria-label="대화 마치기"
+        >
+          대화 마치기
+        </button>
       </header>
 
       {/* 메시지 영역 */}

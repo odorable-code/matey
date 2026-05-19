@@ -93,4 +93,23 @@
         WHERE cr.chat_room_id = #{chatRoomId} AND e.user_id = #{userId}
     </select>
 
+    <select id="selectChatContextForLetter" resultType="map">
+        SELECT
+            COALESCE(NULLIF(TRIM(b.display_name), ''), b.name) AS botName,
+            u.nickname AS userNickname,
+            (
+                SELECT COUNT(*)
+                FROM CHAT_ROOM cr2
+                JOIN EXCLUSIVE e2 ON cr2.exclusive_id = e2.exclusive_id
+                WHERE e2.user_id = u.user_id
+                  AND e2.bot_id = b.bot_id
+                  AND cr2.status != 'DELETED'
+            ) AS chatCount
+        FROM CHAT_ROOM cr
+        JOIN EXCLUSIVE e ON cr.exclusive_id = e.exclusive_id
+        JOIN BOT b ON e.bot_id = b.bot_id
+        JOIN USER u ON e.user_id = u.user_id
+        WHERE cr.chat_room_id = #{chatRoomId}
+    </select>
+
 </mapper>

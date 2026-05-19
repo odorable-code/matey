@@ -15,6 +15,7 @@ import {
   isMockAccessToken,
   login as loginRequest,
   logout as logoutRequest,
+  presenceAPI,
   setStoredToken,
   signup as signupRequest,
 } from 'utils/api';
@@ -374,6 +375,16 @@ export function AuthProvider({ children }) {
     setUser(nextUser);
     setStoredUser(nextUser);
   }, []);
+
+  // 로그인 상태일 때 30초마다 heartbeat — 서버가 온라인 여부 감지에 사용
+  useEffect(() => {
+    if (!token || isMockAccessToken(token)) return undefined;
+    presenceAPI.heartbeat().catch(() => {});
+    const id = setInterval(() => {
+      presenceAPI.heartbeat().catch(() => {});
+    }, 30_000);
+    return () => clearInterval(id);
+  }, [token]);
 
   const value = useMemo(
     () => ({

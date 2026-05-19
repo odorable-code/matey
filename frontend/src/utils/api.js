@@ -851,6 +851,13 @@ export const notificationAPI = {
 };
 
 // ==========================================
+// Presence (온라인 감지용 heartbeat)
+// ==========================================
+export const presenceAPI = {
+  heartbeat: () => request('/api/presence/heartbeat', { method: 'POST' }),
+};
+
+// ==========================================
 // Chat Room API (Spring Boot → DB 저장)
 // ==========================================
 export const chatRoomAPI = {
@@ -865,5 +872,7 @@ export const chatRoomAPI = {
     }),
   deleteRoom: (chatRoomId) =>
     request(`/api/chat/rooms/${chatRoomId}`, { method: 'DELETE' }),
+  endRoom: (chatRoomId) =>
+    request(`/api/chat/rooms/${chatRoomId}/end`, { method: 'POST' }),
 };
 

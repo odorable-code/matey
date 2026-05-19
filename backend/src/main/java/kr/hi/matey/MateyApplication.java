@@ -2,11 +2,13 @@ package kr.hi.matey;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.jdbc.core.JdbcTemplate;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 
 @SpringBootApplication
+@EnableScheduling
 public class MateyApplication {
 
     @Autowired

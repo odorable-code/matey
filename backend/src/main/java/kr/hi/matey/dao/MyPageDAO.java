@@ -63,6 +63,13 @@ public interface MyPageDAO {
 
     // 4. 경험치/친밀도 점수 절대값 업데이트 (MyPageService 호환용)
     int updateBotExp(@Param("userId") long userId, @Param("exp") int exp);
-	void insertBotLetter(long userId, String title, String content);
-	
+	void insertBotLetter(@Param("userId") long userId, @Param("letterTypeId") long letterTypeId,
+						 @Param("title") String title, @Param("content") String content);
+
+	List<Long> selectAbsentUserIdsForLetter(@Param("minDays") int minDays, @Param("maxDays") int maxDays);
+
+	Map<String, Object> selectUserContextForLetter(@Param("userId") long userId);
+
+	int countRecentLetters(@Param("userId") long userId, @Param("hours") int hours);
+
 }

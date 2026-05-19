@@ -30,4 +30,6 @@ public interface ChatDAO {
     List<ChatRoomDTO> selectChatRooms(long userId);
     List<ChatMessageDTO> selectMessages(long chatRoomId);
     int countChatRoomByUserAndId(@Param("userId") long userId, @Param("chatRoomId") long chatRoomId);
+
+    Map<String, Object> selectChatContextForLetter(@Param("chatRoomId") long chatRoomId);
 }

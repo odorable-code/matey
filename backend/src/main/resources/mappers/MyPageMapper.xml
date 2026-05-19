@@ -423,4 +423,59 @@
         DELETE FROM `USER` WHERE `user_id` = #{userId}
     </update>
 
+    <insert id="insertBotLetter">
+        INSERT INTO BOT_LETTER (letter_type_id, exclusive_id, title, content, is_read)
+        SELECT #{letterTypeId}, e.exclusive_id, #{title}, #{content}, FALSE
+        FROM EXCLUSIVE e
+        JOIN USER u ON u.user_id = e.user_id AND u.user_id = #{userId}
+        WHERE e.bot_id = COALESCE(
+            (
+                SELECT e0.bot_id FROM EXCLUSIVE e0
+                INNER JOIN USER u0 ON u0.user_id = #{userId} AND u0.user_id = e0.user_id
+                WHERE e0.bot_id = u0.assigned_bot_id LIMIT 1
+            ),
+            (
+                SELECT e1.bot_id FROM EXCLUSIVE e1
+                WHERE e1.user_id = #{userId} ORDER BY e1.exclusive_id ASC LIMIT 1
+            )
+        )
+        LIMIT 1
+    </insert>
+
+    <select id="selectAbsentUserIdsForLetter" resultType="long">
+        SELECT DISTINCT u.user_id
+        FROM USER u
+        JOIN EXCLUSIVE e ON e.user_id = u.user_id
+        LEFT JOIN USER_SETTING us ON us.user_id = u.user_id
+        WHERE u.status = 'ACTIVE'
+          AND COALESCE(us.bot_letter_enabled, TRUE) = TRUE
+          AND DATEDIFF(NOW(), u.last_login_at) BETWEEN #{minDays} AND #{maxDays}
+    </select>
+
+    <select id="selectUserContextForLetter" resultType="map">
+        SELECT
+            COALESCE(NULLIF(TRIM(b.display_name), ''), b.name) AS botName,
+            u.nickname AS userNickname
+        FROM USER u
+        LEFT JOIN EXCLUSIVE e ON e.user_id = u.user_id
+            AND e.bot_id = COALESCE(
+                (SELECT e0.bot_id FROM EXCLUSIVE e0
+                 INNER JOIN USER u0 ON u0.user_id = #{userId} AND u0.user_id = e0.user_id
+                 WHERE e0.bot_id = u0.assigned_bot_id LIMIT 1),
+                (SELECT e1.bot_id FROM EXCLUSIVE e1
+                 WHERE e1.user_id = #{userId} ORDER BY e1.exclusive_id ASC LIMIT 1)
+            )
+        LEFT JOIN BOT b ON b.bot_id = e.bot_id
+        WHERE u.user_id = #{userId}
+        LIMIT 1
+    </select>
+
+    <select id="countRecentLetters" resultType="int">
+        SELECT COUNT(*)
+        FROM BOT_LETTER bl
+        JOIN EXCLUSIVE e ON bl.exclusive_id = e.exclusive_id
+        WHERE e.user_id = #{userId}
+          AND bl.created_at >= DATE_SUB(NOW(), INTERVAL #{hours} HOUR)
+    </select>
+
 </mapper>

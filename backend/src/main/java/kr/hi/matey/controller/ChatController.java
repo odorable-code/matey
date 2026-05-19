@@ -62,4 +62,13 @@ public class ChatController {
         chatService.deleteChatRoom(user.getUser().getUserId(), chatRoomId);
         return ResponseEntity.noContent().build();
     }
+
+    /** 채팅 종료: 대화를 보관하고 요약 + 감정 관찰 쪽지를 쪽지함에 저장합니다. */
+    @PostMapping("/{chatRoomId}/end")
+    public ResponseEntity<Void> endRoom(
+            @AuthenticationPrincipal CustomUser user,
+            @PathVariable long chatRoomId) {
+        chatService.endChatRoomWithLetter(user.getUser().getUserId(), chatRoomId);
+        return ResponseEntity.noContent().build();
+    }
 }
