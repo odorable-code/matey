@@ -51,7 +51,8 @@ public class ChatController {
         long userId = user.getUser().getUserId();
         String content = body.get("content");
         String senderType = body.get("senderType");
-        Long messageId = chatService.saveMessage(userId, chatRoomId, content, senderType);
+        String emotionCode = body.get("emotionCode");
+        Long messageId = chatService.saveMessage(userId, chatRoomId, content, senderType, emotionCode);
         return ResponseEntity.ok(Map.of("messageId", messageId));
     }
 

@@ -865,10 +865,10 @@ export const chatRoomAPI = {
   createRoom: (mateKey, title) =>
     request('/api/chat/rooms', { method: 'POST', body: { mateKey, title } }),
   getMessages: (chatRoomId) => request(`/api/chat/rooms/${chatRoomId}/messages`),
-  saveMessage: (chatRoomId, content, senderType) =>
+  saveMessage: (chatRoomId, content, senderType, emotionCode = null) =>
     request(`/api/chat/rooms/${chatRoomId}/messages`, {
       method: 'POST',
-      body: { content, senderType },
+      body: { content, senderType, ...(emotionCode ? { emotionCode } : {}) },
     }),
   deleteRoom: (chatRoomId) =>
     request(`/api/chat/rooms/${chatRoomId}`, { method: 'DELETE' }),

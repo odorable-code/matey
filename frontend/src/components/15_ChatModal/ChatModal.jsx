@@ -294,7 +294,7 @@ function Sidebar() {
               const lastMsg = s.messages[s.messages.length - 1];
               const preview = lastMsg
                 ? `${lastMsg.role === "user" ? "나: " : ""}${lastMsg.text}`
-                : "아직 첫 메시지를 기다려요.";
+                : s.lastMessage || "아직 첫 메시지를 기다려요.";
               const active = s.id === activeSessionId;
 
               return (
@@ -756,7 +756,7 @@ function RadarChart({ abilities, size = 220 }) {
    우측 채팅방 화면 코드
 ========================================================= */
 function ChatView({ mobileBar = false, onMobileBack }) {
-  const { activeSession, appendMessage, landingMates, endSession } = useChatModal();
+  const { activeSession, appendMessage, persistUserMessage, landingMates, endSession } = useChatModal();
   const mate = useMemo(() => {
     if (!activeSession) return null;
     return landingMates.find((m) => m.key === activeSession.mateKey);
@@ -830,7 +830,8 @@ function ChatView({ mobileBar = false, onMobileBack }) {
       text: trimmed,
       time: nowTimeString(),
     };
-    appendMessage(activeSession.id, userMsg);
+    // 로컬 상태에만 즉시 표시 (DB 저장은 emotion 확보 후)
+    appendMessage(activeSession.id, userMsg, { skipDB: true });
     setInputValue("");
     setIsTyping(true);
 
@@ -838,7 +839,13 @@ function ChatView({ mobileBar = false, onMobileBack }) {
       const res = await fetch(`${CHAT_API_BASE}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: trimmed }),
+        body: JSON.stringify({
+          question: trimmed,
+          speech_level: speechLevel,
+          mate_key: mate?.key ?? null,
+          mate_name: mate?.name ?? null,
+          mate_role: mate?.role ?? null,
+        }),
       });
       if (!res.ok) {
         const errText = await res.text();
@@ -846,6 +853,10 @@ function ChatView({ mobileBar = false, onMobileBack }) {
       }
       const data = await res.json();
       const reply = data.reply || "잠시만, 다시 한 번 말해줄래?";
+      const emotionCode = data.emotion?.emotion_code ?? null;
+
+      // 유저 메시지를 emotion_code 와 함께 DB 저장
+      persistUserMessage(activeSession.chatRoomId, trimmed, emotionCode);
 
       appendMessage(activeSession.id, {
         id: `mate-${Date.now()}`,
@@ -855,6 +866,8 @@ function ChatView({ mobileBar = false, onMobileBack }) {
       });
     } catch (err) {
       console.error("채팅 API 실패:", err);
+      // FastAPI 실패 시에도 유저 메시지는 emotion 없이 저장
+      persistUserMessage(activeSession.chatRoomId, trimmed, null);
       appendMessage(activeSession.id, {
         id: `mate-${Date.now()}`,
         role: "mate",

@@ -82,6 +82,10 @@
         WHERE user_id = #{userId} AND bot_id = #{botId}
     </select>
 
+    <select id="selectDefaultBotId" resultType="long">
+        SELECT bot_id FROM BOT ORDER BY bot_id ASC LIMIT 1
+    </select>
+
     <insert id="insertExclusive">
         INSERT INTO EXCLUSIVE (user_id, bot_id)
         VALUES (#{userId}, #{botId})
