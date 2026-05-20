@@ -107,7 +107,7 @@ function TempInfoPage({
   description,
   primaryText = '홈으로 이동',
   primaryTo = '/',
-  secondaryText = '무료체험 시작',
+  secondaryText = '회원가입',
   secondaryTo = '/signup',
 }) {
   return (
@@ -392,17 +392,6 @@ function AppRoutes() {
         <Route
           path="/features"
           element={<HowToUsePage />}
-        />
-
-        <Route
-          path="/free-trial"
-          element={
-            <TempInfoPage
-              eyebrow="FREE TRIAL"
-              title="무료체험 페이지를 곧 연결할게요"
-              description="회원가입 유도, 무료체험 혜택, 시작 가이드, 빠른 진입 버튼을 중심으로 랜딩형 소개 페이지를 붙일 예정이에요."
-            />
-          }
         />
 
         <Route

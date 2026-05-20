@@ -285,7 +285,7 @@ export default function BotRankingPage() {
                         className={styles.chatLink}
                         to={
                           !authLoading && !isAuthenticated
-                            ? '/free-trial'
+                            ? '/signup'
                             : e.mateKey
                               ? `/chat?mate=${encodeURIComponent(e.mateKey)}`
                               : '/chat'

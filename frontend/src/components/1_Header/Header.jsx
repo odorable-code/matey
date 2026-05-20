@@ -6,7 +6,7 @@
  *
  * [이 파일에서 하는 일]
  * - 로고 클릭 시 홈으로 이동
- * - 가운데 메뉴에서 이용방법 / 무료체험 / 커뮤니티 / 봇랭킹 / FAQ 이동
+ * - 가운데 메뉴에서 이용방법 / 커뮤니티 / 봇랭킹 / FAQ 이동
  * - 비회원은 로그인 / 회원가입 버튼 표시 (회원가입 → /signup)
  * - 회원은 채팅하기 / 알람 / 마이페이지(상단 링크) / 프로필 드롭다운 표시
  * - 관리자 계정은 "관리자 대시보드"를 프로필 드롭다운 안에서만 표시
@@ -40,7 +40,6 @@ import './Header.css';
 ========================================================= */
 const NAV_ITEMS = [
   { key: 'features', label: '이용방법', path: '/features' },
-  { key: 'free-trial', label: '무료체험', path: '/free-trial' },
   { key: 'community', label: '커뮤니티', path: '/community' },
   { key: 'bot-ranking', label: '봇랭킹', path: '/bot-ranking' },
   { key: 'faq', label: 'FAQ', path: '/faq' },

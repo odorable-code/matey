@@ -23,6 +23,7 @@ public interface ChatDAO {
 
     void insertChatRoom(Map<String, Object> param);
     void insertMessage(Map<String, Object> param);
+    Long selectEmotionIdByCode(@Param("emotionCode") String emotionCode);
 
     int updateChatRoomLastMessage(@Param("chatRoomId") long chatRoomId, @Param("lastMessage") String lastMessage);
     int updateChatRoomStatus(@Param("userId") long userId, @Param("chatRoomId") long chatRoomId, @Param("status") String status);

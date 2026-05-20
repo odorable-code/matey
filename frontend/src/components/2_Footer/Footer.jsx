@@ -35,19 +35,16 @@ function Footer() {
       return [
         { label: '로그인', type: 'route', value: '/login' },
         { label: '회원가입', type: 'route', value: '/signup' },
-        { label: '무료체험', type: 'route', value: '/free-trial' },
       ];
     }
     if (isAuthenticated) {
       return [
         { label: '마이페이지', type: 'route', value: '/mypage' },
-        { label: '무료체험', type: 'route', value: '/free-trial' },
       ];
     }
     return [
       { label: '로그인', type: 'route', value: '/login' },
       { label: '회원가입', type: 'route', value: '/signup' },
-      { label: '무료체험', type: 'route', value: '/free-trial' },
     ];
   }, [isAuthenticated, authLoading]);
 

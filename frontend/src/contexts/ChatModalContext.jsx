@@ -337,12 +337,13 @@ export function ChatModalProvider({ children }) {
   }, []);
 
   // -------- 메시지 추가 + DB 저장 --------
-  const appendMessage = useCallback((sessionId, message) => {
+  // skipDB: true 이면 로컬 상태만 업데이트 (DB 저장은 persistUserMessage 로 분리)
+  const appendMessage = useCallback((sessionId, message, { skipDB = false } = {}) => {
     setSessions((prev) => {
       const session = prev.find((s) => s.id === sessionId);
 
-      // DB 저장 (chatRoomId 있고 db-msg가 아닌 새 메시지만)
-      if (session?.chatRoomId && !String(message.id).startsWith('db-msg-')) {
+      // DB 저장 (chatRoomId 있고 db-msg가 아닌 새 메시지만, skipDB 아닐 때만)
+      if (!skipDB && session?.chatRoomId && !String(message.id).startsWith('db-msg-')) {
         const senderType = message.role === 'user' ? 'USER' : 'BOT';
         chatRoomAPI
           .saveMessage(session.chatRoomId, message.text, senderType)
@@ -392,6 +393,12 @@ export function ChatModalProvider({ children }) {
     [sessions, activeSessionId],
   );
 
+  // 유저 메시지를 emotionCode 와 함께 DB에만 저장 (로컬 상태 변경 없음)
+  const persistUserMessage = useCallback((chatRoomId, content, emotionCode = null) => {
+    if (!chatRoomId) return;
+    chatRoomAPI.saveMessage(chatRoomId, content, 'USER', emotionCode).catch(() => {});
+  }, []);
+
   const value = {
     isOpen,
     rightView,
@@ -411,6 +418,7 @@ export function ChatModalProvider({ children }) {
     deleteSession,
     endSession,
     appendMessage,
+    persistUserMessage,
     relativeTimeString,
   };
 
