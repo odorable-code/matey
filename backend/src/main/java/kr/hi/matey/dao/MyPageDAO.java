@@ -17,6 +17,7 @@ public interface MyPageDAO {
     List<AssignableBotOption> selectBotsForPicker();
     /** 홈·채팅 랜딩용 — card_stats_json 포함(컬럼 없을 수 있음 → 서비스에서 폴백) */
     List<AssignableBotOption> selectBotsForPublicLanding();
+    Long selectDefaultBotId();
     int countBotById(@Param("botId") long botId);
     int countExclusiveByUserAndBot(@Param("userId") long userId, @Param("botId") long botId);
     int insertExclusive(@Param("userId") long userId, @Param("botId") long botId);

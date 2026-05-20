@@ -6,7 +6,7 @@ import '../components/2_Footer/Footer.css';
 const COPY = {
   ctaTitle: '오늘은 가볍게 한 줄부터 시작해볼까요?',
   ctaDescription:
-    '처음이라면 무료체험부터, 궁금한 게 남아 있다면 FAQ부터 보면 돼요.',
+    '궁금한 게 있다면 FAQ부터, 바로 시작하고 싶다면 회원가입부터 해보세요.',
   primaryLabel: '대화 시작하기',
 };
 
@@ -19,7 +19,7 @@ function HomeClosingCta() {
   const guideName = MATE_NAMES.dog;
 
   const handlePrimary = () => {
-    navigate('/free-trial');
+    navigate('/signup');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 

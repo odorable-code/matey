@@ -40,9 +40,18 @@
     </insert>
 
     <insert id="insertMessage" useGeneratedKeys="true" keyProperty="messageId">
-        INSERT INTO MESSAGE (chat_room_id, content, sender_type)
-        VALUES (#{chatRoomId}, #{content}, #{senderType})
+        INSERT INTO MESSAGE (chat_room_id, content, sender_type, emotion_id)
+        VALUES (#{chatRoomId}, #{content}, #{senderType},
+            <choose>
+                <when test="emotionId != null">#{emotionId}</when>
+                <otherwise>NULL</otherwise>
+            </choose>
+        )
     </insert>
+
+    <select id="selectEmotionIdByCode" resultType="Long">
+        SELECT emotion_id FROM EMOTION_CATEGORY WHERE emotion_code = #{emotionCode} LIMIT 1
+    </select>
 
     <update id="updateChatRoomLastMessage">
         UPDATE CHAT_ROOM

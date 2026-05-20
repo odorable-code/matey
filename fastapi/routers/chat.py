@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 
 from services.llm_client import run_chat_completion
 from services.matey_chat import build_system_prompt
+from services.emotion_analyzer import analyze as analyze_emotion
 from rag_chatbot import RAGChatbot
 from vector_store import VectorStore
 
@@ -37,6 +38,11 @@ class ChatCompletionRequest(BaseModel):
 class RAGChatRequest(BaseModel):
     question: str
     top_k: Optional[int] = Field(default=5, ge=1, le=20)
+    speech_level: str = Field(default="polite", description="polite | casual")
+    mate_key: Optional[str] = None
+    mate_name: Optional[str] = None
+    mate_role: Optional[str] = None
+    mate_persona: Optional[str] = None
 
 
 @router.post("/chat/completions")
@@ -69,18 +75,33 @@ def chat_completions(body: ChatCompletionRequest) -> Dict[str, Any]:
 @router.post("/chat")
 def chat_rag(body: RAGChatRequest) -> Dict[str, Any]:
     """
-    RAG 기반 챗봇 엔드포인트. 
+    RAG 기반 챗봇 엔드포인트.
     ChromaDB에서 유사한 문서를 찾아 답변을 생성합니다.
     """
-    answer, chunks = bot.chat(body.question, top_k=body.top_k)
+    system = build_system_prompt(
+        mate_key=body.mate_key,
+        mate_name=body.mate_name,
+        mate_role=body.mate_role,
+        mate_persona=body.mate_persona,
+        speech_level=body.speech_level,
+    )
+    emotion = analyze_emotion(body.question)
+    answer, chunks = bot.chat(body.question, top_k=body.top_k, system_prompt=system)
     return {
         "reply": answer,
+        "emotion": {
+            "emotion_code": emotion.emotion_code,
+            "valence":      emotion.valence,
+            "arousal":      emotion.arousal,
+            "by_llm":       emotion.by_llm,
+            "confidence":   emotion.confidence,
+        },
         "references": [
             {
-                "content": c["content"],
+                "content":  c["content"],
                 "metadata": c["metadata"],
-                "score": float(c["score"]) if "score" in c else 0.0
+                "score":    float(c["score"]) if "score" in c else 0.0,
             } for c in chunks
-        ]
+        ],
     }
 

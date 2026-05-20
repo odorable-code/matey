@@ -61,19 +61,27 @@ public class ChatService {
     }
 
     @Transactional
-    public Long saveMessage(long userId, long chatRoomId, String content, String senderType) {
+    public Long saveMessage(long userId, long chatRoomId, String content, String senderType, String emotionCode) {
         if (chatDAO.countChatRoomByUserAndId(userId, chatRoomId) == 0) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "접근 권한이 없습니다.");
+        }
+
+        Long emotionId = null;
+        if (emotionCode != null && !emotionCode.isBlank()) {
+            emotionId = chatDAO.selectEmotionIdByCode(emotionCode);
         }
 
         Map<String, Object> param = new HashMap<>();
         param.put("chatRoomId", chatRoomId);
         param.put("content", content);
         param.put("senderType", senderType);
+        param.put("emotionId", emotionId);
         chatDAO.insertMessage(param);
 
-        String preview = content.length() > 100 ? content.substring(0, 100) : content;
-        chatDAO.updateChatRoomLastMessage(chatRoomId, preview);
+        if ("BOT".equalsIgnoreCase(senderType)) {
+            String preview = content.length() > 100 ? content.substring(0, 100) : content;
+            chatDAO.updateChatRoomLastMessage(chatRoomId, preview);
+        }
         return ((Number) param.get("messageId")).longValue();
     }
 

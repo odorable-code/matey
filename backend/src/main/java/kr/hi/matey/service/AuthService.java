@@ -29,6 +29,7 @@ public class AuthService {
 	private final BCryptPasswordEncoder encoder;
 	private final JavaMailSender mailSender;
 	private final NotificationService notificationService;
+	private final MyPageService myPageService;
 
 	@Value("${app.frontend-url:http://localhost:3000}")
 	private String frontendBaseUrl;
@@ -84,12 +85,7 @@ public class AuthService {
                 authDAO.insertUserRole(userVO.getUserId(), 1);
                 authDAO.insertUserSetting(userVO.getUserId());
                 authDAO.insertDefaultNotificationSettings(userVO.getUserId());
-                notificationService.createNotification(
-                    userVO.getUserId(),
-                    "SYSTEM_NOTICE",
-                    userVO.getNickname() + "님, 메이트에 오신 걸 환영해요! 함께 즐거운 시간을 보내봐요 🎉",
-                    null, null
-                );
+                myPageService.createWelcomeLetter(userVO.getUserId(), userVO.getNickname());
             }
 
             return result;

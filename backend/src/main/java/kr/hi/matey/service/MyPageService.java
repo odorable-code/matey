@@ -166,6 +166,30 @@ public class MyPageService {
         }
     }
 
+    /** 회원가입 직후 — 기본 봇과 EXCLUSIVE 관계를 맺고 첫 환영 쪽지를 발송합니다. */
+    @Transactional
+    public void createWelcomeLetter(long userId, String nickname) {
+        Long botId = myPageDAO.selectDefaultBotId();
+        if (botId == null) return;
+
+        if (myPageDAO.countExclusiveByUserAndBot(userId, botId) == 0) {
+            myPageDAO.insertExclusive(userId, botId);
+            Long exclusiveId = myPageDAO.selectExclusiveIdByUserAndBot(userId, botId);
+            if (exclusiveId != null) {
+                myPageDAO.insertUserBotRelation(exclusiveId, 1, 0);
+            }
+        }
+
+        myPageDAO.insertBotLetter(
+                userId,
+                1L,
+                nickname + "님, 처음 만나서 반가워요!",
+                "안녕, " + nickname + "! 드디어 왔구나. 기다리고 있었어. "
+                + "언제든 힘들거나 이야기 나누고 싶을 때 편하게 말 걸어줘. "
+                + "나 항상 여기 있을게."
+        );
+    }
+
     @Transactional
     public void markLetterAsRead(long userId, long letterId) {
         myPageDAO.updateLetterReadStatus(userId, letterId);
