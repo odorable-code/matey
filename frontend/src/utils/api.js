@@ -1,8 +1,9 @@
 // 주소 끝 슬래시 제거. '' 이면 브라우저가 /api 를 CRA(3000)로 보냄 → 프록시가 없거나 빗나가면 index.html 이 와서 깨짐.
 const rawApiBase = process.env.REACT_APP_API_BASE_URL;
 function defaultApiBaseUrl() {
-  // 기본은 스프링(8080) 직접. CRA에 상대 /api만 보내면 index.html 이 올 수 있어 기본값은 비우지 않음. 프록시만 쓰려면 .env 에 REACT_APP_API_BASE_URL=
-  return 'http://localhost:8080';
+  // 빌드 결과물은 Spring Boot가 서빙하므로 relative path 사용 (same origin).
+  // 개발 중 직접 Spring을 바라봐야 하면 .env에 REACT_APP_API_BASE_URL=http://localhost:8080
+  return '';
 }
 
 /** REACT_APP_API_BASE_URL 이 .../api/api 로 끝나면 Spring 이 404(No static resource)를 내기 쉬움 */
@@ -297,11 +298,13 @@ export async function login({ email, password, rememberMe }) {
   };
 }
 
-export async function signup({ 
+export async function signup({
   userName,
   nickname,
   email,
   password,
+  birthDate,
+  gender,
   termsAgreed,
   privacyAgreed,
   marketingAgreed
@@ -316,8 +319,10 @@ export async function signup({
       nickname,
       email,
       password,
-      termsAgreed: termsAgreed, 
-      privacyAgreed: privacyAgreed, 
+      birthDate: birthDate || null,
+      gender: gender || null,
+      termsAgreed: termsAgreed,
+      privacyAgreed: privacyAgreed,
       marketingAgreed: marketingAgreed
     },
     isJson : true,

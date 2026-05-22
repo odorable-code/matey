@@ -40,9 +40,8 @@ function resolveChatApiBase() {
   if (fromEnv != null && String(fromEnv).trim() !== "") {
     return String(fromEnv).replace(/\/$/, "");
   }
-  // 개발: setupProxy 가 /api/chat → FastAPI(8000) 로 넘김 → 동일 출처라 CORS 없음
-  if (process.env.NODE_ENV === "development") return "";
-  return "http://localhost:8000";
+  // 개발: setupProxy → FastAPI(8000), 운영: Spring Boot가 /api/chat 를 FastAPI로 프록시
+  return "";
 }
 
 const CHAT_API_BASE = resolveChatApiBase();
@@ -836,6 +835,13 @@ function ChatView({ mobileBar = false, onMobileBack }) {
     setIsTyping(true);
 
     try {
+      const history = activeSession.messages
+        .filter((m) => m.role === "user" || m.role === "mate")
+        .map((m) => ({
+          role: m.role === "user" ? "user" : "model",
+          content: m.text,
+        }));
+
       const res = await fetch(`${CHAT_API_BASE}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -845,6 +851,7 @@ function ChatView({ mobileBar = false, onMobileBack }) {
           mate_key: mate?.key ?? null,
           mate_name: mate?.name ?? null,
           mate_role: mate?.role ?? null,
+          history,
         }),
       });
       if (!res.ok) {

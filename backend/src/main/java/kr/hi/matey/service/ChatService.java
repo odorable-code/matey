@@ -6,6 +6,7 @@ import kr.hi.matey.dto.ChatRoomDTO;
 import kr.hi.matey.dto.ChatMessageDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,8 +23,10 @@ import java.util.stream.Collectors;
 @Slf4j
 public class ChatService {
 
-    private static final String FASTAPI_URL = "http://localhost:8000/api/generate-chat-letter";
     private static final long COUNSEL_LETTER_TYPE_ID = 1L; // RECONNECT 타입 재활용
+
+    @Value("${fastapi.base-url}")
+    private String fastapiBaseUrl;
 
     private final ChatDAO chatDAO;
     private final MyPageDAO myPageDAO;
@@ -140,8 +143,9 @@ public class ChatService {
 
         try {
             RestTemplate restTemplate = new RestTemplate();
+            String fastapiUrl = fastapiBaseUrl + "/api/generate-chat-letter";
             @SuppressWarnings("unchecked")
-            Map<String, Object> result = restTemplate.postForObject(FASTAPI_URL, payload, Map.class);
+            Map<String, Object> result = restTemplate.postForObject(fastapiUrl, payload, Map.class);
             if (result != null) {
                 String title = (String) result.get("title");
                 String content = (String) result.get("content");

@@ -72,10 +72,17 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/check-email", "/api/v1/users/**").permitAll()
                         .requestMatchers("/ws-stomp/**").permitAll()
                         .requestMatchers("/error").permitAll() // 에러 페이지 허용 (500 에러가 403으로 가려지는 현상 방지)
+
+                        // React 정적 리소스 허용
+                        .requestMatchers("/", "/index.html", "/favicon.ico", "/manifest.json", "/asset-manifest.json").permitAll()
+                        .requestMatchers("/static/**", "/images/**").permitAll()
                         
                         // FAQ/문의 사유는 비로그인 조회 허용 (Support 모달/FAQ에서 사용)
                         .requestMatchers(HttpMethod.GET, "/api/mypage/support/faq").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/mypage/support/reasons").permitAll()
+
+                        // FastAPI 프록시 — health/preparing 는 비로그인 허용
+                        .requestMatchers("/api/health/**", "/api/preparing/**").permitAll()
 
                         // 마이페이지 API는 인증된 사용자만 허용
                         .requestMatchers("/api/mypage/**").authenticated()

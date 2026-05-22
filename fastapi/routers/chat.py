@@ -43,6 +43,7 @@ class RAGChatRequest(BaseModel):
     mate_name: Optional[str] = None
     mate_role: Optional[str] = None
     mate_persona: Optional[str] = None
+    history: Optional[List[ChatMessage]] = Field(default_factory=list)
 
 
 @router.post("/chat/completions")
@@ -86,7 +87,8 @@ def chat_rag(body: RAGChatRequest) -> Dict[str, Any]:
         speech_level=body.speech_level,
     )
     emotion = analyze_emotion(body.question)
-    answer, chunks = bot.chat(body.question, top_k=body.top_k, system_prompt=system)
+    history = [m.model_dump() for m in (body.history or [])]
+    answer, chunks = bot.chat(body.question, top_k=body.top_k, system_prompt=system, history=history)
     return {
         "reply": answer,
         "emotion": {

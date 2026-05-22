@@ -56,7 +56,17 @@ class RAGChatbot:
     # 단일 응답
     # ------------------------------------------------------------------
 
-    def chat(self, question: str, top_k: int | None = None, system_prompt: str | None = None) -> tuple[str, list[dict]]:
+    def _build_gemini_history(self, history: list[dict]) -> list[types.Content]:
+        """클라이언트 히스토리(role/content 딕셔너리)를 Gemini Content 객체로 변환."""
+        result = []
+        for msg in history:
+            role = "user" if msg.get("role") == "user" else "model"
+            content = str(msg.get("content") or "").strip()
+            if content:
+                result.append(types.Content(role=role, parts=[types.Part(text=content)]))
+        return result
+
+    def chat(self, question: str, top_k: int | None = None, system_prompt: str | None = None, history: list[dict] | None = None) -> tuple[str, list[dict]]:
         """질문에 답변하고 (응답 텍스트, 참조 청크 목록)을 반환합니다."""
         chunks = self._store.query(question, top_k=top_k)
         if not chunks:
@@ -65,16 +75,18 @@ class RAGChatbot:
         context = _build_context(chunks)
         prompt = _RAG_TEMPLATE.format(context=context, question=question)
 
+        session_history = self._build_gemini_history(history) if history else self._history
         session = self._genai.chats.create(
             model=config.CHAT_MODEL,
             config=types.GenerateContentConfig(system_instruction=system_prompt or _SYSTEM_PROMPT),
-            history=self._history,
+            history=session_history,
         )
         response = session.send_message(prompt)
         answer = response.text
 
-        self._history.append(types.Content(role="user", parts=[types.Part(text=prompt)]))
-        self._history.append(types.Content(role="model", parts=[types.Part(text=answer)]))
+        if not history:
+            self._history.append(types.Content(role="user", parts=[types.Part(text=prompt)]))
+            self._history.append(types.Content(role="model", parts=[types.Part(text=answer)]))
 
         return answer, chunks
 

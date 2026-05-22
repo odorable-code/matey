@@ -187,8 +187,8 @@ function MyPageContainer() {
       },
       {
         key: 'letterBox',
-        label: '편지함',
-        description: '도착한 편지와 읽지 않은 편지를 봐요',
+        label: '쪽지함',
+        description: '도착한 쪽지와 읽지 않은 쪽지를 봐요',
       },
       {
         key: 'settings',

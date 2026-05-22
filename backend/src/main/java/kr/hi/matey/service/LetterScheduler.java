@@ -3,6 +3,7 @@ package kr.hi.matey.service;
 import kr.hi.matey.dao.MyPageDAO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,9 +20,11 @@ import java.util.Map;
 public class LetterScheduler {
 
     private static final long RECONNECT_TYPE_ID = 1L;
-    private static final String SPONTANEOUS_API_URL = "http://localhost:8000/api/generate-spontaneous-letter";
     private static final int SPONTANEOUS_COOLDOWN_HOURS = 4; // 동일 유저에게 4시간 내 재발송 금지
     private static final int SPONTANEOUS_MAX_PER_RUN = 3;    // 1회 실행당 최대 발송 수
+
+    @Value("${fastapi.base-url}")
+    private String fastapiBaseUrl;
 
     private final MyPageDAO myPageDAO;
     private final OnlineUserRegistry onlineUserRegistry;
@@ -54,8 +57,9 @@ public class LetterScheduler {
                         "botName", botName,
                         "userNickname", userNickname
                 );
+                String spontaneousApiUrl = fastapiBaseUrl + "/api/generate-spontaneous-letter";
                 @SuppressWarnings("unchecked")
-                Map<String, Object> result = restTemplate.postForObject(SPONTANEOUS_API_URL, payload, Map.class);
+                Map<String, Object> result = restTemplate.postForObject(spontaneousApiUrl, payload, Map.class);
                 if (result != null) {
                     myPageDAO.insertBotLetter(userId, RECONNECT_TYPE_ID,
                             (String) result.get("title"), (String) result.get("content"));

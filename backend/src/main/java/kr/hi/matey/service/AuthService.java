@@ -56,6 +56,7 @@ public class AuthService {
 		}
 
 	// 회원가입
+	@Transactional
 	public boolean signup(UserDTO user) {
 		String encodedPw = encoder.encode(user.getPassword());
 		UserVO userVO = new UserVO();
