@@ -33,8 +33,8 @@ function resolveAnalysisApiBase() {
   if (env != null && String(env).trim() !== '') {
     return String(env).replace(/\/$/, '');
   }
-  if (process.env.NODE_ENV === 'development') return '';
-  return 'http://localhost:8000';
+  // Always use relative path so Spring Boot proxies to FastAPI (works in both dev and prod)
+  return '';
 }
 
 const ANALYSIS_API_BASE = resolveAnalysisApiBase();
