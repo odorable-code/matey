@@ -82,10 +82,9 @@ matey/
 ├── backend/           # Spring Boot 메인 API 서버
 ├── fastapi/           # FastAPI AI 서버 (RAG + Gemini)
 ├── frontend/          # React 프론트엔드
-├── data/              #
-├── scripts/
-├── test-sql/
-├── docs/
+├── scripts/           # 각종 스크립트
+├── test-sql/          # DB테스트용 sql
+├── docs/              # 각종 문서
 └── 프로젝트 DB.sql 
 ```
 ---
