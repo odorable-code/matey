@@ -55,6 +55,8 @@ public class FastApiProxyController {
         String query = request.getQueryString();
         String targetUrl = fastapiBaseUrl + path + (query != null ? "?" + query : "");
 
+        log.info("[FastApiProxy] → {} {}", request.getMethod(), targetUrl);
+
         HttpHeaders headers = new HttpHeaders();
         Collections.list(request.getHeaderNames()).stream()
                 .filter(h -> !"host".equalsIgnoreCase(h) && !"content-length".equalsIgnoreCase(h))
@@ -70,10 +72,14 @@ public class FastApiProxyController {
                     byte[].class
             );
         } catch (HttpStatusCodeException e) {
-            log.debug("[FastApiProxy] {} {} → {}", request.getMethod(), path, e.getStatusCode());
+            log.warn("[FastApiProxy] {} {} → {}", request.getMethod(), path, e.getStatusCode());
             return ResponseEntity.status(e.getStatusCode())
                     .headers(e.getResponseHeaders())
                     .body(e.getResponseBodyAsByteArray());
+        } catch (Exception e) {
+            log.error("[FastApiProxy] {} {} → connection failed: {}", request.getMethod(), targetUrl, e.getMessage());
+            return ResponseEntity.status(502)
+                    .body(("FastAPI unavailable: " + e.getMessage()).getBytes());
         }
     }
 }

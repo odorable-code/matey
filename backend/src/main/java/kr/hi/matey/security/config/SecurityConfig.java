@@ -81,8 +81,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/mypage/support/faq").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/mypage/support/reasons").permitAll()
 
-                        // FastAPI 프록시 — health/preparing 는 비로그인 허용
-                        .requestMatchers("/api/health/**", "/api/preparing/**").permitAll()
+                        // FastAPI 프록시 — AI 채팅/분석/health/preparing 비로그인 허용
+                        .requestMatchers("/api/chat", "/api/chat/gemini/**", "/api/chat/completions/**").permitAll()
+                        .requestMatchers("/api/analysis/**", "/api/health/**", "/api/preparing/**").permitAll()
 
                         // 마이페이지 API는 인증된 사용자만 허용
                         .requestMatchers("/api/mypage/**").authenticated()
