@@ -82,22 +82,12 @@ matey/
 ├── backend/           # Spring Boot 메인 API 서버
 ├── fastapi/           # FastAPI AI 서버 (RAG + Gemini)
 ├── frontend/          # React 프론트엔드
-├── DB 초안.sql
-├── DB_기획서_기준_정리.txt
-├── 기획서.txt
-├── 상담_메시지_DB_저장.md
-└── 상담서비스_DB_보안설계_정리.md
+├── data/              #
+├── scripts/
+├── test-sql/
+├── docs/
+└── 프로젝트 DB.sql 
 ```
-
----
-
-## 담당 영역 (이건영)
-
-- **AI 서버** — FastAPI 기반 RAG 파이프라인 설계 및 구현
-- **백엔드** — Spring Boot 기반 API 개발
-- **마이페이지** — 프론트엔드 및 백엔드 연동
-- **DB 설계** — 상담 메시지 저장 구조 및 보안 설계
-
 ---
 
 ## 실행 방법
