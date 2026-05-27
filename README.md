@@ -100,7 +100,8 @@ cd backend
 
 # FastAPI
 cd fastapi
-uvicorn main:app --reload
+pip install -r requirements.txt
+python main.py
 
 # React
 cd frontend
