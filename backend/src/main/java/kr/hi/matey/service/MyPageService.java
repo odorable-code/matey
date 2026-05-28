@@ -35,6 +35,7 @@ public class MyPageService {
     private String fastapiBaseUrl;
 
     private final MyPageDAO myPageDAO;
+    private final NotificationService notificationService;
 
     @Transactional(readOnly = true)
     public UserProfileDTO getUserProfile(long userId) {
@@ -195,6 +196,7 @@ public class MyPageService {
                 + "언제든 힘들거나 이야기 나누고 싶을 때 편하게 말 걸어줘. "
                 + "나 항상 여기 있을게."
         );
+        notificationService.createNotification(userId, "BOT_MESSAGE", "새 쪽지가 도착했어요!", null, null);
     }
 
     @Transactional

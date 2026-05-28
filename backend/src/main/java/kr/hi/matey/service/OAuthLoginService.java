@@ -78,6 +78,8 @@ public class OAuthLoginService {
         pendingUser.setEmail(userInfo.getEmail());
         pendingUser.setNickname(userInfo.getNickname());
         pendingUser.setProfileImage(userInfo.getProfileImage());
+        pendingUser.setBirthdate(userInfo.getBirthdate());
+        pendingUser.setGender(userInfo.getGender());
 
         session.setAttribute("PENDING_SOCIAL_USER", pendingUser);
 

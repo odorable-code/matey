@@ -28,6 +28,7 @@ public class LetterScheduler {
 
     private final MyPageDAO myPageDAO;
     private final OnlineUserRegistry onlineUserRegistry;
+    private final NotificationService notificationService;
 
     /** 15분마다 — 현재 접속 중인 사용자에게 LLM이 자발적으로 쓴 쪽지 발송 */
     @Scheduled(fixedDelay = 900_000)
@@ -63,6 +64,7 @@ public class LetterScheduler {
                 if (result != null) {
                     myPageDAO.insertBotLetter(userId, RECONNECT_TYPE_ID,
                             (String) result.get("title"), (String) result.get("content"));
+                    notificationService.createNotification(userId, "BOT_MESSAGE", "새 쪽지가 도착했어요!", null, null);
                     sent++;
                 }
             } catch (Exception e) {
@@ -86,6 +88,7 @@ public class LetterScheduler {
                         "멍멍 하루가 지났어요",
                         "멍멍 하루가 지났어요 무슨 일 있는거에요?"
                 );
+                notificationService.createNotification(userId, "BOT_MESSAGE", "새 쪽지가 도착했어요!", null, null);
             } catch (Exception e) {
                 log.warn("[LetterScheduler] 1일 쪽지 실패 userId={}", userId, e);
             }
@@ -106,6 +109,7 @@ public class LetterScheduler {
                         "멍멍 보고 싶어요",
                         "멍멍 한 주가 지났어요.. 보고 싶어요 멍멍"
                 );
+                notificationService.createNotification(userId, "BOT_MESSAGE", "새 쪽지가 도착했어요!", null, null);
             } catch (Exception e) {
                 log.warn("[LetterScheduler] 7일 쪽지 실패 userId={}", userId, e);
             }
@@ -126,6 +130,7 @@ public class LetterScheduler {
                         "멍멍... 한달이 지났어요",
                         "멍멍... 한달이 지났어요. 괜찮은지 걱정돼요 멍"
                 );
+                notificationService.createNotification(userId, "BOT_MESSAGE", "새 쪽지가 도착했어요!", null, null);
             } catch (Exception e) {
                 log.warn("[LetterScheduler] 30일 쪽지 실패 userId={}", userId, e);
             }

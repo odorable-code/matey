@@ -65,7 +65,7 @@ def chat_completions(body: ChatCompletionRequest) -> Dict[str, Any]:
     )
     text = run_chat_completion(
         msgs,
-        model=body.model or "claude-3-5-sonnet-20240620",
+        model=body.model or "gemini-2.0-flash",
         max_tokens=body.max_tokens or 1024,
         mate_key=body.mate_key,
         speech_level=body.speech_level,

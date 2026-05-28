@@ -79,7 +79,24 @@
         INNER JOIN EXCLUSIVE e ON e.exclusive_id = cr.exclusive_id
         INNER JOIN BOT b ON b.bot_id = e.bot_id
         WHERE e.user_id = #{userId}
-          AND cr.status != 'DELETED'
+          AND cr.status NOT IN ('DELETED', 'ARCHIVED')
+        ORDER BY COALESCE(cr.last_message_at, cr.created_at) DESC
+    </select>
+
+    <select id="selectArchivedChatRooms" resultType="kr.hi.matey.dto.ChatRoomDTO">
+        SELECT
+            cr.chat_room_id AS chatRoomId,
+            b.name AS mateKey,
+            COALESCE(NULLIF(TRIM(b.display_name), ''), b.name) AS mateName,
+            cr.title,
+            cr.last_message AS lastMessage,
+            DATE_FORMAT(cr.last_message_at, '%Y-%m-%dT%H:%i:%s') AS lastMessageAt,
+            cr.status
+        FROM CHAT_ROOM cr
+        INNER JOIN EXCLUSIVE e ON e.exclusive_id = cr.exclusive_id
+        INNER JOIN BOT b ON b.bot_id = e.bot_id
+        WHERE e.user_id = #{userId}
+          AND cr.status = 'ARCHIVED'
         ORDER BY COALESCE(cr.last_message_at, cr.created_at) DESC
     </select>
 
@@ -105,6 +122,7 @@
     <select id="selectChatContextForLetter" resultType="map">
         SELECT
             COALESCE(NULLIF(TRIM(b.display_name), ''), b.name) AS botName,
+            b.name AS botKey,
             u.nickname AS userNickname,
             (
                 SELECT COUNT(*)

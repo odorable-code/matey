@@ -25,6 +25,12 @@ public class ChatController {
         return ResponseEntity.ok(chatService.getChatRooms(user.getUser().getUserId()));
     }
 
+    @GetMapping("/archived")
+    public ResponseEntity<List<ChatRoomDTO>> getArchivedRooms(
+            @AuthenticationPrincipal CustomUser user) {
+        return ResponseEntity.ok(chatService.getArchivedChatRooms(user.getUser().getUserId()));
+    }
+
     @PostMapping
     public ResponseEntity<Map<String, Object>> createRoom(
             @AuthenticationPrincipal CustomUser user,

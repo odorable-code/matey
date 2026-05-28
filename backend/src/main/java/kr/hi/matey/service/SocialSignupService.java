@@ -25,6 +25,7 @@ public class SocialSignupService {
 
     private final SocialLoginDAO socialLoginDAO;
     private final AuthDAO authDAO;
+    private final MyPageService myPageService;
     private final JwtTokenProvider jwtTokenProvider;
     private final BCryptPasswordEncoder passwordEncoder;
 
@@ -55,6 +56,8 @@ public class SocialSignupService {
 
         socialLoginDAO.insertUser(user);
         authDAO.insertUserRole(user.getUserId(), 1);
+        authDAO.insertDefaultNotificationSettings(user.getUserId());
+        myPageService.createWelcomeLetter(user.getUserId(), user.getNickname());
 
         SocialLoginDTO socialLogin = new SocialLoginDTO();
         socialLogin.setProvider(pendingUser.getProvider());

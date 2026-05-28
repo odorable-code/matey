@@ -12,7 +12,7 @@ module.exports = function setupProxy(app) {
     logLevel: 'warn',
   });
   const spring = createProxyMiddleware({
-    target: 'http://localhost',
+    target: 'http://localhost:8080',
     changeOrigin: true,
     logLevel: 'warn',
   });

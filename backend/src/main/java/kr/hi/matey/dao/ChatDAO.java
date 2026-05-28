@@ -29,6 +29,7 @@ public interface ChatDAO {
     int updateChatRoomStatus(@Param("userId") long userId, @Param("chatRoomId") long chatRoomId, @Param("status") String status);
 
     List<ChatRoomDTO> selectChatRooms(long userId);
+    List<ChatRoomDTO> selectArchivedChatRooms(long userId);
     List<ChatMessageDTO> selectMessages(long chatRoomId);
     int countChatRoomByUserAndId(@Param("userId") long userId, @Param("chatRoomId") long chatRoomId);
 

@@ -11,4 +11,6 @@ public class OAuthUserInfo {
     private String email;
     private String nickname;
     private String profileImage;
+    private String birthdate;  // "YYYY-MM-DD", nullable
+    private String gender;     // "M" or "F", nullable
 }

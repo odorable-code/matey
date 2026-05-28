@@ -284,6 +284,73 @@
   font-weight: 600;
 }
 
+/* 헤더 타이틀 + 탭 한 줄 */
+.matey-chat-side__header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+/* 대화목록 / 지난대화 탭 */
+.matey-chat-side__tab-wrap {
+  display: inline-flex;
+  gap: 0;
+  flex-shrink: 0;
+}
+.matey-chat-side__tab-btn {
+  padding: 3px 8px;
+  border: 1px solid #e8e3f2;
+  background: transparent;
+  font-size: 10px;
+  font-weight: 700;
+  color: #8a85a0;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.matey-chat-side__tab-btn:first-child {
+  border-radius: 6px 0 0 6px;
+  border-right: none;
+}
+.matey-chat-side__tab-btn:last-child {
+  border-radius: 0 6px 6px 0;
+}
+.matey-chat-side__tab-btn.is-active {
+  background: rgba(141, 121, 255, 0.15);
+  color: #3d2f6b;
+}
+.matey-chat-side__tab-btn:hover:not(.is-active) {
+  background: rgba(141, 121, 255, 0.06);
+  color: #4b4468;
+}
+
+/* 지난 대화 목록 아이템 스타일 */
+.matey-chat-side__room.is-archived {
+  opacity: 0.75;
+}
+.matey-chat-side__room.is-archived::after {
+  content: '종료';
+  font-size: 9px;
+  font-weight: 700;
+  color: #8a85a0;
+  background: #f0edf8;
+  border-radius: 4px;
+  padding: 1px 5px;
+  flex-shrink: 0;
+}
+
+/* 종료된 대화 안내 바 */
+.matey-chat-room__archived-notice {
+  padding: 12px 20px;
+  text-align: center;
+  font-size: 12.5px;
+  color: #8a85a0;
+  background: #f8f6fd;
+  border-top: 1px solid #efeaf8;
+}
+
 .matey-chat-side__scroll {
   overflow-y: auto;
   padding: 10px 12px;

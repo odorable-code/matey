@@ -867,6 +867,7 @@ export const presenceAPI = {
 // ==========================================
 export const chatRoomAPI = {
   getRooms: () => request('/api/chat/rooms'),
+  getArchivedRooms: () => request('/api/chat/rooms/archived'),
   createRoom: (mateKey, title) =>
     request('/api/chat/rooms', { method: 'POST', body: { mateKey, title } }),
   getMessages: (chatRoomId) => request(`/api/chat/rooms/${chatRoomId}/messages`),

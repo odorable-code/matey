@@ -67,9 +67,19 @@ export function ChatModalProvider({ children }) {
   const [rightView, setRightView] = useState(RIGHT.EMPTY);
   const [activeSessionId, setActiveSessionId] = useState(null);
   const [sessions, setSessions] = useState(INITIAL_SESSIONS);
+  const [archivedSessions, setArchivedSessions] = useState([]);
   const [landingMates, setLandingMates] = useState(() => mergeLandingBotsRows([]));
   /** 담당봇 bot-menu: 채팅은 친밀 레벨로 해금된 모션만, 맥락에 맞게 선택 */
   const [assignedBotMotionsForChat, setAssignedBotMotionsForChat] = useState(null);
+
+  // 모달 닫힐 때 활성 세션만 초기화 (stale ARCHIVED 방지)
+  useEffect(() => {
+    if (!isOpen) {
+      setSessions([]);
+      setActiveSessionId(null);
+      setRightView(RIGHT.EMPTY);
+    }
+  }, [isOpen]);
 
   // 모달 열릴 때 DB에서 채팅방 목록 로드
   useEffect(() => {
@@ -78,11 +88,13 @@ export function ChatModalProvider({ children }) {
     chatRoomAPI
       .getRooms()
       .then((rooms) => {
-        if (cancelled || !Array.isArray(rooms) || rooms.length === 0) return;
+        if (cancelled || !Array.isArray(rooms)) return;
+        // 클라이언트에서도 ARCHIVED 방 이중 필터
+        const activeRooms = rooms.filter((r) => r.status !== 'ARCHIVED');
         setSessions((prev) => {
-          const existingIds = new Set(prev.map((s) => String(s.chatRoomId)));
-          const newFromDb = rooms
-            .filter((r) => !existingIds.has(String(r.chatRoomId)))
+          const keptIds = new Set(prev.map((s) => String(s.chatRoomId)));
+          const newFromDb = activeRooms
+            .filter((r) => !keptIds.has(String(r.chatRoomId)))
             .map((r) => ({
               id: `db-${r.chatRoomId}`,
               chatRoomId: r.chatRoomId,
@@ -95,7 +107,6 @@ export function ChatModalProvider({ children }) {
               messages: [],
               loadedFromDb: true,
             }));
-          if (newFromDb.length === 0) return prev;
           return [...prev, ...newFromDb].sort((a, b) => b.updatedAt - a.updatedAt);
         });
       })
@@ -250,38 +261,52 @@ export function ChatModalProvider({ children }) {
   // -------- 기존 방 열기 --------
   const openSession = useCallback((sessionId) => {
     setActiveSessionId(sessionId);
+
+    const loadMessages = (chatRoomId, updateFn) => {
+      chatRoomAPI
+        .getMessages(chatRoomId)
+        .then((msgs) => {
+          if (!Array.isArray(msgs) || msgs.length === 0) return;
+          const mapped = msgs.map((m) => ({
+            id: `db-msg-${m.messageId}`,
+            role: m.senderType === 'USER' ? 'user' : 'mate',
+            text: m.content,
+            time: m.createdAt
+              ? (() => {
+                  const d = new Date(m.createdAt);
+                  const h = d.getHours();
+                  const mi = d.getMinutes().toString().padStart(2, '0');
+                  const p = h < 12 ? '오전' : '오후';
+                  return `${p} ${h % 12 === 0 ? 12 : h % 12}:${mi}`;
+                })()
+              : '',
+          }));
+          updateFn(mapped);
+        })
+        .catch(() => {});
+    };
+
     setSessions((prev) => {
       const session = prev.find((s) => s.id === sessionId);
-      // DB에서 로드된 방이고 메시지가 없으면 메시지 조회
       if (session?.chatRoomId && session.messages.length === 0) {
-        chatRoomAPI
-          .getMessages(session.chatRoomId)
-          .then((msgs) => {
-            if (!Array.isArray(msgs) || msgs.length === 0) return;
-            const mapped = msgs.map((m) => ({
-              id: `db-msg-${m.messageId}`,
-              role: m.senderType === 'USER' ? 'user' : 'mate',
-              text: m.content,
-              time: m.createdAt
-                ? (() => {
-                    const d = new Date(m.createdAt);
-                    const h = d.getHours();
-                    const mi = d.getMinutes().toString().padStart(2, '0');
-                    const p = h < 12 ? '오전' : '오후';
-                    return `${p} ${h % 12 === 0 ? 12 : h % 12}:${mi}`;
-                  })()
-                : '',
-            }));
-            setSessions((cur) =>
-              cur.map((s) =>
-                s.id === sessionId ? { ...s, messages: mapped } : s,
-              ),
-            );
-          })
-          .catch(() => {});
+        loadMessages(session.chatRoomId, (mapped) =>
+          setSessions((cur) => cur.map((s) => s.id === sessionId ? { ...s, messages: mapped } : s))
+        );
       }
       return prev.map((s) => (s.id === sessionId ? { ...s, unread: 0 } : s));
     });
+
+    // 아카이브 세션인 경우 메시지 로드
+    setArchivedSessions((prev) => {
+      const session = prev.find((s) => s.id === sessionId);
+      if (session?.chatRoomId && session.messages.length === 0) {
+        loadMessages(session.chatRoomId, (mapped) =>
+          setArchivedSessions((cur) => cur.map((s) => s.id === sessionId ? { ...s, messages: mapped } : s))
+        );
+      }
+      return prev;
+    });
+
     setRightView(RIGHT.CHAT);
   }, []);
 
@@ -323,6 +348,11 @@ export function ChatModalProvider({ children }) {
       const session = prev.find((s) => s.id === sessionId);
       if (session?.chatRoomId) {
         chatRoomAPI.endRoom(session.chatRoomId).catch(() => {});
+        setArchivedSessions((arch) => {
+          const alreadyIn = arch.some((a) => a.chatRoomId === session.chatRoomId);
+          if (alreadyIn) return arch;
+          return [{ ...session, id: `archived-${session.chatRoomId}`, status: 'ARCHIVED' }, ...arch];
+        });
       }
       return prev.filter((s) => s.id !== sessionId);
     });
@@ -389,8 +419,11 @@ export function ChatModalProvider({ children }) {
   }, [isOpen]);
 
   const activeSession = useMemo(
-    () => sessions.find((s) => s.id === activeSessionId) ?? null,
-    [sessions, activeSessionId],
+    () =>
+      sessions.find((s) => s.id === activeSessionId) ??
+      archivedSessions.find((s) => s.id === activeSessionId) ??
+      null,
+    [sessions, archivedSessions, activeSessionId],
   );
 
   // 유저 메시지를 emotionCode 와 함께 DB에만 저장 (로컬 상태 변경 없음)
@@ -399,10 +432,30 @@ export function ChatModalProvider({ children }) {
     chatRoomAPI.saveMessage(chatRoomId, content, 'USER', emotionCode).catch(() => {});
   }, []);
 
+  const loadArchivedSessions = useCallback(() => {
+    chatRoomAPI.getArchivedRooms().then((rooms) => {
+      if (!Array.isArray(rooms)) return;
+      setArchivedSessions(
+        rooms.map((r) => ({
+          id: `archived-${r.chatRoomId}`,
+          chatRoomId: r.chatRoomId,
+          mateKey: resolveMateKey(r.mateKey ?? '') || r.mateKey,
+          title: r.title || '대화',
+          lastMessage: r.lastMessage || '',
+          updatedAt: r.lastMessageAt ? new Date(r.lastMessageAt).getTime() : 0,
+          status: 'ARCHIVED',
+          messages: [],
+        }))
+      );
+    }).catch(() => {});
+  }, []);
+
   const value = {
     isOpen,
     rightView,
     sessions,
+    archivedSessions,
+    loadArchivedSessions,
     activeSession,
     activeSessionId,
     RIGHT,

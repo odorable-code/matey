@@ -4,7 +4,8 @@ from typing import Dict, List
 import random
 from datetime import datetime
 
-from services.llm_client import run_chat_completion
+from services.llm_client import run_chat_completion, get_anthropic_api_key, get_gemini_api_key
+from services.matey_chat import MATE_CHARACTER
 
 router = APIRouter(prefix="/api", tags=["letter"])
 
@@ -17,6 +18,7 @@ class CounselData(BaseModel):
 
 class ChatLetterRequest(BaseModel):
     botName: str
+    botKey: Optional[str] = None   # "dog" | "bear" | "cat"
     userNickname: str
     isFirstCounsel: bool
     messages: List[Dict[str, str]]  # [{"role": "USER"|"BOT", "content": "..."}]
@@ -106,12 +108,19 @@ async def generate_chat_letter(data: ChatLetterRequest):
         "내용: (내용)"
     )
 
+    char_directive = MATE_CHARACTER.get((data.botKey or "").lower(), "")
+    system_content = (
+        f"너는 따뜻한 AI 상담 메이트 {bot}이야. 친근하고 진심 어린 말투로 쪽지를 써줘.\n"
+        + (f"\n{char_directive}" if char_directive else "")
+    )
     llm_messages = [
-        {"role": "system", "content": f"너는 따뜻한 AI 상담 메이트 {bot}이야. 친근하고 진심 어린 말투로 쪽지를 써줘."},
+        {"role": "system", "content": system_content},
         {"role": "user", "content": prompt},
     ]
 
     try:
+        if not get_gemini_api_key() and not get_anthropic_api_key():
+            raise ValueError("LLM API key not set")
         raw = run_chat_completion(llm_messages, max_tokens=512)
         title, content = _parse_letter(raw, bot, user)
     except Exception:

@@ -30,6 +30,7 @@ public class ChatService {
 
     private final ChatDAO chatDAO;
     private final MyPageDAO myPageDAO;
+    private final NotificationService notificationService;
 
     @Transactional
     public Long createChatRoom(long userId, String mateKey, String title) {
@@ -94,6 +95,11 @@ public class ChatService {
     }
 
     @Transactional(readOnly = true)
+    public List<ChatRoomDTO> getArchivedChatRooms(long userId) {
+        return chatDAO.selectArchivedChatRooms(userId);
+    }
+
+    @Transactional(readOnly = true)
     public List<ChatMessageDTO> getMessages(long userId, long chatRoomId) {
         if (chatDAO.countChatRoomByUserAndId(userId, chatRoomId) == 0) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "접근 권한이 없습니다.");
@@ -128,6 +134,7 @@ public class ChatService {
         }
 
         String botName = (String) context.get("botName");
+        String botKey  = (String) context.get("botKey");
         String userNickname = (String) context.get("userNickname");
         long chatCount = ((Number) context.get("chatCount")).longValue();
 
@@ -137,6 +144,7 @@ public class ChatService {
 
         Map<String, Object> payload = new HashMap<>();
         payload.put("botName", botName);
+        payload.put("botKey", botKey);
         payload.put("userNickname", userNickname);
         payload.put("isFirstCounsel", chatCount <= 1);
         payload.put("messages", msgList);
@@ -150,6 +158,7 @@ public class ChatService {
                 String title = (String) result.get("title");
                 String content = (String) result.get("content");
                 myPageDAO.insertBotLetter(userId, COUNSEL_LETTER_TYPE_ID, title, content);
+                notificationService.createNotification(userId, "BOT_MESSAGE", "새 쪽지가 도착했어요!", null, null);
             }
         } catch (Exception e) {
             log.warn("[ChatService] 채팅 쪽지 생성 실패 chatRoomId={}", chatRoomId, e);

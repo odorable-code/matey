@@ -71,12 +71,20 @@ public class NaverOAuthProvider implements OAuthProvider {
 
         Map<String, Object> response = (Map<String, Object>) body.get("response");
 
+        String birthyear = (String) response.get("birthyear");
+        String birthday  = (String) response.get("birthday"); // "MM-DD"
+        String birthdate = (birthyear != null && birthday != null)
+                ? birthyear + "-" + birthday
+                : null;
+
         return OAuthUserInfo.builder()
                 .provider("naver")
                 .providerUserId(String.valueOf(response.get("id")))
                 .email((String) response.get("email"))
                 .nickname((String) response.get("nickname"))
                 .profileImage((String) response.get("profile_image"))
+                .birthdate(birthdate)
+                .gender((String) response.get("gender"))
                 .build();
     }
 }

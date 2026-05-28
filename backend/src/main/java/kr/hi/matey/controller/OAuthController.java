@@ -41,6 +41,7 @@ public class OAuthController {
             response.sendRedirect(redirectUrl);
         } catch (IllegalArgumentException e) {
             String base = appProperties.getFrontendUrl();
+            System.out.println("base: " + base);
             if (base == null || base.isBlank()) {
                 response.sendError(HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
                 return;

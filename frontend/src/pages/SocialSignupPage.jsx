@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { API_BASE_URL, setStoredToken } from 'utils/api';
 
 /**
@@ -13,6 +13,18 @@ export default function SocialSignupPage() {
   const [isMarketingAgreed, setIsMarketingAgreed] = useState(false);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/api/v1/auth/social/prefill`, { credentials: 'include' })
+      .then((r) => r.ok ? r.json() : {})
+      .then((data) => {
+        if (data.nickname) setUserName(data.nickname);
+        if (data.birthdate) setUserBirth(data.birthdate);
+        if (data.gender === 'M') setGender('1');
+        else if (data.gender === 'F') setGender('2');
+      })
+      .catch(() => {});
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -74,7 +86,7 @@ export default function SocialSignupPage() {
   };
 
   return (
-    <main style={{ maxWidth: 420, margin: '3rem auto', padding: '0 1rem' }}>
+    <main style={{ maxWidth: 420, margin: '0 auto', padding: '100px 1rem 3rem' }}>
       <h1 style={{ fontSize: '1.35rem', marginBottom: '0.5rem' }}>소셜 계정 추가 정보</h1>
       <p style={{ color: '#6f6883', fontSize: 14, marginBottom: '1.5rem' }}>
         최초 소셜 로그인입니다. 서비스 이용을 위해 아래 정보를 입력해 주세요.

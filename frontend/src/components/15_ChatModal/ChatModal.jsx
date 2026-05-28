@@ -86,6 +86,13 @@ function timeAgo(timestamp) {
   return `${d.getMonth() + 1}월 ${d.getDate()}일`;
 }
 
+function hasBatchim(str) {
+  if (!str) return false;
+  const code = str.charCodeAt(str.length - 1);
+  if (code < 0xAC00 || code > 0xD7A3) return false;
+  return (code - 0xAC00) % 28 !== 0;
+}
+
 function nowTimeString() {
   const d = new Date();
   const h = d.getHours();
@@ -267,104 +274,136 @@ export default ChatModal;
 /* =========================================================
    좌측 사이드바 — 채팅방 목록 코드
 ========================================================= */
+function RoomItem({ s, active, mate, onOpen, onDelete, archived = false }) {
+  const lastMsg = s.messages[s.messages.length - 1];
+  const preview = lastMsg
+    ? `${lastMsg.role === "user" ? "나: " : ""}${lastMsg.text}`
+    : s.lastMessage || (archived ? "종료된 대화예요." : "아직 첫 메시지를 기다려요.");
+
+  return (
+    <li>
+      <button
+        type="button"
+        className={`matey-chat-side__room ${mate ? mate.accent : "is-unassigned"} ${active ? "is-active" : ""} ${archived ? "is-archived" : ""}`}
+        onClick={() => onOpen(s.id)}
+      >
+        <span className="matey-chat-side__avatar">
+          {mate ? (
+            <img src={mate.image} alt="" />
+          ) : (
+            <span className="matey-chat-side__avatar-fallback" aria-hidden>···</span>
+          )}
+        </span>
+
+        <span className="matey-chat-side__body">
+          <span className="matey-chat-side__top">
+            <span className="matey-chat-side__name">
+              {mate ? mate.name : COPY.sessionNoMate}
+            </span>
+            <span className="matey-chat-side__time">{timeAgo(s.updatedAt)}</span>
+          </span>
+          <span className="matey-chat-side__preview">{preview}</span>
+        </span>
+
+        {!archived && s.unread > 0 && (
+          <span className="matey-chat-side__unread">{s.unread}</span>
+        )}
+
+        {!archived && (
+          <span
+            className="matey-chat-side__delete"
+            onClick={(e) => { e.stopPropagation(); onDelete(s.id); }}
+            role="button"
+            tabIndex={0}
+            aria-label="대화 삭제"
+          >
+            ×
+          </span>
+        )}
+      </button>
+    </li>
+  );
+}
+
 function Sidebar() {
-  const { sessions, activeSessionId, openSession, deleteSession, showPick, landingMates } =
-    useChatModal();
+  const {
+    sessions, archivedSessions, loadArchivedSessions,
+    activeSessionId, openSession, deleteSession, showPick, landingMates,
+  } = useChatModal();
+
+  const [tab, setTab] = useState('active');
+
+  const handleTabChange = (next) => {
+    setTab(next);
+    if (next === 'archived') loadArchivedSessions();
+  };
+
+  const list = tab === 'active' ? sessions : archivedSessions;
 
   return (
     <aside className="matey-chat-side">
       <header className="matey-chat-side__header">
-        <h2 className="matey-chat-side__title">{COPY.sidebarTitle}</h2>
-        <p className="matey-chat-side__count">{sessions.length}개의 대화</p>
+        <div className="matey-chat-side__header-row">
+          <h2 className="matey-chat-side__title">{COPY.sidebarTitle}</h2>
+          <div className="matey-chat-side__tab-wrap">
+            <button
+              type="button"
+              className={`matey-chat-side__tab-btn ${tab === 'active' ? 'is-active' : ''}`}
+              onClick={() => handleTabChange('active')}
+            >
+              대화목록
+            </button>
+            <button
+              type="button"
+              className={`matey-chat-side__tab-btn ${tab === 'archived' ? 'is-active' : ''}`}
+              onClick={() => handleTabChange('archived')}
+            >
+              지난대화
+            </button>
+          </div>
+        </div>
+        <p className="matey-chat-side__count">{list.length}개의 대화</p>
       </header>
 
       <div className="matey-chat-side__scroll">
-        {sessions.length === 0 ? (
+        {list.length === 0 ? (
           <div className="matey-chat-side__empty">
-            <p>아직 대화가 없어요</p>
-            <span>아래 버튼으로 새 친구와 시작해봐요</span>
+            {tab === 'active' ? (
+              <>
+                <p>아직 대화가 없어요</p>
+                <span>아래 버튼으로 새 친구와 시작해봐요</span>
+              </>
+            ) : (
+              <p>지난 대화가 없어요</p>
+            )}
           </div>
         ) : (
           <ul className="matey-chat-side__list">
-            {sessions.map((s) => {
-              const mate = s.mateKey
-                ? landingMates.find((m) => m.key === s.mateKey)
-                : null;
-              const lastMsg = s.messages[s.messages.length - 1];
-              const preview = lastMsg
-                ? `${lastMsg.role === "user" ? "나: " : ""}${lastMsg.text}`
-                : s.lastMessage || "아직 첫 메시지를 기다려요.";
-              const active = s.id === activeSessionId;
-
+            {list.map((s) => {
+              const mate = s.mateKey ? landingMates.find((m) => m.key === s.mateKey) : null;
               return (
-                <li key={s.id}>
-                  <button
-                    type="button"
-                    className={`matey-chat-side__room ${
-                      mate ? mate.accent : "is-unassigned"
-                    } ${active ? "is-active" : ""}`}
-                    onClick={() => openSession(s.id)}
-                  >
-                    <span className="matey-chat-side__avatar">
-                      {mate ? (
-                        <img src={mate.image} alt="" />
-                      ) : (
-                        <span className="matey-chat-side__avatar-fallback" aria-hidden>
-                          ···
-                        </span>
-                      )}
-                    </span>
-
-                    <span className="matey-chat-side__body">
-                      <span className="matey-chat-side__top">
-                        <span className="matey-chat-side__name">
-                          {mate ? mate.name : COPY.sessionNoMate}
-                        </span>
-                        <span className="matey-chat-side__time">
-                          {timeAgo(s.updatedAt)}
-                        </span>
-                      </span>
-                      <span className="matey-chat-side__preview">
-                        {preview}
-                      </span>
-                    </span>
-
-                    {s.unread > 0 && (
-                      <span className="matey-chat-side__unread">
-                        {s.unread}
-                      </span>
-                    )}
-
-                    <span
-                      className="matey-chat-side__delete"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteSession(s.id);
-                      }}
-                      role="button"
-                      tabIndex={0}
-                      aria-label="대화 삭제"
-                    >
-                      ×
-                    </span>
-                  </button>
-                </li>
+                <RoomItem
+                  key={s.id}
+                  s={s}
+                  active={s.id === activeSessionId}
+                  mate={mate}
+                  onOpen={openSession}
+                  onDelete={deleteSession}
+                  archived={tab === 'archived'}
+                />
               );
             })}
           </ul>
         )}
       </div>
 
-      {/* 항상 보이는 새 대화 버튼 */}
-      <div className="matey-chat-side__cta-wrap">
-        <button
-          type="button"
-          className="matey-chat-side__cta"
-          onClick={showPick}
-        >
-          {COPY.newButton}
-        </button>
-      </div>
+      {tab === 'active' && (
+        <div className="matey-chat-side__cta-wrap">
+          <button type="button" className="matey-chat-side__cta" onClick={showPick}>
+            {COPY.newButton}
+          </button>
+        </div>
+      )}
     </aside>
   );
 }
@@ -760,6 +799,7 @@ function ChatView({ mobileBar = false, onMobileBack }) {
     if (!activeSession) return null;
     return landingMates.find((m) => m.key === activeSession.mateKey);
   }, [activeSession, landingMates]);
+  const isArchived = activeSession?.status === 'ARCHIVED';
 
   const { settings } = useNotifications();
   const [inputValue, setInputValue] = useState("");
@@ -782,13 +822,13 @@ function ChatView({ mobileBar = false, onMobileBack }) {
 
     if (geminiInitializedFor.current !== activeSession.id) {
       geminiInitializedFor.current = activeSession.id;
-      const isNew = activeSession.messages.length === 0;
+      const isNew = activeSession.messages.length === 0 && !activeSession.loadedFromDb;
       if (isNew) {
         // 새로 생긴 방이면 메이트의 기본 인사말을 로컬에서 추가
         appendMessage(activeSession.id, {
           id: `mate-${Date.now()}`,
           role: "mate",
-          text: `안녕하세요! 저는 ${mate.name}이에요. 무엇을 도와드릴까요?`,
+          text: `안녕하세요! 저는 ${mate.name}${hasBatchim(mate.name) ? '이에요' : '에요'}. 무엇을 도와드릴까요?`,
           time: nowTimeString(),
         });
       }
@@ -952,14 +992,16 @@ function ChatView({ mobileBar = false, onMobileBack }) {
             반말
           </button>
         </div>
-        <button
-          type="button"
-          className="matey-chat-room__end-btn"
-          onClick={() => endSession(activeSession.id)}
-          aria-label="대화 마치기"
-        >
-          대화 마치기
-        </button>
+        {!isArchived && (
+          <button
+            type="button"
+            className="matey-chat-room__end-btn"
+            onClick={() => endSession(activeSession.id)}
+            aria-label="대화 마치기"
+          >
+            대화 마치기
+          </button>
+        )}
       </header>
 
       {/* 메시지 영역 */}
@@ -1011,7 +1053,12 @@ function ChatView({ mobileBar = false, onMobileBack }) {
       )}
 
       {/* 인풋 영역 */}
-      <form className="matey-chat-room__input-bar" onSubmit={handleSubmit}>
+      {isArchived && (
+        <div className="matey-chat-room__archived-notice">
+          종료된 대화예요. 새 대화를 시작해보세요.
+        </div>
+      )}
+      {!isArchived && <form className="matey-chat-room__input-bar" onSubmit={handleSubmit}>
         <input
           ref={inputRef}
           type="text"
@@ -1034,7 +1081,7 @@ function ChatView({ mobileBar = false, onMobileBack }) {
             />
           </svg>
         </button>
-      </form>
+      </form>}
     </div>
   );
 }
