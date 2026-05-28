@@ -33,6 +33,7 @@ import {
 import { mergeLandingBotsRows } from 'utils/landingMates';
 import { communityAPI, myPageAPI, chatRoomAPI } from 'utils/api';
 import { resolveMateKey } from '../constants/mates';
+import { useAuth } from './AuthContext';
 
 // ============================================================
 // 1. 시간 포맷
@@ -63,6 +64,9 @@ const RIGHT = {
 const ChatModalContext = createContext(null);
 
 export function ChatModalProvider({ children }) {
+  const { user } = useAuth();
+  const currentUserId = user?.userId ?? user?.id ?? null;
+
   const [isOpen, setIsOpen] = useState(false);
   const [rightView, setRightView] = useState(RIGHT.EMPTY);
   const [activeSessionId, setActiveSessionId] = useState(null);
@@ -72,7 +76,15 @@ export function ChatModalProvider({ children }) {
   /** 담당봇 bot-menu: 채팅은 친밀 레벨로 해금된 모션만, 맥락에 맞게 선택 */
   const [assignedBotMotionsForChat, setAssignedBotMotionsForChat] = useState(null);
 
-  // 모달 닫힐 때 활성 세션만 초기화 (stale ARCHIVED 방지)
+  // 로그인 유저가 바뀔 때만 세션 전체 초기화 (다른 계정 재로그인 시 데이터 혼용 방지)
+  useEffect(() => {
+    setSessions([]);
+    setArchivedSessions([]);
+    setActiveSessionId(null);
+    setRightView(RIGHT.EMPTY);
+  }, [currentUserId]);
+
+  // 모달 닫힐 때 활성 세션만 초기화 (지난대화는 유지)
   useEffect(() => {
     if (!isOpen) {
       setSessions([]);
