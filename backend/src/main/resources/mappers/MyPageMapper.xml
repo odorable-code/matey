@@ -423,8 +423,66 @@
     </update>
 
     <update id="withdrawUser">
-        -- DB 스키마의 ON DELETE CASCADE 설정으로 인해 USER 삭제 시 연관 데이터가 자동 삭제됩니다.
-        DELETE FROM `USER` WHERE `user_id` = #{userId}
+        DELETE cs FROM COUNSEL_SUMMARY cs
+            INNER JOIN CHAT_ROOM cr ON cs.chat_room_id = cr.chat_room_id
+            INNER JOIN EXCLUSIVE e  ON cr.exclusive_id  = e.exclusive_id
+        WHERE e.user_id = #{userId};
+
+        DELETE s FROM SATISFACTION s
+            INNER JOIN EXCLUSIVE e ON s.exclusive_id = e.exclusive_id
+        WHERE e.user_id = #{userId};
+
+        DELETE ubr FROM USER_BOT_RELATION ubr
+            INNER JOIN EXCLUSIVE e ON ubr.exclusive_id = e.exclusive_id
+        WHERE e.user_id = #{userId};
+
+        DELETE bl FROM BOT_LETTER bl
+            INNER JOIN EXCLUSIVE e ON bl.exclusive_id = e.exclusive_id
+        WHERE e.user_id = #{userId};
+
+        DELETE m FROM MESSAGE m
+            INNER JOIN CHAT_ROOM cr ON m.chat_room_id = cr.chat_room_id
+            INNER JOIN EXCLUSIVE e  ON cr.exclusive_id  = e.exclusive_id
+        WHERE e.user_id = #{userId};
+
+        DELETE cr FROM CHAT_ROOM cr
+            INNER JOIN EXCLUSIVE e ON cr.exclusive_id = e.exclusive_id
+        WHERE e.user_id = #{userId};
+
+        DELETE FROM EXCLUSIVE WHERE user_id = #{userId};
+
+        DELETE sa FROM SUPPORT_ANSWER sa
+            INNER JOIN SUPPORT s ON sa.support_id = s.support_id
+        WHERE s.user_id = #{userId};
+
+        DELETE FROM SUPPORT_ANSWER WHERE admin_user_id = #{userId};
+
+        DELETE FROM SUPPORT         WHERE user_id = #{userId};
+        DELETE FROM NOTIFICATION    WHERE user_id = #{userId};
+        DELETE FROM EMOTION_SCORE   WHERE user_id = #{userId};
+        DELETE FROM USER_SETTING    WHERE user_id = #{userId};
+        DELETE FROM PASSWORD_RESET_TOKEN WHERE user_id = #{userId};
+        DELETE FROM USER_ROLE       WHERE user_id = #{userId};
+        DELETE FROM AUTO_LOGIN      WHERE user_id = #{userId};
+        DELETE FROM SOCIAL_LOGIN    WHERE user_id = #{userId};
+        DELETE FROM USER_NOTIFICATION_SETTING WHERE user_id = #{userId};
+        DELETE FROM USER_BOT_RECOMMEND WHERE user_id = #{userId};
+        DELETE FROM USER_INVENTORY  WHERE user_id = #{userId};
+        DELETE FROM REACTION        WHERE user_id = #{userId};
+
+        DELETE pi FROM POST_IMAGE pi
+            INNER JOIN POST p ON pi.post_id = p.post_id
+        WHERE p.user_id = #{userId};
+
+        UPDATE COMMENT c
+            INNER JOIN COMMENT pc ON c.parent_comment_id = pc.comment_id
+        SET c.parent_comment_id = NULL
+        WHERE pc.user_id = #{userId} AND c.user_id != #{userId};
+
+        DELETE FROM COMMENT WHERE user_id = #{userId};
+        DELETE FROM POST    WHERE user_id = #{userId};
+
+        DELETE FROM `USER` WHERE `user_id` = #{userId};
     </update>
 
     <insert id="insertBotLetter">

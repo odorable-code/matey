@@ -327,6 +327,8 @@ CREATE TABLE `INTIMACY_LEVEL` (
 	`intimacy_standard`	int	NULL
 );
 
+INSERT INTO BOT_LETTER_TYPE (letter_type_id, name, template) VALUES (1, '일반', '');
+
 INSERT INTO INTIMACY_LEVEL (intimacy_id, level_description, intimacy_standard) VALUES (1, '처음 만남', 0);
 INSERT INTO INTIMACY_LEVEL (intimacy_id, level_description, intimacy_standard) VALUES
   (2,'단계 2',1),
