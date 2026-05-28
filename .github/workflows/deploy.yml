@@ -61,6 +61,8 @@ jobs:
           FASTAPI_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/matey-chatbot
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
           NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
           NAVER_REDIRECT_URI: ${{ secrets.NAVER_REDIRECT_URI }}
@@ -71,11 +73,12 @@ jobs:
           MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
           FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
           CORS_ALLOWED_ORIGIN_PATTERNS: ${{ secrets.CORS_ALLOWED_ORIGIN_PATTERNS }}
+          FASTAPI_BASE_URL: ${{ secrets.FASTAPI_BASE_URL }}
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          envs: FRONTEND_IMAGE,BACKEND_IMAGE,FASTAPI_IMAGE,GEMINI_API_KEY,JWT_SECRET,NAVER_CLIENT_ID,NAVER_CLIENT_SECRET,NAVER_REDIRECT_URI,KAKAO_CLIENT_ID,KAKAO_CLIENT_SECRET,KAKAO_REDIRECT_URI,MAIL_USERNAME,MAIL_PASSWORD,FRONTEND_URL,CORS_ALLOWED_ORIGIN_PATTERNS
+          envs: FRONTEND_IMAGE,BACKEND_IMAGE,FASTAPI_IMAGE,GEMINI_API_KEY,JWT_SECRET,DB_USERNAME,DB_PASSWORD,NAVER_CLIENT_ID,NAVER_CLIENT_SECRET,NAVER_REDIRECT_URI,KAKAO_CLIENT_ID,KAKAO_CLIENT_SECRET,KAKAO_REDIRECT_URI,MAIL_USERNAME,MAIL_PASSWORD,FRONTEND_URL,CORS_ALLOWED_ORIGIN_PATTERNS,FASTAPI_BASE_URL
           script: |
             # Docker 네트워크 (frontend ↔ backend ↔ chatbot 통신용)
             docker network create matey-network 2>/dev/null || true
@@ -107,8 +110,12 @@ jobs:
             docker run -d \
               --name matey-backend \
               --network matey-network \
+              --add-host host.docker.internal:host-gateway \
               --restart unless-stopped \
               -p 8080:8080 \
+              -e JDBC_MYSQL_URL="jdbc:mysql://host.docker.internal:3306/matey?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&allowMultiQueries=true" \
+              -e DB_USERNAME="$DB_USERNAME" \
+              -e DB_PASSWORD="$DB_PASSWORD" \
               -e JWT_SECRET="$JWT_SECRET" \
               -e NAVER_CLIENT_ID="$NAVER_CLIENT_ID" \
               -e NAVER_CLIENT_SECRET="$NAVER_CLIENT_SECRET" \
@@ -120,6 +127,7 @@ jobs:
               -e MAIL_PASSWORD="$MAIL_PASSWORD" \
               -e FRONTEND_URL="$FRONTEND_URL" \
               -e CORS_ALLOWED_ORIGIN_PATTERNS="$CORS_ALLOWED_ORIGIN_PATTERNS" \
+              -e FASTAPI_BASE_URL="$FASTAPI_BASE_URL" \
               "$BACKEND_IMAGE:latest"
 
             # ── Frontend (matey) ──
