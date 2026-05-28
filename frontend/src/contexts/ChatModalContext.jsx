@@ -279,20 +279,23 @@ export function ChatModalProvider({ children }) {
         .getMessages(chatRoomId)
         .then((msgs) => {
           if (!Array.isArray(msgs) || msgs.length === 0) return;
-          const mapped = msgs.map((m) => ({
-            id: `db-msg-${m.messageId}`,
-            role: m.senderType === 'USER' ? 'user' : 'mate',
-            text: m.content,
-            time: m.createdAt
-              ? (() => {
-                  const d = new Date(m.createdAt);
-                  const h = d.getHours();
-                  const mi = d.getMinutes().toString().padStart(2, '0');
-                  const p = h < 12 ? '오전' : '오후';
-                  return `${p} ${h % 12 === 0 ? 12 : h % 12}:${mi}`;
-                })()
-              : '',
-          }));
+          const mapped = msgs
+            .slice()
+            .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+            .map((m) => ({
+              id: `db-msg-${m.messageId}`,
+              role: m.senderType === 'USER' ? 'user' : 'mate',
+              text: m.content,
+              time: m.createdAt
+                ? (() => {
+                    const d = new Date(m.createdAt);
+                    const h = d.getHours();
+                    const mi = d.getMinutes().toString().padStart(2, '0');
+                    const p = h < 12 ? '오전' : '오후';
+                    return `${p} ${h % 12 === 0 ? 12 : h % 12}:${mi}`;
+                  })()
+                : '',
+            }));
           updateFn(mapped);
         })
         .catch(() => {});
