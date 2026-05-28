@@ -67,6 +67,9 @@ public interface MyPageDAO {
 	void insertBotLetter(@Param("userId") long userId, @Param("letterTypeId") long letterTypeId,
 						 @Param("title") String title, @Param("content") String content);
 
+	void insertBotLetterByExclusiveId(@Param("exclusiveId") long exclusiveId, @Param("letterTypeId") long letterTypeId,
+									  @Param("title") String title, @Param("content") String content);
+
 	List<Long> selectAbsentUserIdsForLetter(@Param("minDays") int minDays, @Param("maxDays") int maxDays);
 
 	Map<String, Object> selectUserContextForLetter(@Param("userId") long userId);

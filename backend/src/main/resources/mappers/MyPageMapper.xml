@@ -446,6 +446,11 @@
         LIMIT 1
     </insert>
 
+    <insert id="insertBotLetterByExclusiveId">
+        INSERT INTO BOT_LETTER (letter_type_id, exclusive_id, title, content, is_read)
+        VALUES (#{letterTypeId}, #{exclusiveId}, #{title}, #{content}, FALSE)
+    </insert>
+
     <select id="selectAbsentUserIdsForLetter" resultType="long">
         SELECT DISTINCT u.user_id
         FROM USER u
