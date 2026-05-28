@@ -5,6 +5,9 @@ import { API_BASE_URL, setStoredToken } from 'utils/api';
  * 소셜 최초 로그인 시 백엔드 세션(PENDING_SOCIAL_USER)과 함께 추가 정보 제출
  */
 export default function SocialSignupPage() {
+  const [userEmail, setUserEmail] = useState('');
+  const [emailChecked, setEmailChecked] = useState(false);
+  const [emailCheckMsg, setEmailCheckMsg] = useState('');
   const [userName, setUserName] = useState('');
   const [userBirth, setUserBirth] = useState('');
   const [gender, setGender] = useState('1');
@@ -18,6 +21,11 @@ export default function SocialSignupPage() {
     fetch(`${API_BASE_URL}/api/v1/auth/social/prefill`, { credentials: 'include' })
       .then((r) => r.ok ? r.json() : {})
       .then((data) => {
+        if (data.email) {
+          setUserEmail(data.email);
+          setEmailChecked(true);
+          setEmailCheckMsg('');
+        }
         if (data.nickname) setUserName(data.nickname);
         if (data.birthdate) setUserBirth(data.birthdate);
         if (data.gender === 'M') setGender('1');
@@ -26,10 +34,47 @@ export default function SocialSignupPage() {
       .catch(() => {});
   }, []);
 
+  const handleEmailCheck = async () => {
+    const email = userEmail.trim();
+    if (!email) {
+      setEmailCheckMsg('이메일을 입력해 주세요.');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setEmailCheckMsg('올바른 이메일 형식을 입력해 주세요.');
+      return;
+    }
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/v1/auth/check-email?email=${encodeURIComponent(email)}`);
+      const data = await res.json();
+      if (data.isEmailDuplicate) {
+        setEmailChecked(false);
+        setEmailCheckMsg('이미 사용 중인 이메일입니다.');
+      } else {
+        setEmailChecked(true);
+        setEmailCheckMsg('사용 가능한 이메일입니다.');
+      }
+    } catch {
+      setEmailCheckMsg('중복 확인 중 오류가 발생했습니다.');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage('');
 
+    if (!userEmail.trim()) {
+      setMessage('이메일을 입력해 주세요.');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userEmail.trim())) {
+      setMessage('올바른 이메일 형식을 입력해 주세요.');
+      return;
+    }
+    if (!emailChecked) {
+      setMessage('이메일 중복 확인을 해주세요.');
+      return;
+    }
     if (!userName.trim()) {
       setMessage('이름을 입력해 주세요.');
       return;
@@ -56,6 +101,7 @@ export default function SocialSignupPage() {
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          userEmail: userEmail.trim(),
           userName: userName.trim(),
           userBirth: birthMs,
           gender: Number(gender),
@@ -93,6 +139,40 @@ export default function SocialSignupPage() {
       </p>
 
       <form onSubmit={handleSubmit}>
+        <div style={{ marginBottom: '0.75rem' }}>
+          <span style={{ display: 'block', fontWeight: 600, marginBottom: 4 }}>이메일</span>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input
+              type="email"
+              value={userEmail}
+              onChange={(e) => { setUserEmail(e.target.value); setEmailChecked(false); setEmailCheckMsg(''); }}
+              placeholder="example@email.com"
+              style={{ flex: 1, padding: '10px 12px', borderRadius: 8, border: '1px solid #ccc' }}
+            />
+            <button
+              type="button"
+              onClick={handleEmailCheck}
+              style={{
+                padding: '10px 14px',
+                borderRadius: 8,
+                border: '1px solid #5c4b8a',
+                background: '#fff',
+                color: '#5c4b8a',
+                fontWeight: 600,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              중복 확인
+            </button>
+          </div>
+          {emailCheckMsg && (
+            <p style={{ margin: '4px 0 0', fontSize: 13, color: emailChecked ? '#27ae60' : '#c0392b' }}>
+              {emailCheckMsg}
+            </p>
+          )}
+        </div>
+
         <label style={{ display: 'block', marginBottom: '0.75rem' }}>
           <span style={{ display: 'block', fontWeight: 600, marginBottom: 4 }}>이름</span>
           <input
