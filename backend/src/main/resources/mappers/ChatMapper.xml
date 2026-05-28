@@ -121,6 +121,7 @@
 
     <select id="selectChatContextForLetter" resultType="map">
         SELECT
+            e.exclusive_id AS exclusiveId,
             COALESCE(NULLIF(TRIM(b.display_name), ''), b.name) AS botName,
             b.name AS botKey,
             u.nickname AS userNickname,

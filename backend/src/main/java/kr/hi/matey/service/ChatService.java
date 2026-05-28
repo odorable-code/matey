@@ -133,6 +133,7 @@ public class ChatService {
             return;
         }
 
+        long exclusiveId = ((Number) context.get("exclusiveId")).longValue();
         String botName = (String) context.get("botName");
         String botKey  = (String) context.get("botKey");
         String userNickname = (String) context.get("userNickname");
@@ -157,7 +158,7 @@ public class ChatService {
             if (result != null) {
                 String title = (String) result.get("title");
                 String content = (String) result.get("content");
-                myPageDAO.insertBotLetter(userId, COUNSEL_LETTER_TYPE_ID, title, content);
+                myPageDAO.insertBotLetterByExclusiveId(exclusiveId, COUNSEL_LETTER_TYPE_ID, title, content);
                 notificationService.createNotification(userId, "BOT_MESSAGE", "새 쪽지가 도착했어요!", null, null);
             }
         } catch (Exception e) {

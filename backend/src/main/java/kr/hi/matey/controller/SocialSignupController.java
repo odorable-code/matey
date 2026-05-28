@@ -28,6 +28,7 @@ public class SocialSignupController {
 
         Map<String, Object> result = new HashMap<>();
         if (pending != null) {
+            result.put("email", pending.getEmail());
             result.put("nickname", pending.getNickname());
             result.put("birthdate", pending.getBirthdate());
             result.put("gender", pending.getGender());

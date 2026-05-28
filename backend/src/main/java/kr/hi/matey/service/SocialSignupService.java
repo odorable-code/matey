@@ -39,7 +39,10 @@ public class SocialSignupService {
         }
 
         UserVO user = new UserVO();
-        user.setEmail(pendingUser.getEmail());
+        String email = (request.getUserEmail() != null && !request.getUserEmail().isBlank())
+                ? request.getUserEmail()
+                : pendingUser.getEmail();
+        user.setEmail(email);
         user.setPassword(passwordEncoder.encode("SOCIAL_" + UUID.randomUUID()));
         user.setNickname(pendingUser.getNickname());
         user.setUserName(request.getUserName());

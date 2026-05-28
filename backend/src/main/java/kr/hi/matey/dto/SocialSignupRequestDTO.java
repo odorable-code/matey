@@ -6,6 +6,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class SocialSignupRequestDTO {
+    private String userEmail;
     private String userName;
     private Long userBirth;
     private Long gender;
