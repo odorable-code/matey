@@ -25,8 +25,17 @@ public class OAuthController {
     @GetMapping("/{provider}")
     public void redirect(@PathVariable("provider") String provider,
                          HttpServletResponse response) throws IOException {
-        String url = oAuthLoginService.buildAuthorizeUrl(provider);
-        response.sendRedirect(url);
+        try {
+            String url = oAuthLoginService.buildAuthorizeUrl(provider);
+            response.sendRedirect(url);
+        } catch (Exception e) {
+            String base = appProperties.getFrontendUrl();
+            if (base == null || base.isBlank()) {
+                response.sendError(HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
+                return;
+            }
+            response.sendRedirect(base.replaceAll("/$", "") + "/login?error=oauth");
+        }
     }
 
     @GetMapping("/callback/{provider}")
