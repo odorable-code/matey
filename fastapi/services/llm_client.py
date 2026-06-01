@@ -19,7 +19,7 @@ def get_anthropic_api_key() -> Optional[str]:
 def run_chat_completion(
     messages: List[dict],
     *,
-    model: str = "gemini-2.0-flash",
+    model: str = "gemini-3.1-flash-lite",
     max_tokens: int = 1024,
     mate_key: Optional[str] = None,
     speech_level: Optional[str] = None,

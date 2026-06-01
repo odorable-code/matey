@@ -55,7 +55,7 @@ def classify_risk_with_gemini(clean_text):
     try:
         # SDK에 맞는 호출 방식 및 모델명 수정
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-3.1-flash-lite",
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json", # JSON 출력 강제
