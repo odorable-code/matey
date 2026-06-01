@@ -281,7 +281,11 @@ export function ChatModalProvider({ children }) {
           if (!Array.isArray(msgs) || msgs.length === 0) return;
           const mapped = msgs
             .slice()
-            .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+            .sort((a, b) => {
+              const t = new Date(a.createdAt) - new Date(b.createdAt);
+              // 같은 초(초 단위 타임스탬프) 메시지는 messageId(삽입 순서)로 정렬
+              return t !== 0 ? t : (a.messageId ?? 0) - (b.messageId ?? 0);
+            })
             .map((m) => ({
               id: `db-msg-${m.messageId}`,
               role: m.senderType === 'USER' ? 'user' : 'mate',

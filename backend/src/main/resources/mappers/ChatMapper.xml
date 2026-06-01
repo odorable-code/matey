@@ -109,7 +109,7 @@
             DATE_FORMAT(created_at, '%Y-%m-%dT%H:%i:%s') AS createdAt
         FROM MESSAGE
         WHERE chat_room_id = #{chatRoomId}
-        ORDER BY created_at ASC
+        ORDER BY created_at ASC, message_id ASC
     </select>
 
     <select id="countChatRoomByUserAndId" resultType="int">
