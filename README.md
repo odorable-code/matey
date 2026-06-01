@@ -25,8 +25,8 @@ Gemini 2.5 Flash와 Chroma DB를 활용한 RAG 파이프라인으로, 캐릭터�
                                                             │
                                                             ▼
                                                    ┌──────────────────┐
-                                                   │  Gemini 2.5      │
-                                                   │  Flash API       │
+                                                   │  Gemini 3.1      │
+                                                   │  Flash Lite API  │
                                                    └──────────────────┘
 ```
 
