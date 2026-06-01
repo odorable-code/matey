@@ -170,6 +170,12 @@
         expired_at = #{expiryDate},
         last_used_at = NOW()
      </insert>
+
+	<update id="updateLastLogin">
+		UPDATE USER
+		SET last_login_at = NOW()
+		WHERE user_id = #{userId}
+	</update>
      
      <update id="removeAutoLoginToken">
 	    UPDATE AUTO_LOGIN 

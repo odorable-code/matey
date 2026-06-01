@@ -117,6 +117,7 @@ public class AuthController {
             String refreshToken = jwtTokenProvider.createRefreshToken(customUser);
 
             authService.persistRefreshToken(customUser.getUser().getUserId(), refreshToken);
+            authService.updateLastLogin(customUser.getUser().getUserId());
             response.addCookie(makeRefreshCookie(refreshToken, 60 * 60 * 24 * 7));
 
             Map<String, Object> responseBody = new HashMap<>();
@@ -152,6 +153,9 @@ public class AuthController {
             String refreshToken = jwtTokenProvider.createRefreshToken(customUser);
 
             authService.persistRefreshToken(customUser.getUser().getUserId(), refreshToken);
+
+            // 최근 로그인 시각 갱신 (어드민 사용자 목록에 반영)
+            authService.updateLastLogin(customUser.getUser().getUserId());
 
             // 음수 (예: -1): 쿠키를 별도의 파일로 저장하지 않고 브라우저가 켜져 있는 동안만 유지. 브라우저(모든 탭과 창)를 완전히 닫으면 삭제. (일반 로그인에 사용)
             // 0: 쿠키를 즉시 삭제하라는 뜻. (로그아웃 구현 시 사용)

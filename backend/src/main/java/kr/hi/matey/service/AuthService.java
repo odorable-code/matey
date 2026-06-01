@@ -197,6 +197,12 @@ public class AuthService {
 		LocalDateTime expiryDate = LocalDateTime.now().plusSeconds(refreshTokenValiditySeconds);
 		authDAO.saveAutoLoginInfo(userId, refreshToken, expiryDate);
 	}
+
+
+	/** 로그인 성공 시 최근 로그인 시각(USER.last_login_at) 갱신 */
+	public void updateLastLogin(Long userId) {
+		authDAO.updateLastLogin(userId);
+	}
 	
 	
 	public boolean isValidRefreshToken(String subject, String refreshToken) {
