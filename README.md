@@ -46,7 +46,7 @@ Gemini 2.5 Flash와 Chroma DB를 활용한 RAG 파이프라인으로, 캐릭터�
 
 ### AI Server
 - **Python**, **FastAPI**
-- **Gemini 2.5 Flash** (응답 생성 LLM)
+- **Gemini 3.1 Flash** (응답 생성 LLM)
 - **Gemini Embedding** (임베딩 모델)
 - **Chroma DB** (벡터 데이터베이스)
 
@@ -101,7 +101,7 @@ cd backend
 # FastAPI
 cd fastapi
 pip install -r requirements.txt
-python main.py
+python app.py
 
 # React
 cd frontend
